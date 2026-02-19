@@ -34,8 +34,12 @@ export function writeSkillsRows(
     skillToPlacement.set(p.skill.skill, p);
   }
 
+  // Row number → required level mapping
+  const ROW_TO_LEVEL: Record<number, number> = { 1: 1, 2: 6, 3: 12, 4: 18, 5: 24, 6: 30 };
+
   // Resolve column indices dynamically (fallback to hardcoded)
   const charclassIdx = safeGetCol(headers, 'charclass', COL.charclass);
+  const reqlevelIdx = safeGetCol(headers, 'reqlevel', 174);
   const reqskill1Idx = safeGetCol(headers, 'reqskill1', COL.reqskill1);
   const reqskill2Idx = safeGetCol(headers, 'reqskill2', COL.reqskill2);
   const reqskill3Idx = safeGetCol(headers, 'reqskill3', COL.reqskill3);
@@ -53,6 +57,10 @@ export function writeSkillsRows(
 
     // Update charclass
     row[charclassIdx] = classDef.charclass;
+
+    // Update reqlevel to match the assigned row
+    const newLevel = ROW_TO_LEVEL[placement.row] ?? 1;
+    row[reqlevelIdx] = String(newLevel);
 
     // Clear prerequisites (tree structure is randomized)
     row[reqskill1Idx] = '';

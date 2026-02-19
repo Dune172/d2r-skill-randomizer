@@ -29,6 +29,7 @@ export interface SkillEntry {
   charclass: string; // original class
   skilldesc: string;
   lineNumber: number; // row index in skills.json
+  reqlevel: number; // required level (1, 6, 12, 18, 24, 30)
   // synergy formula columns
   EDmgSymPerCalc?: string;
   ELenSymPerCalc?: string;

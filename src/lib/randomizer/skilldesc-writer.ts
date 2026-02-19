@@ -1,33 +1,13 @@
 import { SkillPlacement } from './types';
 
-// Column indices in skilldesc.txt (0-based)
-const COL = {
-  skilldesc: 0,
-  SkillPage: 1,
-  SkillRow: 2,
-  SkillColumn: 3,
-  ListRow: 4,
-  IconCel: 5,
-  strName: 6,
-};
-
-// dsc3textb columns at indices 83, 88, 93, 98, 103, 108, 113
-const DSC3_TEXTB_INDICES = [83, 88, 93, 98, 103, 108, 113];
-// dsc3texta columns (preceding textb by 1)
-const DSC3_TEXTA_INDICES = [82, 87, 92, 97, 102, 107, 112];
-// dsc3line columns (preceding texta by 1)
-const DSC3_LINE_INDICES = [81, 86, 91, 96, 101, 106, 111];
-// dsc3calca columns (following textb by 1)
-const DSC3_CALCA_INDICES = [84, 89, 94, 99, 104, 109, 114];
-// dsc3calcb columns (following calca by 1)
-const DSC3_CALCB_INDICES = [85, 90, 95, 100, 105, 110, 115];
-
 /**
  * Modify skilldesc.txt rows based on placements:
  * - Update SkillPage (tab index + 1)
  * - Update SkillRow and SkillColumn
  * - Update IconCel
  * - Update dsc3textb synergy references
+ *
+ * All column indices are resolved dynamically from headers.
  */
 export function writeSkillDescRows(
   headers: string[],
@@ -43,12 +23,27 @@ export function writeSkillDescRows(
     }
   }
 
-  // Resolve column indices dynamically
-  const skillPageIdx = safeGetCol(headers, 'SkillPage', COL.SkillPage);
-  const skillRowIdx = safeGetCol(headers, 'SkillRow', COL.SkillRow);
-  const skillColIdx = safeGetCol(headers, 'SkillColumn', COL.SkillColumn);
-  const iconCelIdx = safeGetCol(headers, 'IconCel', COL.IconCel);
-  const listRowIdx = safeGetCol(headers, 'ListRow', COL.ListRow);
+  // Resolve all column indices dynamically from headers
+  const skillPageIdx = headers.indexOf('SkillPage');
+  const skillRowIdx = headers.indexOf('SkillRow');
+  const skillColIdx = headers.indexOf('SkillColumn');
+  const iconCelIdx = headers.indexOf('IconCel');
+  const listRowIdx = headers.indexOf('ListRow');
+
+  // Build dsc3 column index arrays dynamically
+  const dsc3LineIdx: number[] = [];
+  const dsc3TextaIdx: number[] = [];
+  const dsc3TextbIdx: number[] = [];
+  const dsc3CalcaIdx: number[] = [];
+  const dsc3CalcbIdx: number[] = [];
+
+  for (let i = 1; i <= 7; i++) {
+    dsc3LineIdx.push(headers.indexOf(`dsc3line${i}`));
+    dsc3TextaIdx.push(headers.indexOf(`dsc3texta${i}`));
+    dsc3TextbIdx.push(headers.indexOf(`dsc3textb${i}`));
+    dsc3CalcaIdx.push(headers.indexOf(`dsc3calca${i}`));
+    dsc3CalcbIdx.push(headers.indexOf(`dsc3calcb${i}`));
+  }
 
   for (const row of rows) {
     const skilldescName = row[0]; // skilldesc column is always first
@@ -56,52 +51,47 @@ export function writeSkillDescRows(
     if (!placement) continue;
 
     // SkillPage = tab index + 1 (1-based)
-    row[skillPageIdx] = String(placement.tabIndex + 1);
+    if (skillPageIdx >= 0) row[skillPageIdx] = String(placement.tabIndex + 1);
 
     // SkillRow and SkillColumn from grid position
-    row[skillRowIdx] = String(placement.row);
-    row[skillColIdx] = String(placement.col);
+    if (skillRowIdx >= 0) row[skillRowIdx] = String(placement.row);
+    if (skillColIdx >= 0) row[skillColIdx] = String(placement.col);
 
     // ListRow = position within tab (1-based sequential)
-    row[listRowIdx] = String(placement.skillIndex % 10 + 1);
+    if (listRowIdx >= 0) row[listRowIdx] = String(placement.skillIndex % 10 + 1);
 
     // IconCel = new icon index
-    row[iconCelIdx] = String(placement.iconCel);
+    if (iconCelIdx >= 0) row[iconCelIdx] = String(placement.iconCel);
 
     // Update dsc3textb synergy references
     const newTextBs = descSynergyUpdates.get(placement.skill.skill);
     if (newTextBs) {
       // Clear all dsc3 slots first
       for (let i = 0; i < 7; i++) {
-        if (DSC3_LINE_INDICES[i] < row.length) row[DSC3_LINE_INDICES[i]] = '';
-        if (DSC3_TEXTA_INDICES[i] < row.length) row[DSC3_TEXTA_INDICES[i]] = '';
-        if (DSC3_TEXTB_INDICES[i] < row.length) row[DSC3_TEXTB_INDICES[i]] = '';
-        if (DSC3_CALCA_INDICES[i] < row.length) row[DSC3_CALCA_INDICES[i]] = '';
-        if (DSC3_CALCB_INDICES[i] < row.length) row[DSC3_CALCB_INDICES[i]] = '';
+        if (dsc3LineIdx[i] >= 0 && dsc3LineIdx[i] < row.length) row[dsc3LineIdx[i]] = '';
+        if (dsc3TextaIdx[i] >= 0 && dsc3TextaIdx[i] < row.length) row[dsc3TextaIdx[i]] = '';
+        if (dsc3TextbIdx[i] >= 0 && dsc3TextbIdx[i] < row.length) row[dsc3TextbIdx[i]] = '';
+        if (dsc3CalcaIdx[i] >= 0 && dsc3CalcaIdx[i] < row.length) row[dsc3CalcaIdx[i]] = '';
+        if (dsc3CalcbIdx[i] >= 0 && dsc3CalcbIdx[i] < row.length) row[dsc3CalcbIdx[i]] = '';
       }
 
       // Fill in synergy header
-      if (newTextBs.length > 0 && DSC3_LINE_INDICES[0] < row.length) {
-        row[DSC3_LINE_INDICES[0]] = '40'; // line type for synergy header
-        row[DSC3_TEXTA_INDICES[0]] = 'Sksyn';
-        row[DSC3_TEXTB_INDICES[0]] = newTextBs[0];
-        row[DSC3_CALCA_INDICES[0]] = '2';
+      if (newTextBs.length > 0 && dsc3LineIdx[0] >= 0) {
+        row[dsc3LineIdx[0]] = '40';
+        row[dsc3TextaIdx[0]] = 'Sksyn';
+        row[dsc3TextbIdx[0]] = newTextBs[0];
+        row[dsc3CalcaIdx[0]] = '2';
       }
 
       // Fill remaining synergy entries
       for (let i = 1; i < newTextBs.length && i < 7; i++) {
-        if (DSC3_LINE_INDICES[i] < row.length) {
-          row[DSC3_LINE_INDICES[i]] = '76'; // line type for synergy bonus
-          row[DSC3_TEXTA_INDICES[i]] = 'Magdplev';
-          row[DSC3_TEXTB_INDICES[i]] = newTextBs[i];
-          row[DSC3_CALCA_INDICES[i]] = 'par8';
+        if (dsc3LineIdx[i] >= 0) {
+          row[dsc3LineIdx[i]] = '76';
+          row[dsc3TextaIdx[i]] = 'Magdplev';
+          row[dsc3TextbIdx[i]] = newTextBs[i];
+          row[dsc3CalcaIdx[i]] = 'par8';
         }
       }
     }
   }
-}
-
-function safeGetCol(headers: string[], name: string, fallback: number): number {
-  const idx = headers.indexOf(name);
-  return idx !== -1 ? idx : fallback;
 }

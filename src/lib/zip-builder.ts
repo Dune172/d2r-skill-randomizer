@@ -9,14 +9,27 @@ export interface ZipContents {
   iconSprites: Map<string, Buffer>; // filename → sprite buffer
 }
 
+// Map sprite prefix to full folder name used in D2R mod paths
+const PREFIX_TO_FOLDER: Record<string, string> = {
+  am: 'amazon',
+  so: 'sorceress',
+  ne: 'necromancer',
+  pa: 'paladin',
+  ba: 'barbarian',
+  dr: 'druid',
+  as: 'assassin',
+  wa: 'warlock',
+};
+
 /**
  * Build the mod zip file as a Buffer.
- * Structure:
- *   data/global/excel/skills.txt
- *   data/global/excel/skilldesc.txt
- *   data/hd/global/ui/spells/skill_trees/{prefix}skilltree.sprite
- *   data/hd/global/ui/spells/skill_trees/{prefix}skilltree.lowend.sprite
- *   data/hd/global/ui/spells/{class}/{prefix}skillicon.sprite
+ * Structure matches D2R mod format (rooted under mod/):
+ *   mod/modinfo.json
+ *   mod/data/global/excel/skills.txt
+ *   mod/data/global/excel/skilldesc.txt
+ *   mod/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.sprite
+ *   mod/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.lowend.sprite
+ *   mod/data/global/ui/spells/{classname}/{prefix}skillicon.sprite
  */
 export async function buildZip(contents: ZipContents): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -27,24 +40,35 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     archive.on('end', () => resolve(Buffer.concat(chunks)));
     archive.on('error', reject);
 
-    // Add text files
-    archive.append(contents.skillsTxt, { name: 'data/global/excel/skills.txt' });
-    archive.append(contents.skillDescTxt, { name: 'data/global/excel/skilldesc.txt' });
+    // Add modinfo.json
+    const modinfo = JSON.stringify({
+      name: "d2r-skill-randomizer",
+      version: "1.0",
+      description: "Randomized skill trees across all classes",
+      author: "Stephen",
+      d2rmmVersion: "1.5.0",
+    }, null, 2);
+    archive.append(modinfo, { name: 'mod/modinfo.json' });
 
-    // Add tree sprites
+    // Add text files
+    archive.append(contents.skillsTxt, { name: 'mod/data/global/excel/skills.txt' });
+    archive.append(contents.skillDescTxt, { name: 'mod/data/global/excel/skilldesc.txt' });
+
+    // Add tree sprites (hd path)
     for (const [filename, buf] of contents.treeSprites.entries()) {
-      archive.append(buf, { name: `data/hd/global/ui/spells/skill_trees/${filename}` });
+      archive.append(buf, { name: `mod/data/hd/global/ui/spells/skill_trees/${filename}` });
     }
 
-    // Add icon sprites - per class
+    // Add icon sprites to both non-hd and hd paths
     for (const [filename, buf] of contents.iconSprites.entries()) {
-      // Extract class prefix from filename (e.g. 'amskillicon.sprite' → 'am')
       const prefix = filename.replace('skillicon.sprite', '');
-      const classDef = CLASS_DEFS.find(c => c.spritePrefix === prefix);
-      if (classDef) {
-        const folderName = classDef.spritePrefix;
+      const folderName = PREFIX_TO_FOLDER[prefix];
+      if (folderName) {
         archive.append(buf, {
-          name: `data/hd/global/ui/spells/${folderName}/${filename}`,
+          name: `mod/data/global/ui/spells/${folderName}/${filename}`,
+        });
+        archive.append(buf, {
+          name: `mod/data/hd/global/ui/spells/${folderName}/${filename}`,
         });
       }
     }

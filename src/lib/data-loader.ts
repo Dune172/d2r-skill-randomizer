@@ -67,6 +67,7 @@ export function loadSkills(): SkillEntry[] {
       charclass: v.charclass as string,
       skilldesc: (v.skilldesc as string) || '',
       lineNumber: v.lineNumber as number,
+      reqlevel: (v.reqlevel as number) || 1,
       EDmgSymPerCalc: (v.EDmgSymPerCalc as string) || undefined,
       ELenSymPerCalc: (v.ELenSymPerCalc as string) || undefined,
       DmgSymPerCalc: (v.DmgSymPerCalc as string) || undefined,
@@ -116,29 +117,54 @@ export function loadSkillDescs(): Map<string, SkillDescEntry> {
 
 /**
  * Parse tab-delimited TXT file → { headers: string[], rows: string[][] }
- * Each row is an array of column values (strings)
+ * Each row is an array of column values (strings).
+ * Handles mixed line endings (CRLF/LF) and normalizes rows to match header column count.
  */
 export function loadTxtFile(filename: string): { headers: string[]; rows: string[][] } {
   const filePath = path.join(DATA_DIR, 'txt', filename);
   const content = fs.readFileSync(filePath, 'utf-8');
-  const lines = content.replace(/\r/g, '').split('\n');
+  // Handle mixed line endings: normalize all to \n
+  const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 
   const headers = lines[0].split('\t');
+  const headerCount = headers.length;
   const rows: string[][] = [];
 
   for (let i = 1; i < lines.length; i++) {
     if (lines[i].trim() === '') continue;
-    rows.push(lines[i].split('\t'));
+    const cols = lines[i].split('\t');
+
+    // Normalize column count to match header:
+    // - Truncate extra columns (e.g. Warlock rows with 322 cols vs 262 header)
+    // - Pad missing columns with empty strings
+    if (cols.length > headerCount) {
+      rows.push(cols.slice(0, headerCount));
+    } else if (cols.length < headerCount) {
+      rows.push([...cols, ...Array(headerCount - cols.length).fill('')]);
+    } else {
+      rows.push(cols);
+    }
   }
 
   return { headers, rows };
 }
 
 /**
- * Serialize headers + rows back to tab-delimited text
+ * Serialize headers + rows back to tab-delimited text.
+ * Uses \r\n line endings as D2R expects.
  */
 export function serializeTxtFile(headers: string[], rows: string[][]): string {
-  const lines = [headers.join('\t'), ...rows.map(r => r.join('\t'))];
+  const headerCount = headers.length;
+  const lines = [
+    headers.join('\t'),
+    ...rows.map(r => {
+      // Ensure each row has exactly the right number of columns
+      const normalized = r.length >= headerCount
+        ? r.slice(0, headerCount)
+        : [...r, ...Array(headerCount - r.length).fill('')];
+      return normalized.join('\t');
+    }),
+  ];
   return lines.join('\r\n') + '\r\n';
 }
 
