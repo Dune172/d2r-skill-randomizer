@@ -27,8 +27,8 @@ export const CHARCLASS_TO_CODE: Record<string, ClassCode> = {
   war: 'war',
 };
 
-// Classes that have sprite data (Warlock excluded)
-export const SPRITE_CLASSES: ClassCode[] = ['ama', 'sor', 'nec', 'pal', 'bar', 'dru', 'ass'];
+// Classes that have sprite data
+export const SPRITE_CLASSES: ClassCode[] = ['ama', 'sor', 'nec', 'pal', 'bar', 'dru', 'ass', 'war'];
 
 // Grid dimensions
 export const GRID_ROWS = 6;

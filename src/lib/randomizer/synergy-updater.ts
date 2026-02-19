@@ -84,33 +84,30 @@ export function updateSkillDescSynergies(
   placements: SkillPlacement[],
   placementsByClass: Map<ClassCode, SkillPlacement[]>,
   skillDescStrNames: Map<string, string>, // skilldesc name → str name
+  skillDescEntries: Map<string, { dsc3textb: string[] }>, // skilldesc name → original dsc3textb
   rng: SeededRNG,
 ): Map<string, string[]> {
-  // Returns: skill name → new dsc3textb values
+  // Returns: skill name → new dsc3textb values (same count as original)
   const updates = new Map<string, string[]>();
-
-  // Build: skilldesc name → str name for all skills
-  // Build: skill name → skilldesc name
-  const skillToSkilldesc = new Map<string, string>();
-  for (const p of placements) {
-    skillToSkilldesc.set(p.skill.skill, p.skill.skilldesc);
-  }
 
   for (const placement of placements) {
     const skill = placement.skill;
     const skilldescName = skill.skilldesc;
-    const strName = skillDescStrNames.get(skilldescName);
-    if (!strName) continue;
+    if (!skilldescName) continue;
+
+    // Get original synergy count from dsc3textb
+    const descEntry = skillDescEntries.get(skilldescName);
+    if (!descEntry || descEntry.dsc3textb.length === 0) continue;
+
+    const originalCount = descEntry.dsc3textb.length;
 
     const classmates = placementsByClass.get(placement.targetClass) || [];
     const otherClassmates = classmates.filter(p => p.skill.skill !== skill.skill);
 
     if (otherClassmates.length === 0) continue;
 
-    // Get original dsc3textb count - we need to know how many synergies this skill had
-    // We'll generate new references based on some classmates
-    // Pick up to 5 random classmates for synergy display
-    const synergyCount = Math.min(otherClassmates.length, 5);
+    // Pick the same number of classmates as the original synergy count
+    const synergyCount = Math.min(otherClassmates.length, originalCount);
     const shuffled = rng.shuffle(otherClassmates);
     const newTextBs = shuffled.slice(0, synergyCount).map(p => {
       const sd = p.skill.skilldesc;

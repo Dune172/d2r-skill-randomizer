@@ -63,33 +63,18 @@ export function writeSkillDescRows(
     // IconCel = new icon index
     if (iconCelIdx >= 0) row[iconCelIdx] = String(placement.iconCel);
 
-    // Update dsc3textb synergy references
+    // Update dsc3textb synergy references (preserve original line/texta/calca/calcb)
     const newTextBs = descSynergyUpdates.get(placement.skill.skill);
     if (newTextBs) {
-      // Clear all dsc3 slots first
-      for (let i = 0; i < 7; i++) {
-        if (dsc3LineIdx[i] >= 0 && dsc3LineIdx[i] < row.length) row[dsc3LineIdx[i]] = '';
-        if (dsc3TextaIdx[i] >= 0 && dsc3TextaIdx[i] < row.length) row[dsc3TextaIdx[i]] = '';
-        if (dsc3TextbIdx[i] >= 0 && dsc3TextbIdx[i] < row.length) row[dsc3TextbIdx[i]] = '';
-        if (dsc3CalcaIdx[i] >= 0 && dsc3CalcaIdx[i] < row.length) row[dsc3CalcaIdx[i]] = '';
-        if (dsc3CalcbIdx[i] >= 0 && dsc3CalcbIdx[i] < row.length) row[dsc3CalcbIdx[i]] = '';
-      }
-
-      // Fill in synergy header
-      if (newTextBs.length > 0 && dsc3LineIdx[0] >= 0) {
-        row[dsc3LineIdx[0]] = '40';
-        row[dsc3TextaIdx[0]] = 'Sksyn';
-        row[dsc3TextbIdx[0]] = newTextBs[0];
-        row[dsc3CalcaIdx[0]] = '2';
-      }
-
-      // Fill remaining synergy entries
-      for (let i = 1; i < newTextBs.length && i < 7; i++) {
-        if (dsc3LineIdx[i] >= 0) {
-          row[dsc3LineIdx[i]] = '76';
-          row[dsc3TextaIdx[i]] = 'Magdplev';
-          row[dsc3TextbIdx[i]] = newTextBs[i];
-          row[dsc3CalcaIdx[i]] = 'par8';
+      // Find which dsc3 slots have textb values (skill references to swap)
+      // Some slots use texta for skill refs (line type 18), others use textb
+      let newIdx = 0;
+      for (let i = 0; i < 7 && newIdx < newTextBs.length; i++) {
+        if (dsc3TextbIdx[i] < 0 || dsc3TextbIdx[i] >= row.length) continue;
+        const origTextB = row[dsc3TextbIdx[i]];
+        if (origTextB) {
+          // This slot has a textb reference — swap it with a new classmate
+          row[dsc3TextbIdx[i]] = newTextBs[newIdx++];
         }
       }
     }

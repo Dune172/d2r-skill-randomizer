@@ -44,9 +44,9 @@ function extractTreeFrame(
   const buf = loadSprite(filename);
   const header = parseSpriteHeader(buf);
 
-  // Frame index is treeIndex - 1 (0-based)
-  const frameIdx = treeIndex - 1;
-  if (frameIdx >= header.frameCount) {
+  // Sprite frames are stored in reverse order: frame 0 = tree 3, frame 1 = tree 2, frame 2 = tree 1
+  const frameIdx = header.frameCount - treeIndex;
+  if (frameIdx < 0 || frameIdx >= header.frameCount) {
     throw new Error(`Frame ${frameIdx} out of range for ${filename} (${header.frameCount} frames)`);
   }
 
@@ -71,12 +71,16 @@ export function stitchTreeSprite(
   let maxHeight = 0;
   let frameWidth = 0;
 
+  // Extract frames for each tree (tab 0 = tree index 1, tab 1 = tree index 2, tab 2 = tree index 3)
   for (const tree of trees) {
     const frame = extractTreeFrame(tree.classCode, tree.treeIndex, lowend);
     frames.push(frame);
     maxHeight = Math.max(maxHeight, frame.height);
     frameWidth = frame.width; // All frames should have the same width
   }
+
+  // Sprite frames are stored in reverse order: frame 0 = tab 2, frame 1 = tab 1, frame 2 = tab 0
+  frames.reverse();
 
   return buildSpriteWithPadding(frames, frameWidth, maxHeight);
 }
