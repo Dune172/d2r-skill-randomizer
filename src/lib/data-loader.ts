@@ -1,0 +1,154 @@
+import fs from 'fs';
+import path from 'path';
+import { TreePage, GridSlot, SkillEntry, SkillDescEntry } from './randomizer/types';
+
+const DATA_DIR = path.join(process.cwd(), 'data');
+
+/**
+ * Parse skill_tree_grid.csv → Map<string, TreePage>
+ * Key format: "ama-1", "sor-2", etc.
+ */
+export function loadTreeGrid(): Map<string, TreePage> {
+  const csvPath = path.join(DATA_DIR, 'skill_tree_grid.csv');
+  const content = fs.readFileSync(csvPath, 'utf-8');
+  const lines = content.trim().replace(/\r/g, '').split('\n');
+  const header = lines[0].split(',');
+
+  const pages = new Map<string, TreePage>();
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    const className = cols[0];
+    const classCode = cols[1];
+    const tree = parseInt(cols[2]);
+    const row = parseInt(cols[3]);
+    const col = parseInt(cols[4]);
+    const status = cols[5] as 'FILLED' | 'EMPTY';
+    const skill = cols[6] || undefined;
+
+    const key = `${classCode}-${tree}`;
+
+    if (!pages.has(key)) {
+      pages.set(key, {
+        classCode,
+        className,
+        treeIndex: tree,
+        slots: [],
+        filledCount: 0,
+      });
+    }
+
+    const page = pages.get(key)!;
+    const slot: GridSlot = { row, col, status, skill };
+    page.slots.push(slot);
+    if (status === 'FILLED') {
+      page.filledCount++;
+    }
+  }
+
+  return pages;
+}
+
+/**
+ * Parse skills.json → SkillEntry[] (only class skills with charclass)
+ */
+export function loadSkills(): SkillEntry[] {
+  const jsonPath = path.join(DATA_DIR, 'json', 'skills.json');
+  const data = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+  const skills: SkillEntry[] = [];
+
+  for (const [key, value] of Object.entries(data)) {
+    const v = value as Record<string, unknown>;
+    if (!v.charclass) continue;
+
+    skills.push({
+      id: v['*Id'] as number,
+      skill: v.skill as string,
+      charclass: v.charclass as string,
+      skilldesc: (v.skilldesc as string) || '',
+      lineNumber: v.lineNumber as number,
+      EDmgSymPerCalc: (v.EDmgSymPerCalc as string) || undefined,
+      ELenSymPerCalc: (v.ELenSymPerCalc as string) || undefined,
+      DmgSymPerCalc: (v.DmgSymPerCalc as string) || undefined,
+      reqskill1: (v.reqskill1 as string) || undefined,
+      reqskill2: (v.reqskill2 as string) || undefined,
+      reqskill3: (v.reqskill3 as string) || undefined,
+    });
+  }
+
+  return skills;
+}
+
+/**
+ * Parse skilldesc.json → Map<string, SkillDescEntry>
+ * Keyed by skilldesc name
+ */
+export function loadSkillDescs(): Map<string, SkillDescEntry> {
+  const jsonPath = path.join(DATA_DIR, 'json', 'skilldesc.json');
+  const data = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+  const descs = new Map<string, SkillDescEntry>();
+
+  for (const [key, value] of Object.entries(data)) {
+    const v = value as Record<string, unknown>;
+    if (!v.skilldesc) continue;
+
+    const dsc3textb: string[] = [];
+    for (let i = 1; i <= 7; i++) {
+      const tb = v[`dsc3textb${i}`] as string;
+      if (tb) dsc3textb.push(tb);
+      else break;
+    }
+
+    descs.set(v.skilldesc as string, {
+      skilldesc: v.skilldesc as string,
+      SkillPage: (v.SkillPage as number) || 0,
+      SkillRow: (v.SkillRow as number) || 0,
+      SkillColumn: (v.SkillColumn as number) || 0,
+      IconCel: (v.IconCel as number) || 0,
+      strName: (v['str name'] as string) || '',
+      lineNumber: parseInt(key),
+      dsc3textb,
+    });
+  }
+
+  return descs;
+}
+
+/**
+ * Parse tab-delimited TXT file → { headers: string[], rows: string[][] }
+ * Each row is an array of column values (strings)
+ */
+export function loadTxtFile(filename: string): { headers: string[]; rows: string[][] } {
+  const filePath = path.join(DATA_DIR, 'txt', filename);
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const lines = content.replace(/\r/g, '').split('\n');
+
+  const headers = lines[0].split('\t');
+  const rows: string[][] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].trim() === '') continue;
+    rows.push(lines[i].split('\t'));
+  }
+
+  return { headers, rows };
+}
+
+/**
+ * Serialize headers + rows back to tab-delimited text
+ */
+export function serializeTxtFile(headers: string[], rows: string[][]): string {
+  const lines = [headers.join('\t'), ...rows.map(r => r.join('\t'))];
+  return lines.join('\r\n') + '\r\n';
+}
+
+/**
+ * Get column index by header name
+ */
+export function getColumnIndex(headers: string[], name: string): number {
+  const idx = headers.indexOf(name);
+  if (idx === -1) {
+    throw new Error(`Column "${name}" not found in headers`);
+  }
+  return idx;
+}
