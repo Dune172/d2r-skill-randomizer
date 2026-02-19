@@ -66,14 +66,15 @@ export function writeSkillDescRows(
     // Update dsc3textb synergy references (preserve original line/texta/calca/calcb)
     const newTextBs = descSynergyUpdates.get(placement.skill.skill);
     if (newTextBs) {
-      // Find which dsc3 slots have textb values (skill references to swap)
-      // Some slots use texta for skill refs (line type 18), others use textb
+      // Swap dsc3textb values for synergy entries only.
+      // Skip line type "40" (header: "X receives bonuses from:") — textb1 is a self-reference.
+      // Only swap where dsc3line is "76" or other synergy entry types.
       let newIdx = 0;
       for (let i = 0; i < 7 && newIdx < newTextBs.length; i++) {
         if (dsc3TextbIdx[i] < 0 || dsc3TextbIdx[i] >= row.length) continue;
+        if (dsc3LineIdx[i] >= 0 && row[dsc3LineIdx[i]] === '40') continue; // skip header
         const origTextB = row[dsc3TextbIdx[i]];
         if (origTextB) {
-          // This slot has a textb reference — swap it with a new classmate
           row[dsc3TextbIdx[i]] = newTextBs[newIdx++];
         }
       }

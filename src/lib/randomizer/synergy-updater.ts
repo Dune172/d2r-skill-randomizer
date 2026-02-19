@@ -95,11 +95,12 @@ export function updateSkillDescSynergies(
     const skilldescName = skill.skilldesc;
     if (!skilldescName) continue;
 
-    // Get original synergy count from dsc3textb
+    // Get original synergy count from dsc3textb.
+    // Subtract 1 because dsc3textb[0] is a self-reference (header), not a synergy entry.
     const descEntry = skillDescEntries.get(skilldescName);
-    if (!descEntry || descEntry.dsc3textb.length === 0) continue;
+    if (!descEntry || descEntry.dsc3textb.length <= 1) continue;
 
-    const originalCount = descEntry.dsc3textb.length;
+    const originalCount = descEntry.dsc3textb.length - 1;
 
     const classmates = placementsByClass.get(placement.targetClass) || [];
     const otherClassmates = classmates.filter(p => p.skill.skill !== skill.skill);

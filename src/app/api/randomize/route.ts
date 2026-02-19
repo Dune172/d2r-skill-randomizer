@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const seedInput = body.seed;
+    const enablePrereqs = body.enablePrereqs !== false; // default true
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -60,8 +61,10 @@ export async function POST(request: NextRequest) {
       rng,
     );
 
-    // Assign prerequisites based on grid position
-    const prereqAssignments = assignPrerequisites(placements, placementsByClass);
+    // Assign prerequisites based on grid position (or empty map if disabled)
+    const prereqAssignments = enablePrereqs
+      ? assignPrerequisites(placements, placementsByClass)
+      : new Map();
 
     // Step 8: Write modified txt files
     writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments);

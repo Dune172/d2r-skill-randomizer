@@ -7,13 +7,19 @@ import ProgressIndicator from '@/components/ProgressIndicator';
 
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
 
+interface Options {
+  enablePrereqs: boolean;
+}
+
 export default function Home() {
   const [preview, setPreview] = useState<any>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
+  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true });
 
-  const handleGenerate = async (seedInput: string) => {
+  const handleGenerate = async (seedInput: string, options: Options) => {
+    setCurrentOptions(options);
     setStatus('generating');
     setErrorMessage('');
     setPreview(null);
@@ -49,7 +55,7 @@ export default function Home() {
       const res = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: currentSeed }),
+        body: JSON.stringify({ seed: currentSeed, enablePrereqs: currentOptions.enablePrereqs }),
       });
 
       if (!res.ok) {
