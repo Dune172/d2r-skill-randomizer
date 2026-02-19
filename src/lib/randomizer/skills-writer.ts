@@ -1,6 +1,7 @@
 import { ClassCode, SkillPlacement } from './types';
 import { getColumnIndex } from '../data-loader';
 import { CLASS_BY_CODE } from './config';
+import { PrereqAssignment } from './prereq-assigner';
 
 // Column indices in skills.txt (0-based)
 const COL = {
@@ -27,6 +28,7 @@ export function writeSkillsRows(
   rows: string[][],
   placements: SkillPlacement[],
   synergyUpdates: Map<string, { EDmgSymPerCalc?: string; ELenSymPerCalc?: string; DmgSymPerCalc?: string }>,
+  prereqAssignments: Map<string, PrereqAssignment>,
 ): void {
   // Build lookup: skill name → placement
   const skillToPlacement = new Map<string, SkillPlacement>();
@@ -62,9 +64,10 @@ export function writeSkillsRows(
     const newLevel = ROW_TO_LEVEL[placement.row] ?? 1;
     row[reqlevelIdx] = String(newLevel);
 
-    // Clear prerequisites (tree structure is randomized)
-    row[reqskill1Idx] = '';
-    row[reqskill2Idx] = '';
+    // Assign prerequisites based on grid position
+    const prereq = prereqAssignments.get(skillName);
+    row[reqskill1Idx] = prereq?.reqskill1 || '';
+    row[reqskill2Idx] = prereq?.reqskill2 || '';
     row[reqskill3Idx] = '';
 
     // Update synergy formulas

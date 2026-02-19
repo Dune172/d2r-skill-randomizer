@@ -6,6 +6,7 @@ import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
 import { writeSkillsRows } from '@/lib/randomizer/skills-writer';
 import { writeSkillDescRows } from '@/lib/randomizer/skilldesc-writer';
+import { assignPrerequisites } from '@/lib/randomizer/prereq-assigner';
 import { buildAllTreeSprites, clearSpriteCache } from '@/lib/sprites/tree-stitcher';
 import { buildAllIconSprites } from '@/lib/sprites/icon-assembler';
 import { buildZip } from '@/lib/zip-builder';
@@ -59,8 +60,11 @@ export async function POST(request: NextRequest) {
       rng,
     );
 
+    // Assign prerequisites based on grid position
+    const prereqAssignments = assignPrerequisites(placements, placementsByClass);
+
     // Step 8: Write modified txt files
-    writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates);
+    writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments);
     writeSkillDescRows(skillDescTxt.headers, skillDescTxt.rows, placements, descSynergyUpdates);
 
     const skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
