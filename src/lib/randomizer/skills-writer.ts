@@ -1,6 +1,6 @@
 import { ClassCode, SkillPlacement } from './types';
 import { getColumnIndex } from '../data-loader';
-import { CLASS_BY_CODE } from './config';
+import { CLASS_BY_CODE, CLASS_NATURAL_WEAPON, CLASS_RESTRICTED_TYPES } from './config';
 import { PrereqAssignment } from './prereq-assigner';
 
 // Column indices in skills.txt (0-based)
@@ -21,22 +21,6 @@ const COL = {
   itypea3: 138,
   itypeb1: 141,
 };
-
-// Weapon type the class naturally uses — used to remap class-restricted weapon columns
-const CLASS_NATURAL_WEAPON: Record<string, string> = {
-  ama: 'miss',  // Amazon → missiles
-  sor: 'staf',  // Sorceress → staves
-  nec: 'wand',  // Necromancer → wands
-  pal: 'mele',  // Paladin → melee
-  bar: 'mele',  // Barbarian → melee
-  dru: 'mele',  // Druid → melee
-  ass: 'h2h',   // Assassin → stays as claws (no remap needed)
-  war: 'weap',  // Warlock → weapons
-};
-
-// Item types that are class-restricted in itemtypes.txt AND appear in skill weapon columns.
-// Only h2h (Assassin claws) qualifies — all other weapon types are equippable by anyone.
-const CLASS_RESTRICTED_TYPES = new Set(['h2h', 'h2h2']);
 
 /**
  * Modify skills.txt rows based on placements:

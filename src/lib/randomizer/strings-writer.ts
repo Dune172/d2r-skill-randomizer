@@ -1,19 +1,6 @@
 import { SkillPlacement } from './types';
 import { StringEntry } from '../data-loader';
-
-// Same constants as skills-writer.ts — weapon types that are class-restricted
-const CLASS_RESTRICTED_TYPES = new Set(['h2h', 'h2h2']);
-
-const CLASS_NATURAL_WEAPON: Record<string, string> = {
-  ama: 'miss',
-  sor: 'staf',
-  nec: 'wand',
-  pal: 'mele',
-  bar: 'mele',
-  dru: 'mele',
-  ass: 'h2h',
-  war: 'weap',
-};
+import { CLASS_NATURAL_WEAPON, CLASS_RESTRICTED_TYPES } from './config';
 
 // Human-readable names and description phrases for each weapon type
 const WEAPON_TYPE_INFO: Record<string, { name: string; text: string }> = {
