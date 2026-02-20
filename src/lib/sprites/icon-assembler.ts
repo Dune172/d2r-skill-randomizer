@@ -34,9 +34,7 @@ function getIconPaths(
     throw new Error(`Unknown class for icons: ${originalClass}`);
   }
 
-  const className = folder === 'Necro' ? 'Necro' : (
-    folder === 'Warlock' ? 'Warlock' : folder
-  );
+  const className = folder;
 
   // IconCel is the base index; normal = IconCel, pressed = IconCel + 1
   const normalIdx = originalIconCel;
