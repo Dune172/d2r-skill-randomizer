@@ -4,6 +4,7 @@ import { useState } from 'react';
 import RandomizerForm from '@/components/RandomizerForm';
 import SkillTreePreview from '@/components/SkillTreePreview';
 import ProgressIndicator from '@/components/ProgressIndicator';
+import type { PreviewData } from '@/lib/randomizer/types';
 
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
 
@@ -13,11 +14,17 @@ interface Options {
 }
 
 export default function Home() {
-  const [preview, setPreview] = useState<any>(null);
+  const [preview, setPreview] = useState<PreviewData | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
   const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal' });
+  // Read seed from URL so results can be shared via ?seed=N
+  // Lazy initializer runs once on first render (client-side only)
+  const [initialSeed] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    return new URLSearchParams(window.location.search).get('seed') ?? '';
+  });
 
   const handleGenerate = async (seedInput: string, options: Options) => {
     setCurrentOptions(options);
@@ -38,9 +45,14 @@ export default function Home() {
         throw new Error(err.error || 'Preview failed');
       }
 
-      const data = await previewRes.json();
+      const data: PreviewData = await previewRes.json();
       setPreview(data);
       setCurrentSeed(data.seed);
+
+      // Update URL so this result is shareable
+      const url = new URL(window.location.href);
+      url.searchParams.set('seed', String(data.seed));
+      window.history.replaceState(null, '', url.toString());
 
       // Step 2: Build the mod
       setStatus('building');
@@ -99,6 +111,7 @@ export default function Home() {
           <RandomizerForm
             onGenerate={handleGenerate}
             isLoading={status === 'generating' || status === 'building'}
+            initialSeed={initialSeed || undefined}
           />
         </div>
 

@@ -5,10 +5,11 @@ import { useState } from 'react';
 interface RandomizerFormProps {
   onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal' }) => void;
   isLoading: boolean;
+  initialSeed?: string;
 }
 
-export default function RandomizerForm({ onGenerate, isLoading }: RandomizerFormProps) {
-  const [seed, setSeed] = useState('');
+export default function RandomizerForm({ onGenerate, isLoading, initialSeed }: RandomizerFormProps) {
+  const [seed, setSeed] = useState(initialSeed ?? '');
   const [enablePrereqs, setEnablePrereqs] = useState(true);
   const [logic, setLogic] = useState<'minimal' | 'normal'>('normal');
 
