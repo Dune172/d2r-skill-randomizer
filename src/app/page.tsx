@@ -26,41 +26,32 @@ export default function Home() {
     setPreview(null);
 
     try {
-      const res = await fetch('/api/preview', {
+      // Step 1: Generate preview
+      const previewRes = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ seed: seedInput }),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
+      if (!previewRes.ok) {
+        const err = await previewRes.json();
         throw new Error(err.error || 'Preview failed');
       }
 
-      const data = await res.json();
+      const data = await previewRes.json();
       setPreview(data);
       setCurrentSeed(data.seed);
-      setStatus('idle');
-    } catch (err) {
-      setStatus('error');
-      setErrorMessage(err instanceof Error ? err.message : 'Unknown error');
-    }
-  };
 
-  const handleBuildMod = async () => {
-    if (!currentSeed && currentSeed !== 0) return;
-    setStatus('building');
-    setErrorMessage('');
-
-    try {
-      const res = await fetch('/api/randomize', {
+      // Step 2: Build the mod
+      setStatus('building');
+      const buildRes = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: currentSeed, enablePrereqs: currentOptions.enablePrereqs, logic: currentOptions.logic }),
+        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic }),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
+      if (!buildRes.ok) {
+        const err = await buildRes.json();
         throw new Error(err.error || 'Build failed');
       }
 
@@ -90,7 +81,7 @@ export default function Home() {
           <h1 className="font-cinzel font-black tracking-[0.18em] text-4xl md:text-5xl text-[#c8942a] glow-gold uppercase text-center mb-2">
             D2R Skill Tree Randomizer
           </h1>
-          <p className="font-cinzel tracking-[0.45em] text-[11px] text-[#7a5818] uppercase text-center">
+          <p className="font-cinzel tracking-[0.45em] text-[11px] text-[#a87830] uppercase text-center">
             Reign of the Warlock
           </p>
 
@@ -107,7 +98,7 @@ export default function Home() {
         <div className="rounded-lg border border-[#4a1e14] bg-[#0c0405]/80 p-6 panel-shadow">
           <RandomizerForm
             onGenerate={handleGenerate}
-            isLoading={status === 'generating'}
+            isLoading={status === 'generating' || status === 'building'}
           />
         </div>
 
@@ -115,35 +106,19 @@ export default function Home() {
 
         {preview && (
           <>
-            <div className="flex gap-3 flex-wrap">
+            {status === 'ready' && (
               <button
-                onClick={handleBuildMod}
-                disabled={status === 'building'}
-                className="px-8 py-2.5 rounded font-cinzel font-bold tracking-widest text-sm uppercase text-[#e8d5a0]
-                  bg-gradient-to-b from-[#5c1010] to-[#380808]
-                  border border-[#8b2820]
-                  hover:from-[#7a1818] hover:to-[#480e0e] hover:border-[#c42020]
-                  disabled:opacity-40 disabled:cursor-not-allowed
+                onClick={handleDownload}
+                className="px-8 py-2.5 rounded font-cinzel font-bold tracking-widest text-sm uppercase text-[#c8d8f8]
+                  bg-gradient-to-b from-[#121838] to-[#0a1028]
+                  border border-[#283878]
+                  hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
                   transition-all duration-200
-                  shadow-[0_0_16px_rgba(139,40,32,0.28)] hover:shadow-[0_0_28px_rgba(196,32,32,0.42)]"
+                  shadow-[0_0_16px_rgba(40,56,120,0.30)] hover:shadow-[0_0_28px_rgba(72,88,192,0.42)]"
               >
-                {status === 'building' ? 'Building...' : 'Build Mod'}
+                Download Zip
               </button>
-
-              {status === 'ready' && (
-                <button
-                  onClick={handleDownload}
-                  className="px-8 py-2.5 rounded font-cinzel font-bold tracking-widest text-sm uppercase text-[#c8d8f8]
-                    bg-gradient-to-b from-[#121838] to-[#0a1028]
-                    border border-[#283878]
-                    hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
-                    transition-all duration-200
-                    shadow-[0_0_16px_rgba(40,56,120,0.30)] hover:shadow-[0_0_28px_rgba(72,88,192,0.42)]"
-                >
-                  Download Zip
-                </button>
-              )}
-            </div>
+            )}
 
             <SkillTreePreview data={preview} />
           </>

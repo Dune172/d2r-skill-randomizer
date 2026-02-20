@@ -38,7 +38,7 @@ export default function ClassTreeCard({ code, name, tabs }: ClassTreeCardProps) 
   const theme = CLASS_THEME[code] || DEFAULT_THEME;
 
   return (
-    <div className={`rounded-lg border ${theme.accent} bg-[#090304] overflow-hidden shadow-lg`}>
+    <div className={`rounded-lg border ${theme.accent} overflow-hidden shadow-lg`}>
       {/* Class header */}
       <div className={`px-4 py-3 ${theme.headerBg} border-b ${theme.accent}`}>
         <h3 className={`font-cinzel font-bold text-sm tracking-[0.18em] uppercase ${theme.headerText}`}>
@@ -46,10 +46,11 @@ export default function ClassTreeCard({ code, name, tabs }: ClassTreeCardProps) 
         </h3>
       </div>
 
-      <div className="p-3 space-y-4">
+      {/* Grey stone background — mimics the in-game skill tree panel */}
+      <div className="p-3 space-y-4 bg-[#222222]">
         {tabs.map((tab, tabIdx) => (
           <div key={tabIdx}>
-            <div className="text-[9px] tracking-[0.15em] text-[#5a3a28] uppercase mb-1.5 font-cinzel">
+            <div className="text-[9px] tracking-[0.15em] text-[#9a9090] uppercase mb-1.5 font-cinzel">
               Tab {tabIdx + 1} · {tab.sourceClass} / Tree {tab.sourceTree}
             </div>
             <div className="grid grid-cols-3 gap-[3px]">
@@ -60,7 +61,7 @@ export default function ClassTreeCard({ code, name, tabs }: ClassTreeCardProps) 
 
                 if (!skill) {
                   return (
-                    <div key={i} className="h-8 rounded-sm bg-[#0c0405]/70 border border-[#1c0a0c]/60" />
+                    <div key={i} className="h-8 rounded-sm bg-[#181818] border border-[#2e2e2e]" />
                   );
                 }
 
@@ -69,13 +70,13 @@ export default function ClassTreeCard({ code, name, tabs }: ClassTreeCardProps) 
                 return (
                   <div
                     key={i}
-                    className="h-8 rounded-sm bg-[#100508] border border-[#280e10] flex items-center px-1.5 gap-1 hover:border-[#3d1515] transition-colors"
+                    className="h-8 rounded-sm bg-[#2e2e2e] border border-[#404040] flex items-center px-1.5 gap-1 hover:border-[#606060] transition-colors"
                     title={`${skill.name} (from ${skill.originalClass})`}
                   >
                     <span className={`text-[8px] px-1 py-px rounded-sm flex-shrink-0 font-mono font-bold leading-none ${skillTheme.badge}`}>
                       {skill.originalClass}
                     </span>
-                    <span className="text-[9px] text-[#7a6050] truncate leading-none">
+                    <span className="text-[10px] text-[#d8ccc0] truncate leading-none">
                       {skill.name}
                     </span>
                   </div>

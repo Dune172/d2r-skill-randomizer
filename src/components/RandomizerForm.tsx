@@ -23,7 +23,7 @@ export default function RandomizerForm({ onGenerate, isLoading }: RandomizerForm
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Seed row */}
       <div>
-        <label htmlFor="seed" className="block font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#9a7a50] mb-2">
+        <label htmlFor="seed" className="block font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] mb-2">
           Seed
         </label>
         <div className="flex gap-2">
@@ -40,7 +40,7 @@ export default function RandomizerForm({ onGenerate, isLoading }: RandomizerForm
           <button
             type="button"
             onClick={randomSeed}
-            className="rounded border border-[#3a1510] bg-[#0e0506] px-4 py-2.5 text-xs text-[#9a7a50]
+            className="rounded border border-[#3a1510] bg-[#0e0506] px-4 py-2.5 text-xs text-[#c8a870]
               hover:text-[#e8d5a0] hover:border-[#5c2218] hover:bg-[#150708]
               transition-all duration-200 font-cinzel tracking-widest uppercase"
           >
@@ -73,14 +73,14 @@ export default function RandomizerForm({ onGenerate, isLoading }: RandomizerForm
               )}
             </div>
           </div>
-          <span className="text-sm text-[#9a7a50] group-hover:text-[#c8a060] transition-colors">
+          <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
             Skill prerequisites
           </span>
         </label>
 
         {/* Logic level dropdown */}
         <div className="flex items-center gap-3 ml-auto">
-          <label htmlFor="logic" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#9a7a50] whitespace-nowrap">
+          <label htmlFor="logic" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
             Logic
           </label>
           <div className="relative">
@@ -117,7 +117,7 @@ export default function RandomizerForm({ onGenerate, isLoading }: RandomizerForm
             transition-all duration-200
             shadow-[0_0_14px_rgba(139,40,32,0.22)] hover:shadow-[0_0_26px_rgba(196,32,32,0.38)]"
         >
-          {isLoading ? 'Divining…' : 'Generate Preview'}
+          {isLoading ? 'Generating…' : 'Generate Mod'}
         </button>
       </div>
     </form>
