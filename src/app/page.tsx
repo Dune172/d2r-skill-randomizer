@@ -9,6 +9,7 @@ type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
 
 interface Options {
   enablePrereqs: boolean;
+  logic: 'minimal' | 'normal';
 }
 
 export default function Home() {
@@ -16,7 +17,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
-  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true });
+  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal' });
 
   const handleGenerate = async (seedInput: string, options: Options) => {
     setCurrentOptions(options);
@@ -55,7 +56,7 @@ export default function Home() {
       const res = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: currentSeed, enablePrereqs: currentOptions.enablePrereqs }),
+        body: JSON.stringify({ seed: currentSeed, enablePrereqs: currentOptions.enablePrereqs, logic: currentOptions.logic }),
       });
 
       if (!res.ok) {
@@ -76,51 +77,77 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-amber-400 mb-2">
-            D2R Skill Tree Randomizer
-          </h1>
-          <p className="text-gray-400">
-            Reign of the Warlock - Randomize skill trees across all classes
-          </p>
-        </div>
-
-        <div className="space-y-6">
-          <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-6">
-            <RandomizerForm
-              onGenerate={handleGenerate}
-              isLoading={status === 'generating'}
-            />
+    <main className="min-h-screen">
+      {/* ── Header ── */}
+      <header className="border-b border-[#3a1510] bg-[#080204]/90 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 py-7">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#7a5818] to-[#c8942a]" />
+            <span className="text-[#c8942a] text-xs">◆</span>
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent via-[#7a5818] to-[#c8942a]" />
           </div>
 
-          <ProgressIndicator status={status} message={errorMessage} />
+          <h1 className="font-cinzel font-black tracking-[0.18em] text-4xl md:text-5xl text-[#c8942a] glow-gold uppercase text-center mb-2">
+            D2R Skill Tree Randomizer
+          </h1>
+          <p className="font-cinzel tracking-[0.45em] text-[11px] text-[#7a5818] uppercase text-center">
+            Reign of the Warlock
+          </p>
 
-          {preview && (
-            <>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleBuildMod}
-                  disabled={status === 'building'}
-                  className="rounded-md bg-emerald-600 px-6 py-2 font-medium text-white hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {status === 'building' ? 'Building...' : 'Build Mod'}
-                </button>
-                {status === 'ready' && (
-                  <button
-                    onClick={handleDownload}
-                    className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-500 transition-colors"
-                  >
-                    Download Zip
-                  </button>
-                )}
-              </div>
-
-              <SkillTreePreview data={preview} />
-            </>
-          )}
+          <div className="flex items-center gap-3 mt-4">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#7a5818] to-[#c8942a]" />
+            <span className="text-[#c8942a] text-xs">◆</span>
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent via-[#7a5818] to-[#c8942a]" />
+          </div>
         </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        {/* ── Form panel ── */}
+        <div className="rounded-lg border border-[#4a1e14] bg-[#0c0405]/80 p-6 panel-shadow">
+          <RandomizerForm
+            onGenerate={handleGenerate}
+            isLoading={status === 'generating'}
+          />
+        </div>
+
+        <ProgressIndicator status={status} message={errorMessage} />
+
+        {preview && (
+          <>
+            <div className="flex gap-3 flex-wrap">
+              <button
+                onClick={handleBuildMod}
+                disabled={status === 'building'}
+                className="px-8 py-2.5 rounded font-cinzel font-bold tracking-widest text-sm uppercase text-[#e8d5a0]
+                  bg-gradient-to-b from-[#5c1010] to-[#380808]
+                  border border-[#8b2820]
+                  hover:from-[#7a1818] hover:to-[#480e0e] hover:border-[#c42020]
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all duration-200
+                  shadow-[0_0_16px_rgba(139,40,32,0.28)] hover:shadow-[0_0_28px_rgba(196,32,32,0.42)]"
+              >
+                {status === 'building' ? 'Building...' : 'Build Mod'}
+              </button>
+
+              {status === 'ready' && (
+                <button
+                  onClick={handleDownload}
+                  className="px-8 py-2.5 rounded font-cinzel font-bold tracking-widest text-sm uppercase text-[#c8d8f8]
+                    bg-gradient-to-b from-[#121838] to-[#0a1028]
+                    border border-[#283878]
+                    hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
+                    transition-all duration-200
+                    shadow-[0_0_16px_rgba(40,56,120,0.30)] hover:shadow-[0_0_28px_rgba(72,88,192,0.42)]"
+                >
+                  Download Zip
+                </button>
+              )}
+            </div>
+
+            <SkillTreePreview data={preview} />
+          </>
+        )}
       </div>
     </main>
   );

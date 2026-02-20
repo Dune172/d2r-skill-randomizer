@@ -7,6 +7,7 @@ export interface ZipContents {
   skillDescTxt: string;
   treeSprites: Map<string, Buffer>; // filename → sprite buffer
   iconSprites: Map<string, Buffer>; // filename → sprite buffer
+  skillStringsJson?: string;        // optional: modified skills string table (Normal Logic)
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -53,6 +54,11 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     // Add text files
     archive.append(contents.skillsTxt, { name: 'mod/data/global/excel/skills.txt' });
     archive.append(contents.skillDescTxt, { name: 'mod/data/global/excel/skilldesc.txt' });
+
+    // Add modified skill strings (Normal Logic only)
+    if (contents.skillStringsJson) {
+      archive.append(contents.skillStringsJson, { name: 'mod/data/local/lng/strings/skills.json' });
+    }
 
     // Add tree sprites (hd path)
     for (const [filename, buf] of contents.treeSprites.entries()) {

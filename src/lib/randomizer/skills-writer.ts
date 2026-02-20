@@ -15,7 +15,27 @@ const COL = {
   DmgSymPerCalc: 237,
   EDmgSymPerCalc: 251,
   ELenSymPerCalc: 256,
+  passiveitype: 47,
+  itypea1: 132,
+  itypea2: 133,
+  itypea3: 134,
 };
+
+// Weapon type the class naturally uses — used to remap class-restricted weapon columns
+const CLASS_NATURAL_WEAPON: Record<string, string> = {
+  ama: 'miss',  // Amazon → missiles
+  sor: 'staf',  // Sorceress → staves
+  nec: 'wand',  // Necromancer → wands
+  pal: 'mele',  // Paladin → melee
+  bar: 'mele',  // Barbarian → melee
+  dru: 'mele',  // Druid → melee
+  ass: 'h2h',   // Assassin → stays as claws (no remap needed)
+  war: 'weap',  // Warlock → weapons
+};
+
+// Item types that are class-restricted in itemtypes.txt AND appear in skill weapon columns.
+// Only h2h (Assassin claws) qualifies — all other weapon types are equippable by anyone.
+const CLASS_RESTRICTED_TYPES = new Set(['h2h', 'h2h2']);
 
 /**
  * Modify skills.txt rows based on placements:
@@ -29,6 +49,7 @@ export function writeSkillsRows(
   placements: SkillPlacement[],
   synergyUpdates: Map<string, { EDmgSymPerCalc?: string; ELenSymPerCalc?: string; DmgSymPerCalc?: string }>,
   prereqAssignments: Map<string, PrereqAssignment>,
+  logic: 'minimal' | 'normal' = 'minimal',
 ): void {
   // Build lookup: skill name → placement
   const skillToPlacement = new Map<string, SkillPlacement>();
@@ -48,6 +69,10 @@ export function writeSkillsRows(
   const dmgSymIdx = safeGetCol(headers, 'DmgSymPerCalc', COL.DmgSymPerCalc);
   const edmgSymIdx = safeGetCol(headers, 'EDmgSymPerCalc', COL.EDmgSymPerCalc);
   const elenSymIdx = safeGetCol(headers, 'ELenSymPerCalc', COL.ELenSymPerCalc);
+  const passiveitypeIdx = safeGetCol(headers, 'passiveitype', COL.passiveitype);
+  const itypea1Idx = safeGetCol(headers, 'itypea1', COL.itypea1);
+  const itypea2Idx = safeGetCol(headers, 'itypea2', COL.itypea2);
+  const itypea3Idx = safeGetCol(headers, 'itypea3', COL.itypea3);
 
   for (const row of rows) {
     const skillName = row[0]; // skill column is always first
@@ -76,6 +101,21 @@ export function writeSkillsRows(
       if (syn.DmgSymPerCalc !== undefined) row[dmgSymIdx] = syn.DmgSymPerCalc;
       if (syn.EDmgSymPerCalc !== undefined) row[edmgSymIdx] = syn.EDmgSymPerCalc;
       if (syn.ELenSymPerCalc !== undefined) row[elenSymIdx] = syn.ELenSymPerCalc;
+    }
+
+    // Normal Logic: remap class-restricted weapon types to the target class's natural weapon
+    if (logic === 'normal') {
+      const naturalWeapon = CLASS_NATURAL_WEAPON[placement.targetClass];
+      if (naturalWeapon) {
+        if (CLASS_RESTRICTED_TYPES.has(row[passiveitypeIdx])) {
+          row[passiveitypeIdx] = naturalWeapon;
+        }
+        for (const idx of [itypea1Idx, itypea2Idx, itypea3Idx]) {
+          if (CLASS_RESTRICTED_TYPES.has(row[idx])) {
+            row[idx] = naturalWeapon;
+          }
+        }
+      }
     }
   }
 }

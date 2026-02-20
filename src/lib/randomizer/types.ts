@@ -37,6 +37,11 @@ export interface SkillEntry {
   reqskill1?: string;
   reqskill2?: string;
   reqskill3?: string;
+  // weapon type restriction columns
+  passiveitype?: string;
+  itypea1?: string;
+  itypea2?: string;
+  itypea3?: string;
 }
 
 export interface SkillDescEntry {

@@ -74,6 +74,10 @@ export function loadSkills(): SkillEntry[] {
       reqskill1: (v.reqskill1 as string) || undefined,
       reqskill2: (v.reqskill2 as string) || undefined,
       reqskill3: (v.reqskill3 as string) || undefined,
+      passiveitype: (v.passiveitype as string) || undefined,
+      itypea1: (v.itypea1 as string) || undefined,
+      itypea2: (v.itypea2 as string) || undefined,
+      itypea3: (v.itypea3 as string) || undefined,
     });
   }
 
@@ -166,6 +170,18 @@ export function serializeTxtFile(headers: string[], rows: string[][]): string {
     }),
   ];
   return lines.join('\r\n') + '\r\n';
+}
+
+export type StringEntry = Record<string, unknown> & { Key: string; enUS: string };
+
+/**
+ * Load skills.json string table → StringEntry[]
+ * Used for updating skill names and descriptions under Normal Logic.
+ */
+export function loadSkillStrings(): StringEntry[] {
+  const filePath = path.join(DATA_DIR, 'local', 'strings', 'skills.json');
+  const raw = fs.readFileSync(filePath, 'utf-8').replace(/^\uFEFF/, ''); // strip BOM
+  return JSON.parse(raw) as StringEntry[];
 }
 
 /**

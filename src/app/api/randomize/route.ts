@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRNG, seedFromString } from '@/lib/randomizer/seed';
-import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile } from '@/lib/data-loader';
+import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings } from '@/lib/data-loader';
 import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
 import { writeSkillsRows } from '@/lib/randomizer/skills-writer';
 import { writeSkillDescRows } from '@/lib/randomizer/skilldesc-writer';
+import { writeSkillStrings } from '@/lib/randomizer/strings-writer';
 import { assignPrerequisites } from '@/lib/randomizer/prereq-assigner';
 import { buildAllTreeSprites, clearSpriteCache } from '@/lib/sprites/tree-stitcher';
 import { buildAllIconSprites } from '@/lib/sprites/icon-assembler';
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const seedInput = body.seed;
     const enablePrereqs = body.enablePrereqs !== false; // default true
+    const logic: 'minimal' | 'normal' = body.logic === 'normal' ? 'normal' : 'minimal';
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -67,11 +69,19 @@ export async function POST(request: NextRequest) {
       : new Map();
 
     // Step 8: Write modified txt files
-    writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments);
+    writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments, logic);
     writeSkillDescRows(skillDescTxt.headers, skillDescTxt.rows, placements, descSynergyUpdates);
 
     const skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
     const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
+
+    // Normal Logic: update skill names and descriptions in the string table
+    let skillStringsJson: string | undefined;
+    if (logic === 'normal') {
+      const skillStrings = loadSkillStrings();
+      writeSkillStrings(skillStrings, skillDescStrNames, placements);
+      skillStringsJson = JSON.stringify(skillStrings, null, 2);
+    }
 
     // Step 10: Build tree sprites
     const treeSprites = buildAllTreeSprites(treeAssignments);
@@ -92,6 +102,7 @@ export async function POST(request: NextRequest) {
       skillDescTxt: skillDescTxtContent,
       treeSprites,
       iconSprites,
+      skillStringsJson,
     });
 
     // Cache the result

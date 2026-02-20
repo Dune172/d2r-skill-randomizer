@@ -3,70 +3,122 @@
 import { useState } from 'react';
 
 interface RandomizerFormProps {
-  onGenerate: (seed: string, options: { enablePrereqs: boolean }) => void;
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal' }) => void;
   isLoading: boolean;
 }
 
 export default function RandomizerForm({ onGenerate, isLoading }: RandomizerFormProps) {
   const [seed, setSeed] = useState('');
   const [enablePrereqs, setEnablePrereqs] = useState(true);
+  const [logic, setLogic] = useState<'minimal' | 'normal'>('normal');
 
-  const randomSeed = () => {
-    const s = Math.floor(Math.random() * 2147483647).toString();
-    setSeed(s);
-  };
+  const randomSeed = () => setSeed(Math.floor(Math.random() * 2147483647).toString());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (seed.trim()) {
-      onGenerate(seed.trim(), { enablePrereqs });
-    }
+    if (seed.trim()) onGenerate(seed.trim(), { enablePrereqs, logic });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-        <div className="flex-1">
-          <label htmlFor="seed" className="block text-sm font-medium text-gray-300 mb-1">
-            Seed
-          </label>
-          <div className="flex gap-2">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Seed row */}
+      <div>
+        <label htmlFor="seed" className="block font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#9a7a50] mb-2">
+          Seed
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="seed"
+            type="text"
+            value={seed}
+            onChange={e => setSeed(e.target.value)}
+            placeholder="Enter a seed or any text…"
+            className="flex-1 rounded bg-[#090203] border border-[#3a1510] px-4 py-2.5 text-[#e8d5a0] placeholder-[#4a3020]
+              focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+              transition-colors text-sm"
+          />
+          <button
+            type="button"
+            onClick={randomSeed}
+            className="rounded border border-[#3a1510] bg-[#0e0506] px-4 py-2.5 text-xs text-[#9a7a50]
+              hover:text-[#e8d5a0] hover:border-[#5c2218] hover:bg-[#150708]
+              transition-all duration-200 font-cinzel tracking-widest uppercase"
+          >
+            Random
+          </button>
+        </div>
+      </div>
+
+      {/* Options row */}
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-3 pt-1">
+        {/* Prerequisites checkbox */}
+        <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor="enablePrereqs">
+          <div className="relative flex-shrink-0">
             <input
-              id="seed"
-              type="text"
-              value={seed}
-              onChange={e => setSeed(e.target.value)}
-              placeholder="Enter a seed or number"
-              className="flex-1 rounded-md bg-gray-800 border border-gray-600 px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+              id="enablePrereqs"
+              type="checkbox"
+              checked={enablePrereqs}
+              onChange={e => setEnablePrereqs(e.target.checked)}
+              className="sr-only"
             />
-            <button
-              type="button"
-              onClick={randomSeed}
-              className="rounded-md bg-gray-700 px-3 py-2 text-sm text-gray-300 hover:bg-gray-600 transition-colors"
+            <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
+              ${enablePrereqs
+                ? 'bg-[#7a1010] border-[#c42020]'
+                : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}
             >
-              Random
-            </button>
+              {enablePrereqs && (
+                <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+          </div>
+          <span className="text-sm text-[#9a7a50] group-hover:text-[#c8a060] transition-colors">
+            Skill prerequisites
+          </span>
+        </label>
+
+        {/* Logic level dropdown */}
+        <div className="flex items-center gap-3 ml-auto">
+          <label htmlFor="logic" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#9a7a50] whitespace-nowrap">
+            Logic
+          </label>
+          <div className="relative">
+            <select
+              id="logic"
+              value={logic}
+              onChange={e => setLogic(e.target.value as 'minimal' | 'normal')}
+              className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-2
+                text-sm text-[#e8d5a0]
+                focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                transition-colors cursor-pointer"
+            >
+              <option value="minimal">Minimal</option>
+              <option value="normal">Normal</option>
+            </select>
+            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">
+              ▾
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Submit */}
+      <div className="pt-1">
         <button
           type="submit"
           disabled={isLoading || !seed.trim()}
-          className="rounded-md bg-amber-600 px-6 py-2 font-medium text-white hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full rounded py-3
+            font-cinzel font-bold tracking-[0.22em] text-sm uppercase text-[#e8d5a0]
+            bg-gradient-to-b from-[#5c1010] to-[#380808]
+            border border-[#8b2820]
+            hover:from-[#7a1818] hover:to-[#480e0e] hover:border-[#c42020]
+            disabled:opacity-40 disabled:cursor-not-allowed
+            transition-all duration-200
+            shadow-[0_0_14px_rgba(139,40,32,0.22)] hover:shadow-[0_0_26px_rgba(196,32,32,0.38)]"
         >
-          {isLoading ? 'Generating...' : 'Generate Preview'}
+          {isLoading ? 'Divining…' : 'Generate Preview'}
         </button>
-      </div>
-      <div className="flex items-center gap-2">
-        <input
-          id="enablePrereqs"
-          type="checkbox"
-          checked={enablePrereqs}
-          onChange={e => setEnablePrereqs(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-amber-500 focus:ring-amber-500 focus:ring-offset-gray-900"
-        />
-        <label htmlFor="enablePrereqs" className="text-sm text-gray-300">
-          Enable skill prerequisites (arrow connections on tree)
-        </label>
       </div>
     </form>
   );
