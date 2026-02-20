@@ -15,10 +15,11 @@ const COL = {
   DmgSymPerCalc: 237,
   EDmgSymPerCalc: 251,
   ELenSymPerCalc: 256,
-  passiveitype: 47,
-  itypea1: 132,
-  itypea2: 133,
-  itypea3: 134,
+  passiveitype: 49,
+  itypea1: 136,
+  itypea2: 137,
+  itypea3: 138,
+  itypeb1: 141,
 };
 
 // Weapon type the class naturally uses — used to remap class-restricted weapon columns
@@ -73,6 +74,7 @@ export function writeSkillsRows(
   const itypea1Idx = safeGetCol(headers, 'itypea1', COL.itypea1);
   const itypea2Idx = safeGetCol(headers, 'itypea2', COL.itypea2);
   const itypea3Idx = safeGetCol(headers, 'itypea3', COL.itypea3);
+  const itypeb1Idx = safeGetCol(headers, 'itypeb1', COL.itypeb1);
 
   for (const row of rows) {
     const skillName = row[0]; // skill column is always first
@@ -110,7 +112,7 @@ export function writeSkillsRows(
         if (CLASS_RESTRICTED_TYPES.has(row[passiveitypeIdx])) {
           row[passiveitypeIdx] = naturalWeapon;
         }
-        for (const idx of [itypea1Idx, itypea2Idx, itypea3Idx]) {
+        for (const idx of [itypea1Idx, itypea2Idx, itypea3Idx, itypeb1Idx]) {
           if (CLASS_RESTRICTED_TYPES.has(row[idx])) {
             row[idx] = naturalWeapon;
           }
