@@ -68,7 +68,10 @@ export function placeSkills(
 
     // Pinned skills for this class stay here; fill remaining slots from the shuffle pool
     const pinned = pinnedByClass.get(classCode) || [];
-    const shuffledCount = slotCount - pinned.length;
+    if (pinned.length > slotCount) {
+      console.error(`Class ${classCode}: ${pinned.length} pinned skills but only ${slotCount} slots — some pinned skills will be dropped`);
+    }
+    const shuffledCount = Math.max(0, slotCount - pinned.length);
     const classShuffled = shuffled.slice(skillIdx, skillIdx + shuffledCount);
     skillIdx += shuffledCount;
 
