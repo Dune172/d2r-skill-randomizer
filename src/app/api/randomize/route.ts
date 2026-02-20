@@ -105,14 +105,14 @@ export async function POST(request: NextRequest) {
       skillStringsJson,
     });
 
-    // Cache the result
-    zipCache.set(seed, zipBuffer);
-
-    // Limit cache size
-    if (zipCache.size > 10) {
+    // Limit cache size before inserting (evict oldest entry if at capacity)
+    if (zipCache.size >= 10) {
       const firstKey = zipCache.keys().next().value;
       if (firstKey !== undefined) zipCache.delete(firstKey);
     }
+
+    // Cache the result
+    zipCache.set(seed, zipBuffer);
 
     return NextResponse.json({ seed, status: 'ready' });
   } catch (error) {
