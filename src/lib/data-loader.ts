@@ -4,11 +4,20 @@ import { TreePage, GridSlot, SkillEntry, SkillDescEntry } from './randomizer/typ
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
+export type StringEntry = Record<string, unknown> & { Key: string; enUS: string };
+
+// Module-level caches — these files never change at runtime
+let _treeGrid: Map<string, TreePage> | null = null;
+let _skills: SkillEntry[] | null = null;
+let _skillDescs: Map<string, SkillDescEntry> | null = null;
+let _skillStrings: StringEntry[] | null = null;
+
 /**
  * Parse skill_tree_grid.csv → Map<string, TreePage>
  * Key format: "ama-1", "sor-2", etc.
  */
 export function loadTreeGrid(): Map<string, TreePage> {
+  if (_treeGrid) return _treeGrid;
   const csvPath = path.join(DATA_DIR, 'skill_tree_grid.csv');
   const content = fs.readFileSync(csvPath, 'utf-8');
   const lines = content.trim().replace(/\r/g, '').split('\n');
@@ -46,13 +55,15 @@ export function loadTreeGrid(): Map<string, TreePage> {
     }
   }
 
-  return pages;
+  _treeGrid = pages;
+  return _treeGrid;
 }
 
 /**
  * Parse skills.json → SkillEntry[] (only class skills with charclass)
  */
 export function loadSkills(): SkillEntry[] {
+  if (_skills) return _skills;
   const jsonPath = path.join(DATA_DIR, 'json', 'skills.json');
   const data = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
   const skills: SkillEntry[] = [];
@@ -84,7 +95,8 @@ export function loadSkills(): SkillEntry[] {
     });
   }
 
-  return skills;
+  _skills = skills;
+  return _skills;
 }
 
 /**
@@ -92,6 +104,7 @@ export function loadSkills(): SkillEntry[] {
  * Keyed by skilldesc name
  */
 export function loadSkillDescs(): Map<string, SkillDescEntry> {
+  if (_skillDescs) return _skillDescs;
   const jsonPath = path.join(DATA_DIR, 'json', 'skilldesc.json');
   const data = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
   const descs = new Map<string, SkillDescEntry>();
@@ -119,7 +132,8 @@ export function loadSkillDescs(): Map<string, SkillDescEntry> {
     });
   }
 
-  return descs;
+  _skillDescs = descs;
+  return _skillDescs;
 }
 
 /**
@@ -175,16 +189,16 @@ export function serializeTxtFile(headers: string[], rows: string[][]): string {
   return lines.join('\r\n') + '\r\n';
 }
 
-export type StringEntry = Record<string, unknown> & { Key: string; enUS: string };
-
 /**
  * Load skills.json string table → StringEntry[]
  * Used for updating skill names and descriptions under Normal Logic.
  */
 export function loadSkillStrings(): StringEntry[] {
+  if (_skillStrings) return _skillStrings;
   const filePath = path.join(DATA_DIR, 'local', 'strings', 'skills.json');
   const raw = fs.readFileSync(filePath, 'utf-8').replace(/^\uFEFF/, ''); // strip BOM
-  return JSON.parse(raw) as StringEntry[];
+  _skillStrings = JSON.parse(raw) as StringEntry[];
+  return _skillStrings;
 }
 
 /**
