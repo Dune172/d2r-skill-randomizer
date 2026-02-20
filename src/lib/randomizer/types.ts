@@ -42,6 +42,10 @@ export interface SkillEntry {
   itypea1?: string;
   itypea2?: string;
   itypea3?: string;
+  itypeb1?: string;
+  // class-usability restrictions
+  weapsel?: number;  // 3 = requires dual weapons (Barbarian/Assassin only)
+  restrict?: number; // 2 = requires shapeshifted form (Druid only)
 }
 
 export interface SkillDescEntry {

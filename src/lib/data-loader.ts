@@ -78,6 +78,9 @@ export function loadSkills(): SkillEntry[] {
       itypea1: (v.itypea1 as string) || undefined,
       itypea2: (v.itypea2 as string) || undefined,
       itypea3: (v.itypea3 as string) || undefined,
+      itypeb1: (v.itypeb1 as string) || undefined,
+      weapsel: v.weapsel != null ? Number(v.weapsel) : undefined,
+      restrict: v.restrict != null && v.restrict !== '' ? Number(v.restrict) : undefined,
     });
   }
 

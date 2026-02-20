@@ -3,8 +3,25 @@ import { SeededRNG } from './seed';
 import { CLASS_DEFS } from './config';
 
 /**
+ * Returns true if this skill must stay on its original class:
+ * - weapsel=3: requires dual weapons (only Barbarian and Assassin can dual-wield)
+ * - itypeb1=h2h/h2h2: requires claw in off-hand (only Assassin can equip claws)
+ * - restrict=2: requires shapeshifted form (only Druid can shapeshift)
+ */
+function isPinnedToOriginalClass(skill: SkillEntry): boolean {
+  return (
+    skill.weapsel === 3 ||
+    skill.itypeb1 === 'h2h' ||
+    skill.itypeb1 === 'h2h2' ||
+    skill.restrict === 2
+  );
+}
+
+/**
  * Shuffle all 240 class skills and assign them to FILLED grid slots
  * across all 8 classes' assigned tree pages.
+ * Skills that require class-specific abilities (dual-wield, shapeshifting,
+ * off-hand claws) are pinned to their original class. All others are shuffled.
  * Skills are sorted by reqlevel within each class so that lower-level
  * skills land in earlier rows (row 1 = level 1, row 2 = level 6, etc.)
  */
@@ -13,8 +30,21 @@ export function placeSkills(
   skills: SkillEntry[],
   treeAssignments: Map<ClassCode, TreePage[]>,
 ): SkillPlacement[] {
-  // Shuffle all skills
-  const shuffled = rng.shuffle(skills);
+  // Separate pinned skills (must stay on original class) from the shuffle pool
+  const pinnedByClass = new Map<ClassCode, SkillEntry[]>();
+  const shufflePool: SkillEntry[] = [];
+  for (const skill of skills) {
+    if (isPinnedToOriginalClass(skill)) {
+      const cls = skill.charclass as ClassCode;
+      if (!pinnedByClass.has(cls)) pinnedByClass.set(cls, []);
+      pinnedByClass.get(cls)!.push(skill);
+    } else {
+      shufflePool.push(skill);
+    }
+  }
+
+  // Shuffle the remaining skills
+  const shuffled = rng.shuffle(shufflePool);
   const placements: SkillPlacement[] = [];
 
   // First pass: count how many slots each class needs
@@ -36,9 +66,14 @@ export function placeSkills(
     const trees = treeAssignments.get(classCode)!;
     const slotCount = classSlotsCount[ci];
 
-    // Take this class's share of shuffled skills
-    const classSkills = shuffled.slice(skillIdx, skillIdx + slotCount);
-    skillIdx += slotCount;
+    // Pinned skills for this class stay here; fill remaining slots from the shuffle pool
+    const pinned = pinnedByClass.get(classCode) || [];
+    const shuffledCount = slotCount - pinned.length;
+    const classShuffled = shuffled.slice(skillIdx, skillIdx + shuffledCount);
+    skillIdx += shuffledCount;
+
+    // Combine pinned + shuffled, then sort by reqlevel
+    const classSkills = [...pinned, ...classShuffled];
 
     // Sort by reqlevel so lowest-level skills go in earliest rows
     classSkills.sort((a, b) => a.reqlevel - b.reqlevel);
