@@ -42,6 +42,9 @@ yarn-error.log*
 !/data/local/
 !/data/local/strings/
 !/data/local/strings/skills.json
+!/data/local/strings/item-modifiers.json
+!/data/txt/
+!/data/txt/charstats.txt
 
 # typescript
 *.tsbuildinfo

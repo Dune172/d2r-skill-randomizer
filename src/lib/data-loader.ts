@@ -13,6 +13,15 @@ let _skillDescs: Map<string, SkillDescEntry> | null = null;
 let _skillStrings: StringEntry[] | null = null;
 
 /**
+ * Clear the skill strings cache so the next call to loadSkillStrings()
+ * re-reads from disk. Call at the start of each randomize request so that
+ * updates to data/local/strings/skills.json take effect without a server restart.
+ */
+export function clearSkillStringsCache(): void {
+  _skillStrings = null;
+}
+
+/**
  * Parse skill_tree_grid.csv → Map<string, TreePage>
  * Key format: "ama-1", "sor-2", etc.
  */

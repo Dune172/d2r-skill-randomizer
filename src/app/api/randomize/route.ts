@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 import { createRNG, seedFromString } from '@/lib/randomizer/seed';
-import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings } from '@/lib/data-loader';
+import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings, clearSkillStringsCache } from '@/lib/data-loader';
 import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
@@ -12,9 +14,15 @@ import { buildAllTreeSprites, clearSpriteCache } from '@/lib/sprites/tree-stitch
 import { buildAllIconSprites } from '@/lib/sprites/icon-assembler';
 import { buildZip } from '@/lib/zip-builder';
 import { getZipCache } from '@/lib/zip-cache';
+import { CLASS_DEFS } from '@/lib/randomizer/config';
+
+const DATA_DIR = path.join(process.cwd(), 'data');
 
 export async function POST(request: NextRequest) {
   try {
+    // Clear skill strings cache so any on-disk update to skills.json is picked up.
+    clearSkillStringsCache();
+
     const body = await request.json();
     const seedInput = body.seed;
     const enablePrereqs = body.enablePrereqs !== false; // default true
@@ -72,15 +80,82 @@ export async function POST(request: NextRequest) {
     writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments, logic);
     writeSkillDescRows(skillDescTxt.headers, skillDescTxt.rows, placements, descSynergyUpdates);
 
+    // Build StartSkill candidates from the verified, already-updated skillsTxt rows.
+    // Reading directly from the txt we just wrote guarantees the skill name matches
+    // exactly what D2R will read, and that charclass was successfully updated.
+    const charclassColIdx = skillsTxt.headers.indexOf('charclass') !== -1
+      ? skillsTxt.headers.indexOf('charclass') : 2;
+    const reqlevelColIdx = skillsTxt.headers.indexOf('reqlevel') !== -1
+      ? skillsTxt.headers.indexOf('reqlevel') : 174;
+    const row1SkillsByClass = new Map<string, string[]>();
+    for (const row of skillsTxt.rows) {
+      const cc = row[charclassColIdx];
+      const rl = row[reqlevelColIdx];
+      if (cc && rl === '1') {
+        if (!row1SkillsByClass.has(cc)) row1SkillsByClass.set(cc, []);
+        row1SkillsByClass.get(cc)!.push(row[0]);
+      }
+    }
+
     const skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
     const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
 
-    // Normal Logic: update skill names and descriptions in the string table
-    let skillStringsJson: string | undefined;
+    // Always load skill strings so all skills (including Warlock) have description text.
+    // Under Normal Logic, additionally rewrite weapon-type references in the strings.
+    const skillStrings = loadSkillStrings();
     if (logic === 'normal') {
-      const skillStrings = loadSkillStrings();
       writeSkillStrings(skillStrings, skillDescStrNames, placements);
-      skillStringsJson = JSON.stringify(skillStrings, null, 2);
+    }
+
+    // Override SkillCategoryXxN tab titles to "Random 1/2/3" for all 8 classes.
+    // These keys in skills.json drive the in-tree tab label display in D2R.
+    // Suffix 1/2/3 maps directly to SkillPage (left/middle/right tab).
+    const SKILL_CATEGORY_OVERRIDES: Record<string, string> = {
+      SkillCategoryAm1: 'Random 1', SkillCategoryAm2: 'Random 2', SkillCategoryAm3: 'Random 3',
+      SkillCategorySo1: 'Random 1', SkillCategorySo2: 'Random 2', SkillCategorySo3: 'Random 3',
+      SkillCategoryNe1: 'Random 1', SkillCategoryNe2: 'Random 2', SkillCategoryNe3: 'Random 3',
+      SkillCategoryPa1: 'Random 1', SkillCategoryPa2: 'Random 2', SkillCategoryPa3: 'Random 3',
+      SkillCategoryBa1: 'Random 1', SkillCategoryBa2: 'Random 2', SkillCategoryBa3: 'Random 3',
+      SkillCategoryDr1: 'Random 1', SkillCategoryDr2: 'Random 2', SkillCategoryDr3: 'Random 3',
+      SkillCategoryAs1: 'Random 1', SkillCategoryAs2: 'Random 2', SkillCategoryAs3: 'Random 3',
+      SkillCategoryWa1: 'Random 1', SkillCategoryWa2: 'Random 2', SkillCategoryWa3: 'Random 3',
+    };
+    for (const [key, text] of Object.entries(SKILL_CATEGORY_OVERRIDES)) {
+      const entry = skillStrings.find(e => e.Key === key);
+      if (entry) entry.enUS = text;
+    }
+
+    // Serialize with BOM + CRLF to match D2R's expected JSON string file format.
+    const skillStringsJson = '\uFEFF' + JSON.stringify(skillStrings, null, 2).replace(/\n/g, '\r\n');
+
+    // Load item-modifiers.json as-is (static pass-through — StrSklTabItemN values are for
+    // item affix display only, not tab titles; no modification needed).
+    let itemModifiersJson: string | undefined;
+    const itemModifiersPath = path.join(DATA_DIR, 'local', 'strings', 'item-modifiers.json');
+    if (fs.existsSync(itemModifiersPath)) {
+      itemModifiersJson = fs.readFileSync(itemModifiersPath, 'utf-8');
+    }
+
+    // Update charstats.txt: set StartSkill and skill tree tab labels for each class
+    let charstatsTxt: string | undefined;
+    const charstatsPath = path.join(DATA_DIR, 'txt', 'charstats.txt');
+    if (fs.existsSync(charstatsPath)) {
+      const charstats = loadTxtFile('charstats.txt');
+      const classCol = charstats.headers.indexOf('class');
+      const startSkillCol = charstats.headers.indexOf('StartSkill');
+      if (classCol !== -1 && startSkillCol !== -1) {
+        for (const row of charstats.rows) {
+          const classDef = CLASS_DEFS.find(d => d.name === row[classCol]);
+          if (classDef) {
+            const candidates = row1SkillsByClass.get(classDef.code) ?? [];
+            const startSkill = candidates.length > 0
+              ? candidates[rng.randInt(0, candidates.length - 1)]
+              : undefined;
+            row[startSkillCol] = startSkill ?? '';
+          }
+        }
+      }
+      charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
     }
 
     // Step 10: Build tree sprites
@@ -103,6 +178,8 @@ export async function POST(request: NextRequest) {
       treeSprites,
       iconSprites,
       skillStringsJson,
+      charstatsTxt,
+      itemModifiersJson,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)

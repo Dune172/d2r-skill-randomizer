@@ -1,6 +1,6 @@
 import { ClassCode, SkillEntry, SkillPlacement, TreePage } from './types';
 import { SeededRNG } from './seed';
-import { CLASS_DEFS } from './config';
+import { CLASS_DEFS, CLASS_RESTRICTED_TYPES } from './config';
 
 /**
  * Returns true if this skill must stay on its original class:
@@ -13,7 +13,11 @@ function isPinnedToOriginalClass(skill: SkillEntry): boolean {
     skill.weapsel === 3 ||
     skill.itypeb1 === 'h2h' ||
     skill.itypeb1 === 'h2h2' ||
-    skill.restrict === 2
+    skill.restrict === 2 ||
+    CLASS_RESTRICTED_TYPES.has(skill.passiveitype ?? '') ||
+    CLASS_RESTRICTED_TYPES.has(skill.itypea1 ?? '') ||
+    CLASS_RESTRICTED_TYPES.has(skill.itypea2 ?? '') ||
+    CLASS_RESTRICTED_TYPES.has(skill.itypea3 ?? '')
   );
 }
 

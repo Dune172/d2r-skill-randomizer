@@ -7,7 +7,9 @@ export interface ZipContents {
   skillDescTxt: string;
   treeSprites: Map<string, Buffer>; // filename → sprite buffer
   iconSprites: Map<string, Buffer>; // filename → sprite buffer
-  skillStringsJson?: string;        // optional: modified skills string table (Normal Logic)
+  skillStringsJson?: string;        // skills string table (always included)
+  charstatsTxt?: string;            // charstats with randomised StartSkill per class
+  itemModifiersJson?: string;       // skill tab label strings (StrSklTabItem1–24)
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -55,9 +57,19 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     archive.append(contents.skillsTxt, { name: 'mod/data/global/excel/skills.txt' });
     archive.append(contents.skillDescTxt, { name: 'mod/data/global/excel/skilldesc.txt' });
 
-    // Add modified skill strings (Normal Logic only)
+    // Skill string table (always included — ensures all skills have description text)
     if (contents.skillStringsJson) {
       archive.append(contents.skillStringsJson, { name: 'mod/data/local/lng/strings/skills.json' });
+    }
+
+    // Charstats with randomised StartSkill per class
+    if (contents.charstatsTxt) {
+      archive.append(contents.charstatsTxt, { name: 'mod/data/global/excel/charstats.txt' });
+    }
+
+    // Skill tab label strings (StrSklTabItem1–24 for all 8 classes)
+    if (contents.itemModifiersJson) {
+      archive.append(contents.itemModifiersJson, { name: 'mod/data/local/lng/strings/item-modifiers.json' });
     }
 
     // Add tree sprites (hd path)
