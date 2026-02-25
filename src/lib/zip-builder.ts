@@ -10,6 +10,7 @@ export interface ZipContents {
   skillStringsJson?: string;        // skills string table (always included)
   charstatsTxt?: string;            // charstats with randomised StartSkill per class
   itemModifiersJson?: string;       // skill tab label strings (StrSklTabItem1–24)
+  monstatsTxt?: string;             // monstats with HP/Exp scaled for players simulation
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -70,6 +71,11 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     // Skill tab label strings (StrSklTabItem1–24 for all 8 classes)
     if (contents.itemModifiersJson) {
       archive.append(contents.itemModifiersJson, { name: 'mod/data/local/lng/strings/item-modifiers.json' });
+    }
+
+    // Monster stats scaled for players simulation
+    if (contents.monstatsTxt) {
+      archive.append(contents.monstatsTxt, { name: 'mod/data/global/excel/monstats.txt' });
     }
 
     // Add tree sprites (hd path)

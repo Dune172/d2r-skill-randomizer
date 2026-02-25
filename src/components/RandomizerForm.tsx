@@ -3,21 +3,23 @@
 import { useState } from 'react';
 
 interface RandomizerFormProps {
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal' }) => void;
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal'; playersEnabled: boolean; playersCount: number }) => void;
   isLoading: boolean;
-  initialSeed?: string;
+  seed: string;
+  onSeedChange: (s: string) => void;
 }
 
-export default function RandomizerForm({ onGenerate, isLoading, initialSeed }: RandomizerFormProps) {
-  const [seed, setSeed] = useState(initialSeed ?? '');
+export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChange }: RandomizerFormProps) {
   const [enablePrereqs, setEnablePrereqs] = useState(true);
   const [logic, setLogic] = useState<'minimal' | 'normal'>('normal');
+  const [playersEnabled, setPlayersEnabled] = useState(false);
+  const [playersCount, setPlayersCount] = useState(1);
 
-  const randomSeed = () => setSeed(Math.floor(Math.random() * 2147483647).toString());
+  const randomSeed = () => onSeedChange(Math.floor(Math.random() * 2147483647).toString());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (seed.trim()) onGenerate(seed.trim(), { enablePrereqs, logic });
+    if (seed.trim()) onGenerate(seed.trim(), { enablePrereqs, logic, playersEnabled, playersCount });
   };
 
   return (
@@ -32,7 +34,7 @@ export default function RandomizerForm({ onGenerate, isLoading, initialSeed }: R
             id="seed"
             type="text"
             value={seed}
-            onChange={e => setSeed(e.target.value)}
+            onChange={e => onSeedChange(e.target.value)}
             placeholder="Enter a seed or any text…"
             className="flex-1 rounded bg-[#090203] border border-[#3a1510] px-4 py-2.5 text-[#e8d5a0] placeholder-[#4a3020]
               focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
@@ -102,6 +104,55 @@ export default function RandomizerForm({ onGenerate, isLoading, initialSeed }: R
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Players setting */}
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-3 pt-1">
+        <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor="playersEnabled">
+          <div className="relative flex-shrink-0">
+            <input
+              id="playersEnabled"
+              type="checkbox"
+              checked={playersEnabled}
+              onChange={e => setPlayersEnabled(e.target.checked)}
+              className="sr-only"
+            />
+            <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
+              ${playersEnabled
+                ? 'bg-[#7a1010] border-[#c42020]'
+                : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}
+            >
+              {playersEnabled && (
+                <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+          </div>
+          <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
+            Players simulation
+          </span>
+        </label>
+
+        {playersEnabled && (
+          <div className="flex items-center gap-3 ml-auto">
+            <label htmlFor="playersCount" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
+              Players
+            </label>
+            <input
+              id="playersCount"
+              type="number"
+              min={1}
+              max={8}
+              value={playersCount}
+              onChange={e => setPlayersCount(Math.min(8, Math.max(1, Number(e.target.value) || 1)))}
+              className="w-16 rounded border border-[#3a1510] bg-[#090203] px-3 py-2
+                text-sm text-[#e8d5a0] text-center
+                focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                transition-colors"
+            />
+          </div>
+        )}
       </div>
 
       {/* Submit */}

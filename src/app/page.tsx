@@ -11,6 +11,8 @@ type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
 interface Options {
   enablePrereqs: boolean;
   logic: 'minimal' | 'normal';
+  playersEnabled: boolean;
+  playersCount: number;
 }
 
 export default function Home() {
@@ -18,10 +20,9 @@ export default function Home() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
-  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal' });
-  // Read seed from URL so results can be shared via ?seed=N
-  // Lazy initializer runs once on first render (client-side only)
-  const [initialSeed] = useState<string>(() => {
+  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1 });
+  // Seed state owned here so we can update the textbox after generation
+  const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
     return new URLSearchParams(window.location.search).get('seed') ?? '';
   });
@@ -48,6 +49,7 @@ export default function Home() {
       const data: PreviewData = await previewRes.json();
       setPreview(data);
       setCurrentSeed(data.seed);
+      setSeed(String(data.seed));
 
       // Update URL so this result is shareable
       const url = new URL(window.location.href);
@@ -59,7 +61,7 @@ export default function Home() {
       const buildRes = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic }),
+        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic, playersEnabled: options.playersEnabled, playersCount: options.playersCount }),
       });
 
       if (!buildRes.ok) {
@@ -76,7 +78,10 @@ export default function Home() {
 
   const handleDownload = () => {
     if (currentSeed === null) return;
-    window.open(`/api/download?seed=${currentSeed}`, '_blank');
+    const playersParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
+      ? `&players=${currentOptions.playersCount}`
+      : '';
+    window.open(`/api/download?seed=${currentSeed}${playersParam}`, '_blank');
   };
 
   return (
@@ -111,7 +116,8 @@ export default function Home() {
           <RandomizerForm
             onGenerate={handleGenerate}
             isLoading={status === 'generating' || status === 'building'}
-            initialSeed={initialSeed || undefined}
+            seed={seed}
+            onSeedChange={setSeed}
           />
         </div>
 

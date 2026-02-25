@@ -4,20 +4,23 @@ import { seedFromString } from '@/lib/randomizer/seed';
 // We need a shared cache between randomize and download routes.
 // Since they're in the same process, we use a module-level cache.
 // Import from a shared location rather than the randomize route to avoid circular deps.
-import { getZipCache } from '@/lib/zip-cache';
+import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const seedParam = searchParams.get('seed');
+    const playersParam = searchParams.get('players');
 
     if (!seedParam) {
       return NextResponse.json({ error: 'Seed parameter required' }, { status: 400 });
     }
 
     const seed = isNaN(Number(seedParam)) ? seedFromString(seedParam) : Number(seedParam);
+    const playersCount = Math.min(8, Math.max(1, Number(playersParam) || 1));
+    const cacheKey = makeCacheKey(seed, playersCount);
     const zipCache = getZipCache();
-    const zipBuffer = zipCache.get(seed);
+    const zipBuffer = zipCache.get(cacheKey);
 
     if (!zipBuffer) {
       return NextResponse.json(

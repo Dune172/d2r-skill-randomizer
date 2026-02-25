@@ -13,7 +13,8 @@ import { assignPrerequisites } from '@/lib/randomizer/prereq-assigner';
 import { buildAllTreeSprites, clearSpriteCache } from '@/lib/sprites/tree-stitcher';
 import { buildAllIconSprites } from '@/lib/sprites/icon-assembler';
 import { buildZip } from '@/lib/zip-builder';
-import { getZipCache } from '@/lib/zip-cache';
+import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
+import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -27,16 +28,23 @@ export async function POST(request: NextRequest) {
     const seedInput = body.seed;
     const enablePrereqs = body.enablePrereqs !== false; // default true
     const logic: 'minimal' | 'normal' = body.logic === 'normal' ? 'normal' : 'minimal';
+    const playersEnabled = body.playersEnabled === true;
+    const playersCount = Math.min(8, Math.max(1, Number(body.playersCount) || 1));
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
     }
 
-    const seed = typeof seedInput === 'number' ? seedInput : seedFromString(String(seedInput));
+    const numericSeed = Number(seedInput);
+    const seed = (typeof seedInput === 'number' || (typeof seedInput === 'string' && !isNaN(numericSeed) && Number.isInteger(numericSeed)))
+      ? Math.trunc(numericSeed)
+      : seedFromString(String(seedInput));
+    const effectivePlayers = playersEnabled ? playersCount : 1;
+    const cacheKey = makeCacheKey(seed, effectivePlayers);
     const zipCache = getZipCache();
 
     // Check cache
-    if (zipCache.has(seed)) {
+    if (zipCache.has(cacheKey)) {
       return NextResponse.json({ seed, status: 'ready' });
     }
 
@@ -171,6 +179,17 @@ export async function POST(request: NextRequest) {
 
     const iconSprites = await buildAllIconSprites(placementsByClass, skillDescIconCels);
 
+    // Step 11b: Scale monstats for players simulation (if enabled and count > 1)
+    let monstatsTxt: string | undefined;
+    if (playersEnabled && playersCount > 1) {
+      const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
+      if (fs.existsSync(monstatsTxtPath)) {
+        const monstats = loadTxtFile('monstats.txt');
+        const scaledRows = scaleMonstats(monstats.headers, monstats.rows, playersCount);
+        monstatsTxt = serializeTxtFile(monstats.headers, scaledRows);
+      }
+    }
+
     // Step 12: Build zip
     const zipBuffer = await buildZip({
       skillsTxt: skillsTxtContent,
@@ -180,6 +199,7 @@ export async function POST(request: NextRequest) {
       skillStringsJson,
       charstatsTxt,
       itemModifiersJson,
+      monstatsTxt,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)
@@ -189,7 +209,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Cache the result
-    zipCache.set(seed, zipBuffer);
+    zipCache.set(cacheKey, zipBuffer);
 
     return NextResponse.json({ seed, status: 'ready' });
   } catch (error) {

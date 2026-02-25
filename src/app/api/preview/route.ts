@@ -15,7 +15,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
     }
 
-    const seed = typeof seedInput === 'number' ? seedInput : seedFromString(String(seedInput));
+    const numericSeed = Number(seedInput);
+    const seed = (typeof seedInput === 'number' || (typeof seedInput === 'string' && !isNaN(numericSeed) && Number.isInteger(numericSeed)))
+      ? Math.trunc(numericSeed)
+      : seedFromString(String(seedInput));
     const rng = createRNG(seed);
 
     // Load data
