@@ -1,6 +1,11 @@
 // Column names as they appear in monstats.txt (mixed case)
 const HP_COLS = ['minHP', 'maxHP', 'MinHP(N)', 'MaxHP(N)', 'MinHP(H)', 'MaxHP(H)'];
 const EXP_COLS = ['Exp', 'Exp(N)', 'Exp(H)'];
+const DAMAGE_AR_COLS = [
+  'A1MinD', 'A1MaxD', 'A1TH', 'A2MinD', 'A2MaxD', 'A2TH', 'S1MinD', 'S1MaxD', 'S1TH',
+  'A1MinD(N)', 'A1MaxD(N)', 'A1TH(N)', 'A2MinD(N)', 'A2MaxD(N)', 'A2TH(N)', 'S1MinD(N)', 'S1MaxD(N)', 'S1TH(N)',
+  'A1MinD(H)', 'A1MaxD(H)', 'A1TH(H)', 'A2MinD(H)', 'A2MaxD(H)', 'A2TH(H)', 'S1MinD(H)', 'S1MaxD(H)', 'S1TH(H)',
+];
 const TC_COL = 'TreasureClass';
 const ACT_RE = /^Act (\d)/;
 
@@ -40,10 +45,14 @@ const BOSS_ACTS: Record<string, number> = {
 };
 
 /**
- * Scale monster HP and experience to simulate the effect of /players N.
- * Formula: multiplier = 1 + (playerCount - 1) * 0.5
- * (matches D2 engine: 1p→1×, 2p→1.5×, 4p→2.5×, 8p→4.5×)
- * Monster damage is intentionally NOT scaled — only HP and Exp.
+ * Scale monster stats to simulate the effect of /players N.
+ *
+ * HP & XP formula:   multiplier = (playerCount + 1) / 2
+ *   (1p→1×, 2p→1.5×, 4p→2.5×, 8p→4.5×)
+ *
+ * Damage & AR formula: multiplier = 1 + (playerCount - 1) / 16
+ *   (1p→0% bonus, 2p→+6.25%, 4p→+18.75%, 8p→+43.75%)
+ *
  * Only monsters belonging to the specified acts are scaled.
  */
 export function scaleMonstats(
@@ -52,8 +61,8 @@ export function scaleMonstats(
   playerCount: number,
   acts: number[] = [1, 2, 3, 4, 5],
 ): string[][] {
-  const multiplier = 1 + (playerCount - 1) * 0.5;
-  const colsToScale = [...HP_COLS, ...EXP_COLS];
+  const hpExpMultiplier = (playerCount + 1) / 2;
+  const damageArMultiplier = 1 + (playerCount - 1) / 16;
   const tcIdx = headers.indexOf(TC_COL);
   const actsSet = new Set(acts);
 
@@ -68,14 +77,25 @@ export function scaleMonstats(
     if (monsterAct === null || !actsSet.has(monsterAct)) return row;
 
     const scaled = [...row];
-    for (const col of colsToScale) {
+
+    for (const col of [...HP_COLS, ...EXP_COLS]) {
       const idx = headers.indexOf(col);
       if (idx === -1) continue;
       const val = parseInt(scaled[idx], 10);
       if (!isNaN(val) && val > 0) {
-        scaled[idx] = String(Math.round(val * multiplier));
+        scaled[idx] = String(Math.round(val * hpExpMultiplier));
       }
     }
+
+    for (const col of DAMAGE_AR_COLS) {
+      const idx = headers.indexOf(col);
+      if (idx === -1) continue;
+      const val = parseInt(scaled[idx], 10);
+      if (!isNaN(val) && val > 0) {
+        scaled[idx] = String(Math.round(val * damageArMultiplier));
+      }
+    }
+
     return scaled;
   });
 }

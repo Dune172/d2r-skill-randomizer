@@ -13,6 +13,11 @@ const DATA_FILE = path.join(__dirname, '..', 'data', 'txt', 'monstats.txt');
 
 const HP_COLS = ['minHP', 'maxHP', 'MinHP(N)', 'MaxHP(N)', 'MinHP(H)', 'MaxHP(H)'];
 const EXP_COLS = ['Exp', 'Exp(N)', 'Exp(H)'];
+const DAMAGE_AR_COLS = [
+  'A1MinD', 'A1MaxD', 'A1TH', 'A2MinD', 'A2MaxD', 'A2TH', 'S1MinD', 'S1MaxD', 'S1TH',
+  'A1MinD(N)', 'A1MaxD(N)', 'A1TH(N)', 'A2MinD(N)', 'A2MaxD(N)', 'A2TH(N)', 'S1MinD(N)', 'S1MaxD(N)', 'S1TH(N)',
+  'A1MinD(H)', 'A1MaxD(H)', 'A1TH(H)', 'A2MinD(H)', 'A2MaxD(H)', 'A2TH(H)', 'S1MinD(H)', 'S1MaxD(H)', 'S1TH(H)',
+];
 const TC_COL = 'TreasureClass';
 const ACT_RE = /^Act (\d)/;
 
@@ -50,8 +55,8 @@ const BOSS_ACTS = {
 };
 
 function scaleMonstats(headers, rows, playerCount, acts = [1, 2, 3, 4, 5]) {
-  const multiplier = 1 + (playerCount - 1) * 0.5;
-  const colsToScale = [...HP_COLS, ...EXP_COLS];
+  const hpExpMultiplier = (playerCount + 1) / 2;
+  const damageArMultiplier = 1 + (playerCount - 1) / 16;
   const tcIdx = headers.indexOf(TC_COL);
   const actsSet = new Set(acts);
 
@@ -66,12 +71,20 @@ function scaleMonstats(headers, rows, playerCount, acts = [1, 2, 3, 4, 5]) {
     if (monsterAct === null || !actsSet.has(monsterAct)) return row;
 
     const scaled = [...row];
-    for (const col of colsToScale) {
+    for (const col of [...HP_COLS, ...EXP_COLS]) {
       const idx = headers.indexOf(col);
       if (idx === -1) continue;
       const val = parseInt(scaled[idx], 10);
       if (!isNaN(val) && val > 0) {
-        scaled[idx] = String(Math.round(val * multiplier));
+        scaled[idx] = String(Math.round(val * hpExpMultiplier));
+      }
+    }
+    for (const col of DAMAGE_AR_COLS) {
+      const idx = headers.indexOf(col);
+      if (idx === -1) continue;
+      const val = parseInt(scaled[idx], 10);
+      if (!isNaN(val) && val > 0) {
+        scaled[idx] = String(Math.round(val * damageArMultiplier));
       }
     }
     return scaled;
@@ -122,8 +135,11 @@ function scaledMinHP(id, playerCount, acts) {
 }
 
 function expectedHP(original, playerCount) {
-  const multiplier = 1 + (playerCount - 1) * 0.5;
-  return Math.round(original * multiplier);
+  return Math.round(original * (playerCount + 1) / 2);
+}
+
+function expectedDamageAR(original, playerCount) {
+  return Math.round(original * (1 + (playerCount - 1) / 16));
 }
 
 // ── Group A: Act isolation — only Act 1 selected, players=4 (multiplier=2.5×) ───────────────
@@ -246,6 +262,41 @@ assert(
   unexpectedCount === 0,
   `${unexpectedCount} unexpected uncovered TC(s) — see list above`,
 );
+
+// ── Group F: Damage & AR scaling (+6.25% per player above P1) ─────────────────────────────────
+
+console.log('\nGroup F: Damage & AR scaling');
+
+const a1minDIdx = headers.indexOf('A1MinD');
+
+function origA1MinD(id) {
+  const row = getRow(id);
+  if (!row) return null;
+  return parseInt(row[a1minDIdx], 10);
+}
+
+function scaledA1MinD(id, playerCount, acts) {
+  const row = getRow(id);
+  if (!row) return null;
+  const result = scaleMonstats(headers, [row], playerCount, acts);
+  return parseInt(result[0][a1minDIdx], 10);
+}
+
+{
+  const id = 'skeleton1';
+  for (const players of [4, 8]) {
+    const orig = origA1MinD(id);
+    const scaled = scaledA1MinD(id, players, [1, 2, 3, 4, 5]);
+    const exp = expectedDamageAR(orig, players);
+    assert(`${id} A1MinD ×${(1 + (players - 1) / 16).toFixed(4)} at P${players} (orig=${orig} → ${exp})`, scaled === exp, `got ${scaled}`);
+  }
+}
+
+for (const id of ['claygolem', 'hellbovine']) {
+  const orig = origA1MinD(id);
+  const scaled = scaledA1MinD(id, 8, [1, 2, 3, 4, 5]);
+  assert(`${id} A1MinD unchanged (excluded, orig=${orig})`, scaled === orig, `got ${scaled}`);
+}
 
 // ── Summary ───────────────────────────────────────────────────────────────────────────────────
 
