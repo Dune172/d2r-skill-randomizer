@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
     const teleportParam = searchParams.get('teleportStaff');
     const seed = isNaN(Number(seedParam)) ? seedFromString(seedParam) : Number(seedParam);
     const playersCount = Math.min(8, Math.max(1, Number(playersParam) || 1));
-    const teleportStaff = teleportParam === '1';
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaff);
+    const teleportStaffLevel = Number(teleportParam) || 0;
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 

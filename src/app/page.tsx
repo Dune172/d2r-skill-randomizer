@@ -13,7 +13,7 @@ interface Options {
   logic: 'minimal' | 'normal';
   playersEnabled: boolean;
   playersCount: number;
-  startingItems: { teleportStaff: boolean };
+  startingItems: { teleportStaff: boolean; teleportStaffLevel: number };
 }
 
 export default function Home() {
@@ -21,7 +21,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
-  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, startingItems: { teleportStaff: false } });
+  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, startingItems: { teleportStaff: false, teleportStaffLevel: 1 } });
   // Seed state owned here so we can update the textbox after generation
   const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
@@ -82,7 +82,9 @@ export default function Home() {
     const playersParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
       ? `&players=${currentOptions.playersCount}`
       : '';
-    const staffParam = currentOptions.startingItems.teleportStaff ? '&teleportStaff=1' : '';
+    const staffParam = currentOptions.startingItems.teleportStaff
+      ? `&teleportStaff=${currentOptions.startingItems.teleportStaffLevel}`
+      : '';
     window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}`, '_blank');
   };
 
@@ -98,7 +100,7 @@ export default function Home() {
           </div>
 
           <h1 className="font-cinzel font-black tracking-[0.18em] text-4xl md:text-5xl text-[#c8942a] glow-gold uppercase text-center mb-2">
-            D2R Skill Tree Randomizer
+            D2R Randomizer
           </h1>
           <p className="font-cinzel tracking-[0.45em] text-[11px] text-[#a87830] uppercase text-center">
             Reign of the Warlock

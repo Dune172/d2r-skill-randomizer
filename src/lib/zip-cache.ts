@@ -13,7 +13,7 @@ export function getZipCache(): Map<string, Buffer> {
 export function makeCacheKey(
   seed: number,
   playersCount: number,
-  teleportStaff: boolean,
+  teleportStaffLevel: number,
 ): string {
-  return `${seed}:${playersCount}:${teleportStaff ? 1 : 0}`;
+  return `${seed}:${playersCount}:${teleportStaffLevel}`;
 }

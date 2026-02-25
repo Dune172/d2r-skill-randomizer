@@ -32,6 +32,9 @@ export async function POST(request: NextRequest) {
     const playersEnabled = body.playersEnabled === true;
     const playersCount = Math.min(8, Math.max(1, Number(body.playersCount) || 1));
     const startingTeleportStaff = body.startingItems?.teleportStaff === true;
+    const teleportStaffLevel = startingTeleportStaff
+      ? (Number(body.startingItems?.teleportStaffLevel) || 1)
+      : 0;
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -42,7 +45,7 @@ export async function POST(request: NextRequest) {
       ? Math.trunc(numericSeed)
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
-    const cacheKey = makeCacheKey(seed, effectivePlayers, startingTeleportStaff);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel);
     const zipCache = getZipCache();
 
     // Check cache
@@ -174,7 +177,7 @@ export async function POST(request: NextRequest) {
         const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
         if (fs.existsSync(uiPath)) {
           const ui = loadTxtFile('uniqueitems.txt');
-          const uiRows = applyTeleportStaffUnique(ui.headers, ui.rows);
+          const uiRows = applyTeleportStaffUnique(ui.headers, ui.rows, teleportStaffLevel);
           uniqueitemsTxt = serializeTxtFile(ui.headers, uiRows);
         }
       }
