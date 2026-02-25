@@ -89,7 +89,7 @@ export default function Home() {
     const actsParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
       ? `&acts=${[...currentOptions.playersActs].sort((a, b) => a - b).join(',')}`
       : '';
-    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}`, '_blank');
+    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}`, '_blank');
   };
 
   return (

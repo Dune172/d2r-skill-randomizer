@@ -26,7 +26,8 @@ export async function GET(request: NextRequest) {
     const playersActs = actsParam
       ? actsParam.split(',').map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs);
+    const logicParam = searchParams.get('logic') === 'normal' ? 'normal' : 'minimal';
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 
