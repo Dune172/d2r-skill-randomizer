@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 interface RandomizerFormProps {
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal'; playersEnabled: boolean; playersCount: number }) => void;
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal'; playersEnabled: boolean; playersCount: number; startingItems: { teleportStaff: boolean } }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -14,12 +14,13 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
   const [logic, setLogic] = useState<'minimal' | 'normal'>('normal');
   const [playersEnabled, setPlayersEnabled] = useState(false);
   const [playersCount, setPlayersCount] = useState(1);
+  const [teleportStaff, setTeleportStaff] = useState(false);
 
   const randomSeed = () => onSeedChange(Math.floor(Math.random() * 2147483647).toString());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (seed.trim()) onGenerate(seed.trim(), { enablePrereqs, logic, playersEnabled, playersCount });
+    if (seed.trim()) onGenerate(seed.trim(), { enablePrereqs, logic, playersEnabled, playersCount, startingItems: { teleportStaff } });
   };
 
   return (
@@ -153,6 +154,35 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
             />
           </div>
         )}
+      </div>
+
+      {/* Starting items */}
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-3 pt-1">
+        <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor="teleportStaff">
+          <div className="relative flex-shrink-0">
+            <input
+              id="teleportStaff"
+              type="checkbox"
+              checked={teleportStaff}
+              onChange={e => setTeleportStaff(e.target.checked)}
+              className="sr-only"
+            />
+            <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
+              ${teleportStaff
+                ? 'bg-[#7a1010] border-[#c42020]'
+                : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}
+            >
+              {teleportStaff && (
+                <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+          </div>
+          <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
+            Start with Teleport Staff
+          </span>
+        </label>
       </div>
 
       {/* Submit */}

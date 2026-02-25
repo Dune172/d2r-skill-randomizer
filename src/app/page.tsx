@@ -13,6 +13,7 @@ interface Options {
   logic: 'minimal' | 'normal';
   playersEnabled: boolean;
   playersCount: number;
+  startingItems: { teleportStaff: boolean };
 }
 
 export default function Home() {
@@ -20,7 +21,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
-  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1 });
+  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, startingItems: { teleportStaff: false } });
   // Seed state owned here so we can update the textbox after generation
   const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
@@ -61,7 +62,7 @@ export default function Home() {
       const buildRes = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic, playersEnabled: options.playersEnabled, playersCount: options.playersCount }),
+        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic, playersEnabled: options.playersEnabled, playersCount: options.playersCount, startingItems: options.startingItems }),
       });
 
       if (!buildRes.ok) {
@@ -81,7 +82,8 @@ export default function Home() {
     const playersParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
       ? `&players=${currentOptions.playersCount}`
       : '';
-    window.open(`/api/download?seed=${currentSeed}${playersParam}`, '_blank');
+    const staffParam = currentOptions.startingItems.teleportStaff ? '&teleportStaff=1' : '';
+    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}`, '_blank');
   };
 
   return (

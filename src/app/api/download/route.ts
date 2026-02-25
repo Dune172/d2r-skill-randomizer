@@ -16,9 +16,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Seed parameter required' }, { status: 400 });
     }
 
+    const teleportParam = searchParams.get('teleportStaff');
     const seed = isNaN(Number(seedParam)) ? seedFromString(seedParam) : Number(seedParam);
     const playersCount = Math.min(8, Math.max(1, Number(playersParam) || 1));
-    const cacheKey = makeCacheKey(seed, playersCount);
+    const teleportStaff = teleportParam === '1';
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaff);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 

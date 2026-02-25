@@ -15,6 +15,7 @@ import { buildAllIconSprites } from '@/lib/sprites/icon-assembler';
 import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
+import { applyTeleportStaff, applyTeleportStaffUnique } from '@/lib/randomizer/starting-items';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
     const logic: 'minimal' | 'normal' = body.logic === 'normal' ? 'normal' : 'minimal';
     const playersEnabled = body.playersEnabled === true;
     const playersCount = Math.min(8, Math.max(1, Number(body.playersCount) || 1));
+    const startingTeleportStaff = body.startingItems?.teleportStaff === true;
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -40,7 +42,7 @@ export async function POST(request: NextRequest) {
       ? Math.trunc(numericSeed)
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
-    const cacheKey = makeCacheKey(seed, effectivePlayers);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, startingTeleportStaff);
     const zipCache = getZipCache();
 
     // Check cache
@@ -126,7 +128,7 @@ export async function POST(request: NextRequest) {
       SkillCategoryBa1: 'Random 1', SkillCategoryBa2: 'Random 2', SkillCategoryBa3: 'Random 3',
       SkillCategoryDr1: 'Random 1', SkillCategoryDr2: 'Random 2', SkillCategoryDr3: 'Random 3',
       SkillCategoryAs1: 'Random 1', SkillCategoryAs2: 'Random 2', SkillCategoryAs3: 'Random 3',
-      SkillCategoryWa1: 'Random 1', SkillCategoryWa2: 'Random 2', SkillCategoryWa3: 'Random 3',
+      SkillCategoryWa1: 'Random 3', SkillCategoryWa2: 'Random 2', SkillCategoryWa3: 'Random 1',
     };
     for (const [key, text] of Object.entries(SKILL_CATEGORY_OVERRIDES)) {
       const entry = skillStrings.find(e => e.Key === key);
@@ -144,8 +146,9 @@ export async function POST(request: NextRequest) {
       itemModifiersJson = fs.readFileSync(itemModifiersPath, 'utf-8');
     }
 
-    // Update charstats.txt: set StartSkill and skill tree tab labels for each class
+    // Update charstats.txt: set StartSkill and starting items for each class
     let charstatsTxt: string | undefined;
+    let uniqueitemsTxt: string | undefined;
     const charstatsPath = path.join(DATA_DIR, 'txt', 'charstats.txt');
     if (fs.existsSync(charstatsPath)) {
       const charstats = loadTxtFile('charstats.txt');
@@ -163,6 +166,19 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+
+      // Starting items: add Teleport Staff to inventory for all classes
+      if (startingTeleportStaff) {
+        applyTeleportStaff(charstats.headers, charstats.rows);
+
+        const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
+        if (fs.existsSync(uiPath)) {
+          const ui = loadTxtFile('uniqueitems.txt');
+          const uiRows = applyTeleportStaffUnique(ui.headers, ui.rows);
+          uniqueitemsTxt = serializeTxtFile(ui.headers, uiRows);
+        }
+      }
+
       charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
     }
 
@@ -200,6 +216,7 @@ export async function POST(request: NextRequest) {
       charstatsTxt,
       itemModifiersJson,
       monstatsTxt,
+      uniqueitemsTxt,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)
