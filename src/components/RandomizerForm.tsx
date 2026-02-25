@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 interface RandomizerFormProps {
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal'; playersEnabled: boolean; playersCount: number; startingItems: { teleportStaff: boolean; teleportStaffLevel: number } }) => void;
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal'; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number } }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -13,14 +13,18 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
   const [enablePrereqs, setEnablePrereqs] = useState(true);
   const [logic, setLogic] = useState<'minimal' | 'normal'>('normal');
   const [playersCount, setPlayersCount] = useState(1);
+  const [playersActs, setPlayersActs] = useState<number[]>([1, 2, 3, 4, 5]);
   const [teleportStaff, setTeleportStaff] = useState(false);
   const [teleportStaffLevel, setTeleportStaffLevel] = useState(1);
+
+  const toggleAct = (act: number) =>
+    setPlayersActs(prev => prev.includes(act) ? prev.filter(a => a !== act) : [...prev, act]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const effectiveSeed = seed.trim() || Math.floor(Math.random() * 2147483647).toString();
     if (!seed.trim()) onSeedChange(effectiveSeed);
-    onGenerate(effectiveSeed, { enablePrereqs, logic, playersEnabled: playersCount > 1, playersCount, startingItems: { teleportStaff, teleportStaffLevel } });
+    onGenerate(effectiveSeed, { enablePrereqs, logic, playersEnabled: playersCount > 1, playersCount, playersActs, startingItems: { teleportStaff, teleportStaffLevel } });
   };
 
   return (
@@ -97,22 +101,53 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
       </div>
 
       {/* Players row */}
-      <div className="flex items-center gap-3 pt-1">
-        <label htmlFor="playersCount" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
-          Players
-        </label>
-        <input
-          id="playersCount"
-          type="number"
-          min={1}
-          max={8}
-          value={playersCount}
-          onChange={e => setPlayersCount(Math.min(8, Math.max(1, Number(e.target.value) || 1)))}
-          className="w-16 rounded border border-[#3a1510] bg-[#090203] px-3 py-2
-            text-sm text-[#e8d5a0] text-center
-            focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-            transition-colors"
-        />
+      <div className="pt-1">
+        <div className="flex items-center gap-3">
+          <label htmlFor="playersCount" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
+            Players
+          </label>
+          <input
+            id="playersCount"
+            type="number"
+            min={1}
+            max={8}
+            value={playersCount}
+            onChange={e => setPlayersCount(Math.min(8, Math.max(1, Number(e.target.value) || 1)))}
+            className="w-16 rounded border border-[#3a1510] bg-[#090203] px-3 py-2
+              text-sm text-[#e8d5a0] text-center
+              focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+              transition-colors"
+          />
+        </div>
+        {playersCount > 1 && (
+          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
+            {([1, 2, 3, 4, 5] as const).map(act => {
+              const labels = ['Act I', 'Act II', 'Act III', 'Act IV', 'Act V'];
+              const checked = playersActs.includes(act);
+              return (
+                <label key={act} className="flex items-center gap-2 cursor-pointer group select-none">
+                  <div className="relative flex-shrink-0">
+                    <input type="checkbox" checked={checked}
+                      onChange={() => toggleAct(act)} className="sr-only" />
+                    <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
+                      ${checked ? 'bg-[#7a1010] border-[#c42020]'
+                                : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}>
+                      {checked && (
+                        <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
+                          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2"
+                            strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
+                    {labels[act - 1]}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Starting Items section */}

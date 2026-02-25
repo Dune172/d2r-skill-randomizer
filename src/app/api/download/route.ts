@@ -19,10 +19,14 @@ export async function GET(request: NextRequest) {
     }
 
     const teleportParam = searchParams.get('teleportStaff');
+    const actsParam = searchParams.get('acts');
     const seed = isNaN(Number(seedParam)) ? seedFromString(seedParam) : Number(seedParam);
     const playersCount = Math.min(8, Math.max(1, Number(playersParam) || 1));
     const teleportStaffLevel = Number(teleportParam) || 0;
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel);
+    const playersActs = actsParam
+      ? actsParam.split(',').map(Number).filter(n => n >= 1 && n <= 5)
+      : [1, 2, 3, 4, 5];
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 

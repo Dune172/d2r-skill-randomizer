@@ -14,6 +14,8 @@ export function makeCacheKey(
   seed: number,
   playersCount: number,
   teleportStaffLevel: number,
+  playersActs: number[] = [1, 2, 3, 4, 5],
 ): string {
-  return `${seed}:${playersCount}:${teleportStaffLevel}`;
+  const actsKey = [...playersActs].sort((a, b) => a - b).join('');
+  return `${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}`;
 }

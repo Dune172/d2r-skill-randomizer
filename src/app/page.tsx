@@ -13,6 +13,7 @@ interface Options {
   logic: 'minimal' | 'normal';
   playersEnabled: boolean;
   playersCount: number;
+  playersActs: number[];
   startingItems: { teleportStaff: boolean; teleportStaffLevel: number };
 }
 
@@ -21,7 +22,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
-  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, startingItems: { teleportStaff: false, teleportStaffLevel: 1 } });
+  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1 } });
   // Seed state owned here so we can update the textbox after generation
   const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
@@ -62,7 +63,7 @@ export default function Home() {
       const buildRes = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic, playersEnabled: options.playersEnabled, playersCount: options.playersCount, startingItems: options.startingItems }),
+        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems }),
       });
 
       if (!buildRes.ok) {
@@ -85,7 +86,10 @@ export default function Home() {
     const staffParam = currentOptions.startingItems.teleportStaff
       ? `&teleportStaff=${currentOptions.startingItems.teleportStaffLevel}`
       : '';
-    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}`, '_blank');
+    const actsParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
+      ? `&acts=${[...currentOptions.playersActs].sort((a, b) => a - b).join(',')}`
+      : '';
+    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}`, '_blank');
   };
 
   return (

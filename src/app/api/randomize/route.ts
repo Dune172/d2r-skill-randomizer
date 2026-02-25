@@ -33,6 +33,9 @@ export async function POST(request: NextRequest) {
     const logic: 'minimal' | 'normal' = body.logic === 'normal' ? 'normal' : 'minimal';
     const playersEnabled = body.playersEnabled === true;
     const playersCount = Math.min(8, Math.max(1, Number(body.playersCount) || 1));
+    const playersActs: number[] = Array.isArray(body.playersActs)
+      ? (body.playersActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
+      : [1, 2, 3, 4, 5];
     const startingTeleportStaff = body.startingItems?.teleportStaff === true;
     const teleportStaffLevel = startingTeleportStaff
       ? (Number(body.startingItems?.teleportStaffLevel) || 1)
@@ -47,7 +50,8 @@ export async function POST(request: NextRequest) {
       ? Math.trunc(numericSeed)
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel);
+    const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs);
     const zipCache = getZipCache();
 
     // Check cache
@@ -222,7 +226,7 @@ export async function POST(request: NextRequest) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
         const monstats = loadTxtFile('monstats.txt');
-        const scaledRows = scaleMonstats(monstats.headers, monstats.rows, playersCount);
+        const scaledRows = scaleMonstats(monstats.headers, monstats.rows, playersCount, playersActs);
         monstatsTxt = serializeTxtFile(monstats.headers, scaledRows);
       }
     }
