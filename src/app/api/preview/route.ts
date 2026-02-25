@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRNG, seedFromString } from '@/lib/randomizer/seed';
+
+export const maxDuration = 30;
 import { loadTreeGrid, loadSkills, loadSkillDescs } from '@/lib/data-loader';
 import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';

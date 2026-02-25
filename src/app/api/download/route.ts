@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { seedFromString } from '@/lib/randomizer/seed';
 
+export const maxDuration = 60;
+
 // We need a shared cache between randomize and download routes.
 // Since they're in the same process, we use a module-level cache.
 // Import from a shared location rather than the randomize route to avoid circular deps.

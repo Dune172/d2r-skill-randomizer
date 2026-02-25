@@ -1,13 +1,1 @@
-{
-  "functions": {
-    "src/app/api/randomize/route.ts": {
-      "maxDuration": 60
-    },
-    "src/app/api/download/route.ts": {
-      "maxDuration": 60
-    },
-    "src/app/api/preview/route.ts": {
-      "maxDuration": 30
-    }
-  }
-}
+{}
