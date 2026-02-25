@@ -114,7 +114,7 @@ export default function Home() {
               href="https://ko-fi.com/dune172"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-cinzel text-[10px] tracking-[0.2em] text-[#7a5818] hover:text-[#c8942a] transition-colors uppercase"
+              className="font-cinzel text-[11px] tracking-[0.45em] text-[#a87830] hover:text-[#c8942a] transition-colors uppercase"
             >
               ☕ Support on Ko-fi
             </a>
