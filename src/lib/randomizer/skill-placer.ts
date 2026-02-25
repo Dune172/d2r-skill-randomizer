@@ -2,11 +2,16 @@ import { ClassCode, SkillEntry, SkillPlacement, TreePage } from './types';
 import { SeededRNG } from './seed';
 import { CLASS_DEFS, CLASS_RESTRICTED_TYPES } from './config';
 
+// Amazon spear/javelin skills use the SQ animation which only exists on Amazon.
+// Moving them to another class breaks the animation entirely.
+const ANIMATION_LOCKED_TYPES = new Set(['spea', 'jave']);
+
 /**
  * Returns true if this skill must stay on its original class:
  * - weapsel=3: requires dual weapons (only Barbarian and Assassin can dual-wield)
  * - itypeb1=h2h/h2h2: requires claw in off-hand (only Assassin can equip claws)
  * - restrict=2: requires shapeshifted form (only Druid can shapeshift)
+ * - itypea=spea/jave: Amazon spear/javelin skills use SQ animation, broken on other classes
  */
 function isPinnedToOriginalClass(skill: SkillEntry): boolean {
   return (
@@ -17,7 +22,10 @@ function isPinnedToOriginalClass(skill: SkillEntry): boolean {
     CLASS_RESTRICTED_TYPES.has(skill.passiveitype ?? '') ||
     CLASS_RESTRICTED_TYPES.has(skill.itypea1 ?? '') ||
     CLASS_RESTRICTED_TYPES.has(skill.itypea2 ?? '') ||
-    CLASS_RESTRICTED_TYPES.has(skill.itypea3 ?? '')
+    CLASS_RESTRICTED_TYPES.has(skill.itypea3 ?? '') ||
+    ANIMATION_LOCKED_TYPES.has(skill.itypea1 ?? '') ||
+    ANIMATION_LOCKED_TYPES.has(skill.itypea2 ?? '') ||
+    ANIMATION_LOCKED_TYPES.has(skill.itypea3 ?? '')
   );
 }
 
