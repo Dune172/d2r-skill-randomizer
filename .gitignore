@@ -36,10 +36,6 @@ yarn-error.log*
 # vercel
 .vercel
 
-# skill tree sprites are too large for git (127 MB)
-# everything else in data/ is tracked (json, txt, local strings, icons)
-/data/sprites/skill_trees/
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
