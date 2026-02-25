@@ -12,6 +12,7 @@ export interface ZipContents {
   itemModifiersJson?: string;       // skill tab label strings (StrSklTabItem1–24)
   monstatsTxt?: string;             // monstats with HP/Exp scaled for players simulation
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
+  itemNamesJson?: string;           // item-names strings (display name for unique staff)
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -82,6 +83,11 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     // Unique items with Teleport Staff added
     if (contents.uniqueitemsTxt) {
       archive.append(contents.uniqueitemsTxt, { name: 'mod/data/global/excel/uniqueitems.txt' });
+    }
+
+    // Item name strings (display name for unique staff)
+    if (contents.itemNamesJson) {
+      archive.append(contents.itemNamesJson, { name: 'mod/data/local/lng/strings/item-names.json' });
     }
 
     // Add tree sprites (hd path)

@@ -149,6 +149,13 @@ export async function POST(request: NextRequest) {
       itemModifiersJson = fs.readFileSync(itemModifiersPath, 'utf-8');
     }
 
+    // Item name string entry for the unique staff (D2R looks up index value as a string key)
+    let itemNamesJson: string | undefined;
+    if (startingTeleportStaff) {
+      const nameEntries = [{ id: 99999, Key: 'Astral Wayfarer', enUS: 'Astral Wayfarer', zhTW: 'Astral Wayfarer', deDE: 'Astral Wayfarer', esES: 'Astral Wayfarer', frFR: 'Astral Wayfarer', itIT: 'Astral Wayfarer', koKR: 'Astral Wayfarer', plPL: 'Astral Wayfarer', esMX: 'Astral Wayfarer', jaJP: 'Astral Wayfarer', ptBR: 'Astral Wayfarer', ruRU: 'Astral Wayfarer', zhCN: 'Astral Wayfarer' }];
+      itemNamesJson = '\uFEFF' + JSON.stringify(nameEntries, null, 2).replace(/\n/g, '\r\n');
+    }
+
     // Update charstats.txt: set StartSkill and starting items for each class
     let charstatsTxt: string | undefined;
     let uniqueitemsTxt: string | undefined;
@@ -220,6 +227,7 @@ export async function POST(request: NextRequest) {
       itemModifiersJson,
       monstatsTxt,
       uniqueitemsTxt,
+      itemNamesJson,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)

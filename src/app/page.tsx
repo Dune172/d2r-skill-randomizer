@@ -105,6 +105,16 @@ export default function Home() {
           <p className="font-cinzel tracking-[0.45em] text-[11px] text-[#a87830] uppercase text-center">
             Reign of the Warlock
           </p>
+          <p className="text-center mt-2">
+            <a
+              href="https://ko-fi.com/YOUR_HANDLE"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-cinzel text-[10px] tracking-[0.2em] text-[#7a5818] hover:text-[#c8942a] transition-colors uppercase"
+            >
+              ☕ Support on Ko-fi
+            </a>
+          </p>
 
           <div className="flex items-center gap-3 mt-4">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#7a5818] to-[#c8942a]" />
@@ -123,16 +133,12 @@ export default function Home() {
             seed={seed}
             onSeedChange={setSeed}
           />
-        </div>
-
-        <ProgressIndicator status={status} message={errorMessage} />
-
-        {preview && (
-          <>
-            {status === 'ready' && (
+          {status === 'ready' && (
+            <div className="pt-3">
               <button
                 onClick={handleDownload}
-                className="px-8 py-2.5 rounded font-cinzel font-bold tracking-widest text-sm uppercase text-[#c8d8f8]
+                className="w-full rounded py-3
+                  font-cinzel font-bold tracking-[0.22em] text-sm uppercase text-[#c8d8f8]
                   bg-gradient-to-b from-[#121838] to-[#0a1028]
                   border border-[#283878]
                   hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
@@ -141,10 +147,14 @@ export default function Home() {
               >
                 Download Zip
               </button>
-            )}
+            </div>
+          )}
+        </div>
 
-            <SkillTreePreview data={preview} />
-          </>
+        <ProgressIndicator status={status} message={errorMessage} />
+
+        {preview && (
+          <SkillTreePreview data={preview} />
         )}
       </div>
     </main>

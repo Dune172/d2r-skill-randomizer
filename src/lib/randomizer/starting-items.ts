@@ -68,7 +68,7 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
     if (i !== -1) newRow[i] = val;
   };
 
-  set('index',    'Teleport Staff');
+  set('index',    'Astral Wayfarer');
   set('version',  '0');
   set('disabled', '0');
   set('spawnable','1');
