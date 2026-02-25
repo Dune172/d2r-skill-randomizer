@@ -154,7 +154,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
       <div className="space-y-3 pt-1">
         <div className="flex items-center gap-3">
           <div className="h-px flex-1 bg-[#3a1510]/50" />
-          <span className="font-cinzel text-[10px] tracking-[0.28em] uppercase text-[#8a6030]">
+          <span className="font-cinzel text-[10px] tracking-[0.28em] uppercase text-[#c8a870]">
             Starting Items
           </span>
           <div className="h-px flex-1 bg-[#3a1510]/50" />
