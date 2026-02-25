@@ -88,11 +88,17 @@ export function stitchTreeSprite(
 /**
  * Build all tree sprites for all classes.
  * Returns a map of filename → Buffer for each output sprite.
+ * Returns an empty map if the skill_trees sprite directory is not available.
  */
 export function buildAllTreeSprites(
   treeAssignments: Map<ClassCode, TreePage[]>,
 ): Map<string, Buffer> {
   const results = new Map<string, Buffer>();
+
+  if (!fs.existsSync(SPRITES_DIR) || fs.readdirSync(SPRITES_DIR).length === 0) {
+    console.warn('Skill tree sprites not available — skipping tree sprite generation');
+    return results;
+  }
 
   for (const [classCode, trees] of treeAssignments.entries()) {
     const classDef = CLASS_BY_CODE.get(classCode);

@@ -36,15 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
-# binary data assets (sprites, icons, game files - too large for git)
-/data/
-# but track the string table (text config, not binary)
-!/data/local/
-!/data/local/strings/
-!/data/local/strings/skills.json
-!/data/local/strings/item-modifiers.json
-!/data/txt/
-!/data/txt/charstats.txt
+# skill tree sprites are too large for git (127 MB)
+# everything else in data/ is tracked (json, txt, local strings, icons)
+/data/sprites/skill_trees/
 
 # typescript
 *.tsbuildinfo

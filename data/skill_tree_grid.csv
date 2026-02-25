@@ -1,0 +1,433 @@
+Class,Class_Code,Tree,Row,Col,Status,Skill
+Amazon,ama,1,1,1,EMPTY,
+Amazon,ama,1,1,2,FILLED,Magic Arrow
+Amazon,ama,1,1,3,FILLED,Fire Arrow
+Amazon,ama,1,2,1,FILLED,Cold Arrow
+Amazon,ama,1,2,2,FILLED,Multiple Shot
+Amazon,ama,1,2,3,EMPTY,
+Amazon,ama,1,3,1,EMPTY,
+Amazon,ama,1,3,2,EMPTY,
+Amazon,ama,1,3,3,FILLED,Exploding Arrow
+Amazon,ama,1,4,1,FILLED,Ice Arrow
+Amazon,ama,1,4,2,FILLED,Guided Arrow
+Amazon,ama,1,4,3,EMPTY,
+Amazon,ama,1,5,1,EMPTY,
+Amazon,ama,1,5,2,FILLED,Strafe
+Amazon,ama,1,5,3,FILLED,Immolation Arrow
+Amazon,ama,1,6,1,FILLED,Freezing Arrow
+Amazon,ama,1,6,2,EMPTY,
+Amazon,ama,1,6,3,EMPTY,
+Amazon,ama,2,1,1,FILLED,Inner Sight
+Amazon,ama,2,1,2,EMPTY,
+Amazon,ama,2,1,3,FILLED,Critical Strike
+Amazon,ama,2,2,1,EMPTY,
+Amazon,ama,2,2,2,FILLED,Dodge
+Amazon,ama,2,2,3,EMPTY,
+Amazon,ama,2,3,1,FILLED,Slow Missiles
+Amazon,ama,2,3,2,FILLED,Avoid
+Amazon,ama,2,3,3,EMPTY,
+Amazon,ama,2,4,1,EMPTY,
+Amazon,ama,2,4,2,EMPTY,
+Amazon,ama,2,4,3,FILLED,Penetrate
+Amazon,ama,2,5,1,FILLED,Dopplezon
+Amazon,ama,2,5,2,FILLED,Evade
+Amazon,ama,2,5,3,EMPTY,
+Amazon,ama,2,6,1,FILLED,Valkyrie
+Amazon,ama,2,6,2,EMPTY,
+Amazon,ama,2,6,3,FILLED,Pierce
+Amazon,ama,3,1,1,FILLED,Jab
+Amazon,ama,3,1,2,EMPTY,
+Amazon,ama,3,1,3,EMPTY,
+Amazon,ama,3,2,1,EMPTY,
+Amazon,ama,3,2,2,FILLED,Power Strike
+Amazon,ama,3,2,3,FILLED,Poison Javelin
+Amazon,ama,3,3,1,FILLED,Impale
+Amazon,ama,3,3,2,EMPTY,
+Amazon,ama,3,3,3,FILLED,Lightning Bolt
+Amazon,ama,3,4,1,EMPTY,
+Amazon,ama,3,4,2,FILLED,Charged Strike
+Amazon,ama,3,4,3,FILLED,Plague Javelin
+Amazon,ama,3,5,1,FILLED,Fend
+Amazon,ama,3,5,2,EMPTY,
+Amazon,ama,3,5,3,EMPTY,
+Amazon,ama,3,6,1,EMPTY,
+Amazon,ama,3,6,2,FILLED,Lightning Strike
+Amazon,ama,3,6,3,FILLED,Lightning Fury
+Sorceress,sor,1,1,1,EMPTY,
+Sorceress,sor,1,1,2,FILLED,Fire Bolt
+Sorceress,sor,1,1,3,FILLED,Warmth
+Sorceress,sor,1,2,1,FILLED,Inferno
+Sorceress,sor,1,2,2,EMPTY,
+Sorceress,sor,1,2,3,EMPTY,
+Sorceress,sor,1,3,1,FILLED,Blaze
+Sorceress,sor,1,3,2,FILLED,Fire Ball
+Sorceress,sor,1,3,3,EMPTY,
+Sorceress,sor,1,4,1,FILLED,Fire Wall
+Sorceress,sor,1,4,2,EMPTY,
+Sorceress,sor,1,4,3,FILLED,Enchant
+Sorceress,sor,1,5,1,EMPTY,
+Sorceress,sor,1,5,2,FILLED,Meteor
+Sorceress,sor,1,5,3,EMPTY,
+Sorceress,sor,1,6,1,EMPTY,
+Sorceress,sor,1,6,2,FILLED,Fire Mastery
+Sorceress,sor,1,6,3,FILLED,Hydra
+Sorceress,sor,2,1,1,EMPTY,
+Sorceress,sor,2,1,2,FILLED,Charged Bolt
+Sorceress,sor,2,1,3,EMPTY,
+Sorceress,sor,2,2,1,FILLED,Static Field
+Sorceress,sor,2,2,2,EMPTY,
+Sorceress,sor,2,2,3,FILLED,Telekinesis
+Sorceress,sor,2,3,1,FILLED,Nova
+Sorceress,sor,2,3,2,FILLED,Lightning
+Sorceress,sor,2,3,3,EMPTY,
+Sorceress,sor,2,4,1,EMPTY,
+Sorceress,sor,2,4,2,FILLED,Chain Lightning
+Sorceress,sor,2,4,3,FILLED,Teleport
+Sorceress,sor,2,5,1,FILLED,Thunder Storm
+Sorceress,sor,2,5,2,EMPTY,
+Sorceress,sor,2,5,3,FILLED,Energy Shield
+Sorceress,sor,2,6,1,EMPTY,
+Sorceress,sor,2,6,2,FILLED,Lightning Mastery
+Sorceress,sor,2,6,3,EMPTY,
+Sorceress,sor,3,1,1,EMPTY,
+Sorceress,sor,3,1,2,FILLED,Ice Bolt
+Sorceress,sor,3,1,3,FILLED,Frozen Armor
+Sorceress,sor,3,2,1,FILLED,Frost Nova
+Sorceress,sor,3,2,2,FILLED,Ice Blast
+Sorceress,sor,3,2,3,EMPTY,
+Sorceress,sor,3,3,1,EMPTY,
+Sorceress,sor,3,3,2,EMPTY,
+Sorceress,sor,3,3,3,FILLED,Shiver Armor
+Sorceress,sor,3,4,1,EMPTY,
+Sorceress,sor,3,4,2,FILLED,Glacial Spike
+Sorceress,sor,3,4,3,EMPTY,
+Sorceress,sor,3,5,1,FILLED,Blizzard
+Sorceress,sor,3,5,2,EMPTY,
+Sorceress,sor,3,5,3,FILLED,Chilling Armor
+Sorceress,sor,3,6,1,FILLED,Frozen Orb
+Sorceress,sor,3,6,2,FILLED,Cold Mastery
+Sorceress,sor,3,6,3,EMPTY,
+Necromancer,nec,1,1,1,EMPTY,
+Necromancer,nec,1,1,2,FILLED,Amplify Damage
+Necromancer,nec,1,1,3,EMPTY,
+Necromancer,nec,1,2,1,FILLED,Dim Vision
+Necromancer,nec,1,2,2,EMPTY,
+Necromancer,nec,1,2,3,FILLED,Weaken
+Necromancer,nec,1,3,1,EMPTY,
+Necromancer,nec,1,3,2,FILLED,Iron Maiden
+Necromancer,nec,1,3,3,FILLED,Terror
+Necromancer,nec,1,4,1,FILLED,Confuse
+Necromancer,nec,1,4,2,FILLED,Life Tap
+Necromancer,nec,1,4,3,EMPTY,
+Necromancer,nec,1,5,1,FILLED,Attract
+Necromancer,nec,1,5,2,EMPTY,
+Necromancer,nec,1,5,3,FILLED,Decrepify
+Necromancer,nec,1,6,1,EMPTY,
+Necromancer,nec,1,6,2,FILLED,Lower Resist
+Necromancer,nec,1,6,3,EMPTY,
+Necromancer,nec,2,1,1,EMPTY,
+Necromancer,nec,2,1,2,FILLED,Teeth
+Necromancer,nec,2,1,3,FILLED,Bone Armor
+Necromancer,nec,2,2,1,FILLED,Poison Dagger
+Necromancer,nec,2,2,2,FILLED,Corpse Explosion
+Necromancer,nec,2,2,3,EMPTY,
+Necromancer,nec,2,3,1,EMPTY,
+Necromancer,nec,2,3,2,EMPTY,
+Necromancer,nec,2,3,3,FILLED,Bone Wall
+Necromancer,nec,2,4,1,FILLED,Poison Explosion
+Necromancer,nec,2,4,2,FILLED,Bone Spear
+Necromancer,nec,2,4,3,EMPTY,
+Necromancer,nec,2,5,1,EMPTY,
+Necromancer,nec,2,5,2,EMPTY,
+Necromancer,nec,2,5,3,FILLED,Bone Prison
+Necromancer,nec,2,6,1,FILLED,Poison Nova
+Necromancer,nec,2,6,2,FILLED,Bone Spirit
+Necromancer,nec,2,6,3,EMPTY,
+Necromancer,nec,3,1,1,FILLED,Skeleton Mastery
+Necromancer,nec,3,1,2,EMPTY,
+Necromancer,nec,3,1,3,FILLED,Raise Skeleton
+Necromancer,nec,3,2,1,EMPTY,
+Necromancer,nec,3,2,2,FILLED,Clay Golem
+Necromancer,nec,3,2,3,EMPTY,
+Necromancer,nec,3,3,1,FILLED,Golem Mastery
+Necromancer,nec,3,3,2,EMPTY,
+Necromancer,nec,3,3,3,FILLED,Raise Skeletal Mage
+Necromancer,nec,3,4,1,EMPTY,
+Necromancer,nec,3,4,2,FILLED,BloodGolem
+Necromancer,nec,3,4,3,EMPTY,
+Necromancer,nec,3,5,1,FILLED,Summon Resist
+Necromancer,nec,3,5,2,FILLED,IronGolem
+Necromancer,nec,3,5,3,EMPTY,
+Necromancer,nec,3,6,1,EMPTY,
+Necromancer,nec,3,6,2,FILLED,FireGolem
+Necromancer,nec,3,6,3,FILLED,Revive
+Paladin,pal,1,1,1,FILLED,Sacrifice
+Paladin,pal,1,1,2,EMPTY,
+Paladin,pal,1,1,3,FILLED,Smite
+Paladin,pal,1,2,1,EMPTY,
+Paladin,pal,1,2,2,FILLED,Holy Bolt
+Paladin,pal,1,2,3,EMPTY,
+Paladin,pal,1,3,1,FILLED,Zeal
+Paladin,pal,1,3,2,EMPTY,
+Paladin,pal,1,3,3,FILLED,Charge
+Paladin,pal,1,4,1,FILLED,Vengeance
+Paladin,pal,1,4,2,FILLED,Blessed Hammer
+Paladin,pal,1,4,3,EMPTY,
+Paladin,pal,1,5,1,FILLED,Conversion
+Paladin,pal,1,5,2,EMPTY,
+Paladin,pal,1,5,3,FILLED,Holy Shield
+Paladin,pal,1,6,1,EMPTY,
+Paladin,pal,1,6,2,FILLED,Fist of the Heavens
+Paladin,pal,1,6,3,EMPTY,
+Paladin,pal,2,1,1,FILLED,Might
+Paladin,pal,2,1,2,EMPTY,
+Paladin,pal,2,1,3,EMPTY,
+Paladin,pal,2,2,1,EMPTY,
+Paladin,pal,2,2,2,FILLED,Holy Fire
+Paladin,pal,2,2,3,FILLED,Thorns
+Paladin,pal,2,3,1,FILLED,Blessed Aim
+Paladin,pal,2,3,2,EMPTY,
+Paladin,pal,2,3,3,EMPTY,
+Paladin,pal,2,4,1,FILLED,Concentration
+Paladin,pal,2,4,2,FILLED,Holy Freeze
+Paladin,pal,2,4,3,EMPTY,
+Paladin,pal,2,5,1,EMPTY,
+Paladin,pal,2,5,2,FILLED,Holy Shock
+Paladin,pal,2,5,3,FILLED,Sanctuary
+Paladin,pal,2,6,1,FILLED,Fanaticism
+Paladin,pal,2,6,2,EMPTY,
+Paladin,pal,2,6,3,FILLED,Conviction
+Paladin,pal,3,1,1,FILLED,Prayer
+Paladin,pal,3,1,2,EMPTY,
+Paladin,pal,3,1,3,FILLED,Resist Fire
+Paladin,pal,3,2,1,EMPTY,
+Paladin,pal,3,2,2,FILLED,Defiance
+Paladin,pal,3,2,3,FILLED,Resist Cold
+Paladin,pal,3,3,1,FILLED,Cleansing
+Paladin,pal,3,3,2,EMPTY,
+Paladin,pal,3,3,3,FILLED,Resist Lightning
+Paladin,pal,3,4,1,EMPTY,
+Paladin,pal,3,4,2,FILLED,Vigor
+Paladin,pal,3,4,3,EMPTY,
+Paladin,pal,3,5,1,FILLED,Meditation
+Paladin,pal,3,5,2,EMPTY,
+Paladin,pal,3,5,3,EMPTY,
+Paladin,pal,3,6,1,EMPTY,
+Paladin,pal,3,6,2,FILLED,Redemption
+Paladin,pal,3,6,3,FILLED,Salvation
+Barbarian,bar,1,1,1,EMPTY,
+Barbarian,bar,1,1,2,FILLED,Bash
+Barbarian,bar,1,1,3,EMPTY,
+Barbarian,bar,1,2,1,FILLED,Leap
+Barbarian,bar,1,2,2,EMPTY,
+Barbarian,bar,1,2,3,FILLED,Double Swing
+Barbarian,bar,1,3,1,EMPTY,
+Barbarian,bar,1,3,2,FILLED,Stun
+Barbarian,bar,1,3,3,FILLED,Double Throw
+Barbarian,bar,1,4,1,FILLED,Leap Attack
+Barbarian,bar,1,4,2,FILLED,Concentrate
+Barbarian,bar,1,4,3,EMPTY,
+Barbarian,bar,1,5,1,EMPTY,
+Barbarian,bar,1,5,2,EMPTY,
+Barbarian,bar,1,5,3,FILLED,Frenzy
+Barbarian,bar,1,6,1,FILLED,Whirlwind
+Barbarian,bar,1,6,2,FILLED,Berserk
+Barbarian,bar,1,6,3,EMPTY,
+Barbarian,bar,2,1,1,FILLED,Blade Mastery
+Barbarian,bar,2,1,2,FILLED,Axe Mastery
+Barbarian,bar,2,1,3,FILLED,Mace Mastery
+Barbarian,bar,2,2,1,FILLED,Pole Arm Mastery
+Barbarian,bar,2,2,2,FILLED,Throwing Mastery
+Barbarian,bar,2,2,3,FILLED,Spear Mastery
+Barbarian,bar,2,3,1,FILLED,Increased Stamina
+Barbarian,bar,2,3,2,EMPTY,
+Barbarian,bar,2,3,3,EMPTY,
+Barbarian,bar,2,4,1,EMPTY,
+Barbarian,bar,2,4,2,EMPTY,
+Barbarian,bar,2,4,3,FILLED,Iron Skin
+Barbarian,bar,2,5,1,FILLED,Increased Speed
+Barbarian,bar,2,5,2,EMPTY,
+Barbarian,bar,2,5,3,EMPTY,
+Barbarian,bar,2,6,1,EMPTY,
+Barbarian,bar,2,6,2,EMPTY,
+Barbarian,bar,2,6,3,FILLED,Natural Resistance
+Barbarian,bar,3,1,1,FILLED,Howl
+Barbarian,bar,3,1,2,EMPTY,
+Barbarian,bar,3,1,3,FILLED,Find Potion
+Barbarian,bar,3,2,1,FILLED,Taunt
+Barbarian,bar,3,2,2,FILLED,Shout
+Barbarian,bar,3,2,3,EMPTY,
+Barbarian,bar,3,3,1,EMPTY,
+Barbarian,bar,3,3,2,EMPTY,
+Barbarian,bar,3,3,3,FILLED,Find Item
+Barbarian,bar,3,4,1,FILLED,Battle Cry
+Barbarian,bar,3,4,2,EMPTY,
+Barbarian,bar,3,4,3,EMPTY,
+Barbarian,bar,3,5,1,EMPTY,
+Barbarian,bar,3,5,2,FILLED,Battle Orders
+Barbarian,bar,3,5,3,FILLED,Grim Ward
+Barbarian,bar,3,6,1,FILLED,War Cry
+Barbarian,bar,3,6,2,FILLED,Battle Command
+Barbarian,bar,3,6,3,EMPTY,
+Druid,dru,1,1,1,EMPTY,
+Druid,dru,1,1,2,FILLED,Raven
+Druid,dru,1,1,3,FILLED,Plague Poppy
+Druid,dru,1,2,1,FILLED,Oak Sage
+Druid,dru,1,2,2,FILLED,Summon Spirit Wolf
+Druid,dru,1,2,3,EMPTY,
+Druid,dru,1,3,1,EMPTY,
+Druid,dru,1,3,2,EMPTY,
+Druid,dru,1,3,3,FILLED,Cycle of Life
+Druid,dru,1,4,1,FILLED,Heart of Wolverine
+Druid,dru,1,4,2,FILLED,Summon Fenris
+Druid,dru,1,4,3,EMPTY,
+Druid,dru,1,5,1,EMPTY,
+Druid,dru,1,5,2,EMPTY,
+Druid,dru,1,5,3,FILLED,Vines
+Druid,dru,1,6,1,FILLED,Spirit of Barbs
+Druid,dru,1,6,2,FILLED,Summon Grizzly
+Druid,dru,1,6,3,EMPTY,
+Druid,dru,2,1,1,FILLED,Wearwolf
+Druid,dru,2,1,2,FILLED,Shape Shifting
+Druid,dru,2,1,3,EMPTY,
+Druid,dru,2,2,1,EMPTY,
+Druid,dru,2,2,2,EMPTY,
+Druid,dru,2,2,3,FILLED,Wearbear
+Druid,dru,2,3,1,FILLED,Feral Rage
+Druid,dru,2,3,2,EMPTY,
+Druid,dru,2,3,3,FILLED,Maul
+Druid,dru,2,4,1,FILLED,Rabies
+Druid,dru,2,4,2,FILLED,Fire Claws
+Druid,dru,2,4,3,EMPTY,
+Druid,dru,2,5,1,EMPTY,
+Druid,dru,2,5,2,FILLED,Hunger
+Druid,dru,2,5,3,FILLED,Shock Wave
+Druid,dru,2,6,1,FILLED,Fury
+Druid,dru,2,6,2,EMPTY,
+Druid,dru,2,6,3,EMPTY,
+Druid,dru,3,1,1,FILLED,Firestorm
+Druid,dru,3,1,2,EMPTY,
+Druid,dru,3,1,3,EMPTY,
+Druid,dru,3,2,1,FILLED,Molten Boulder
+Druid,dru,3,2,2,EMPTY,
+Druid,dru,3,2,3,FILLED,Arctic Blast
+Druid,dru,3,3,1,FILLED,Eruption
+Druid,dru,3,3,2,EMPTY,
+Druid,dru,3,3,3,FILLED,Cyclone Armor
+Druid,dru,3,4,1,EMPTY,
+Druid,dru,3,4,2,FILLED,Twister
+Druid,dru,3,4,3,EMPTY,
+Druid,dru,3,5,1,FILLED,Volcano
+Druid,dru,3,5,2,FILLED,Tornado
+Druid,dru,3,5,3,EMPTY,
+Druid,dru,3,6,1,FILLED,Armageddon
+Druid,dru,3,6,2,FILLED,Hurricane
+Druid,dru,3,6,3,EMPTY,
+Assassin,ass,1,1,1,EMPTY,
+Assassin,ass,1,1,2,FILLED,Fire Trauma
+Assassin,ass,1,1,3,EMPTY,
+Assassin,ass,1,2,1,FILLED,Shock Field
+Assassin,ass,1,2,2,EMPTY,
+Assassin,ass,1,2,3,FILLED,Blade Sentinel
+Assassin,ass,1,3,1,FILLED,Charged Bolt Sentry
+Assassin,ass,1,3,2,FILLED,Wake of Fire Sentry
+Assassin,ass,1,3,3,EMPTY,
+Assassin,ass,1,4,1,EMPTY,
+Assassin,ass,1,4,2,EMPTY,
+Assassin,ass,1,4,3,FILLED,Blade Fury
+Assassin,ass,1,5,1,FILLED,Lightning Sentry
+Assassin,ass,1,5,2,FILLED,Inferno Sentry
+Assassin,ass,1,5,3,EMPTY,
+Assassin,ass,1,6,1,FILLED,Death Sentry
+Assassin,ass,1,6,2,EMPTY,
+Assassin,ass,1,6,3,FILLED,Blade Shield
+Assassin,ass,2,1,1,EMPTY,
+Assassin,ass,2,1,2,FILLED,Claw Mastery
+Assassin,ass,2,1,3,FILLED,Psychic Hammer
+Assassin,ass,2,2,1,FILLED,Quickness
+Assassin,ass,2,2,2,EMPTY,
+Assassin,ass,2,2,3,EMPTY,
+Assassin,ass,2,3,1,EMPTY,
+Assassin,ass,2,3,2,FILLED,Weapon Block
+Assassin,ass,2,3,3,FILLED,Cloak of Shadows
+Assassin,ass,2,4,1,FILLED,Fade
+Assassin,ass,2,4,2,FILLED,Shadow Warrior
+Assassin,ass,2,4,3,EMPTY,
+Assassin,ass,2,5,1,EMPTY,
+Assassin,ass,2,5,2,EMPTY,
+Assassin,ass,2,5,3,FILLED,Mind Blast
+Assassin,ass,2,6,1,FILLED,Venom
+Assassin,ass,2,6,2,FILLED,Shadow Master
+Assassin,ass,2,6,3,EMPTY,
+Assassin,ass,3,1,1,EMPTY,
+Assassin,ass,3,1,2,FILLED,Tiger Strike
+Assassin,ass,3,1,3,FILLED,Dragon Talon
+Assassin,ass,3,2,1,FILLED,Fists of Fire
+Assassin,ass,3,2,2,EMPTY,
+Assassin,ass,3,2,3,FILLED,Dragon Claw
+Assassin,ass,3,3,1,EMPTY,
+Assassin,ass,3,3,2,FILLED,Cobra Strike
+Assassin,ass,3,3,3,EMPTY,
+Assassin,ass,3,4,1,FILLED,Claws of Thunder
+Assassin,ass,3,4,2,EMPTY,
+Assassin,ass,3,4,3,FILLED,Dragon Tail
+Assassin,ass,3,5,1,FILLED,Blades of Ice
+Assassin,ass,3,5,2,EMPTY,
+Assassin,ass,3,5,3,FILLED,Dragon Flight
+Assassin,ass,3,6,1,EMPTY,
+Assassin,ass,3,6,2,FILLED,Royal Strike
+Assassin,ass,3,6,3,EMPTY,
+Warlock,war,1,1,1,FILLED,Demonic Mastery
+Warlock,war,1,1,2,EMPTY,
+Warlock,war,1,1,3,FILLED,Summon Goatman
+Warlock,war,1,2,1,FILLED,Blood Oath
+Warlock,war,1,2,2,FILLED,Death Mark
+Warlock,war,1,2,3,EMPTY,
+Warlock,war,1,3,1,EMPTY,
+Warlock,war,1,3,2,EMPTY,
+Warlock,war,1,3,3,FILLED,Summon Tainted
+Warlock,war,1,4,1,EMPTY,
+Warlock,war,1,4,2,FILLED,Blood Boil
+Warlock,war,1,4,3,FILLED,Summon Defiler
+Warlock,war,1,5,1,EMPTY,
+Warlock,war,1,5,2,FILLED,Engorge
+Warlock,war,1,5,3,EMPTY,
+Warlock,war,1,6,1,FILLED,Consume
+Warlock,war,1,6,2,EMPTY,
+Warlock,war,1,6,3,FILLED,Bind Demon
+Warlock,war,2,1,1,FILLED,Levitate
+Warlock,war,2,1,2,EMPTY,
+Warlock,war,2,1,3,FILLED,Hex Bane
+Warlock,war,2,2,1,EMPTY,
+Warlock,war,2,2,2,FILLED,Cleave
+Warlock,war,2,2,3,EMPTY,
+Warlock,war,2,3,1,FILLED,Echoing Strike
+Warlock,war,2,3,2,EMPTY,
+Warlock,war,2,3,3,FILLED,Hex Purge
+Warlock,war,2,4,1,FILLED,Blade Warp
+Warlock,war,2,4,2,FILLED,Psychic Ward
+Warlock,war,2,4,3,EMPTY,
+Warlock,war,2,5,1,EMPTY,
+Warlock,war,2,5,2,FILLED,Eldritch Blast
+Warlock,war,2,5,3,FILLED,Hex Siphon
+Warlock,war,2,6,1,EMPTY,
+Warlock,war,2,6,2,FILLED,Mirrored Blades
+Warlock,war,2,6,3,EMPTY,
+Warlock,war,3,1,1,EMPTY,
+Warlock,war,3,1,2,EMPTY,
+Warlock,war,3,1,3,FILLED,Miasma Bolt
+Warlock,war,3,2,1,FILLED,Ring of Fire
+Warlock,war,3,2,2,FILLED,Sigil Lethargy
+Warlock,war,3,2,3,EMPTY,
+Warlock,war,3,3,1,EMPTY,
+Warlock,war,3,3,2,FILLED,Sigil Rancor
+Warlock,war,3,3,3,FILLED,Miasma Chains
+Warlock,war,3,4,1,FILLED,Flame Wave
+Warlock,war,3,4,2,EMPTY,
+Warlock,war,3,4,3,EMPTY,
+Warlock,war,3,5,1,EMPTY,
+Warlock,war,3,5,2,FILLED,Sigil Death
+Warlock,war,3,5,3,FILLED,Enhanced Entropy
+Warlock,war,3,6,1,FILLED,Apocalypse
+Warlock,war,3,6,2,EMPTY,
+Warlock,war,3,6,3,FILLED,Abyss
