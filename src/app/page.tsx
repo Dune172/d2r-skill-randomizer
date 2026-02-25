@@ -107,7 +107,7 @@ export default function Home() {
           </p>
           <p className="text-center mt-2">
             <a
-              href="https://ko-fi.com/YOUR_HANDLE"
+              href="https://ko-fi.com/dune172"
               target="_blank"
               rel="noopener noreferrer"
               className="font-cinzel text-[10px] tracking-[0.2em] text-[#7a5818] hover:text-[#c8942a] transition-colors uppercase"

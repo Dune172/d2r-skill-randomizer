@@ -151,10 +151,19 @@ export async function POST(request: NextRequest) {
       itemModifiersJson = fs.readFileSync(itemModifiersPath, 'utf-8');
     }
 
-    // Item name string entry for the unique staff (D2R looks up index value as a string key)
+    // Item name string entry for the unique staff (D2R looks up index value as a string key).
+    // Load the full official item-names.json first so all other item names remain intact,
+    // then append the Astral Wayfarer entry. Without the full file, D2R replaces its base
+    // item-names.json with the mod version and all other item names break.
     let itemNamesJson: string | undefined;
     if (startingTeleportStaff) {
-      const nameEntries = [{ id: 99999, Key: 'Astral Wayfarer', enUS: 'Astral Wayfarer', zhTW: 'Astral Wayfarer', deDE: 'Astral Wayfarer', esES: 'Astral Wayfarer', frFR: 'Astral Wayfarer', itIT: 'Astral Wayfarer', koKR: 'Astral Wayfarer', plPL: 'Astral Wayfarer', esMX: 'Astral Wayfarer', jaJP: 'Astral Wayfarer', ptBR: 'Astral Wayfarer', ruRU: 'Astral Wayfarer', zhCN: 'Astral Wayfarer' }];
+      const itemNamesPath = path.join(DATA_DIR, 'local', 'strings', 'item-names.json');
+      let nameEntries: object[] = [];
+      if (fs.existsSync(itemNamesPath)) {
+        const raw = fs.readFileSync(itemNamesPath, 'utf-8').replace(/^\uFEFF/, '');
+        nameEntries = JSON.parse(raw);
+      }
+      nameEntries.push({ id: 99999, Key: 'Astral Wayfarer', enUS: 'Astral Wayfarer', zhTW: 'Astral Wayfarer', deDE: 'Astral Wayfarer', esES: 'Astral Wayfarer', frFR: 'Astral Wayfarer', itIT: 'Astral Wayfarer', koKR: 'Astral Wayfarer', plPL: 'Astral Wayfarer', esMX: 'Astral Wayfarer', jaJP: 'Astral Wayfarer', ptBR: 'Astral Wayfarer', ruRU: 'Astral Wayfarer', zhCN: 'Astral Wayfarer' });
       itemNamesJson = '\uFEFF' + JSON.stringify(nameEntries, null, 2).replace(/\n/g, '\r\n');
     }
 
