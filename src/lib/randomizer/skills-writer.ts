@@ -71,6 +71,17 @@ export function writeSkillsRows(
     // Update charclass
     row[charclassIdx] = classDef.charclass;
 
+    // Clear weapon type requirements for skills moved to a new class so they always
+    // appear in the skill select bar and can be used with any weapon.
+    // Pinned skills that stay on their original class keep their requirements intact.
+    if (placement.targetClass !== placement.skill.charclass) {
+      for (const idx of [itypea1Idx, itypea2Idx, itypea3Idx]) {
+        if (row[idx] && row[idx] !== 'xx') {
+          row[idx] = '';
+        }
+      }
+    }
+
     // Update reqlevel to match the assigned row
     const newLevel = ROW_TO_LEVEL[placement.row] ?? 1;
     row[reqlevelIdx] = String(newLevel);
