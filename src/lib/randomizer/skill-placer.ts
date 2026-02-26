@@ -2,16 +2,20 @@ import { ClassCode, SkillEntry, SkillPlacement, TreePage } from './types';
 import { SeededRNG } from './seed';
 import { CLASS_DEFS, CLASS_RESTRICTED_TYPES } from './config';
 
-// Amazon spear/javelin skills use the SQ animation which only exists on Amazon.
-// Moving them to another class breaks the animation entirely.
-const ANIMATION_LOCKED_TYPES = new Set(['spea', 'jave']);
+// Anim codes that only exist on one character class — skill breaks on any other class.
+// TH = Amazon only (javelin throw skills)
+// S3 = Druid only (Rabies, Hunger)
+// KK = Assassin only (Dragon Talon, Dragon Tail)
+// S2 = Assassin only (sentry traps and blade skills)
+const CLASS_SPECIFIC_ANIMS = new Set(['TH', 'S2', 'KK', 'S3']);
 
 /**
  * Returns true if this skill must stay on its original class:
  * - weapsel=3: requires dual weapons (only Barbarian and Assassin can dual-wield)
  * - itypeb1=h2h/h2h2: requires claw in off-hand (only Assassin can equip claws)
  * - restrict=2: requires shapeshifted form (only Druid can shapeshift)
- * - itypea=spea/jave: Amazon spear/javelin skills use SQ animation, broken on other classes
+ * - CLASS_RESTRICTED_TYPES on passiveitype/itypea: class-exclusive weapon types
+ * - CLASS_SPECIFIC_ANIMS: animation only exists on the original class
  */
 function isPinnedToOriginalClass(skill: SkillEntry): boolean {
   return (
@@ -23,9 +27,7 @@ function isPinnedToOriginalClass(skill: SkillEntry): boolean {
     CLASS_RESTRICTED_TYPES.has(skill.itypea1 ?? '') ||
     CLASS_RESTRICTED_TYPES.has(skill.itypea2 ?? '') ||
     CLASS_RESTRICTED_TYPES.has(skill.itypea3 ?? '') ||
-    ANIMATION_LOCKED_TYPES.has(skill.itypea1 ?? '') ||
-    ANIMATION_LOCKED_TYPES.has(skill.itypea2 ?? '') ||
-    ANIMATION_LOCKED_TYPES.has(skill.itypea3 ?? '')
+    CLASS_SPECIFIC_ANIMS.has(skill.anim ?? '')
   );
 }
 
