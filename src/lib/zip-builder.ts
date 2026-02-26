@@ -17,6 +17,7 @@ export interface ZipContents {
   hirelingTxt?: string;             // hireling with Act column remapped to match act shuffle
   monpresetTxt?: string;            // monpreset with Act column remapped to match act shuffle
   objpresetTxt?: string;            // objpreset with Act column remapped to match act shuffle
+  superuniquesTxt?: string;         // superuniques with TC act numbers remapped to new difficulty position
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
   itemNamesJson?: string;           // item-names strings (display name for unique staff)
 }
@@ -106,6 +107,9 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     }
     if (contents.objpresetTxt) {
       archive.append(contents.objpresetTxt, { name: 'mod/data/global/excel/objpreset.txt' });
+    }
+    if (contents.superuniquesTxt) {
+      archive.append(contents.superuniquesTxt, { name: 'mod/data/global/excel/superuniques.txt' });
     }
 
     // Unique items with Teleport Staff added

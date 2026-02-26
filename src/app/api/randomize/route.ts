@@ -260,6 +260,24 @@ export async function POST(request: NextRequest) {
         const newRows = actOrder.map((originalAct, i) => {
           const srcRow = [...actinfo.rows[originalAct - 1]];
           if (actColIdx !== -1) srcRow[actColIdx] = String(i + 1); // preserve 1-based act id
+
+          // Act 4 has only 3 waypoints (waypoint1–3); slots 4–9 are empty.
+          // When Act 4 lands in position 1, the engine may read all 9 waypoint slots
+          // unconditionally and null-dereference on empty entries → crash after moving.
+          // Fill any empty waypoint slots with the town waypoint as a safe placeholder.
+          if (i === 0) {
+            const wp1ColIdx = actinfo.headers.indexOf('waypoint1');
+            const townWaypoint = wp1ColIdx !== -1 ? srcRow[wp1ColIdx] : '';
+            if (townWaypoint) {
+              for (let wpNum = 2; wpNum <= 9; wpNum++) {
+                const wpColIdx = actinfo.headers.indexOf(`waypoint${wpNum}`);
+                if (wpColIdx !== -1 && !srcRow[wpColIdx]) {
+                  srcRow[wpColIdx] = townWaypoint;
+                }
+              }
+            }
+          }
+
           return srcRow;
         });
         actinfoTxt = serializeTxtFile(actinfo.headers, newRows);
@@ -307,6 +325,41 @@ export async function POST(request: NextRequest) {
       objpresetTxt = remapActFile('objpreset.txt', actMap1);
     }
 
+    // Step 11e: Remap TC act numbers in superuniques.txt.
+    // Superuniques have TC columns like "Act 4 Super A" that must reflect the new
+    // difficulty position, not the original act number. Uses same actMap1 as Step 11d.
+    let superuniquesTxt: string | undefined;
+    if (actShuffle && actOrder) {
+      const suPath = path.join(DATA_DIR, 'txt', 'superuniques.txt');
+      if (fs.existsSync(suPath)) {
+        const su = loadTxtFile('superuniques.txt');
+        const SU_TC_COLS = ['TC', 'TC Desecrated', 'TC(N)', 'TC(N) Desecrated', 'TC(H)', 'TC(H) Desecrated'];
+        const ACT_TC_RE = /^(Act )(\d)/;
+        // Rebuild actMap1 (same formula as Step 11d; actOrder is still in scope)
+        const suActMap1: Record<number, number> = {};
+        for (let i = 0; i < actOrder.length; i++) {
+          suActMap1[actOrder[i]] = i + 1;
+        }
+        const suRows = su.rows.map(row => {
+          const newRow = [...row];
+          for (const colName of SU_TC_COLS) {
+            const idx = su.headers.indexOf(colName);
+            if (idx === -1) continue;
+            const tc = newRow[idx];
+            if (!tc) continue;
+            newRow[idx] = tc.replace(ACT_TC_RE, (_, prefix, digit) => {
+              const origAct = parseInt(digit, 10);
+              return suActMap1[origAct] !== undefined
+                ? `${prefix}${suActMap1[origAct]}`
+                : _;
+            });
+          }
+          return newRow;
+        });
+        superuniquesTxt = serializeTxtFile(su.headers, suRows);
+      }
+    }
+
     // Step 12: Build zip
     const zipBuffer = await buildZip({
       skillsTxt: skillsTxtContent,
@@ -323,6 +376,7 @@ export async function POST(request: NextRequest) {
       hirelingTxt,
       monpresetTxt,
       objpresetTxt,
+      superuniquesTxt,
       uniqueitemsTxt,
       itemNamesJson,
     });
