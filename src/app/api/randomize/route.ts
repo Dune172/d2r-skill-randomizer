@@ -17,6 +17,7 @@ import { buildAllIconSprites } from '@/lib/sprites/icon-assembler';
 import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
+import { shuffleActs, actShuffleSeed } from '@/lib/randomizer/act-shuffler';
 import { applyTeleportStaff, applyTeleportStaffUnique } from '@/lib/randomizer/starting-items';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
     const playersActs: number[] = Array.isArray(body.playersActs)
       ? (body.playersActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
+    const actShuffle = body.actShuffle === true;
     const startingTeleportStaff = body.startingItems?.teleportStaff === true;
     const teleportStaffLevel = startingTeleportStaff
       ? (Number(body.startingItems?.teleportStaffLevel) || 1)
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, actShuffle);
     const zipCache = getZipCache();
 
     // Check cache
@@ -220,14 +222,29 @@ export async function POST(request: NextRequest) {
 
     const iconSprites = await buildAllIconSprites(placementsByClass, skillDescIconCels);
 
-    // Step 11b: Scale monstats for players simulation (if enabled and count > 1)
+    // Step 11b: Modify monstats (players scaling and/or act shuffle)
     let monstatsTxt: string | undefined;
-    if (playersEnabled && playersCount > 1) {
+    let actPositions: number[] | undefined;
+    if ((playersEnabled && playersCount > 1) || actShuffle) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
         const monstats = loadTxtFile('monstats.txt');
-        const scaledRows = scaleMonstats(monstats.headers, monstats.rows, playersCount, playersActs);
-        monstatsTxt = serializeTxtFile(monstats.headers, scaledRows);
+        let rows = monstats.rows;
+
+        // 1. Players scaling (runs first)
+        if (playersEnabled && playersCount > 1) {
+          rows = scaleMonstats(monstats.headers, rows, playersCount, playersActs);
+        }
+
+        // 2. Act shuffle (runs after players scaling so effects compound)
+        if (actShuffle) {
+          const actRng = createRNG(actShuffleSeed(seed));
+          const result = shuffleActs(actRng, monstats.headers, rows);
+          rows = result.rows;
+          actPositions = result.actPositions;
+        }
+
+        monstatsTxt = serializeTxtFile(monstats.headers, rows);
       }
     }
 
@@ -254,7 +271,7 @@ export async function POST(request: NextRequest) {
     // Cache the result
     zipCache.set(cacheKey, zipBuffer);
 
-    return NextResponse.json({ seed, status: 'ready' });
+    return NextResponse.json({ seed, status: 'ready', ...(actPositions ? { actPositions } : {}) });
   } catch (error) {
     console.error('Randomize error:', error);
     return NextResponse.json(

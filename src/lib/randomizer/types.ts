@@ -43,6 +43,8 @@ export interface SkillEntry {
   itypea2?: string;
   itypea3?: string;
   itypeb1?: string;
+  // animation code (from skills.json anim column)
+  anim?: string;
   // class-usability restrictions
   weapsel?: number;  // 3 = requires dual weapons (Barbarian/Assassin only)
   restrict?: number; // 2 = requires shapeshifted form (Druid only)
@@ -91,6 +93,7 @@ export interface RandomizerResult {
 
 export interface PreviewData {
   seed: number;
+  actPositions?: number[]; // present when actShuffle was requested; sorted [0..1], index = act-1; Act 1 always easiest
   classes: {
     code: ClassCode;
     name: string;
