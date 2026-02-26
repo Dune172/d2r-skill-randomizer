@@ -12,6 +12,7 @@ export interface ZipContents {
   itemModifiersJson?: string;       // skill tab label strings (StrSklTabItem1–24)
   monstatsTxt?: string;             // monstats with HP/Exp scaled for players simulation
   actinfoTxt?: string;              // actinfo reordered to match act shuffle permutation
+  levelsTxt?: string;               // levels with Act column remapped to match act shuffle
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
   itemNamesJson?: string;           // item-names strings (display name for unique staff)
 }
@@ -84,6 +85,11 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     // Act info reordered to match act shuffle permutation (spawn points + waypoints)
     if (contents.actinfoTxt) {
       archive.append(contents.actinfoTxt, { name: 'mod/data/global/excel/actinfo.txt' });
+    }
+
+    // Levels with Act column remapped to match act shuffle (must be consistent with actinfo)
+    if (contents.levelsTxt) {
+      archive.append(contents.levelsTxt, { name: 'mod/data/global/excel/levels.txt' });
     }
 
     // Unique items with Teleport Staff added

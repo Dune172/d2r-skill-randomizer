@@ -266,6 +266,33 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Step 11d: Remap levels.txt Act column to match the shuffle permutation.
+    // actinfo.txt and levels.txt must be consistent or the engine crashes.
+    let levelsTxt: string | undefined;
+    if (actShuffle && actOrder) {
+      const levelsPath = path.join(DATA_DIR, 'txt', 'levels.txt');
+      if (fs.existsSync(levelsPath)) {
+        const levels = loadTxtFile('levels.txt');
+        const levelsActColIdx = levels.headers.indexOf('Act');
+        if (levelsActColIdx !== -1) {
+          // Build map: original 0-indexed act value → new 0-indexed position
+          // actOrder[i] is 1-indexed, so originalAct0 = actOrder[i] - 1
+          const newActIdx: Record<number, number> = {};
+          for (let i = 0; i < actOrder.length; i++) {
+            newActIdx[actOrder[i] - 1] = i;
+          }
+          const newLevelRows = levels.rows.map(row => {
+            const actVal = parseInt(row[levelsActColIdx], 10);
+            if (isNaN(actVal) || newActIdx[actVal] === undefined) return row;
+            const newRow = [...row];
+            newRow[levelsActColIdx] = String(newActIdx[actVal]);
+            return newRow;
+          });
+          levelsTxt = serializeTxtFile(levels.headers, newLevelRows);
+        }
+      }
+    }
+
     // Step 12: Build zip
     const zipBuffer = await buildZip({
       skillsTxt: skillsTxtContent,
@@ -277,6 +304,7 @@ export async function POST(request: NextRequest) {
       itemModifiersJson,
       monstatsTxt,
       actinfoTxt,
+      levelsTxt,
       uniqueitemsTxt,
       itemNamesJson,
     });
