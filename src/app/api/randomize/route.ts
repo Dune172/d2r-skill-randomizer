@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
 
     // Step 11b: Modify monstats (players scaling and/or act shuffle)
     let monstatsTxt: string | undefined;
-    let actPositions: number[] | undefined;
+    let actOrder: number[] | undefined;
     if ((playersEnabled && playersCount > 1) || actShuffle) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
@@ -241,10 +241,28 @@ export async function POST(request: NextRequest) {
           const actRng = createRNG(actShuffleSeed(seed));
           const result = shuffleActs(actRng, monstats.headers, rows);
           rows = result.rows;
-          actPositions = result.actPositions;
+          actOrder = result.actOrder;
         }
 
         monstatsTxt = serializeTxtFile(monstats.headers, rows);
+      }
+    }
+
+    // Step 11c: Reorder actinfo.txt to match act shuffle permutation
+    // This changes where new characters spawn and which waypoints each act offers.
+    let actinfoTxt: string | undefined;
+    if (actShuffle && actOrder) {
+      const actinfoPath = path.join(DATA_DIR, 'txt', 'actinfo.txt');
+      if (fs.existsSync(actinfoPath)) {
+        const actinfo = loadTxtFile('actinfo.txt');
+        const actColIdx = actinfo.headers.indexOf('act');
+        // Reorder rows: engine act slot i gets the content of original act actOrder[i]
+        const newRows = actOrder.map((originalAct, i) => {
+          const srcRow = [...actinfo.rows[originalAct - 1]];
+          if (actColIdx !== -1) srcRow[actColIdx] = String(i + 1); // preserve 1-based act id
+          return srcRow;
+        });
+        actinfoTxt = serializeTxtFile(actinfo.headers, newRows);
       }
     }
 
@@ -258,6 +276,7 @@ export async function POST(request: NextRequest) {
       charstatsTxt,
       itemModifiersJson,
       monstatsTxt,
+      actinfoTxt,
       uniqueitemsTxt,
       itemNamesJson,
     });
@@ -271,7 +290,7 @@ export async function POST(request: NextRequest) {
     // Cache the result
     zipCache.set(cacheKey, zipBuffer);
 
-    return NextResponse.json({ seed, status: 'ready', ...(actPositions ? { actPositions } : {}) });
+    return NextResponse.json({ seed, status: 'ready', ...(actOrder ? { actOrder } : {}) });
   } catch (error) {
     console.error('Randomize error:', error);
     return NextResponse.json(

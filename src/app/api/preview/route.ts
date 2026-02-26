@@ -7,7 +7,7 @@ import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { PreviewData, ClassCode } from '@/lib/randomizer/types';
-import { computeActPositions, actShuffleSeed } from '@/lib/randomizer/act-shuffler';
+import { computeActPermutation, actShuffleSeed } from '@/lib/randomizer/act-shuffler';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,17 +35,17 @@ export async function POST(request: NextRequest) {
     const placements = placeSkills(rng, skills, treeAssignments);
     const placementsByClass = groupByClass(placements);
 
-    // Compute act positions using a derived RNG so it matches the randomize route deterministically
-    let actPositions: number[] | undefined;
+    // Compute act permutation using a derived RNG so it matches the randomize route deterministically
+    let actOrder: number[] | undefined;
     if (actShuffle) {
       const actRng = createRNG(actShuffleSeed(seed));
-      actPositions = computeActPositions(actRng);
+      actOrder = computeActPermutation(actRng);
     }
 
     // Build preview data
     const preview: PreviewData = {
       seed,
-      ...(actPositions ? { actPositions } : {}),
+      ...(actOrder ? { actOrder } : {}),
       classes: CLASS_DEFS.map(classDef => ({
         code: classDef.code,
         name: classDef.name,

@@ -9,33 +9,25 @@ import type { PreviewData } from '@/lib/randomizer/types';
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
 
 const ACT_LABELS = ['Act I', 'Act II', 'Act III', 'Act IV', 'Act V'];
+const DIFFICULTY_LABELS = ['Easiest', 'Easy', 'Medium', 'Hard', 'Hardest'];
+const DIFFICULTY_COLORS = ['text-[#50e050]', 'text-[#a0d060]', 'text-[#c8a870]', 'text-[#d07040]', 'text-[#e05050]'];
 
-function actHpDisplay(pos: number): string {
-  const hp = 1.0 + pos * (13.0 - 1.0);
-  return `×${hp.toFixed(1)} HP`;
-}
-
-function ActMappingDisplay({ actPositions }: { actPositions: number[] }) {
+function ActMappingDisplay({ actOrder }: { actOrder: number[] }) {
   return (
     <div className="rounded border border-[#3a1510]/60 bg-[#0a0205]/60 p-3 space-y-1.5">
       <p className="font-cinzel text-[10px] tracking-[0.28em] uppercase text-[#c8a870] mb-2">
-        Act Difficulty
+        Act Order (visit order → act content)
       </p>
-      {actPositions.map((pos, i) => {
-        const isHardest = i === actPositions.length - 1;
-        const isEasiest = i === 0;
-        return (
-          <div key={i} className="flex items-center gap-2 text-sm">
-            <span className="w-14 text-[#e8d5a0] font-cinzel text-xs">{ACT_LABELS[i]}</span>
-            <span className="text-[#4a3020]">→</span>
-            <span className={`font-cinzel text-xs ${isHardest ? 'text-[#e05050]' : isEasiest ? 'text-[#50e050]' : 'text-[#c8a870]'}`}>
-              {actHpDisplay(pos)}
-            </span>
-            {isHardest && <span className="text-[10px] text-[#e05050] ml-1">← hardest</span>}
-            {isEasiest && <span className="text-[10px] text-[#50e050] ml-1">← lightest</span>}
-          </div>
-        );
-      })}
+      {actOrder.map((originalAct, i) => (
+        <div key={i} className="flex items-center gap-2 text-sm">
+          <span className="w-16 text-[#e8d5a0] font-cinzel text-xs">Visit {i + 1}:</span>
+          <span className="text-[#4a3020]">→</span>
+          <span className="text-[#e8d5a0] font-cinzel text-xs w-14">{ACT_LABELS[originalAct - 1]}</span>
+          <span className={`font-cinzel text-xs ${DIFFICULTY_COLORS[i]}`}>
+            ({DIFFICULTY_LABELS[i]})
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -185,8 +177,8 @@ export default function Home() {
               >
                 Download Zip
               </button>
-              {preview?.actPositions && (
-                <ActMappingDisplay actPositions={preview.actPositions} />
+              {preview?.actOrder && (
+                <ActMappingDisplay actOrder={preview.actOrder} />
               )}
             </div>
           )}

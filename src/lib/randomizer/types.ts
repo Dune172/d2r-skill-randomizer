@@ -93,7 +93,7 @@ export interface RandomizerResult {
 
 export interface PreviewData {
   seed: number;
-  actPositions?: number[]; // present when actShuffle was requested; sorted [0..1], index = act-1; Act 1 always easiest
+  actOrder?: number[]; // present when actShuffle was requested; actOrder[i] = original act at difficulty position i+1
   classes: {
     code: ClassCode;
     name: string;

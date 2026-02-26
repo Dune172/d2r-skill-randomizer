@@ -11,6 +11,7 @@ export interface ZipContents {
   charstatsTxt?: string;            // charstats with randomised StartSkill per class
   itemModifiersJson?: string;       // skill tab label strings (StrSklTabItem1–24)
   monstatsTxt?: string;             // monstats with HP/Exp scaled for players simulation
+  actinfoTxt?: string;              // actinfo reordered to match act shuffle permutation
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
   itemNamesJson?: string;           // item-names strings (display name for unique staff)
 }
@@ -78,6 +79,11 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     // Monster stats scaled for players simulation
     if (contents.monstatsTxt) {
       archive.append(contents.monstatsTxt, { name: 'mod/data/global/excel/monstats.txt' });
+    }
+
+    // Act info reordered to match act shuffle permutation (spawn points + waypoints)
+    if (contents.actinfoTxt) {
+      archive.append(contents.actinfoTxt, { name: 'mod/data/global/excel/actinfo.txt' });
     }
 
     // Unique items with Teleport Staff added

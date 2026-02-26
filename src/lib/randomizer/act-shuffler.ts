@@ -69,8 +69,6 @@ const BOSS_ACTS: Record<string, number> = {
   act5pow: 5,
 };
 
-function lerp(a: number, b: number, t: number): number { return a + t * (b - a); }
-
 function safeScale(val: string, factor: number): string {
   const n = parseInt(val, 10);
   if (isNaN(n) || n <= 0) return val;
@@ -79,7 +77,7 @@ function safeScale(val: string, factor: number): string {
 
 export interface ActShuffleResult {
   rows: string[][];
-  actPositions: number[]; // sorted ascending [0..1], index = act-1; Act 1 always easiest
+  actOrder: number[]; // permutation: actOrder[i] = original act at difficulty position i+1
 }
 
 /**
@@ -91,13 +89,17 @@ export function actShuffleSeed(seed: number): number {
 }
 
 /**
- * Compute 5 sorted positions in [0,1) from an RNG.
- * Act 1 always gets the smallest position (easiest), Act 5 always gets the largest (hardest).
- * The gaps between acts vary randomly per seed.
+ * Generate a random permutation of [1,2,3,4,5] using Fisher-Yates.
+ * actOrder[i] = which original act's content is at shuffled position i+1.
+ * Example: [5,3,1,2,4] means Act 5 is the first/easiest, Act 3 is second, etc.
  */
-export function computeActPositions(rng: SeededRNG): number[] {
-  return [rng.next(), rng.next(), rng.next(), rng.next(), rng.next()]
-    .sort((a, b) => a - b);
+export function computeActPermutation(rng: SeededRNG): number[] {
+  const arr = [1, 2, 3, 4, 5];
+  for (let i = 4; i > 0; i--) {
+    const j = Math.floor(rng.next() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 export function shuffleActs(
@@ -105,8 +107,15 @@ export function shuffleActs(
   headers: string[],
   rows: string[][],
 ): ActShuffleResult {
-  const actPositions = computeActPositions(rng);
+  const actOrder = computeActPermutation(rng);
   const tcIdx = headers.indexOf('TreasureClass');
+
+  // Build inverse map: difficultyOf[sourceAct] = target difficulty level (1–5)
+  // actOrder[i] = original act at position i+1, so original act actOrder[i] gets difficulty i+1
+  const difficultyOf: Record<number, number> = {};
+  for (let i = 0; i < actOrder.length; i++) {
+    difficultyOf[actOrder[i]] = i + 1;
+  }
 
   const modifiedRows = rows.map(row => {
     const id = row[0];
@@ -120,14 +129,14 @@ export function shuffleActs(
 
     if (sourceAct === null) return row;
 
-    const targetPos = actPositions[sourceAct - 1];
-    const targetActInt = Math.round(1 + targetPos * 4); // 1–5
+    const targetDifficulty = difficultyOf[sourceAct];
+    if (targetDifficulty === undefined) return row;
 
-    const hpFactor  = lerp(ACT_HP_MULT[1],  ACT_HP_MULT[5],  targetPos) / ACT_HP_MULT[sourceAct];
-    const dmgFactor = lerp(ACT_DMG_MULT[1], ACT_DMG_MULT[5], targetPos) / ACT_DMG_MULT[sourceAct];
-    const xpFactor  = lerp(ACT_XP_MULT[1],  ACT_XP_MULT[5],  targetPos) / ACT_XP_MULT[sourceAct];
-    const acFactor  = lerp(ACT_AC_MULT[1],  ACT_AC_MULT[5],  targetPos) / ACT_AC_MULT[sourceAct];
-    const lvlRatio  = lerp(ACT_AVG_LVL[1],  ACT_AVG_LVL[5],  targetPos) / ACT_AVG_LVL[sourceAct];
+    const hpFactor  = ACT_HP_MULT[targetDifficulty]  / ACT_HP_MULT[sourceAct];
+    const dmgFactor = ACT_DMG_MULT[targetDifficulty] / ACT_DMG_MULT[sourceAct];
+    const xpFactor  = ACT_XP_MULT[targetDifficulty]  / ACT_XP_MULT[sourceAct];
+    const acFactor  = ACT_AC_MULT[targetDifficulty]  / ACT_AC_MULT[sourceAct];
+    const lvlRatio  = ACT_AVG_LVL[targetDifficulty]  / ACT_AVG_LVL[sourceAct];
     const isBoss    = BOSS_ACTS[id] !== undefined;
 
     const scaled = [...row];
@@ -166,12 +175,12 @@ export function shuffleActs(
         const idx = headers.indexOf(col);
         if (idx === -1) continue;
         const tc = scaled[idx];
-        if (tc) scaled[idx] = tc.replace(ACT_RE, (_, prefix) => `${prefix}${targetActInt}`);
+        if (tc) scaled[idx] = tc.replace(ACT_RE, (_, prefix) => `${prefix}${targetDifficulty}`);
       }
     }
 
     return scaled;
   });
 
-  return { rows: modifiedRows, actPositions };
+  return { rows: modifiedRows, actOrder };
 }
