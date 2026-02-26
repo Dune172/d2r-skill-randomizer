@@ -266,31 +266,45 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Step 11d: Remap levels.txt Act column to match the shuffle permutation.
-    // actinfo.txt and levels.txt must be consistent or the engine crashes.
+    // Step 11d: Remap Act columns in all act-keyed data files to match the shuffle permutation.
+    // actinfo.txt and every file with an Act column must be consistent or the engine crashes.
     let levelsTxt: string | undefined;
+    let lvltypesTxt: string | undefined;
+    let hirelingTxt: string | undefined;
+    let monpresetTxt: string | undefined;
+    let objpresetTxt: string | undefined;
+
     if (actShuffle && actOrder) {
-      const levelsPath = path.join(DATA_DIR, 'txt', 'levels.txt');
-      if (fs.existsSync(levelsPath)) {
-        const levels = loadTxtFile('levels.txt');
-        const levelsActColIdx = levels.headers.indexOf('Act');
-        if (levelsActColIdx !== -1) {
-          // Build map: original 0-indexed act value → new 0-indexed position
-          // actOrder[i] is 1-indexed, so originalAct0 = actOrder[i] - 1
-          const newActIdx: Record<number, number> = {};
-          for (let i = 0; i < actOrder.length; i++) {
-            newActIdx[actOrder[i] - 1] = i;
-          }
-          const newLevelRows = levels.rows.map(row => {
-            const actVal = parseInt(row[levelsActColIdx], 10);
-            if (isNaN(actVal) || newActIdx[actVal] === undefined) return row;
-            const newRow = [...row];
-            newRow[levelsActColIdx] = String(newActIdx[actVal]);
-            return newRow;
-          });
-          levelsTxt = serializeTxtFile(levels.headers, newLevelRows);
-        }
+      // 0-indexed map: original act value (0–4) → new position (0–4)  [for levels.txt]
+      const actMap0: Record<number, number> = {};
+      // 1-indexed map: original act value (1–5) → new position (1–5)  [for lvltypes/hireling/etc.]
+      const actMap1: Record<number, number> = {};
+      for (let i = 0; i < actOrder.length; i++) {
+        actMap0[actOrder[i] - 1] = i;       // actOrder is 1-based; positions are 0-based
+        actMap1[actOrder[i]] = i + 1;        // both sides 1-based
       }
+
+      const remapActFile = (filename: string, actMap: Record<number, number>): string | undefined => {
+        const filePath = path.join(DATA_DIR, 'txt', filename);
+        if (!fs.existsSync(filePath)) return undefined;
+        const data = loadTxtFile(filename);
+        const actColIdx = data.headers.indexOf('Act');
+        if (actColIdx === -1) return undefined;
+        const newRows = data.rows.map(row => {
+          const actVal = parseInt(row[actColIdx], 10);
+          if (isNaN(actVal) || actMap[actVal] === undefined) return row;
+          const newRow = [...row];
+          newRow[actColIdx] = String(actMap[actVal]);
+          return newRow;
+        });
+        return serializeTxtFile(data.headers, newRows);
+      };
+
+      levelsTxt    = remapActFile('levels.txt',   actMap0);
+      lvltypesTxt  = remapActFile('lvltypes.txt',  actMap1);
+      hirelingTxt  = remapActFile('hireling.txt',  actMap1);
+      monpresetTxt = remapActFile('monpreset.txt', actMap1);
+      objpresetTxt = remapActFile('objpreset.txt', actMap1);
     }
 
     // Step 12: Build zip
@@ -305,6 +319,10 @@ export async function POST(request: NextRequest) {
       monstatsTxt,
       actinfoTxt,
       levelsTxt,
+      lvltypesTxt,
+      hirelingTxt,
+      monpresetTxt,
+      objpresetTxt,
       uniqueitemsTxt,
       itemNamesJson,
     });
