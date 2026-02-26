@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 interface RandomizerFormProps {
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal'; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number } }) => void;
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal'; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number }; actShuffle: boolean }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -16,6 +16,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
   const [playersActs, setPlayersActs] = useState<number[]>([1, 2, 3, 4, 5]);
   const [teleportStaff, setTeleportStaff] = useState(false);
   const [teleportStaffLevel, setTeleportStaffLevel] = useState(1);
+  const [actShuffle, setActShuffle] = useState(false);
 
   const toggleAct = (act: number) =>
     setPlayersActs(prev => prev.includes(act) ? prev.filter(a => a !== act) : [...prev, act]);
@@ -24,7 +25,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
     e.preventDefault();
     const effectiveSeed = seed.trim() || Math.floor(Math.random() * 2147483647).toString();
     if (!seed.trim()) onSeedChange(effectiveSeed);
-    onGenerate(effectiveSeed, { enablePrereqs, logic, playersEnabled: playersCount > 1, playersCount, playersActs, startingItems: { teleportStaff, teleportStaffLevel } });
+    onGenerate(effectiveSeed, { enablePrereqs, logic, playersEnabled: playersCount > 1, playersCount, playersActs, startingItems: { teleportStaff, teleportStaffLevel }, actShuffle });
   };
 
   return (
@@ -215,6 +216,48 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
             </div>
           )}
         </div>
+      </div>
+
+      {/* Act Shuffle section */}
+      <div className="space-y-3 pt-1">
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-[#3a1510]/50" />
+          <span className="font-cinzel text-[10px] tracking-[0.28em] uppercase text-[#c8a870]">
+            Act Difficulty
+          </span>
+          <div className="h-px flex-1 bg-[#3a1510]/50" />
+        </div>
+
+        <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor="actShuffle">
+          <div className="relative flex-shrink-0">
+            <input
+              id="actShuffle"
+              type="checkbox"
+              checked={actShuffle}
+              onChange={e => setActShuffle(e.target.checked)}
+              className="sr-only"
+            />
+            <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
+              ${actShuffle
+                ? 'bg-[#7a1010] border-[#c42020]'
+                : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}
+            >
+              {actShuffle && (
+                <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+          </div>
+          <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
+            Shuffle Act Difficulty
+          </span>
+        </label>
+        {actShuffle && (
+          <p className="text-xs text-[#7a5818] pl-7">
+            Randomizes the difficulty order of the 5 acts — monster stats and loot are scaled to match; maps and quest order are unchanged.
+          </p>
+        )}
       </div>
 
       {/* Submit */}
