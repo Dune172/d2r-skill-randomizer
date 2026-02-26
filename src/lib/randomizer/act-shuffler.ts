@@ -92,14 +92,26 @@ export function actShuffleSeed(seed: number): number {
  * Generate a random permutation of [1,2,3,4,5] using Fisher-Yates.
  * actOrder[i] = which original act's content is at shuffled position i+1.
  * Example: [5,3,1,2,4] means Act 5 is the first/easiest, Act 3 is second, etc.
+ *
+ * Position 1 is constrained to acts 1–3 only. Acts 4 and 5 have Populate=0
+ * towns in lvlprest.txt, so the engine ignores monpreset/objpreset for those
+ * levels and wrong NPCs/objects appear from a hardcoded position-1 init routine.
  */
 export function computeActPermutation(rng: SeededRNG): number[] {
-  const arr = [1, 2, 3, 4, 5];
-  for (let i = 4; i > 0; i--) {
+  // Position 1 must be an act with Populate=1 town (acts 1-3).
+  // Acts 4 and 5 have Populate=0 towns — engine ignores monpreset/objpreset
+  // for those levels, so wrong NPCs/objects appear from hardcoded pos-1 init.
+  const eligiblePos1 = [1, 2, 3];
+  const pos1Act = eligiblePos1[Math.floor(rng.next() * 3)];
+
+  // Shuffle remaining 4 acts into positions 2-5
+  const rest = [1, 2, 3, 4, 5].filter(a => a !== pos1Act);
+  for (let i = rest.length - 1; i > 0; i--) {
     const j = Math.floor(rng.next() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    [rest[i], rest[j]] = [rest[j], rest[i]];
   }
-  return arr;
+
+  return [pos1Act, ...rest];
 }
 
 export function shuffleActs(
