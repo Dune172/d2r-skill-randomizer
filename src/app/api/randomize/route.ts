@@ -318,7 +318,61 @@ export async function POST(request: NextRequest) {
         return serializeTxtFile(data.headers, newRows);
       };
 
-      levelsTxt    = remapActFile('levels.txt',   actMap0);
+      // Remap levels.txt: both the Act column (0-indexed) and the Waypoint column.
+      // When acts are shuffled, waypoint indices must shift so that bit 0 always
+      // corresponds to the starting town (position 1), preventing a save-file crash.
+      {
+        const ACT_WP_COUNT: Record<number, number> = {1: 9, 2: 9, 3: 9, 4: 3, 5: 9};
+        const ACT_WP_BASE_ORIG: Record<number, number> = {1: 0, 2: 9, 3: 18, 4: 27, 5: 30};
+
+        // Compute new waypoint base for each act based on its shuffled position
+        let wpCum = 0;
+        const newWpBase: Record<number, number> = {};
+        for (const act of actOrder) {
+          newWpBase[act] = wpCum;
+          wpCum += ACT_WP_COUNT[act];
+        }
+
+        const data = loadTxtFile('levels.txt');
+        const actColIdx = data.headers.indexOf('Act');
+        const wpColIdx  = data.headers.indexOf('Waypoint');
+        const newRows = data.rows.map(row => {
+          const newRow = [...row];
+
+          // Remap Act (0-indexed)
+          if (actColIdx !== -1) {
+            const actVal = parseInt(row[actColIdx], 10);
+            if (!isNaN(actVal) && actMap0[actVal] !== undefined) {
+              newRow[actColIdx] = String(actMap0[actVal]);
+            }
+          }
+
+          // Remap Waypoint (skip empty or 255 = "no waypoint" sentinel)
+          if (wpColIdx !== -1) {
+            const wpStr = row[wpColIdx];
+            if (wpStr !== '' && wpStr !== '255') {
+              const wpIdx = parseInt(wpStr, 10);
+              if (!isNaN(wpIdx)) {
+                // Determine which original act owns this waypoint index
+                let origAct: number | null = null;
+                for (const [aStr, base] of Object.entries(ACT_WP_BASE_ORIG)) {
+                  const a = parseInt(aStr);
+                  if (wpIdx >= base && wpIdx < base + ACT_WP_COUNT[a]) {
+                    origAct = a; break;
+                  }
+                }
+                if (origAct !== null) {
+                  const offset = wpIdx - ACT_WP_BASE_ORIG[origAct];
+                  newRow[wpColIdx] = String(newWpBase[origAct] + offset);
+                }
+              }
+            }
+          }
+
+          return newRow;
+        });
+        levelsTxt = serializeTxtFile(data.headers, newRows);
+      }
       lvltypesTxt  = remapActFile('lvltypes.txt',  actMap1);
       hirelingTxt  = remapActFile('hireling.txt',  actMap1);
       monpresetTxt = remapActFile('monpreset.txt', actMap1);
