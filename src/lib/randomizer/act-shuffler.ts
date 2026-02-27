@@ -91,27 +91,22 @@ export function actShuffleSeed(seed: number): number {
 /**
  * Generate a random permutation of [1,2,3,4,5] using Fisher-Yates.
  * actOrder[i] = which original act's content is at shuffled position i+1.
- * Example: [5,3,1,2,4] means Act 5 is the first/easiest, Act 3 is second, etc.
+ * Example: [1,3,5,2,4] means Act 1 is first, Act 3 is second, etc.
  *
- * Position 1 is constrained to acts 1–3 only. Acts 4 and 5 have Populate=0
- * towns in lvlprest.txt, so the engine ignores monpreset/objpreset for those
- * levels and wrong NPCs/objects appear from a hardcoded position-1 init routine.
+ * Position 1 is always Act 1. The engine has hardcoded behavior that assumes the
+ * starting town is Rogue Encampment (Act 1, level ID 1): Acts 2–3 have Populate=1
+ * but crash on load when in position 1 (quest-state / NPC init fails for a fresh
+ * character); Acts 4–5 have Populate=0 and spawn wrong NPCs from a hardcoded
+ * position-1 routine. Acts 2–5 are shuffled into positions 2–5.
  */
 export function computeActPermutation(rng: SeededRNG): number[] {
-  // Position 1 must be an act with Populate=1 town (acts 1-3).
-  // Acts 4 and 5 have Populate=0 towns — engine ignores monpreset/objpreset
-  // for those levels, so wrong NPCs/objects appear from hardcoded pos-1 init.
-  const eligiblePos1 = [1, 2, 3];
-  const pos1Act = eligiblePos1[Math.floor(rng.next() * 3)];
-
-  // Shuffle remaining 4 acts into positions 2-5
-  const rest = [1, 2, 3, 4, 5].filter(a => a !== pos1Act);
+  // Acts 2-5 are shuffled into positions 2-5; Act 1 is always position 1.
+  const rest = [2, 3, 4, 5];
   for (let i = rest.length - 1; i > 0; i--) {
     const j = Math.floor(rng.next() * (i + 1));
     [rest[i], rest[j]] = [rest[j], rest[i]];
   }
-
-  return [pos1Act, ...rest];
+  return [1, ...rest];
 }
 
 export function shuffleActs(
