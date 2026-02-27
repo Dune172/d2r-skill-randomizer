@@ -91,25 +91,22 @@ export function actShuffleSeed(seed: number): number {
 /**
  * Generate a random permutation of [1,2,3,4,5] using Fisher-Yates.
  * actOrder[i] = which original act's content is at shuffled position i+1.
- * Example: [2,1,5,3,4] means Act 2 is first, Act 1 is second, etc.
+ * Example: [1,3,5,2,4] means Act 1 is first, Act 3 is second, etc.
  *
- * Position 1 must be Acts 1–3 (Populate=1 towns). Acts 4–5 have Populate=0:
- * the engine ignores monpreset/objpreset and spawns wrong Act-1 NPCs from its
- * hardcoded pos-1 init routine, so they are blocked from position 1.
+ * Position 1 must always be Act 1. The engine has hardcoded "new-character"
+ * initialisation routines for position 1 that assume Act 1 content: Den of Evil
+ * placement, Blood Moor quest flags, Act-1 NPC init, etc. Acts 2–3 (Populate=1)
+ * survive the load but get wrong content injected. Acts 4–5 (Populate=0) crash
+ * or spawn wrong NPCs from a hardcoded pos-1 routine. None of this can be
+ * suppressed through data-file remapping. Acts 2–5 shuffle into positions 2–5.
  */
 export function computeActPermutation(rng: SeededRNG): number[] {
-  // Position 1 must be acts 1-3 (Populate=1 towns).
-  // Acts 4-5 have Populate=0: engine ignores monpreset/objpreset and spawns
-  // wrong Act-1 NPCs from its hardcoded pos-1 init routine.
-  const eligiblePos1 = [1, 2, 3];
-  const pos1Act = eligiblePos1[Math.floor(rng.next() * 3)];
-
-  const rest = [1, 2, 3, 4, 5].filter(a => a !== pos1Act);
+  const rest = [2, 3, 4, 5];
   for (let i = rest.length - 1; i > 0; i--) {
     const j = Math.floor(rng.next() * (i + 1));
     [rest[i], rest[j]] = [rest[j], rest[i]];
   }
-  return [pos1Act, ...rest];
+  return [1, ...rest];
 }
 
 export function shuffleActs(
