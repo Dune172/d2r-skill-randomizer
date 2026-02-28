@@ -106,6 +106,13 @@ export async function POST(request: NextRequest) {
     // exactly what D2R will read, and that charclass was successfully updated.
     const charclassColIdx = skillsTxt.headers.indexOf('charclass') !== -1
       ? skillsTxt.headers.indexOf('charclass') : 2;
+
+    // Diagnostic: verify charclass was updated for a known cross-class skill.
+    // If this logs the original class (e.g. 'nec') instead of the placed class,
+    // skillToPlacement lookup is failing for that skill (name mismatch, etc.).
+    const ccCheck = skillsTxt.rows.find(r => r[0] === 'Clay Golem');
+    console.log('Clay Golem charclass after update:', ccCheck?.[charclassColIdx]);
+
     const reqlevelColIdx = skillsTxt.headers.indexOf('reqlevel') !== -1
       ? skillsTxt.headers.indexOf('reqlevel') : 174;
     const row1SkillsByClass = new Map<string, string[]>();
@@ -149,12 +156,14 @@ export async function POST(request: NextRequest) {
     // Serialize with BOM + CRLF to match D2R's expected JSON string file format.
     const skillStringsJson = '\uFEFF' + JSON.stringify(skillStrings, null, 2).replace(/\n/g, '\r\n');
 
-    // Load item-modifiers.json as-is (static pass-through — StrSklTabItemN values are for
-    // item affix display only, not tab titles; no modification needed).
+    // Load item-modifiers.json; normalize BOM + CRLF like other D2R string files.
+    // If the source file has LF-only endings, D2R may fail to parse it and silently
+    // fall back to base-game strings (producing e.g. the tristram dialogue on item modifiers).
     let itemModifiersJson: string | undefined;
     const itemModifiersPath = path.join(DATA_DIR, 'local', 'strings', 'item-modifiers.json');
     if (fs.existsSync(itemModifiersPath)) {
-      itemModifiersJson = fs.readFileSync(itemModifiersPath, 'utf-8');
+      const raw = fs.readFileSync(itemModifiersPath, 'utf-8').replace(/^\uFEFF/, '');
+      itemModifiersJson = '\uFEFF' + raw.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
     }
 
     // Item name string entry for the unique staff (D2R looks up index value as a string key).
