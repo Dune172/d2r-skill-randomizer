@@ -59,6 +59,7 @@ export function writeSkillsRows(
   const itypea2Idx = safeGetCol(headers, 'itypea2', COL.itypea2);
   const itypea3Idx = safeGetCol(headers, 'itypea3', COL.itypea3);
   const itypeb1Idx = safeGetCol(headers, 'itypeb1', COL.itypeb1);
+  const leftskillIdx = safeGetCol(headers, 'leftskill', -1);
 
   for (const row of rows) {
     const skillName = row[0]; // skill column is always first
@@ -87,6 +88,13 @@ export function writeSkillsRows(
       if (syn.DmgSymPerCalc !== undefined) row[dmgSymIdx] = syn.DmgSymPerCalc;
       if (syn.EDmgSymPerCalc !== undefined) row[edmgSymIdx] = syn.EDmgSymPerCalc;
       if (syn.ELenSymPerCalc !== undefined) row[elenSymIdx] = syn.ELenSymPerCalc;
+    }
+
+    // Ensure cross-class skills are assignable to the left mouse button.
+    // Some skills have leftskill=0 by vanilla design (e.g. Raven, Valkyrie) but
+    // randomized skills should be usable on either mouse button.
+    if (leftskillIdx >= 0 && row[leftskillIdx] === '0') {
+      row[leftskillIdx] = '1';
     }
 
     // Normal Logic: remap class-restricted weapon types to the target class's natural weapon

@@ -57,8 +57,11 @@ export function writeSkillDescRows(
     if (skillRowIdx >= 0) row[skillRowIdx] = String(placement.row);
     if (skillColIdx >= 0) row[skillColIdx] = String(placement.col);
 
-    // ListRow = position within tab (1-based sequential)
-    if (listRowIdx >= 0) row[listRowIdx] = String(placement.skillIndex % 10 + 1);
+    // ListRow = which skill tree tab (1=tree1, 2=tree2, 3=tree3).
+    // Per the D2R Data Guide, valid values are 0-3; values >3 make the skill
+    // invisible in the Skill Selection UI (action bar assignment list).
+    // ListRow must equal SkillPage (both represent the tab number).
+    if (listRowIdx >= 0) row[listRowIdx] = String(placement.tabIndex + 1);
 
     // IconCel = new icon index
     if (iconCelIdx >= 0) row[iconCelIdx] = String(placement.iconCel);
