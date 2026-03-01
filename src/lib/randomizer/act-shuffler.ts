@@ -108,20 +108,27 @@ export function actShuffleSeed(seed: number): number {
  * actOrder[i] = which original act's content is at shuffled position i+1.
  * Example: [1,3,5,2,4] means Act 1 is first, Act 3 is second, etc.
  *
+ * Positions 1 and 5 are pinned to their native acts:
+ *
  * Position 1 must always be Act 1. The engine has hardcoded "new-character"
  * initialisation routines for position 1 that assume Act 1 content: Den of Evil
  * placement, Blood Moor quest flags, Act-1 NPC init, etc. Acts 2–3 (Populate=1)
  * survive the load but get wrong content injected. Acts 4–5 (Populate=0) crash
  * or spawn wrong NPCs from a hardcoded pos-1 routine. None of this can be
- * suppressed through data-file remapping. Acts 2–5 shuffle into positions 2–5.
+ * suppressed through data-file remapping.
+ *
+ * Position 5 must always be Act 5. Act 5 (also Populate=0) has engine-hardcoded
+ * expansion-act initialisation (siege state, Baal quest chain, Harrogath NPC setup)
+ * that crashes when Act 5 content is loaded in any non-5 slot. Acts 2–4 shuffle
+ * freely among positions 2–4 (6 possible orderings).
  */
 export function computeActPermutation(rng: SeededRNG): number[] {
-  const rest = [2, 3, 4, 5];
+  const rest = [2, 3, 4];
   for (let i = rest.length - 1; i > 0; i--) {
     const j = Math.floor(rng.next() * (i + 1));
     [rest[i], rest[j]] = [rest[j], rest[i]];
   }
-  return [1, ...rest];
+  return [1, ...rest, 5];
 }
 
 export function shuffleActs(
