@@ -13,6 +13,7 @@ export interface ZipContents {
   monstatsTxt?: string;             // monstats with HP/Exp scaled for players simulation
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
   itemNamesJson?: string;           // item-names strings (display name for unique staff)
+  hirelingTxt?: string;             // hireling.txt with randomized auras
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -73,6 +74,11 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     // Skill tab label strings (StrSklTabItem1–24 for all 8 classes)
     if (contents.itemModifiersJson) {
       archive.append(contents.itemModifiersJson, { name: 'mod/data/local/lng/strings/item-modifiers.json' });
+    }
+
+    // Hireling auras
+    if (contents.hirelingTxt) {
+      archive.append(contents.hirelingTxt, { name: 'mod/data/global/excel/hireling.txt' });
     }
 
     // Monster stats scaled for players simulation

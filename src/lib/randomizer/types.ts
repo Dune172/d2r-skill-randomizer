@@ -45,6 +45,10 @@ export interface SkillEntry {
   itypeb1?: string;
   // animation code (from skills.json anim column)
   anim?: string;
+  // non-empty if skill is a paladin-style aura (e.g. "prayer", "might", "defiance")
+  aurastate?: string;
+  // element type: 'fire', 'cold', 'ltng', 'pois', etc. (from skills.json EType)
+  etype?: string;
   // class-usability restrictions
   weapsel?: number;  // 3 = requires dual weapons (Barbarian/Assassin only)
   restrict?: number; // 2 = requires shapeshifted form (Druid only)

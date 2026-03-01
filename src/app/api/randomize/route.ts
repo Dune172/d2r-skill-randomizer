@@ -18,6 +18,7 @@ import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { applyTeleportStaff, applyTeleportStaffUnique } from '@/lib/randomizer/starting-items';
+import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -98,6 +99,11 @@ export async function POST(request: NextRequest) {
     // Step 8: Write modified txt files
     writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments, logic);
     writeSkillDescRows(skillDescTxt.headers, skillDescTxt.rows, placements, descSynergyUpdates);
+
+    // Hireling aura randomization
+    const hirelingTxtFile = loadTxtFile('hireling.txt');
+    writeHirelingRows(hirelingTxtFile.headers, hirelingTxtFile.rows, placements, rng);
+    const hirelingTxtContent = serializeTxtFile(hirelingTxtFile.headers, hirelingTxtFile.rows);
 
     // Build StartSkill candidates from the verified, already-updated skillsTxt rows.
     // Reading directly from the txt we just wrote guarantees the skill name matches
@@ -252,6 +258,7 @@ export async function POST(request: NextRequest) {
       monstatsTxt,
       uniqueitemsTxt,
       itemNamesJson,
+      hirelingTxt: hirelingTxtContent,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)
