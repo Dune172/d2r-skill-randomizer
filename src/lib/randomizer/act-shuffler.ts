@@ -69,6 +69,21 @@ const BOSS_ACTS: Record<string, number> = {
   act5pow: 5,
 };
 
+/**
+ * Estimate source act from a monster's Normal-difficulty Level.
+ * Level is a reliable proxy for spawn location; TreasureClass is not
+ * (35% of monsters have TC that doesn't match their actual spawn act).
+ * Thresholds derived from ACT_AVG_LVL={1:8, 2:18, 3:24, 4:28, 5:36},
+ * padded to cover high-level variants within each act.
+ */
+function actFromLevel(level: number): number {
+  if (level <= 16) return 1;
+  if (level <= 22) return 2;
+  if (level <= 27) return 3;
+  if (level <= 39) return 4;
+  return 5;
+}
+
 function safeScale(val: string, factor: number): string {
   const n = parseInt(val, 10);
   if (isNaN(n) || n <= 0) return val;
@@ -115,7 +130,7 @@ export function shuffleActs(
   rows: string[][],
 ): ActShuffleResult {
   const actOrder = computeActPermutation(rng);
-  const tcIdx = headers.indexOf('TreasureClass');
+  const lvlIdx = headers.indexOf('Level');
 
   // Build inverse map: difficultyOf[sourceAct] = target difficulty level (1–5)
   // actOrder[i] = original act at position i+1, so original act actOrder[i] gets difficulty i+1
@@ -128,10 +143,11 @@ export function shuffleActs(
     const id = row[0];
     let sourceAct: number | null = null;
 
-    if (tcIdx !== -1) {
-      const tc = row[tcIdx] ?? '';
-      const m = tc.match(ACT_RE);
-      sourceAct = m ? parseInt(m[2]) : (BOSS_ACTS[id] ?? null);
+    if (BOSS_ACTS[id] !== undefined) {
+      sourceAct = BOSS_ACTS[id]; // explicit override takes priority
+    } else if (lvlIdx !== -1) {
+      const level = parseInt(row[lvlIdx] ?? '0', 10);
+      sourceAct = level > 0 ? actFromLevel(level) : null;
     }
 
     if (sourceAct === null) return row;

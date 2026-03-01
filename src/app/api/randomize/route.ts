@@ -271,10 +271,11 @@ export async function POST(request: NextRequest) {
           if (actColIdx !== -1) srcRow[actColIdx] = String(i + 1); // preserve 1-based act id
 
           // Act 4 has only 3 waypoints (waypoint1–3); slots 4–9 are empty.
-          // When Act 4 lands in position 1, the engine may read all 9 waypoint slots
-          // unconditionally and null-dereference on empty entries → crash after moving.
+          // The engine reads all 9 waypoint slots unconditionally for every act position,
+          // null-dereferencing on empty entries → freeze when moving between acts.
           // Fill any empty waypoint slots with the town waypoint as a safe placeholder.
-          if (i === 0) {
+          // This is safe for acts with 9 real waypoints: only empty strings are replaced.
+          {
             const wp1ColIdx = actinfo.headers.indexOf('waypoint1');
             const townWaypoint = wp1ColIdx !== -1 ? srcRow[wp1ColIdx] : '';
             if (townWaypoint) {
