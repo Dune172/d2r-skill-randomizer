@@ -330,11 +330,60 @@ export async function POST(request: NextRequest) {
         return serializeTxtFile(data.headers, newRows);
       };
 
-      // Remap levels.txt: Act column only (0-indexed).
-      // Waypoint indices are left at their original values so the engine's fixed-range
-      // assumptions are not violated. SubWaypoint (col 31) also stays unchanged.
+      // Remap levels.txt: both Act column (0-indexed) and Waypoint column.
+      // Waypoint values are global indices; each act owns a fixed range. When an act
+      // moves to a new slot, its waypoint values must shift into the target slot's range.
+      // 255 = no waypoint (sentinel) and is left unchanged.
+      // If a source act has more waypoints than the target slot supports (e.g. a
+      // 9-waypoint act lands in Act 4's 3-waypoint slot), excess waypoints are set to
+      // 255 so the engine treats them as having no waypoint.
+      const ACT_WP_INFO: Record<number, { base: number; count: number }> = {
+        1: { base: 0,  count: 9 },
+        2: { base: 9,  count: 9 },
+        3: { base: 18, count: 9 },
+        4: { base: 27, count: 3 },
+        5: { base: 30, count: 9 },
+      };
       {
-        levelsTxt = remapActFile('levels.txt', actMap0);
+        const lvlPath = path.join(DATA_DIR, 'txt', 'levels.txt');
+        if (fs.existsSync(lvlPath)) {
+          const lvl = loadTxtFile('levels.txt');
+          const actColIdx = lvl.headers.indexOf('Act');
+          const wpColIdx  = lvl.headers.indexOf('Waypoint');
+
+          const newRows = lvl.rows.map(row => {
+            const origActVal = parseInt(row[actColIdx] ?? '', 10); // 0-indexed (0–4)
+            if (isNaN(origActVal) || actMap0[origActVal] === undefined) return row;
+
+            const newRow = [...row];
+            const sourceAct = origActVal + 1;           // 1-indexed (1–5)
+            const targetPos = actMap0[origActVal] + 1;  // 1-indexed (1–5)
+
+            // Remap Act column (same as remapActFile does)
+            newRow[actColIdx] = String(actMap0[origActVal]);
+
+            // Remap Waypoint into target act's global index range.
+            if (wpColIdx !== -1) {
+              const wpVal = parseInt(row[wpColIdx] ?? '', 10);
+              if (!isNaN(wpVal) && wpVal !== 255) {
+                const src = ACT_WP_INFO[sourceAct];
+                const tgt = ACT_WP_INFO[targetPos];
+                if (src && tgt) {
+                  const localIdx = wpVal - src.base; // 0-based slot within source act
+                  if (localIdx >= 0 && localIdx < src.count) {
+                    newRow[wpColIdx] = localIdx < tgt.count
+                      ? String(tgt.base + localIdx)
+                      : '255'; // beyond target act's capacity — suppress waypoint
+                  }
+                }
+              }
+            }
+
+            return newRow;
+          });
+
+          levelsTxt = serializeTxtFile(lvl.headers, newRows);
+        }
       }
       lvltypesTxt  = remapActFile('lvltypes.txt',  actMap1);
       hirelingTxt  = remapActFile('hireling.txt',  actMap1);
