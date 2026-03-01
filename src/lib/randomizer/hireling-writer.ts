@@ -1,20 +1,34 @@
 import { SkillEntry, SkillPlacement } from './types';
 import { SeededRNG } from './seed';
 
+// Native class of each hireling type.
+// Attack pools are built from this class's tree so D2R's hiring panel can
+// look up the skill's IconCel in the native class sprite and display the
+// correct icon.
+const HIRELING_NATIVE_CLASS: Record<string, string> = {
+  'Rogue Scout':      'ama',
+  'Desert Mercenary': 'ama',
+  'Eastern Sorceror': 'sor',
+  'Barbarian':        'bar',
+};
+
 /**
  * Assign randomized attack skills and a random paladin aura to every hireling
  * subtype, tiered by Act and Difficulty.
  *
  * ATTACK SKILLS (Mode=4, 7, 14)
- * Attack pools are built from all randomized placements, filtered by each
- * hireling's equipped weapon type.  Each attack slot (identified by Mode ∈
- * {'4','7','14'}) gets an independently-chosen skill from the appropriate pool.
+ * Attack pools are built from placements in the hireling's NATIVE class tree,
+ * filtered by weapon type.  Using the native class ensures the skill's IconCel
+ * is valid in the native class sprite that D2R's hiring panel opens.
+ * Skills are tiered by row (same logic as auras):
+ *   - Normal Acts 1–3 (Diff=1): rows 1–2
+ *   - Normal Act 4–5  (Diff=1): rows 2–3
+ *   - Nightmare/Hell  (Diff≥2): any row
  *
  * AURA (Mode=1)
- * Tier pools are built from the randomized paladin placements so the available
- * auras vary per seed:
- *   - Normal Acts 1–3 (Diff=1): rows 1–2 (reqlevel 1 or 6)
- *   - Normal Act 5    (Diff=1): rows 2–3 (reqlevel 6 or 12)
+ * Tier pools are built from all randomized paladin placements:
+ *   - Normal Acts 1–3 (Diff=1): rows 1–2
+ *   - Normal Act 5    (Diff=1): rows 2–3
  *   - Nightmare/Hell  (Diff≥2): any row
  *
  * Desert Mercenaries already have an aura in Skill2 (Mode=1); we replace it
@@ -35,6 +49,7 @@ export function writeHirelingRows(
   options: { aura: boolean; skills: boolean } = { aura: true, skills: true },
 ): void {
   if (!options.aura && !options.skills) return;
+
   // ── Helper predicates ─────────────────────────────────────────────────────
 
   function hasType(skill: SkillEntry, type: string): boolean {
@@ -47,60 +62,63 @@ export function writeHirelingRows(
     return !skill.aurastate && !skill.passiveitype && skill.restrict !== 2;
   }
 
-  // ── Build attack pools ────────────────────────────────────────────────────
-  // Deduplicate by skill name to avoid bias from duplicate placements.
-
   function dedup(names: string[]): string[] {
     return [...new Set(names)];
   }
 
-  const allSkills = placements.map(p => p.skill);
-
-  const bowPool = dedup(
-    allSkills
-      .filter(s => isAttackable(s) && hasType(s, 'miss') && s.weapsel !== 3)
-      .map(s => s.skill),
-  );
-
-  const spearMelePool = dedup(
-    allSkills
-      .filter(s => isAttackable(s) && (hasType(s, 'spea') || hasType(s, 'mele')) && s.weapsel !== 3)
-      .map(s => s.skill),
-  );
-
-  // Eastern Sorceror: elemental spells only, no weapon requirement at all
   const ELEM_TYPES = new Set(['fire', 'cold', 'ltng']);
-  const sorcPool = dedup(
-    allSkills
-      .filter(s =>
-        isAttackable(s) &&
-        ELEM_TYPES.has(s.etype ?? '') &&
-        !s.itypea1 && !s.itypea2 && !s.itypea3 && !s.itypeb1 &&
-        s.weapsel !== 3,
-      )
-      .map(s => s.skill),
-  );
 
-  const mele2hsPool = dedup(
-    allSkills
-      .filter(s => isAttackable(s) && hasType(s, 'mele') && s.weapsel !== 3)
-      .map(s => s.skill),
-  );
+  // ── Build per-hireling attack tier maps ───────────────────────────────────
+  // Each map: row → [skill names], built only from the native class tree so
+  // the skill's IconCel is valid in that class's sprite.
+  //
+  // Barbarian: two maps — '1hs' (all melee) and '2hs' (melee, weapsel !== 3).
 
-  const mele1hsPool = dedup(
-    allSkills
-      .filter(s => isAttackable(s) && hasType(s, 'mele'))
-      .map(s => s.skill),
-  );
-
-  function getAttackPool(hireling: string, subType: string): string[] {
-    if (hireling === 'Rogue Scout')       return bowPool;
-    if (hireling === 'Desert Mercenary')  return spearMelePool;
-    if (hireling === 'Eastern Sorceror')  return sorcPool;
-    if (hireling === 'Barbarian') {
-      return subType.startsWith('1hs') ? mele1hsPool : mele2hsPool;
+  function buildRowMap(
+    nativeCode: string,
+    predicate: (skill: SkillEntry) => boolean,
+  ): Map<number, string[]> {
+    const rowMap = new Map<number, string[]>();
+    for (const p of placements) {
+      if (p.targetClass !== nativeCode) continue;
+      if (!predicate(p.skill)) continue;
+      if (!rowMap.has(p.row)) rowMap.set(p.row, []);
+      rowMap.get(p.row)!.push(p.skill.skill);
     }
-    return [];
+    return rowMap;
+  }
+
+  const attackRowMaps: Record<string, Map<number, string[]>> = {
+    'Rogue Scout':       buildRowMap('ama', s => isAttackable(s) && hasType(s, 'miss') && s.weapsel !== 3),
+    'Desert Mercenary':  buildRowMap('ama', s => isAttackable(s) && (hasType(s, 'spea') || hasType(s, 'mele')) && s.weapsel !== 3),
+    'Eastern Sorceror':  buildRowMap('sor', s => isAttackable(s) && ELEM_TYPES.has(s.etype ?? '') && !s.itypea1 && !s.itypea2 && !s.itypea3 && !s.itypeb1 && s.weapsel !== 3),
+    'Barbarian_2hs':     buildRowMap('bar', s => isAttackable(s) && hasType(s, 'mele') && s.weapsel !== 3),
+    'Barbarian_1hs':     buildRowMap('bar', s => isAttackable(s) && hasType(s, 'mele')),
+  };
+
+  function getAttackRowMap(hireling: string, subType: string): Map<number, string[]> {
+    if (hireling === 'Barbarian') {
+      return subType.startsWith('1hs') ? attackRowMaps['Barbarian_1hs'] : attackRowMaps['Barbarian_2hs'];
+    }
+    return attackRowMaps[hireling] ?? new Map();
+  }
+
+  // Build a tier pool from a row map using the same act/diff logic as auras.
+  function buildTierPool(rowMap: Map<number, string[]>, act: number, diff: number): string[] {
+    const allRows = [...rowMap.values()].flat();
+    if (allRows.length === 0) return [];
+
+    const getRows = (...rowNums: number[]): string[] => {
+      const r = rowNums.flatMap(n => rowMap.get(n) ?? []);
+      return r.length > 0 ? r : allRows; // fallback to all rows if tier is empty
+    };
+
+    let pool: string[];
+    if (diff >= 2)     pool = allRows;
+    else if (act >= 4) pool = getRows(2, 3);
+    else               pool = getRows(1, 2);
+
+    return pool.length > 0 ? pool : allRows;
   }
 
   // ── Build aura pools from randomized paladin placements ───────────────────
@@ -177,112 +195,113 @@ export function writeHirelingRows(
 
     // ── STEP 1: Attack skill assignment (Mode=4/7/14) ─────────────────────
     if (options.skills) {
-    const attackPool = getAttackPool(hireling, subType);
+      const rowMap = getAttackRowMap(hireling, subType);
+      const tierPool = dedup(buildTierPool(rowMap, act, diff));
 
-    if (attackPool.length === 0) {
-      console.warn(`hireling-writer: no attack pool for hireling "${hireling}" subType "${subType}", skipping attack randomization`);
-    } else {
-      // Identify which slot indices (0-based) are attack slots in this group.
-      // Scan ALL rows in the group so we catch slots that appear only in some
-      // rows (e.g. Rogue Scout Skill3 which is absent in lower-level rows).
-      const attackSlotSet = new Set<number>();
-      for (const ri of indices) {
-        const r = rows[ri];
-        for (let s = 0; s < slotCols.length; s++) {
-          const cols = slotCols[s];
-          if (
-            cols.skill !== -1 && cols.mode !== -1 &&
-            r[cols.skill] &&
-            ATTACK_MODES.has(r[cols.mode])
-          ) {
-            attackSlotSet.add(s);
+      if (tierPool.length === 0) {
+        console.warn(`hireling-writer: no attack pool for hireling "${hireling}" subType "${subType}", skipping attack randomization`);
+      } else {
+        // Identify which slot indices (0-based) are attack slots in this group.
+        // Scan ALL rows in the group so we catch slots that appear only in some
+        // rows (e.g. Rogue Scout Skill3 which is absent in lower-level rows).
+        const attackSlotSet = new Set<number>();
+        for (const ri of indices) {
+          const r = rows[ri];
+          for (let s = 0; s < slotCols.length; s++) {
+            const cols = slotCols[s];
+            if (
+              cols.skill !== -1 && cols.mode !== -1 &&
+              r[cols.skill] &&
+              ATTACK_MODES.has(r[cols.mode])
+            ) {
+              attackSlotSet.add(s);
+            }
           }
         }
-      }
-      const attackSlotIndices = [...attackSlotSet].sort((a, b) => a - b);
+        const attackSlotIndices = [...attackSlotSet].sort((a, b) => a - b);
 
-      // Pick one skill per attack slot index (independent rolls → varied skills)
-      const chosenAttacks = new Map<number, string>();
-      for (const s of attackSlotIndices) {
-        chosenAttacks.set(s, attackPool[rng.randInt(0, attackPool.length - 1)]);
-      }
-
-      // Apply chosen skills to every row in the group, preserving all other columns.
-      // Guard per-row: only write if this particular row actually has that slot filled.
-      for (const ri of indices) {
-        const row = rows[ri];
+        // Pick one skill per attack slot index (independent rolls → varied skills)
+        const chosenAttacks = new Map<number, string>();
         for (const s of attackSlotIndices) {
-          const cols = slotCols[s];
-          if (row[cols.skill] && ATTACK_MODES.has(row[cols.mode])) {
-            row[cols.skill] = chosenAttacks.get(s)!;
+          chosenAttacks.set(s, tierPool[rng.randInt(0, tierPool.length - 1)]);
+        }
+
+        // Apply chosen skills to every row in the group, preserving all other columns.
+        // Guard per-row: only write if this particular row actually has that slot filled.
+        for (const ri of indices) {
+          const row = rows[ri];
+          for (const s of attackSlotIndices) {
+            const cols = slotCols[s];
+            if (row[cols.skill] && ATTACK_MODES.has(row[cols.mode])) {
+              row[cols.skill] = chosenAttacks.get(s)!;
+            }
           }
         }
       }
-    }
     } // end options.skills
 
     // ── STEP 2: Aura assignment (Mode=1) ──────────────────────────────────
     if (options.aura) {
-    let auraPool: string[];
-    if (diff >= 2) {
-      auraPool = poolAll;
-    } else if (act >= 4) {
-      auraPool = buildAuraPool(2, 3);
-    } else {
-      auraPool = buildAuraPool(1, 2);
-    }
-
-    const auraName = auraPool[rng.randInt(0, auraPool.length - 1)];
-
-    for (let gi = 0; gi < indices.length; gi++) {
-      const ri = indices[gi];
-      const row = rows[ri];
-      const isLast = gi === indices.length - 1;
-
-      const hiringLevel = parseInt(row[lvlCol] || '1', 10);
-
-      // Try to find an existing always-on aura slot (Mode=1) to replace
-      let targetSlotIdx = -1;
-      for (let s = 0; s < slotCols.length; s++) {
-        const cols = slotCols[s];
-        if (cols.mode !== -1 && row[cols.mode] === '1') {
-          targetSlotIdx = s;
-          break;
-        }
+      let auraPool: string[];
+      if (diff >= 2) {
+        auraPool = poolAll;
+      } else if (act >= 4) {
+        auraPool = buildAuraPool(2, 3);
+      } else {
+        auraPool = buildAuraPool(1, 2);
       }
 
-      if (targetSlotIdx !== -1) {
-        // Replace existing aura slot in-place, preserving Level/LvlPerLvl
-        const cols = slotCols[targetSlotIdx];
-        row[cols.skill] = auraName;
-        // Mode, Chance, ChancePerLvl, Level and LvlPerLvl stay as-is
-      } else {
-        // Find LAST filled attack slot (Mode ∈ {4,7,14}) in this row.
-        // Replacing the last attack slot keeps total slot count identical to
-        // vanilla, so the aura always lands within the panel's visible range.
-        let lastAttackSlotIdx = -1;
-        for (let s = slotCols.length - 1; s >= 0; s--) {
+      const auraName = auraPool[rng.randInt(0, auraPool.length - 1)];
+
+      for (let gi = 0; gi < indices.length; gi++) {
+        const ri = indices[gi];
+        const row = rows[ri];
+        const isLast = gi === indices.length - 1;
+
+        const hiringLevel = parseInt(row[lvlCol] || '1', 10);
+
+        // Try to find an existing always-on aura slot (Mode=1) to replace
+        let targetSlotIdx = -1;
+        for (let s = 0; s < slotCols.length; s++) {
           const cols = slotCols[s];
-          if (
-            cols.skill !== -1 && cols.mode !== -1 &&
-            row[cols.skill] &&
-            ATTACK_MODES.has(row[cols.mode])
-          ) {
-            lastAttackSlotIdx = s;
+          if (cols.mode !== -1 && row[cols.mode] === '1') {
+            targetSlotIdx = s;
             break;
           }
         }
-        if (lastAttackSlotIdx === -1) continue; // no attack slots → skip this row
 
-        const cols = slotCols[lastAttackSlotIdx];
-        row[cols.skill]        = auraName;
-        row[cols.mode]         = '1';
-        row[cols.chance]       = '10';
-        row[cols.chancePerLvl] = '0';
-        row[cols.level]        = String(Math.max(1, Math.floor(hiringLevel / 4)));
-        row[cols.lvlPerLvl]    = isLast ? '0' : '10'; // match vanilla Desert Merc LvlPerLvl=10
+        if (targetSlotIdx !== -1) {
+          // Replace existing aura slot in-place, preserving Level/LvlPerLvl
+          const cols = slotCols[targetSlotIdx];
+          row[cols.skill] = auraName;
+          // Mode, Chance, ChancePerLvl, Level and LvlPerLvl stay as-is
+        } else {
+          // Find LAST filled attack slot (Mode ∈ {4,7,14}) in this row.
+          // Replacing the last attack slot keeps total slot count identical to
+          // vanilla, so the aura always lands within the panel's visible range.
+          let lastAttackSlotIdx = -1;
+          for (let s = slotCols.length - 1; s >= 0; s--) {
+            const cols = slotCols[s];
+            if (
+              cols.skill !== -1 && cols.mode !== -1 &&
+              row[cols.skill] &&
+              ATTACK_MODES.has(row[cols.mode])
+            ) {
+              lastAttackSlotIdx = s;
+              break;
+            }
+          }
+          if (lastAttackSlotIdx === -1) continue; // no attack slots → skip this row
+
+          const cols = slotCols[lastAttackSlotIdx];
+          row[cols.skill]        = auraName;
+          row[cols.mode]         = '1';
+          row[cols.chance]       = '10';
+          row[cols.chancePerLvl] = '0';
+          row[cols.level]        = String(Math.max(1, Math.floor(hiringLevel / 4)));
+          row[cols.lvlPerLvl]    = isLast ? '0' : '10'; // match vanilla Desert Merc LvlPerLvl=10
+        }
       }
-    }
     } // end options.aura
   }
 }
