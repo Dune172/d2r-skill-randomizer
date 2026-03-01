@@ -19,8 +19,9 @@ import { SeededRNG } from './seed';
  *
  * Desert Mercenaries already have an aura in Skill2 (Mode=1); we replace it
  * in-place, preserving the existing Level and LvlPerLvl progression values.
- * All other hireling types get an aura appended to their first empty skill slot,
- * using a scaling formula derived from the vanilla merc aura pattern.
+ * All other hireling types have the aura replace their LAST filled attack slot,
+ * keeping the total slot count identical to vanilla so the aura is always
+ * within the hiring panel's visible range.
  *
  * Mode=5 (passive/utility) slots are never touched.
  *
@@ -256,31 +257,30 @@ export function writeHirelingRows(
         row[cols.skill] = auraName;
         // Mode, Chance, ChancePerLvl, Level and LvlPerLvl stay as-is
       } else {
-        // Find first empty skill slot
-        let emptySlotIdx = -1;
-        for (let s = 0; s < slotCols.length; s++) {
+        // Find LAST filled attack slot (Mode ∈ {4,7,14}) in this row.
+        // Replacing the last attack slot keeps total slot count identical to
+        // vanilla, so the aura always lands within the panel's visible range.
+        let lastAttackSlotIdx = -1;
+        for (let s = slotCols.length - 1; s >= 0; s--) {
           const cols = slotCols[s];
-          if (cols.skill !== -1 && !row[cols.skill]) {
-            emptySlotIdx = s;
+          if (
+            cols.skill !== -1 && cols.mode !== -1 &&
+            row[cols.skill] &&
+            ATTACK_MODES.has(row[cols.mode])
+          ) {
+            lastAttackSlotIdx = s;
             break;
           }
         }
-        if (emptySlotIdx === -1) {
-          // All slots full — skip this row (shouldn't happen with vanilla data)
-          continue;
-        }
+        if (lastAttackSlotIdx === -1) continue; // no attack slots → skip this row
 
-        const cols = slotCols[emptySlotIdx];
-        // Scaling: approx 1 aura level per 4 hireling levels (matches Desert Merc pattern)
-        const auraLevel = Math.max(1, Math.floor(hiringLevel / 4));
-        const lvlPerLvl = isLast ? 0 : 7;
-
+        const cols = slotCols[lastAttackSlotIdx];
         row[cols.skill]        = auraName;
         row[cols.mode]         = '1';
         row[cols.chance]       = '10';
         row[cols.chancePerLvl] = '0';
-        row[cols.level]        = String(auraLevel);
-        row[cols.lvlPerLvl]    = String(lvlPerLvl);
+        row[cols.level]        = String(Math.max(1, Math.floor(hiringLevel / 4)));
+        row[cols.lvlPerLvl]    = isLast ? '0' : '10'; // match vanilla Desert Merc LvlPerLvl=10
       }
     }
     } // end options.aura
