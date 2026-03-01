@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
     const teleportStaffLevel = startingTeleportStaff
       ? (Number(body.startingItems?.teleportStaffLevel) || 1)
       : 0;
+    const hirelingAura   = body.hirelingAura   !== false;  // default true
+    const hirelingSkills = body.hirelingSkills !== false;  // default true
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, hirelingAura, hirelingSkills);
     const zipCache = getZipCache();
 
     // Check cache
@@ -100,10 +102,14 @@ export async function POST(request: NextRequest) {
     writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments, logic);
     writeSkillDescRows(skillDescTxt.headers, skillDescTxt.rows, placements, descSynergyUpdates);
 
-    // Hireling aura randomization
-    const hirelingTxtFile = loadTxtFile('hireling.txt');
-    writeHirelingRows(hirelingTxtFile.headers, hirelingTxtFile.rows, placements, rng);
-    const hirelingTxtContent = serializeTxtFile(hirelingTxtFile.headers, hirelingTxtFile.rows);
+    // Hireling randomization (aura and/or attack skills, per user options)
+    let hirelingTxtContent: string | undefined;
+    if (hirelingAura || hirelingSkills) {
+      const hirelingTxtFile = loadTxtFile('hireling.txt');
+      writeHirelingRows(hirelingTxtFile.headers, hirelingTxtFile.rows, placements, rng,
+        { aura: hirelingAura, skills: hirelingSkills });
+      hirelingTxtContent = serializeTxtFile(hirelingTxtFile.headers, hirelingTxtFile.rows);
+    }
 
     // Build StartSkill candidates from the verified, already-updated skillsTxt rows.
     // Reading directly from the txt we just wrote guarantees the skill name matches

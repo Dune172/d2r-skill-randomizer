@@ -31,7 +31,9 @@ export function writeHirelingRows(
   rows: string[][],
   placements: SkillPlacement[],
   rng: SeededRNG,
+  options: { aura: boolean; skills: boolean } = { aura: true, skills: true },
 ): void {
+  if (!options.aura && !options.skills) return;
   // ── Helper predicates ─────────────────────────────────────────────────────
 
   function hasType(skill: SkillEntry, type: string): boolean {
@@ -173,6 +175,7 @@ export function writeHirelingRows(
     const diff     = parseInt(firstRow[diffCol] || '1', 10);
 
     // ── STEP 1: Attack skill assignment (Mode=4/7/14) ─────────────────────
+    if (options.skills) {
     const attackPool = getAttackPool(hireling, subType);
 
     if (attackPool.length === 0) {
@@ -215,8 +218,10 @@ export function writeHirelingRows(
         }
       }
     }
+    } // end options.skills
 
     // ── STEP 2: Aura assignment (Mode=1) ──────────────────────────────────
+    if (options.aura) {
     let auraPool: string[];
     if (diff >= 2) {
       auraPool = poolAll;
@@ -278,5 +283,6 @@ export function writeHirelingRows(
         row[cols.lvlPerLvl]    = String(lvlPerLvl);
       }
     }
+    } // end options.aura
   }
 }

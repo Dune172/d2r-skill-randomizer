@@ -15,6 +15,8 @@ interface Options {
   playersCount: number;
   playersActs: number[];
   startingItems: { teleportStaff: boolean; teleportStaffLevel: number };
+  hirelingAura: boolean;
+  hirelingSkills: boolean;
 }
 
 export default function Home() {
@@ -22,7 +24,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
-  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1 } });
+  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1 }, hirelingAura: true, hirelingSkills: true });
   // Seed state owned here so we can update the textbox after generation
   const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
@@ -63,7 +65,7 @@ export default function Home() {
       const buildRes = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems }),
+        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, hirelingSkills: options.hirelingSkills }),
       });
 
       if (!buildRes.ok) {
@@ -89,7 +91,9 @@ export default function Home() {
     const actsParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
       ? `&acts=${[...currentOptions.playersActs].sort((a, b) => a - b).join(',')}`
       : '';
-    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}`, '_blank');
+    const hirelingAuraParam   = !currentOptions.hirelingAura   ? '&hirelingAura=0'   : '';
+    const hirelingSkillsParam = !currentOptions.hirelingSkills ? '&hirelingSkills=0' : '';
+    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}${hirelingAuraParam}${hirelingSkillsParam}`, '_blank');
   };
 
   return (

@@ -16,7 +16,9 @@ export function makeCacheKey(
   teleportStaffLevel: number,
   playersActs: number[] = [1, 2, 3, 4, 5],
   logic: string = 'minimal',
+  hirelingAura: boolean = true,
+  hirelingSkills: boolean = true,
 ): string {
   const actsKey = [...playersActs].sort((a, b) => a - b).join('');
-  return `${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${logic}`;
+  return `${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${logic}:${hirelingAura?1:0}${hirelingSkills?1:0}`;
 }

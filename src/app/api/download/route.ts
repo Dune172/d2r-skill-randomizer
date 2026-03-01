@@ -27,7 +27,9 @@ export async function GET(request: NextRequest) {
       ? actsParam.split(',').map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
     const logicParam = searchParams.get('logic') === 'normal' ? 'normal' : 'minimal';
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam);
+    const hirelingAura   = searchParams.get('hirelingAura')   !== '0';  // default true
+    const hirelingSkills = searchParams.get('hirelingSkills') !== '0';  // default true
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam, hirelingAura, hirelingSkills);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 

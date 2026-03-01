@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 interface RandomizerFormProps {
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal'; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number } }) => void;
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal'; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number }; hirelingAura: boolean; hirelingSkills: boolean }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -16,6 +16,8 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
   const [playersActs, setPlayersActs] = useState<number[]>([1, 2, 3, 4, 5]);
   const [teleportStaff, setTeleportStaff] = useState(false);
   const [teleportStaffLevel, setTeleportStaffLevel] = useState(1);
+  const [hirelingAura, setHirelingAura] = useState(true);
+  const [hirelingSkills, setHirelingSkills] = useState(true);
 
   const toggleAct = (act: number) =>
     setPlayersActs(prev => prev.includes(act) ? prev.filter(a => a !== act) : [...prev, act]);
@@ -24,7 +26,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
     e.preventDefault();
     const effectiveSeed = seed.trim() || Math.floor(Math.random() * 2147483647).toString();
     if (!seed.trim()) onSeedChange(effectiveSeed);
-    onGenerate(effectiveSeed, { enablePrereqs, logic, playersEnabled: playersCount > 1, playersCount, playersActs, startingItems: { teleportStaff, teleportStaffLevel } });
+    onGenerate(effectiveSeed, { enablePrereqs, logic, playersEnabled: playersCount > 1, playersCount, playersActs, startingItems: { teleportStaff, teleportStaffLevel }, hirelingAura, hirelingSkills });
   };
 
   return (
@@ -214,6 +216,73 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Hirelings section */}
+      <div className="space-y-3 pt-1">
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-[#3a1510]/50" />
+          <span className="font-cinzel text-[10px] tracking-[0.28em] uppercase text-[#c8a870]">
+            Hirelings
+          </span>
+          <div className="h-px flex-1 bg-[#3a1510]/50" />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          {/* Hireling aura toggle */}
+          <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor="hirelingAura">
+            <div className="relative flex-shrink-0">
+              <input
+                id="hirelingAura"
+                type="checkbox"
+                checked={hirelingAura}
+                onChange={e => setHirelingAura(e.target.checked)}
+                className="sr-only"
+              />
+              <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
+                ${hirelingAura
+                  ? 'bg-[#7a1010] border-[#c42020]'
+                  : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}
+              >
+                {hirelingAura && (
+                  <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
+            </div>
+            <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
+              Randomize aura
+            </span>
+          </label>
+
+          {/* Hireling attack skills toggle */}
+          <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor="hirelingSkills">
+            <div className="relative flex-shrink-0">
+              <input
+                id="hirelingSkills"
+                type="checkbox"
+                checked={hirelingSkills}
+                onChange={e => setHirelingSkills(e.target.checked)}
+                className="sr-only"
+              />
+              <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
+                ${hirelingSkills
+                  ? 'bg-[#7a1010] border-[#c42020]'
+                  : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}
+              >
+                {hirelingSkills && (
+                  <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
+            </div>
+            <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
+              Shuffle attack skills
+            </span>
+          </label>
         </div>
       </div>
 
