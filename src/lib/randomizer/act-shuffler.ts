@@ -117,18 +117,19 @@ export function actShuffleSeed(seed: number): number {
  * or spawn wrong NPCs from a hardcoded pos-1 routine. None of this can be
  * suppressed through data-file remapping.
  *
- * Position 5 must always be Act 5. Act 5 (also Populate=0) has engine-hardcoded
- * expansion-act initialisation (siege state, Baal quest chain, Harrogath NPC setup)
- * that crashes when Act 5 content is loaded in any non-5 slot. Acts 2–4 shuffle
- * freely among positions 2–4 (6 possible orderings).
+ * Positions 4 and 5 must always be Acts 4 and 5. Both are Populate=0 acts with
+ * engine-hardcoded initialisation routines (Diablo/Pandemonium Fortress for Act 4;
+ * siege state, Baal quest chain, Harrogath NPC setup for Act 5) that crash when
+ * their content is loaded in any non-native slot. Acts 2–3 shuffle freely between
+ * positions 2–3 (2 possible orderings).
  */
 export function computeActPermutation(rng: SeededRNG): number[] {
-  const rest = [2, 3, 4];
+  const rest = [2, 3];
   for (let i = rest.length - 1; i > 0; i--) {
     const j = Math.floor(rng.next() * (i + 1));
     [rest[i], rest[j]] = [rest[j], rest[i]];
   }
-  return [1, ...rest, 5];
+  return [1, ...rest, 4, 5];
 }
 
 export function shuffleActs(

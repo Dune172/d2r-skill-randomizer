@@ -251,11 +251,12 @@ export async function POST(request: NextRequest) {
           const result = shuffleActs(actRng, monstats.headers, rows);
           rows = result.rows;
           actOrder = result.actOrder;
-          // Invariant: Acts 1 and 5 must stay in their native slots.
+          // Invariant: Acts 1, 4, and 5 must stay in their native slots.
           // computeActPermutation guarantees this; assert defensively.
-          if (actOrder[0] !== 1 || actOrder[4] !== 5) {
+          if (actOrder[0] !== 1 || actOrder[3] !== 4 || actOrder[4] !== 5) {
             throw new Error(
-              `actOrder invariant violated: slot 1 = ${actOrder[0]}, slot 5 = ${actOrder[4]}. ` +
+              `actOrder invariant violated: slots [1,4,5] = ` +
+              `[${actOrder[0]},${actOrder[3]},${actOrder[4]}]. ` +
               `Full order: ${JSON.stringify(actOrder)}`
             );
           }
