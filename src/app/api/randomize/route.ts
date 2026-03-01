@@ -259,6 +259,7 @@ export async function POST(request: NextRequest) {
               `Full order: ${JSON.stringify(actOrder)}`
             );
           }
+        }
 
         monstatsTxt = serializeTxtFile(monstats.headers, rows);
       }
