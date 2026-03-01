@@ -16,8 +16,7 @@ export function makeCacheKey(
   teleportStaffLevel: number,
   playersActs: number[] = [1, 2, 3, 4, 5],
   logic: string = 'minimal',
-  actShuffle: boolean = false,
 ): string {
   const actsKey = [...playersActs].sort((a, b) => a - b).join('');
-  return `${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${logic}:${actShuffle ? '1' : '0'}`;
+  return `${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${logic}`;
 }

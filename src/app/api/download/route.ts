@@ -27,8 +27,7 @@ export async function GET(request: NextRequest) {
       ? actsParam.split(',').map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
     const logicParam = searchParams.get('logic') === 'normal' ? 'normal' : 'minimal';
-    const actShuffle = searchParams.get('actShuffle') === '1';
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam, actShuffle);
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 

@@ -7,8 +7,6 @@ import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { PreviewData, ClassCode } from '@/lib/randomizer/types';
-import { computeActPermutation, actShuffleSeed } from '@/lib/randomizer/act-shuffler';
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -17,8 +15,6 @@ export async function POST(request: NextRequest) {
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
     }
-
-    const actShuffle = body.actShuffle === true;
 
     const numericSeed = Number(seedInput);
     const seed = (typeof seedInput === 'number' || (typeof seedInput === 'string' && !isNaN(numericSeed) && Number.isInteger(numericSeed)))
@@ -35,17 +31,9 @@ export async function POST(request: NextRequest) {
     const placements = placeSkills(rng, skills, treeAssignments);
     const placementsByClass = groupByClass(placements);
 
-    // Compute act permutation using a derived RNG so it matches the randomize route deterministically
-    let actOrder: number[] | undefined;
-    if (actShuffle) {
-      const actRng = createRNG(actShuffleSeed(seed));
-      actOrder = computeActPermutation(actRng);
-    }
-
     // Build preview data
     const preview: PreviewData = {
       seed,
-      ...(actOrder ? { actOrder } : {}),
       classes: CLASS_DEFS.map(classDef => ({
         code: classDef.code,
         name: classDef.name,

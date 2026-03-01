@@ -11,13 +11,6 @@ export interface ZipContents {
   charstatsTxt?: string;            // charstats with randomised StartSkill per class
   itemModifiersJson?: string;       // skill tab label strings (StrSklTabItem1–24)
   monstatsTxt?: string;             // monstats with HP/Exp scaled for players simulation
-  actinfoTxt?: string;              // actinfo reordered to match act shuffle permutation
-  levelsTxt?: string;               // levels with Act column remapped to match act shuffle
-  lvltypesTxt?: string;             // lvltypes with Act column remapped to match act shuffle
-  hirelingTxt?: string;             // hireling with Act column remapped to match act shuffle
-  monpresetTxt?: string;            // monpreset with Act column remapped to match act shuffle
-  objpresetTxt?: string;            // objpreset with Act column remapped to match act shuffle
-  superuniquesTxt?: string;         // superuniques with TC act numbers remapped to new difficulty position
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
   itemNamesJson?: string;           // item-names strings (display name for unique staff)
 }
@@ -85,31 +78,6 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     // Monster stats scaled for players simulation
     if (contents.monstatsTxt) {
       archive.append(contents.monstatsTxt, { name: 'mod/data/global/excel/monstats.txt' });
-    }
-
-    // Act info reordered to match act shuffle permutation (spawn points + waypoints)
-    if (contents.actinfoTxt) {
-      archive.append(contents.actinfoTxt, { name: 'mod/data/global/excel/actinfo.txt' });
-    }
-
-    // Levels with Act column remapped to match act shuffle (must be consistent with actinfo)
-    if (contents.levelsTxt) {
-      archive.append(contents.levelsTxt, { name: 'mod/data/global/excel/levels.txt' });
-    }
-    if (contents.lvltypesTxt) {
-      archive.append(contents.lvltypesTxt, { name: 'mod/data/global/excel/lvltypes.txt' });
-    }
-    if (contents.hirelingTxt) {
-      archive.append(contents.hirelingTxt, { name: 'mod/data/global/excel/hireling.txt' });
-    }
-    if (contents.monpresetTxt) {
-      archive.append(contents.monpresetTxt, { name: 'mod/data/global/excel/monpreset.txt' });
-    }
-    if (contents.objpresetTxt) {
-      archive.append(contents.objpresetTxt, { name: 'mod/data/global/excel/objpreset.txt' });
-    }
-    if (contents.superuniquesTxt) {
-      archive.append(contents.superuniquesTxt, { name: 'mod/data/global/excel/superuniques.txt' });
     }
 
     // Unique items with Teleport Staff added

@@ -8,30 +8,6 @@ import type { PreviewData } from '@/lib/randomizer/types';
 
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
 
-const ACT_LABELS = ['Act I', 'Act II', 'Act III', 'Act IV', 'Act V'];
-const DIFFICULTY_LABELS = ['Easiest', 'Easy', 'Medium', 'Hard', 'Hardest'];
-const DIFFICULTY_COLORS = ['text-[#50e050]', 'text-[#a0d060]', 'text-[#c8a870]', 'text-[#d07040]', 'text-[#e05050]'];
-
-function ActMappingDisplay({ actOrder }: { actOrder: number[] }) {
-  return (
-    <div className="rounded border border-[#3a1510]/60 bg-[#0a0205]/60 p-3 space-y-1.5">
-      <p className="font-cinzel text-[10px] tracking-[0.28em] uppercase text-[#c8a870] mb-2">
-        Act Order (visit order → act content)
-      </p>
-      {actOrder.map((originalAct, i) => (
-        <div key={i} className="flex items-center gap-2 text-sm">
-          <span className="w-16 text-[#e8d5a0] font-cinzel text-xs">Visit {i + 1}:</span>
-          <span className="text-[#4a3020]">→</span>
-          <span className="text-[#e8d5a0] font-cinzel text-xs w-14">{ACT_LABELS[originalAct - 1]}</span>
-          <span className={`font-cinzel text-xs ${DIFFICULTY_COLORS[i]}`}>
-            ({DIFFICULTY_LABELS[i]})
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 interface Options {
   enablePrereqs: boolean;
   logic: 'minimal' | 'normal';
@@ -39,7 +15,6 @@ interface Options {
   playersCount: number;
   playersActs: number[];
   startingItems: { teleportStaff: boolean; teleportStaffLevel: number };
-  actShuffle: boolean;
 }
 
 export default function Home() {
@@ -47,7 +22,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
-  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1 }, actShuffle: false });
+  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1 } });
   // Seed state owned here so we can update the textbox after generation
   const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
@@ -65,7 +40,7 @@ export default function Home() {
       const previewRes = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: seedInput, actShuffle: options.actShuffle }),
+        body: JSON.stringify({ seed: seedInput }),
       });
 
       if (!previewRes.ok) {
@@ -88,7 +63,7 @@ export default function Home() {
       const buildRes = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, actShuffle: options.actShuffle }),
+        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems }),
       });
 
       if (!buildRes.ok) {
@@ -114,8 +89,7 @@ export default function Home() {
     const actsParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
       ? `&acts=${[...currentOptions.playersActs].sort((a, b) => a - b).join(',')}`
       : '';
-    const actShuffleParam = currentOptions.actShuffle ? '&actShuffle=1' : '';
-    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}${actShuffleParam}`, '_blank');
+    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}`, '_blank');
   };
 
   return (
@@ -177,9 +151,6 @@ export default function Home() {
               >
                 Download Zip
               </button>
-              {preview?.actOrder && (
-                <ActMappingDisplay actOrder={preview.actOrder} />
-              )}
             </div>
           )}
         </div>

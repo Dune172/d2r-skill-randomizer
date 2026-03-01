@@ -17,7 +17,6 @@ import { buildAllIconSprites } from '@/lib/sprites/icon-assembler';
 import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
-import { shuffleActs, actShuffleSeed } from '@/lib/randomizer/act-shuffler';
 import { applyTeleportStaff, applyTeleportStaffUnique } from '@/lib/randomizer/starting-items';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 
@@ -37,7 +36,6 @@ export async function POST(request: NextRequest) {
     const playersActs: number[] = Array.isArray(body.playersActs)
       ? (body.playersActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
-    const actShuffle = body.actShuffle === true;
     const startingTeleportStaff = body.startingItems?.teleportStaff === true;
     const teleportStaffLevel = startingTeleportStaff
       ? (Number(body.startingItems?.teleportStaffLevel) || 1)
@@ -53,7 +51,7 @@ export async function POST(request: NextRequest) {
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, actShuffle);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic);
     const zipCache = getZipCache();
 
     // Check cache
@@ -231,207 +229,14 @@ export async function POST(request: NextRequest) {
 
     const iconSprites = await buildAllIconSprites(placementsByClass, skillDescIconCels);
 
-    // Step 11b: Modify monstats (players scaling and/or act shuffle)
+    // Step 11b: Modify monstats for players scaling
     let monstatsTxt: string | undefined;
-    let actOrder: number[] | undefined;
-    if ((playersEnabled && playersCount > 1) || actShuffle) {
+    if (playersEnabled && playersCount > 1) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
         const monstats = loadTxtFile('monstats.txt');
-        let rows = monstats.rows;
-
-        // 1. Players scaling (runs first)
-        if (playersEnabled && playersCount > 1) {
-          rows = scaleMonstats(monstats.headers, rows, playersCount, playersActs);
-        }
-
-        // 2. Act shuffle (runs after players scaling so effects compound)
-        if (actShuffle) {
-          const actRng = createRNG(actShuffleSeed(seed));
-          const result = shuffleActs(actRng, monstats.headers, rows);
-          rows = result.rows;
-          actOrder = result.actOrder;
-          // Invariant: Acts 1, 4, and 5 must stay in their native slots.
-          // computeActPermutation guarantees this; assert defensively.
-          if (actOrder[0] !== 1 || actOrder[3] !== 4 || actOrder[4] !== 5) {
-            throw new Error(
-              `actOrder invariant violated: slots [1,4,5] = ` +
-              `[${actOrder[0]},${actOrder[3]},${actOrder[4]}]. ` +
-              `Full order: ${JSON.stringify(actOrder)}`
-            );
-          }
-        }
-
+        const rows = scaleMonstats(monstats.headers, monstats.rows, playersCount, playersActs);
         monstatsTxt = serializeTxtFile(monstats.headers, rows);
-      }
-    }
-
-    // Step 11c: Reorder actinfo.txt to match act shuffle permutation
-    // This changes where new characters spawn and which waypoints each act offers.
-    let actinfoTxt: string | undefined;
-    if (actShuffle && actOrder) {
-      const actinfoPath = path.join(DATA_DIR, 'txt', 'actinfo.txt');
-      if (fs.existsSync(actinfoPath)) {
-        const actinfo = loadTxtFile('actinfo.txt');
-        const actColIdx = actinfo.headers.indexOf('act');
-        // Reorder rows: engine act slot i gets the content of original act actOrder[i]
-        const newRows = actOrder.map((originalAct, i) => {
-          const srcRow = [...actinfo.rows[originalAct - 1]];
-          if (actColIdx !== -1) srcRow[actColIdx] = String(i + 1); // preserve 1-based act id
-
-          // Act 4 has only 3 waypoints (waypoint1–3); slots 4–9 are empty.
-          // Fill any empty waypoint slots with a non-waypoint area (classlevelrangestart).
-          // Using a non-waypoint area (Waypoint=255 in levels.txt) prevents:
-          //   (a) null-deref: engine reads a valid, non-empty area name
-          //   (b) duplicate-index crash: the area has no global waypoint bit to register
-          // The town waypoint MUST NOT be used as a fill — it would register 6 copies of
-          // the same waypoint index, which the engine may reject.
-          {
-            const rangeStartColIdx = actinfo.headers.indexOf('classlevelrangestart');
-            const fallbackArea = rangeStartColIdx !== -1 ? srcRow[rangeStartColIdx] : '';
-            if (fallbackArea) {
-              for (let wpNum = 2; wpNum <= 9; wpNum++) {
-                const wpColIdx = actinfo.headers.indexOf(`waypoint${wpNum}`);
-                if (wpColIdx !== -1 && !srcRow[wpColIdx]) {
-                  srcRow[wpColIdx] = fallbackArea;
-                }
-              }
-            }
-          }
-
-          return srcRow;
-        });
-        actinfoTxt = serializeTxtFile(actinfo.headers, newRows);
-      }
-    }
-
-    // Step 11d: Remap Act columns in all act-keyed data files to match the shuffle permutation.
-    // actinfo.txt and every file with an Act column must be consistent or the engine crashes.
-    let levelsTxt: string | undefined;
-    let lvltypesTxt: string | undefined;
-    let hirelingTxt: string | undefined;
-    let monpresetTxt: string | undefined;
-    let objpresetTxt: string | undefined;
-
-    if (actShuffle && actOrder) {
-      // 0-indexed map: original act value (0–4) → new position (0–4)  [for levels.txt]
-      const actMap0: Record<number, number> = {};
-      // 1-indexed map: original act value (1–5) → new position (1–5)  [for lvltypes/hireling/etc.]
-      const actMap1: Record<number, number> = {};
-      for (let i = 0; i < actOrder.length; i++) {
-        actMap0[actOrder[i] - 1] = i;       // actOrder is 1-based; positions are 0-based
-        actMap1[actOrder[i]] = i + 1;        // both sides 1-based
-      }
-
-      const remapActFile = (filename: string, actMap: Record<number, number>): string | undefined => {
-        const filePath = path.join(DATA_DIR, 'txt', filename);
-        if (!fs.existsSync(filePath)) return undefined;
-        const data = loadTxtFile(filename);
-        const actColIdx = data.headers.indexOf('Act');
-        if (actColIdx === -1) return undefined;
-        const newRows = data.rows.map(row => {
-          const actVal = parseInt(row[actColIdx], 10);
-          if (isNaN(actVal) || actMap[actVal] === undefined) return row;
-          const newRow = [...row];
-          newRow[actColIdx] = String(actMap[actVal]);
-          return newRow;
-        });
-        return serializeTxtFile(data.headers, newRows);
-      };
-
-      // Remap levels.txt: both Act column (0-indexed) and Waypoint column.
-      // Waypoint values are global indices; each act owns a fixed range. When an act
-      // moves to a new slot, its waypoint values must shift into the target slot's range.
-      // 255 = no waypoint (sentinel) and is left unchanged.
-      // If a source act has more waypoints than the target slot supports (e.g. a
-      // 9-waypoint act lands in Act 4's 3-waypoint slot), excess waypoints are set to
-      // 255 so the engine treats them as having no waypoint.
-      const ACT_WP_INFO: Record<number, { base: number; count: number }> = {
-        1: { base: 0,  count: 9 },
-        2: { base: 9,  count: 9 },
-        3: { base: 18, count: 9 },
-        4: { base: 27, count: 3 },
-        5: { base: 30, count: 9 },
-      };
-      {
-        const lvlPath = path.join(DATA_DIR, 'txt', 'levels.txt');
-        if (fs.existsSync(lvlPath)) {
-          const lvl = loadTxtFile('levels.txt');
-          const actColIdx = lvl.headers.indexOf('Act');
-          const wpColIdx  = lvl.headers.indexOf('Waypoint');
-
-          const newRows = lvl.rows.map(row => {
-            const origActVal = parseInt(row[actColIdx] ?? '', 10); // 0-indexed (0–4)
-            if (isNaN(origActVal) || actMap0[origActVal] === undefined) return row;
-
-            const newRow = [...row];
-            const sourceAct = origActVal + 1;           // 1-indexed (1–5)
-            const targetPos = actMap0[origActVal] + 1;  // 1-indexed (1–5)
-
-            // Remap Act column (same as remapActFile does)
-            newRow[actColIdx] = String(actMap0[origActVal]);
-
-            // Remap Waypoint into target act's global index range.
-            if (wpColIdx !== -1) {
-              const wpVal = parseInt(row[wpColIdx] ?? '', 10);
-              if (!isNaN(wpVal) && wpVal !== 255) {
-                const src = ACT_WP_INFO[sourceAct];
-                const tgt = ACT_WP_INFO[targetPos];
-                if (src && tgt) {
-                  const localIdx = wpVal - src.base; // 0-based slot within source act
-                  if (localIdx >= 0 && localIdx < src.count) {
-                    newRow[wpColIdx] = localIdx < tgt.count
-                      ? String(tgt.base + localIdx)
-                      : '255'; // beyond target act's capacity — suppress waypoint
-                  }
-                }
-              }
-            }
-
-            return newRow;
-          });
-
-          levelsTxt = serializeTxtFile(lvl.headers, newRows);
-        }
-      }
-      lvltypesTxt  = remapActFile('lvltypes.txt',  actMap1);
-      hirelingTxt  = remapActFile('hireling.txt',  actMap1);
-      monpresetTxt = remapActFile('monpreset.txt', actMap1);
-      objpresetTxt = remapActFile('objpreset.txt', actMap1);
-    }
-
-    // Step 11e: Remap TC act numbers in superuniques.txt.
-    // Superuniques have TC columns like "Act 4 Super A" that must reflect the new
-    // difficulty position, not the original act number. Uses same actMap1 as Step 11d.
-    let superuniquesTxt: string | undefined;
-    if (actShuffle && actOrder) {
-      const suPath = path.join(DATA_DIR, 'txt', 'superuniques.txt');
-      if (fs.existsSync(suPath)) {
-        const su = loadTxtFile('superuniques.txt');
-        const SU_TC_COLS = ['TC', 'TC Desecrated', 'TC(N)', 'TC(N) Desecrated', 'TC(H)', 'TC(H) Desecrated'];
-        const ACT_TC_RE = /^(Act )(\d)/;
-        // Rebuild actMap1 (same formula as Step 11d; actOrder is still in scope)
-        const suActMap1: Record<number, number> = {};
-        for (let i = 0; i < actOrder.length; i++) {
-          suActMap1[actOrder[i]] = i + 1;
-        }
-        const suRows = su.rows.map(row => {
-          const newRow = [...row];
-          for (const colName of SU_TC_COLS) {
-            const idx = su.headers.indexOf(colName);
-            if (idx === -1) continue;
-            const tc = newRow[idx];
-            if (!tc) continue;
-            newRow[idx] = tc.replace(ACT_TC_RE, (_, prefix, digit) => {
-              const origAct = parseInt(digit, 10);
-              return suActMap1[origAct] !== undefined
-                ? `${prefix}${suActMap1[origAct]}`
-                : _;
-            });
-          }
-          return newRow;
-        });
-        superuniquesTxt = serializeTxtFile(su.headers, suRows);
       }
     }
 
@@ -445,13 +250,6 @@ export async function POST(request: NextRequest) {
       charstatsTxt,
       itemModifiersJson,
       monstatsTxt,
-      actinfoTxt,
-      levelsTxt,
-      lvltypesTxt,
-      hirelingTxt,
-      monpresetTxt,
-      objpresetTxt,
-      superuniquesTxt,
       uniqueitemsTxt,
       itemNamesJson,
     });
@@ -465,7 +263,7 @@ export async function POST(request: NextRequest) {
     // Cache the result
     zipCache.set(cacheKey, zipBuffer);
 
-    return NextResponse.json({ seed, status: 'ready', ...(actOrder ? { actOrder } : {}) });
+    return NextResponse.json({ seed, status: 'ready' });
   } catch (error) {
     console.error('Randomize error:', error);
     return NextResponse.json(
