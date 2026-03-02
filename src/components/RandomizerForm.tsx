@@ -7,9 +7,11 @@ interface RandomizerFormProps {
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
+  d2rDir: string;
+  onD2rDirChange: (s: string) => void;
 }
 
-export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChange }: RandomizerFormProps) {
+export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChange, d2rDir, onD2rDirChange }: RandomizerFormProps) {
   const [enablePrereqs, setEnablePrereqs] = useState(true);
   const [logic, setLogic] = useState<'minimal' | 'normal'>('normal');
   const [playersCount, setPlayersCount] = useState(1);
@@ -283,6 +285,35 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
               Shuffle attack skills
             </span>
           </label>
+        </div>
+      </div>
+
+      {/* Installation section */}
+      <div className="space-y-3 pt-1">
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-[#3a1510]/50" />
+          <span className="font-cinzel text-[10px] tracking-[0.28em] uppercase text-[#c8a870]">
+            Installation
+          </span>
+          <div className="h-px flex-1 bg-[#3a1510]/50" />
+        </div>
+        <div>
+          <label htmlFor="d2rDir" className="block font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] mb-2">
+            D2R Folder Path
+          </label>
+          <input
+            id="d2rDir"
+            type="text"
+            value={d2rDir}
+            onChange={e => onD2rDirChange(e.target.value)}
+            placeholder="C:\Program Files (x86)\Diablo II Resurrected"
+            className="w-full rounded bg-[#090203] border border-[#3a1510] px-4 py-2.5 text-[#e8d5a0] placeholder-[#4a3020]
+              focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+              transition-colors text-sm"
+          />
+          <p className="mt-1.5 text-[11px] text-[#6a4828]">
+            Optional. If left blank, the installer will auto-detect your D2R location.
+          </p>
         </div>
       </div>
 

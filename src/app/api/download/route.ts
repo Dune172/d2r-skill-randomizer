@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import AdmZip from 'adm-zip';
 import { seedFromString } from '@/lib/randomizer/seed';
-import { createD2RShortcut } from '@/lib/lnk-builder';
+import { createInstallerBat } from '@/lib/bat-builder';
 
 export const maxDuration = 60;
 
@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     const logicParam = searchParams.get('logic') === 'normal' ? 'normal' : 'minimal';
     const hirelingAura   = searchParams.get('hirelingAura')   !== '0';  // default true
     const hirelingSkills = searchParams.get('hirelingSkills') !== '0';  // default true
+    const d2rDir = searchParams.get('d2rDir') || undefined;
     const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam, hirelingAura, hirelingSkills);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
@@ -42,12 +43,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Inject a Windows launch shortcut (.lnk) into the zip.
-    // The shortcut resolves D2R.exe via %ProgramFiles(x86)% at launch time.
     const modName = `seed_${seed}`;
-    const lnkBuffer = createD2RShortcut(modName);
+    const batBuffer = createInstallerBat(modName, d2rDir);
     const zip = new AdmZip(Buffer.from(zipBuffer));
-    zip.addFile('Launch D2R Mod.lnk', lnkBuffer);
+    zip.addFile('Install and Launch.bat', batBuffer);
     const modifiedBuffer = zip.toBuffer();
 
     return new NextResponse(new Uint8Array(modifiedBuffer), {

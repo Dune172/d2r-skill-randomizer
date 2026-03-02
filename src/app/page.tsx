@@ -25,6 +25,7 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
   const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1 }, hirelingAura: true, hirelingSkills: true });
+  const [d2rDir, setD2rDir] = useState<string>('');
   // Seed state owned here so we can update the textbox after generation
   const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
@@ -93,7 +94,8 @@ export default function Home() {
       : '';
     const hirelingAuraParam   = !currentOptions.hirelingAura   ? '&hirelingAura=0'   : '';
     const hirelingSkillsParam = !currentOptions.hirelingSkills ? '&hirelingSkills=0' : '';
-    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}${hirelingAuraParam}${hirelingSkillsParam}`, '_blank');
+    const d2rDirParam = d2rDir.trim() ? `&d2rDir=${encodeURIComponent(d2rDir.trim())}` : '';
+    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}${hirelingAuraParam}${hirelingSkillsParam}${d2rDirParam}`, '_blank');
   };
 
   return (
@@ -140,6 +142,8 @@ export default function Home() {
             isLoading={status === 'generating' || status === 'building'}
             seed={seed}
             onSeedChange={setSeed}
+            d2rDir={d2rDir}
+            onD2rDirChange={setD2rDir}
           />
 
           {status === 'ready' && (
