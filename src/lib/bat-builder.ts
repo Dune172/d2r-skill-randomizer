@@ -23,12 +23,15 @@ export function createInstallerBat(modName: string, d2rDir?: string): Buffer {
   //   - JS interpolation         (${...}) : used only for modName/preconfiguredLine
   const script =
 `@echo off
-setlocal enabledelayedexpansion
+setlocal
 
 :: ── Self-elevate to Administrator if needed ──────────────────────────────
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    powershell -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\\d2r_elevate.vbs"
+    echo UAC.ShellExecute "cmd.exe", "/c ""%~f0""", "", "runas", 1 >> "%temp%\\d2r_elevate.vbs"
+    cscript //nologo "%temp%\\d2r_elevate.vbs"
+    del "%temp%\\d2r_elevate.vbs" >nul 2>&1
     exit /b
 )
 
@@ -84,8 +87,12 @@ if %errorlevel% gtr 7 (
     exit /b 1
 )
 
-echo Mod installed! Launching D2R...
+echo Mod installed successfully!
+echo.
+echo Launching D2R... if it does not appear, launch from Battle.net.
 start "" "%D2R_DIR%\\D2R.exe" -mod ${modName} -txt
+echo.
+pause
 exit /b 0
 `;
 
