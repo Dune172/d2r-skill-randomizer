@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
 
     // Inject a Windows launch shortcut (.lnk) into the zip.
     // The shortcut resolves D2R.exe via %ProgramFiles(x86)% at launch time.
-    const lnkBuffer = createD2RShortcut();
+    const modName = `seed_${seed}`;
+    const lnkBuffer = createD2RShortcut(modName);
     const zip = new AdmZip(Buffer.from(zipBuffer));
     zip.addFile('Launch D2R Mod.lnk', lnkBuffer);
     const modifiedBuffer = zip.toBuffer();

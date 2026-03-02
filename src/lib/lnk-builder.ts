@@ -54,9 +54,9 @@ function buildEnvVarBlock(): Buffer {
  * The target path is resolved at runtime using the EnvironmentVariableDataBlock,
  * with an expanded fallback path in LinkInfo.LocalBasePath.
  */
-export function createD2RShortcut(): Buffer {
+export function createD2RShortcut(modName: string): Buffer {
   const TARGET_PATH = 'C:\\Program Files (x86)\\Diablo II Resurrected\\D2R.exe';
-  const ARGS = '-mod mod -txt';
+  const ARGS = `-mod ${modName} -txt`;
 
   // ── 1. ShellLinkHeader (exactly 76 bytes) ──────────────────────────────
   //
