@@ -5,8 +5,9 @@
  *
  * Sections written:
  *   1. ShellLinkHeader (76 bytes)
- *   2. LinkInfo  — VolumeIDAndLocalBasePath (ANSI path)
+ *   2. LinkInfo  — VolumeIDAndLocalBasePath (ANSI path, expanded fallback)
  *   3. StringData — Arguments only (UTF-16LE, as required by IsUnicode flag)
+ *   4. ExtraData  — EnvironmentVariableDataBlock (env var path resolution)
  */
 
 function u16le(n: number): Buffer {
@@ -22,19 +23,48 @@ function u32le(n: number): Buffer {
 }
 
 /**
- * Build a Windows .lnk shortcut buffer.
+ * Build an EnvironmentVariableDataBlock (MS-SHLLINK §2.5.4).
+ * Allows Windows to resolve the target path via an environment variable string.
  *
- * @param targetPath - Absolute Windows path to the target executable.
- *                     Must contain only printable ASCII (0x20–0x7E).
- * @param args       - Command-line arguments string.
+ * BlockSize      = 788 (0x314)
+ * BlockSignature = 0xA0000001
+ * TargetAnsi     = 260 bytes, null-padded
+ * TargetUnicode  = 520 bytes, null-padded UTF-16LE
  */
-export function createShortcut(targetPath: string, args: string): Buffer {
+function buildEnvVarBlock(): Buffer {
+  const envPath = '%ProgramFiles(x86)%\\Diablo II Resurrected\\D2R.exe';
+
+  const ansi = Buffer.alloc(260, 0);
+  ansi.write(envPath, 0, 'ascii');
+
+  const unicode = Buffer.alloc(520, 0);
+  unicode.write(envPath, 0, 'utf16le');
+
+  // 4 + 4 + 260 + 520 = 788 (0x314) ✓
+  return Buffer.concat([
+    u32le(0x00000314),  // BlockSize
+    u32le(0xA0000001),  // BlockSignature
+    ansi,               // TargetAnsi   (260 bytes)
+    unicode,            // TargetUnicode (520 bytes)
+  ]);
+}
+
+/**
+ * Build a Windows .lnk shortcut that launches D2R via %ProgramFiles(x86)%.
+ * The target path is resolved at runtime using the EnvironmentVariableDataBlock,
+ * with an expanded fallback path in LinkInfo.LocalBasePath.
+ */
+export function createD2RShortcut(): Buffer {
+  const TARGET_PATH = 'C:\\Program Files (x86)\\Diablo II Resurrected\\D2R.exe';
+  const ARGS = '-mod mod -txt';
+
   // ── 1. ShellLinkHeader (exactly 76 bytes) ──────────────────────────────
   //
   // LinkFlags used:
   //   HasLinkInfo  = 0x00000002
   //   HasArguments = 0x00000020
   //   IsUnicode    = 0x00000080  (StringData fields are UTF-16LE)
+  //   HasExpString = 0x00000200  (EnvironmentVariableDataBlock present)
   const LINK_CLSID = Buffer.from([
     0x01, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
     0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46,
@@ -43,7 +73,7 @@ export function createShortcut(targetPath: string, args: string): Buffer {
   const header = Buffer.concat([
     u32le(0x4C),           // HeaderSize
     LINK_CLSID,            // LinkCLSID  (16 bytes)
-    u32le(0x000000A2),     // LinkFlags: HasLinkInfo | HasArguments | IsUnicode
+    u32le(0x000002A2),     // LinkFlags: HasLinkInfo | HasArguments | IsUnicode | HasExpString
     u32le(0x00000020),     // FileAttributes: FILE_ATTRIBUTE_ARCHIVE
     Buffer.alloc(8),       // CreationTime   (FILETIME, zero)
     Buffer.alloc(8),       // AccessTime     (FILETIME, zero)
@@ -56,38 +86,25 @@ export function createShortcut(targetPath: string, args: string): Buffer {
     u32le(0),              // Reserved2
     u32le(0),              // Reserved3
   ]);
-  // Sanity check: header must be exactly 76 bytes
   // 4 + 16 + 4 + 4 + 8 + 8 + 8 + 4 + 4 + 4 + 2 + 2 + 4 + 4 = 76 ✓
 
   // ── 2. LinkInfo ────────────────────────────────────────────────────────
   //
-  // LinkInfoHeaderSize = 0x1C (28 bytes, the minimum / version 1 layout)
-  // LinkInfoFlags      = 0x00000001 (VolumeIDAndLocalBasePath)
-  //
-  // Layout inside LinkInfo:
-  //   [28-byte LinkInfo header]
-  //   [VolumeID struct]
-  //   [LocalBasePath — null-terminated ANSI]
-  //   [CommonPathSuffix — just a null byte]
+  // LocalBasePath holds the expanded fallback path.
+  // Windows will prefer EnvironmentVariableDataBlock for resolution.
 
-  // VolumeID: minimum 16-byte header + null-terminated empty volume label
-  //   VolumeIDSize         4 bytes
-  //   DriveType            4 bytes  (3 = DRIVE_FIXED)
-  //   DriveSerialNumber    4 bytes  (0)
-  //   VolumeLabelOffset    4 bytes  (0x10 = immediately after the 16-byte header)
-  //   VolumeLabel          1 byte   ('\0' = empty string)
   const volumeLabel = Buffer.from([0x00]); // empty, null-terminated
   const volumeIDHeaderSize = 16;
   const volumeIDSize = volumeIDHeaderSize + volumeLabel.length;
   const volumeID = Buffer.concat([
     u32le(volumeIDSize),
-    u32le(3),               // DRIVE_FIXED
-    u32le(0),               // DriveSerialNumber
+    u32le(3),                  // DRIVE_FIXED
+    u32le(0),                  // DriveSerialNumber
     u32le(volumeIDHeaderSize), // VolumeLabelOffset
     volumeLabel,
   ]);
 
-  const localBasePath = Buffer.from(targetPath + '\0', 'ascii');
+  const localBasePath = Buffer.from(TARGET_PATH + '\0', 'ascii');
   const commonPathSuffix = Buffer.from([0x00]);
 
   const linkInfoHeaderSize = 0x1C; // 28
@@ -104,7 +121,7 @@ export function createShortcut(targetPath: string, args: string): Buffer {
   const linkInfoHeader = Buffer.concat([
     u32le(linkInfoSize),
     u32le(linkInfoHeaderSize),
-    u32le(1),                         // LinkInfoFlags: VolumeIDAndLocalBasePath
+    u32le(1),                       // LinkInfoFlags: VolumeIDAndLocalBasePath
     u32le(volumeIDOffset),
     u32le(localBasePathOffset),
     u32le(commonNetRelLinkOffset),
@@ -123,11 +140,14 @@ export function createShortcut(targetPath: string, args: string): Buffer {
   // Because IsUnicode is set, each CountedString is:
   //   CountCharacters  UInt16LE  (number of UTF-16 code units, not bytes)
   //   String           UTF-16LE  (no null terminator)
-  const argsUTF16 = Buffer.from(args, 'utf16le');
+  const argsUTF16 = Buffer.from(ARGS, 'utf16le');
   const argsStringData = Buffer.concat([
-    u16le(args.length), // CountCharacters (code units)
+    u16le(ARGS.length), // CountCharacters (code units)
     argsUTF16,
   ]);
 
-  return Buffer.concat([header, linkInfo, argsStringData]);
+  // ── 4. ExtraData — EnvironmentVariableDataBlock ─────────────────────────
+  const envVarBlock = buildEnvVarBlock();
+
+  return Buffer.concat([header, linkInfo, argsStringData, envVarBlock]);
 }

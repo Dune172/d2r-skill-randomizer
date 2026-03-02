@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import AdmZip from 'adm-zip';
 import { seedFromString } from '@/lib/randomizer/seed';
-import { createShortcut } from '@/lib/lnk-builder';
+import { createD2RShortcut } from '@/lib/lnk-builder';
 
 export const maxDuration = 60;
 
@@ -43,16 +43,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Inject a Windows launch shortcut (.lnk) into the zip.
-    // The shortcut points to D2R.exe with -mod mod -txt so users can
-    // double-click it after extracting the zip to their D2R directory.
-    const PLACEHOLDER = 'C:\\Program Files (x86)\\Diablo II Resurrected\\D2R.exe';
-    const rawPath = searchParams.get('launcherPath') ?? '';
-    // Accept only printable ASCII (safe for ANSI path in .lnk LinkInfo).
-    const launcherPath = /^[\x20-\x7E]+$/.test(rawPath.trim()) && rawPath.trim()
-      ? rawPath.trim()
-      : PLACEHOLDER;
-
-    const lnkBuffer = createShortcut(launcherPath, '-mod mod -txt');
+    // The shortcut resolves D2R.exe via %ProgramFiles(x86)% at launch time.
+    const lnkBuffer = createD2RShortcut();
     const zip = new AdmZip(Buffer.from(zipBuffer));
     zip.addFile('Launch D2R Mod.lnk', lnkBuffer);
     const modifiedBuffer = zip.toBuffer();
