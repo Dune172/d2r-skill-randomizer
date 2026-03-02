@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import AdmZip from 'adm-zip';
 import { seedFromString } from '@/lib/randomizer/seed';
+import { createShortcut } from '@/lib/lnk-builder';
 
 export const maxDuration = 60;
 
@@ -40,11 +42,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return new NextResponse(new Uint8Array(zipBuffer), {
+    // Inject a Windows launch shortcut (.lnk) into the zip.
+    // The shortcut points to D2R.exe with -mod mod -txt so users can
+    // double-click it after extracting the zip to their D2R directory.
+    const PLACEHOLDER = 'C:\\Program Files (x86)\\Diablo II Resurrected\\D2R.exe';
+    const rawPath = searchParams.get('launcherPath') ?? '';
+    // Accept only printable ASCII (safe for ANSI path in .lnk LinkInfo).
+    const launcherPath = /^[\x20-\x7E]+$/.test(rawPath.trim()) && rawPath.trim()
+      ? rawPath.trim()
+      : PLACEHOLDER;
+
+    const lnkBuffer = createShortcut(launcherPath, '-mod mod -txt');
+    const zip = new AdmZip(Buffer.from(zipBuffer));
+    zip.addFile('Launch D2R Mod.lnk', lnkBuffer);
+    const modifiedBuffer = zip.toBuffer();
+
+    return new NextResponse(new Uint8Array(modifiedBuffer), {
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="d2r_skill_randomizer_seed${seed}.zip"`,
-        'Content-Length': String(zipBuffer.length),
       },
     });
   } catch (error) {

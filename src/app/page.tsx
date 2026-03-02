@@ -25,6 +25,7 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
   const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1 }, hirelingAura: true, hirelingSkills: true });
+  const [launcherPath, setLauncherPath] = useState('');
   // Seed state owned here so we can update the textbox after generation
   const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
@@ -93,7 +94,10 @@ export default function Home() {
       : '';
     const hirelingAuraParam   = !currentOptions.hirelingAura   ? '&hirelingAura=0'   : '';
     const hirelingSkillsParam = !currentOptions.hirelingSkills ? '&hirelingSkills=0' : '';
-    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}${hirelingAuraParam}${hirelingSkillsParam}`, '_blank');
+    const launcherParam = launcherPath.trim()
+      ? `&launcherPath=${encodeURIComponent(launcherPath.trim())}`
+      : '';
+    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}${hirelingAuraParam}${hirelingSkillsParam}${launcherParam}`, '_blank');
   };
 
   return (
@@ -141,6 +145,36 @@ export default function Home() {
             seed={seed}
             onSeedChange={setSeed}
           />
+
+          {/* ── Launcher path ── */}
+          <div className="space-y-3 pt-4">
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-[#3a1510]/50" />
+              <span className="font-cinzel text-[10px] tracking-[0.28em] uppercase text-[#c8a870]">
+                Launch
+              </span>
+              <div className="h-px flex-1 bg-[#3a1510]/50" />
+            </div>
+            <div>
+              <label htmlFor="launcherPath" className="block font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] mb-2">
+                D2R.exe Path <span className="normal-case tracking-normal opacity-60">(optional)</span>
+              </label>
+              <input
+                id="launcherPath"
+                type="text"
+                value={launcherPath}
+                onChange={e => setLauncherPath(e.target.value)}
+                placeholder="C:\Program Files (x86)\Diablo II Resurrected\D2R.exe"
+                className="w-full rounded bg-[#090203] border border-[#3a1510] px-4 py-2.5 text-[#e8d5a0] placeholder-[#4a3020]
+                  focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                  transition-colors text-sm font-mono"
+              />
+              <p className="mt-1.5 text-xs text-[#7a5818]">
+                A launch shortcut (.lnk) will be included in your download.
+              </p>
+            </div>
+          </div>
+
           {status === 'ready' && (
             <div className="pt-3 space-y-3">
               <button
