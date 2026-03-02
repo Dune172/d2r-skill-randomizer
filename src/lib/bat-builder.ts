@@ -25,13 +25,12 @@ export function createInstallerBat(modName: string, d2rDir?: string): Buffer {
 `@echo off
 setlocal
 
+set "SELF=%~f0"
+
 :: ── Self-elevate to Administrator if needed ──────────────────────────────
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\\d2r_elevate.vbs"
-    echo UAC.ShellExecute "cmd.exe", "/c ""%~f0""", "", "runas", 1 >> "%temp%\\d2r_elevate.vbs"
-    cscript //nologo "%temp%\\d2r_elevate.vbs"
-    del "%temp%\\d2r_elevate.vbs" >nul 2>&1
+    powershell -NoProfile -Command "& { Start-Process cmd.exe -ArgumentList ('/c ' + [char]34 + $env:SELF + [char]34) -Verb RunAs }"
     exit /b
 )
 
