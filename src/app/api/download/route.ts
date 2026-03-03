@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import AdmZip from 'adm-zip';
 import { seedFromString } from '@/lib/randomizer/seed';
-import { createInstallerBat } from '@/lib/bat-builder';
+import { createInstallerBat, createInstallerPs1 } from '@/lib/bat-builder';
 
 export const maxDuration = 60;
 
@@ -44,9 +44,11 @@ export async function GET(request: NextRequest) {
     }
 
     const modName = `seed_${seed}`;
-    const batBuffer = createInstallerBat(modName, d2rDir);
+    const batBuffer = createInstallerBat();
+    const ps1Buffer = createInstallerPs1(modName, d2rDir);
     const zip = new AdmZip(Buffer.from(zipBuffer));
     zip.addFile('Install and Launch.bat', batBuffer);
+    zip.addFile('Install and Launch.ps1', ps1Buffer);
     const modifiedBuffer = zip.toBuffer();
 
     return new NextResponse(new Uint8Array(modifiedBuffer), {

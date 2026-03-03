@@ -1,99 +1,114 @@
 /**
- * Generates a Windows batch script that installs the D2R mod and launches the game.
- * The script:
- *   1. Self-elevates to admin if not already elevated
- *   2. Checks a pre-configured path first (if user specified one in the UI)
- *   3. Auto-detects common D2R install paths (Battle.net, Steam)
- *   4. Falls back to prompting the user if none found
- *   5. Copies the mod folder into <D2R dir>\mods\<modName>\
- *   6. Launches D2R.exe with -mod <modName> -txt
+ * Generates the two installer files bundled in the download ZIP:
+ *
+ *   Install and Launch.bat  — trivial 2-line launcher, pure ASCII
+ *   Install and Launch.ps1  — full installer logic in PowerShell
+ *
+ * Splitting into bat + ps1 eliminates every cmd.exe quoting / block-parsing /
+ * ASCII-encoding pitfall that plagued earlier pure-batch approaches.  The bat
+ * file simply invokes the ps1 with -ExecutionPolicy Bypass; all real work
+ * (self-elevation, D2R detection, file copy, game launch) lives in the ps1.
  */
-export function createInstallerBat(modName: string, d2rDir?: string): Buffer {
-  // Pre-configured path line: blank if not provided, set if user entered one in the UI.
-  // Strip any double-quotes from the path to avoid breaking the batch SET command.
-  const preconfiguredLine = d2rDir
-    ? `set "D2R_DIR=${d2rDir.replace(/"/g, '')}"`
-    : `set "D2R_DIR="`;
 
-  // Escaping rules for this template literal:
-  //   - Regular batch variables  (%VAR%)  : write %VAR%  — % is not special in JS strings
-  //   - FOR loop variables       (%%G)    : write %%G    — batch .bat files need double-% for FOR vars
-  //   - Script path              (%~f0)   : write %~f0   — batch special syntax, no doubling needed
-  //   - Script dir               (%~dp0)  : write %~dp0
-  //   - JS interpolation         (${...}) : used only for modName/preconfiguredLine
+/**
+ * Returns the 2-line batch launcher.
+ * Pure ASCII, no variables, no encoding edge-cases.
+ */
+export function createInstallerBat(): Buffer {
   const script =
-`@echo off
-setlocal
+    '@echo off\r\n' +
+    'powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install and Launch.ps1"\r\n';
+  return Buffer.from(script, 'ascii');
+}
 
-set "SELF=%~f0"
+/**
+ * Returns the PowerShell installer script.
+ *
+ * Escaping notes for the template literal below:
+ *   \`         → literal backtick in output (PowerShell line-continuation / `" escape)
+ *   ${modName} → only JS interpolation in this file (plus ${preconfiguredPs1})
+ *   $varName   → literal PS1 variable refs (no {}, so JS leaves them alone)
+ *   \\         → single backslash in output (required for path separators)
+ *   [Environment]::GetEnvironmentVariable('ProgramFiles(x86)') is used instead of
+ *   ${env:ProgramFiles(x86)} to avoid triggering JS template interpolation.
+ */
+export function createInstallerPs1(modName: string, d2rDir?: string): Buffer {
+  // In PS1 single-quoted strings '' is the escape for a literal single-quote.
+  const preconfiguredPs1 = d2rDir
+    ? `$d2rDir = '${d2rDir.replace(/'/g, "''")}'`
+    : `$d2rDir = $null`;
 
-:: ── Self-elevate to Administrator if needed ──────────────────────────────
-fsutil dirty query %systemdrive% >nul 2>&1
-if %errorlevel% equ 0 goto :isadmin
-powershell -NoProfile -Command "& { Start-Process cmd.exe -ArgumentList ('/c ' + [char]34 + $env:SELF + [char]34) -Verb RunAs }"
-exit /b
+  const script = `# Diablo II Resurrected - Skill Randomizer Installer
+# Requires PowerShell 5.1 or later (included in Windows 10/11)
 
-:isadmin
-:: ── Pre-configured path from installer (optional) ────────────────────────
-${preconfiguredLine}
-if defined D2R_DIR if not exist "%D2R_DIR%\\D2R.exe" set "D2R_DIR="
-
-:: ── Auto-detect D2R if not pre-configured ────────────────────────────────
-if not defined D2R_DIR (
-    if exist "%ProgramFiles(x86)%\\Diablo II Resurrected\\D2R.exe" (
-        set "D2R_DIR=%ProgramFiles(x86)%\\Diablo II Resurrected"
-        goto :found
+# ---- Self-elevate to Administrator if needed ----
+if (-not ([Security.Principal.WindowsPrincipal] \`
+          [Security.Principal.WindowsIdentity]::GetCurrent() \`
+         ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Start-Process powershell -Verb RunAs -ArgumentList @(
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "\`"$PSCommandPath\`""
     )
-    if exist "%ProgramFiles%\\Diablo II Resurrected\\D2R.exe" (
-        set "D2R_DIR=%ProgramFiles%\\Diablo II Resurrected"
-        goto :found
+    exit
+}
+
+# ---- Configuration ----
+$modName = '${modName}'
+${preconfiguredPs1}
+
+# ---- Validate pre-configured path ----
+if ($d2rDir -and -not (Test-Path "$d2rDir\\D2R.exe")) { $d2rDir = $null }
+
+# ---- Auto-detect D2R ----
+if (-not $d2rDir) {
+    $pf86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+    $candidates = @(
+        "$env:ProgramFiles\\Diablo II Resurrected",
+        "$pf86\\Diablo II Resurrected"
     )
-    for %%G in (C D E F G H I J K L) do (
-        if exist "%%G:\\Program Files (x86)\\Steam\\steamapps\\common\\Diablo II Resurrected\\D2R.exe" (
-            set "D2R_DIR=%%G:\\Program Files (x86)\\Steam\\steamapps\\common\\Diablo II Resurrected"
-            goto :found
-        )
-        if exist "%%G:\\SteamLibrary\\steamapps\\common\\Diablo II Resurrected\\D2R.exe" (
-            set "D2R_DIR=%%G:\\SteamLibrary\\steamapps\\common\\Diablo II Resurrected"
-            goto :found
-        )
-    )
-    echo D2R was not found automatically.
-    echo.
-    set /p "D2R_DIR=Enter the full path to your Diablo II Resurrected folder: "
-    if not exist "%D2R_DIR%\\D2R.exe" (
-        echo ERROR: D2R.exe not found at "%D2R_DIR%"
-        pause
-        exit /b 1
-    )
-)
+    foreach ($drive in 'C','D','E','F','G','H','I','J','K','L') {
+        $candidates += "$drive:\\Program Files (x86)\\Steam\\steamapps\\common\\Diablo II Resurrected"
+        $candidates += "$drive:\\SteamLibrary\\steamapps\\common\\Diablo II Resurrected"
+    }
+    $d2rDir = $candidates | Where-Object { Test-Path "$_\\D2R.exe" } | Select-Object -First 1
+}
 
-:found
-echo Found D2R at: %D2R_DIR%
-echo.
+if (-not $d2rDir) {
+    Write-Host 'D2R was not found automatically.'
+    Write-Host ''
+    $d2rDir = Read-Host 'Enter the full path to your Diablo II Resurrected folder'
+    if (-not (Test-Path "$d2rDir\\D2R.exe")) {
+        Write-Host "ERROR: D2R.exe not found at '$d2rDir'"
+        Read-Host 'Press Enter to exit'
+        exit 1
+    }
+}
 
-:: ── Copy mod files ───────────────────────────────────────────────────────
-set "SRC=%~dp0${modName}"
-set "DEST=%D2R_DIR%\\mods\\${modName}"
+Write-Host "Found D2R at: $d2rDir"
+Write-Host ''
 
-if not exist "%D2R_DIR%\\mods" mkdir "%D2R_DIR%\\mods"
+# ---- Copy mod files ----
+$src  = Join-Path $PSScriptRoot '${modName}'
+$dest = Join-Path $d2rDir "mods\\${modName}"
 
-echo Installing ${modName}...
-robocopy "%SRC%" "%DEST%" /E /NFL /NDL /NJH /NJS /NC /NS >nul
-if %errorlevel% gtr 7 (
-    echo ERROR: Failed to copy mod files.
-    pause
-    exit /b 1
-)
+if (-not (Test-Path "$d2rDir\\mods")) {
+    New-Item -ItemType Directory -Path "$d2rDir\\mods" | Out-Null
+}
 
-echo Mod installed successfully!
-echo.
-echo Launching D2R... if it does not appear, launch from Battle.net.
-start "" "%D2R_DIR%\\D2R.exe" -mod ${modName} -txt
-echo.
-pause
-exit /b 0
+Write-Host 'Installing ${modName}...'
+robocopy $src $dest /E /NFL /NDL /NJH /NJS /NC /NS | Out-Null
+if ($LASTEXITCODE -gt 7) {
+    Write-Host "ERROR: Failed to copy mod files (code $LASTEXITCODE)"
+    Read-Host 'Press Enter to exit'
+    exit 1
+}
+
+Write-Host 'Mod installed successfully!'
+Write-Host ''
+Write-Host 'Launching D2R... if it does not appear, launch from Battle.net.'
+Start-Process "$d2rDir\\D2R.exe" -ArgumentList "-mod ${modName} -txt"
+Write-Host ''
+Read-Host 'Press Enter to close this window'
 `;
 
-  return Buffer.from(script, 'ascii');
+  return Buffer.from(script, 'utf8');
 }
