@@ -33,7 +33,7 @@ const PREFIX_TO_FOLDER: Record<string, string> = {
  * Build the mod zip file as a Buffer.
  * Structure matches D2R mod format — modinfo.json at the mod root, all data
  * files under the required {modName}.mpq subfolder:
- *   {modName}/modinfo.json
+ *   {modName}/{modName}.mpq/modinfo.json
  *   {modName}/{modName}.mpq/data/global/excel/skills.txt
  *   {modName}/{modName}.mpq/data/global/excel/skilldesc.txt
  *   {modName}/{modName}.mpq/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.sprite
@@ -60,7 +60,7 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
       author: "Stephen",
       d2rmmVersion: "1.5.0",
     }, null, 2);
-    archive.append(modinfo, { name: `${m}/modinfo.json` });
+    archive.append(modinfo, { name: `${d}/modinfo.json` });
 
     // Add text files
     archive.append(contents.skillsTxt, { name: `${d}/data/global/excel/skills.txt` });
