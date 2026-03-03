@@ -19,24 +19,46 @@ interface Options {
   hirelingSkills: boolean;
 }
 
+interface InstallResult {
+  success: boolean;
+  modName?: string;
+  error?: string;
+}
+
 export default function Home() {
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
   const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1 }, hirelingAura: true, hirelingSkills: true });
-  const [d2rDir, setD2rDir] = useState<string>('');
+  const [installResult, setInstallResult] = useState<InstallResult | null>(null);
   // Seed state owned here so we can update the textbox after generation
   const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
     return new URLSearchParams(window.location.search).get('seed') ?? '';
   });
 
+  const buildQueryParams = (seed: number) => {
+    const playersParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
+      ? `&players=${currentOptions.playersCount}`
+      : '';
+    const staffParam = currentOptions.startingItems.teleportStaff
+      ? `&teleportStaff=${currentOptions.startingItems.teleportStaffLevel}`
+      : '';
+    const actsParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
+      ? `&acts=${[...currentOptions.playersActs].sort((a, b) => a - b).join(',')}`
+      : '';
+    const hirelingAuraParam   = !currentOptions.hirelingAura   ? '&hirelingAura=0'   : '';
+    const hirelingSkillsParam = !currentOptions.hirelingSkills ? '&hirelingSkills=0' : '';
+    return `seed=${seed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}${hirelingAuraParam}${hirelingSkillsParam}`;
+  };
+
   const handleGenerate = async (seedInput: string, options: Options) => {
     setCurrentOptions(options);
     setStatus('generating');
     setErrorMessage('');
     setPreview(null);
+    setInstallResult(null);
 
     try {
       // Step 1: Generate preview
@@ -83,19 +105,63 @@ export default function Home() {
 
   const handleDownload = () => {
     if (currentSeed === null) return;
-    const playersParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
-      ? `&players=${currentOptions.playersCount}`
-      : '';
-    const staffParam = currentOptions.startingItems.teleportStaff
-      ? `&teleportStaff=${currentOptions.startingItems.teleportStaffLevel}`
-      : '';
-    const actsParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
-      ? `&acts=${[...currentOptions.playersActs].sort((a, b) => a - b).join(',')}`
-      : '';
-    const hirelingAuraParam   = !currentOptions.hirelingAura   ? '&hirelingAura=0'   : '';
-    const hirelingSkillsParam = !currentOptions.hirelingSkills ? '&hirelingSkills=0' : '';
-    const d2rDirParam = d2rDir.trim() ? `&d2rDir=${encodeURIComponent(d2rDir.trim())}` : '';
-    window.open(`/api/download?seed=${currentSeed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}${hirelingAuraParam}${hirelingSkillsParam}${d2rDirParam}`, '_blank');
+    window.open(`/api/download?${buildQueryParams(currentSeed)}`, '_blank');
+  };
+
+  const handleInstall = async () => {
+    if (currentSeed === null) return;
+    setInstallResult(null);
+
+    if (!('showDirectoryPicker' in window)) {
+      alert('Browser-based install requires Chrome or Edge. Use "Download Zip" instead.');
+      return;
+    }
+
+    try {
+      // 1. Fetch file data from server
+      const res = await fetch(`/api/install-files?${buildQueryParams(currentSeed)}`);
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to fetch mod files');
+      }
+      const { modName, files } = await res.json();
+
+      // 2. Ask user to pick their D2R directory
+      const dirHandle = await (window as any).showDirectoryPicker({
+        id: 'd2r-install',
+        mode: 'readwrite',
+        startIn: 'downloads',
+      });
+
+      // 3. Verify it's actually the D2R folder
+      try { await dirHandle.getFileHandle('D2R.exe'); }
+      catch { throw new Error('D2R.exe not found in selected folder. Please select the Diablo II Resurrected installation folder.'); }
+
+      // 4. Create mods/modName/ directory tree
+      const modsHandle = await dirHandle.getDirectoryHandle('mods', { create: true });
+      const modHandle  = await modsHandle.getDirectoryHandle(modName, { create: true });
+
+      // 5. Write each file (creating subdirectory structure as needed)
+      for (const file of files) {
+        const parts = file.path.split('/');
+        let currentDir = modHandle;
+        for (const part of parts.slice(0, -1)) {
+          currentDir = await currentDir.getDirectoryHandle(part, { create: true });
+        }
+        const fileHandle = await currentDir.getFileHandle(parts[parts.length - 1], { create: true });
+        const writable   = await fileHandle.createWritable();
+        const bytes      = Uint8Array.from(atob(file.content), c => c.charCodeAt(0));
+        await writable.write(bytes);
+        await writable.close();
+      }
+
+      // 6. Success
+      setInstallResult({ success: true, modName });
+
+    } catch (err: any) {
+      if (err.name === 'AbortError') return; // user cancelled picker
+      setInstallResult({ success: false, error: err.message });
+    }
   };
 
   return (
@@ -142,24 +208,62 @@ export default function Home() {
             isLoading={status === 'generating' || status === 'building'}
             seed={seed}
             onSeedChange={setSeed}
-            d2rDir={d2rDir}
-            onD2rDirChange={setD2rDir}
           />
 
           {status === 'ready' && (
-            <div className="pt-3 space-y-3">
+            <div className="pt-3 space-y-2">
               <button
-                onClick={handleDownload}
+                onClick={handleInstall}
                 className="w-full rounded py-3
                   font-cinzel font-bold tracking-[0.22em] text-sm uppercase text-[#c8d8f8]
-                  bg-gradient-to-b from-[#121838] to-[#0a1028]
-                  border border-[#283878]
-                  hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
+                  bg-gradient-to-b from-[#0e1f4a] to-[#081230]
+                  border border-[#1e3878]
+                  hover:from-[#162848] hover:to-[#0e1a3a] hover:border-[#3858c0]
                   transition-all duration-200
-                  shadow-[0_0_16px_rgba(40,56,120,0.30)] hover:shadow-[0_0_28px_rgba(72,88,192,0.42)]"
+                  shadow-[0_0_16px_rgba(30,56,120,0.30)] hover:shadow-[0_0_28px_rgba(56,88,192,0.42)]"
+              >
+                Install to D2R
+              </button>
+              <button
+                onClick={handleDownload}
+                className="w-full rounded py-2.5
+                  font-cinzel font-bold tracking-[0.22em] text-sm uppercase text-[#8898b8]
+                  bg-gradient-to-b from-[#0d0f18] to-[#080a10]
+                  border border-[#1e2438]
+                  hover:from-[#121520] hover:to-[#0a0c15] hover:border-[#2a3050] hover:text-[#a8b8d8]
+                  transition-all duration-200"
               >
                 Download Zip
               </button>
+
+              <p className="text-[11px] text-[#6a4828] pt-1">
+                <span className="text-[#8898b8]">Install to D2R</span> — opens a folder picker; select your Diablo II Resurrected folder.
+                Works instantly for Steam installs on user-writable drives.
+                For Battle.net installs in Program Files, use <span className="text-[#8898b8]">Download Zip</span> and
+                copy the mod folder to <code className="text-[#7a7858]">[D2R dir]\mods\</code> manually.
+              </p>
+
+              {installResult && (
+                <div className={`mt-2 rounded p-3 border text-sm ${
+                  installResult.success
+                    ? 'bg-[#0a1a0a] border-[#1a4a1a] text-[#80c880]'
+                    : 'bg-[#1a0a0a] border-[#4a1a1a] text-[#c88080]'
+                }`}>
+                  {installResult.success ? (
+                    <>
+                      <p className="font-bold mb-1">Mod installed!</p>
+                      <p className="text-[#60a860]">
+                        Launch command: <code className="text-[#a0d8a0]">D2R.exe -mod {installResult.modName} -txt</code>
+                      </p>
+                      <p className="text-[11px] text-[#4a7a4a] mt-1">
+                        Or add those arguments in the Battle.net launcher settings.
+                      </p>
+                    </>
+                  ) : (
+                    <p>{installResult.error}</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
