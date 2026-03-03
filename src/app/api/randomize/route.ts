@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 12: Build zip
-    const modName = `seed_${seed}`;
+    const modName = `seed${seed}`;
     const zipBuffer = await buildZip({
       modName,
       skillsTxt: skillsTxtContent,

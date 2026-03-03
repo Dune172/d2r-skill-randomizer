@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const modName = `seed_${seed}`;
+    const modName = `seed${seed}`;
     const zip = new AdmZip(Buffer.from(zipBuffer));
     zip.addFile('Launch D2R Mod.lnk', createD2RShortcut(modName));
 

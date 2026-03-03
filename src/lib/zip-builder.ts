@@ -55,11 +55,8 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     // Add modinfo.json
     const modinfo = JSON.stringify({
       name: m,
-      version: "1.0",
-      description: "Randomized skill trees across all classes",
-      author: "Stephen",
-      d2rmmVersion: "1.5.0",
-    }, null, 2);
+      savepath: "D2RRandomizer",
+    });
     archive.append(modinfo, { name: `${d}/modinfo.json` });
 
     // Add text files
