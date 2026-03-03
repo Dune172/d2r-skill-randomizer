@@ -31,13 +31,14 @@ const PREFIX_TO_FOLDER: Record<string, string> = {
 
 /**
  * Build the mod zip file as a Buffer.
- * Structure matches D2R mod format (rooted under modName/):
+ * Structure matches D2R mod format — modinfo.json at the mod root, all data
+ * files under the required {modName}.mpq subfolder:
  *   {modName}/modinfo.json
- *   {modName}/data/global/excel/skills.txt
- *   {modName}/data/global/excel/skilldesc.txt
- *   {modName}/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.sprite
- *   {modName}/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.lowend.sprite
- *   {modName}/data/global/ui/spells/{classname}/{prefix}skillicon.sprite
+ *   {modName}/{modName}.mpq/data/global/excel/skills.txt
+ *   {modName}/{modName}.mpq/data/global/excel/skilldesc.txt
+ *   {modName}/{modName}.mpq/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.sprite
+ *   {modName}/{modName}.mpq/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.lowend.sprite
+ *   {modName}/{modName}.mpq/data/global/ui/spells/{classname}/{prefix}skillicon.sprite
  */
 export async function buildZip(contents: ZipContents): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -49,6 +50,7 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     archive.on('error', reject);
 
     const m = contents.modName;
+    const d = `${m}/${m}.mpq`; // data root — D2R requires this subfolder name
 
     // Add modinfo.json
     const modinfo = JSON.stringify({
@@ -61,47 +63,47 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     archive.append(modinfo, { name: `${m}/modinfo.json` });
 
     // Add text files
-    archive.append(contents.skillsTxt, { name: `${m}/data/global/excel/skills.txt` });
-    archive.append(contents.skillDescTxt, { name: `${m}/data/global/excel/skilldesc.txt` });
+    archive.append(contents.skillsTxt, { name: `${d}/data/global/excel/skills.txt` });
+    archive.append(contents.skillDescTxt, { name: `${d}/data/global/excel/skilldesc.txt` });
 
     // Skill string table (always included — ensures all skills have description text)
     if (contents.skillStringsJson) {
-      archive.append(contents.skillStringsJson, { name: `${m}/data/local/lng/strings/skills.json` });
+      archive.append(contents.skillStringsJson, { name: `${d}/data/local/lng/strings/skills.json` });
     }
 
     // Charstats with randomised StartSkill per class
     if (contents.charstatsTxt) {
-      archive.append(contents.charstatsTxt, { name: `${m}/data/global/excel/charstats.txt` });
+      archive.append(contents.charstatsTxt, { name: `${d}/data/global/excel/charstats.txt` });
     }
 
     // Skill tab label strings (StrSklTabItem1–24 for all 8 classes)
     if (contents.itemModifiersJson) {
-      archive.append(contents.itemModifiersJson, { name: `${m}/data/local/lng/strings/item-modifiers.json` });
+      archive.append(contents.itemModifiersJson, { name: `${d}/data/local/lng/strings/item-modifiers.json` });
     }
 
     // Hireling auras
     if (contents.hirelingTxt) {
-      archive.append(contents.hirelingTxt, { name: `${m}/data/global/excel/hireling.txt` });
+      archive.append(contents.hirelingTxt, { name: `${d}/data/global/excel/hireling.txt` });
     }
 
     // Monster stats scaled for players simulation
     if (contents.monstatsTxt) {
-      archive.append(contents.monstatsTxt, { name: `${m}/data/global/excel/monstats.txt` });
+      archive.append(contents.monstatsTxt, { name: `${d}/data/global/excel/monstats.txt` });
     }
 
     // Unique items with Teleport Staff added
     if (contents.uniqueitemsTxt) {
-      archive.append(contents.uniqueitemsTxt, { name: `${m}/data/global/excel/uniqueitems.txt` });
+      archive.append(contents.uniqueitemsTxt, { name: `${d}/data/global/excel/uniqueitems.txt` });
     }
 
     // Item name strings (display name for unique staff)
     if (contents.itemNamesJson) {
-      archive.append(contents.itemNamesJson, { name: `${m}/data/local/lng/strings/item-names.json` });
+      archive.append(contents.itemNamesJson, { name: `${d}/data/local/lng/strings/item-names.json` });
     }
 
     // Add tree sprites (hd path)
     for (const [filename, buf] of contents.treeSprites.entries()) {
-      archive.append(buf, { name: `${m}/data/hd/global/ui/spells/skill_trees/${filename}` });
+      archive.append(buf, { name: `${d}/data/hd/global/ui/spells/skill_trees/${filename}` });
     }
 
     // Add icon sprites to both non-hd and hd paths
@@ -110,10 +112,10 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
       const folderName = PREFIX_TO_FOLDER[prefix];
       if (folderName) {
         archive.append(buf, {
-          name: `${m}/data/global/ui/spells/${folderName}/${filename}`,
+          name: `${d}/data/global/ui/spells/${folderName}/${filename}`,
         });
         archive.append(buf, {
-          name: `${m}/data/hd/global/ui/spells/${folderName}/${filename}`,
+          name: `${d}/data/hd/global/ui/spells/${folderName}/${filename}`,
         });
       }
     }
