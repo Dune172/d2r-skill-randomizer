@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import AdmZip from 'adm-zip';
 import { seedFromString } from '@/lib/randomizer/seed';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
+import { createD2RShortcut } from '@/lib/lnk-builder';
 
 export const maxDuration = 60;
 
@@ -37,7 +39,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return new NextResponse(new Uint8Array(zipBuffer), {
+    const modName = `seed_${seed}`;
+    const zip = new AdmZip(Buffer.from(zipBuffer));
+    zip.addFile('Launch D2R Mod.lnk', createD2RShortcut(modName));
+
+    return new NextResponse(new Uint8Array(zip.toBuffer()), {
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="d2r_skill_randomizer_seed${seed}.zip"`,

@@ -162,16 +162,21 @@ export default function Home() {
               </button>
 
               <div className="text-[11px] text-[#6a4828] space-y-1.5 pt-0.5">
-                <p>
-                  Extract the ZIP and copy the{' '}
-                  <code className="text-[#a89858]">seed_{currentSeed}</code>{' '}
-                  folder into your D2R <code className="text-[#a89858]">mods\</code> directory:
-                </p>
-                <p className="font-mono text-[#7a7858] pl-2 break-all">
-                  [D2R folder]\mods\seed_{currentSeed}\
-                </p>
-                <p>
-                  Then launch with:{' '}
+                <p>Extract the ZIP. Inside you'll find:</p>
+                <ul className="pl-2 space-y-1">
+                  <li>
+                    <code className="text-[#a89858]">seed_{currentSeed}/</code>
+                    {' '}— copy this folder to{' '}
+                    <code className="text-[#7a7858]">[D2R folder]\mods\</code>
+                  </li>
+                  <li>
+                    <code className="text-[#a89858]">Launch D2R Mod.lnk</code>
+                    {' '}— shortcut to launch the mod{' '}
+                    <span className="text-[#5a3818]">(Battle.net default install only)</span>
+                  </li>
+                </ul>
+                <p className="pt-0.5">
+                  Launch command:{' '}
                   <code className="text-[#a89858]">D2R.exe -mod seed_{currentSeed} -txt</code>
                   {' '}— or add those arguments in the Battle.net launcher settings.
                 </p>
