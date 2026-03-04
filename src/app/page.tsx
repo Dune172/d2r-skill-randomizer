@@ -10,7 +10,6 @@ type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
 
 interface Options {
   enablePrereqs: boolean;
-  logic: 'minimal' | 'normal';
   playersEnabled: boolean;
   playersCount: number;
   playersActs: number[];
@@ -24,7 +23,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
-  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, logic: 'normal', playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1 }, hirelingAura: true, hirelingSkills: true });
+  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1 }, hirelingAura: true, hirelingSkills: true });
   // Seed state owned here so we can update the textbox after generation
   const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
@@ -43,7 +42,7 @@ export default function Home() {
       : '';
     const hirelingAuraParam   = !currentOptions.hirelingAura   ? '&hirelingAura=0'   : '';
     const hirelingSkillsParam = !currentOptions.hirelingSkills ? '&hirelingSkills=0' : '';
-    return `seed=${seed}${playersParam}${staffParam}${actsParam}&logic=${currentOptions.logic}${hirelingAuraParam}${hirelingSkillsParam}`;
+    return `seed=${seed}${playersParam}${staffParam}${actsParam}&logic=normal${hirelingAuraParam}${hirelingSkillsParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -80,7 +79,7 @@ export default function Home() {
       const buildRes = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: options.logic, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, hirelingSkills: options.hirelingSkills }),
+        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: 'normal', playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, hirelingSkills: options.hirelingSkills }),
       });
 
       if (!buildRes.ok) {
@@ -161,25 +160,44 @@ export default function Home() {
                 Download Zip
               </button>
 
-              <div className="text-[11px] text-[#6a4828] space-y-1.5 pt-0.5">
-                <p>Extract the ZIP. Inside you'll find:</p>
-                <ul className="pl-2 space-y-1">
-                  <li>
-                    <code className="text-[#a89858]">seed_{currentSeed}/</code>
-                    {' '}— copy this folder to{' '}
-                    <code className="text-[#7a7858]">[D2R folder]\mods\</code>
-                  </li>
-                  <li>
-                    <code className="text-[#a89858]">Launch D2R Mod.lnk</code>
-                    {' '}— shortcut to launch the mod{' '}
-                    <span className="text-[#5a3818]">(Battle.net default install only)</span>
-                  </li>
-                </ul>
-                <p className="pt-0.5">
-                  Launch command:{' '}
-                  <code className="text-[#a89858]">D2R.exe -mod seed_{currentSeed} -txt</code>
-                  {' '}— or add those arguments in the Battle.net launcher settings.
-                </p>
+              <div className="grid grid-cols-2 gap-3 pt-0.5 text-[11px] text-[#6a4828]">
+                {/* Battle.net column */}
+                <div className="space-y-1.5 border border-[#2a1508]/60 rounded p-3 bg-[#080203]/40">
+                  <p className="font-cinzel text-[10px] tracking-[0.22em] uppercase text-[#8a6030] mb-2">Battle.net</p>
+                  <ol className="space-y-1 list-decimal list-inside">
+                    <li>Extract the ZIP.</li>
+                    <li>
+                      Copy{' '}
+                      <code className="text-[#a89858]">seed_{currentSeed}/</code>
+                      {' '}to{' '}
+                      <code className="text-[#7a7858]">[D2R folder]\mods\</code>
+                    </li>
+                    <li>
+                      Use the included shortcut{' '}
+                      <code className="text-[#a89858]">D2R Randomizer {currentSeed}.lnk</code>
+                      {' '}— or add{' '}
+                      <code className="text-[#a89858]">-mod seed_{currentSeed} -txt</code>
+                      {' '}in your Battle.net launcher settings.
+                    </li>
+                  </ol>
+                </div>
+
+                {/* Steam column */}
+                <div className="space-y-1.5 border border-[#2a1508]/60 rounded p-3 bg-[#080203]/40">
+                  <p className="font-cinzel text-[10px] tracking-[0.22em] uppercase text-[#8a6030] mb-2">Steam</p>
+                  <ol className="space-y-1 list-decimal list-inside">
+                    <li>Extract the ZIP.</li>
+                    <li>
+                      Copy{' '}
+                      <code className="text-[#a89858]">seed_{currentSeed}/</code>
+                      {' '}to the D2R mods folder inside your Steam install directory.
+                    </li>
+                    <li>
+                      In Steam: right-click D2R → <em>Properties</em> → <em>General</em> → Launch Options, and add:{' '}
+                      <code className="text-[#a89858]">-mod seed_{currentSeed} -txt</code>
+                    </li>
+                  </ol>
+                </div>
               </div>
             </div>
           )}

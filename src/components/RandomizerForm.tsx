@@ -2,40 +2,152 @@
 
 import { useState } from 'react';
 
+type Preset = 'custom' | 'season1race';
+
+interface FormState {
+  enablePrereqs: boolean;
+  playersCount: number;
+  playersActs: number[];
+  teleportStaff: boolean;
+  teleportStaffLevel: number;
+  hirelingAura: boolean;
+  hirelingSkills: boolean;
+}
+
+const SEASON1_PRESET: FormState = {
+  enablePrereqs: true,
+  playersCount: 4,
+  playersActs: [1],
+  teleportStaff: true,
+  teleportStaffLevel: 6,
+  hirelingAura: true,
+  hirelingSkills: true,
+};
+
+const DEFAULT_STATE: FormState = {
+  enablePrereqs: true,
+  playersCount: 1,
+  playersActs: [1, 2, 3, 4, 5],
+  teleportStaff: false,
+  teleportStaffLevel: 1,
+  hirelingAura: true,
+  hirelingSkills: true,
+};
+
 interface RandomizerFormProps {
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; logic: 'minimal' | 'normal'; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number }; hirelingAura: boolean; hirelingSkills: boolean }) => void;
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number }; hirelingAura: boolean; hirelingSkills: boolean }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
 }
 
-export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChange }: RandomizerFormProps) {
-  const [enablePrereqs, setEnablePrereqs] = useState(true);
-  const [logic, setLogic] = useState<'minimal' | 'normal'>('normal');
-  const [playersCount, setPlayersCount] = useState(1);
-  const [playersActs, setPlayersActs] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [teleportStaff, setTeleportStaff] = useState(false);
-  const [teleportStaffLevel, setTeleportStaffLevel] = useState(1);
-  const [hirelingAura, setHirelingAura] = useState(true);
-  const [hirelingSkills, setHirelingSkills] = useState(true);
+function Checkbox({ id, checked, onChange, label }: { id: string; checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor={id}>
+      <div className="relative flex-shrink-0">
+        <input id={id} type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="sr-only" />
+        <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
+          ${checked ? 'bg-[#7a1010] border-[#c42020]' : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}>
+          {checked && (
+            <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </div>
+      </div>
+      <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">{label}</span>
+    </label>
+  );
+}
 
-  const toggleAct = (act: number) =>
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="h-px flex-1 bg-[#3a1510]/50" />
+      <span className="font-cinzel text-[10px] tracking-[0.28em] uppercase text-[#c8a870]">{label}</span>
+      <div className="h-px flex-1 bg-[#3a1510]/50" />
+    </div>
+  );
+}
+
+export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChange }: RandomizerFormProps) {
+  const [preset, setPreset] = useState<Preset>('custom');
+  const [enablePrereqs, setEnablePrereqs] = useState(DEFAULT_STATE.enablePrereqs);
+  const [playersCount, setPlayersCount] = useState(DEFAULT_STATE.playersCount);
+  const [playersActs, setPlayersActs] = useState<number[]>(DEFAULT_STATE.playersActs);
+  const [teleportStaff, setTeleportStaff] = useState(DEFAULT_STATE.teleportStaff);
+  const [teleportStaffLevel, setTeleportStaffLevel] = useState(DEFAULT_STATE.teleportStaffLevel);
+  const [hirelingAura, setHirelingAura] = useState(DEFAULT_STATE.hirelingAura);
+  const [hirelingSkills, setHirelingSkills] = useState(DEFAULT_STATE.hirelingSkills);
+
+  const applyPreset = (p: Preset) => {
+    setPreset(p);
+    if (p === 'season1race') {
+      setEnablePrereqs(SEASON1_PRESET.enablePrereqs);
+      setPlayersCount(SEASON1_PRESET.playersCount);
+      setPlayersActs(SEASON1_PRESET.playersActs);
+      setTeleportStaff(SEASON1_PRESET.teleportStaff);
+      setTeleportStaffLevel(SEASON1_PRESET.teleportStaffLevel);
+      setHirelingAura(SEASON1_PRESET.hirelingAura);
+      setHirelingSkills(SEASON1_PRESET.hirelingSkills);
+    }
+  };
+
+  // Wrap any manual field change to revert preset indicator to "Custom"
+  function field<T>(setter: (v: T) => void) {
+    return (v: T) => { setPreset('custom'); setter(v); };
+  }
+
+  const toggleAct = (act: number) => {
+    setPreset('custom');
     setPlayersActs(prev => prev.includes(act) ? prev.filter(a => a !== act) : [...prev, act]);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const effectiveSeed = seed.trim() || Math.floor(Math.random() * 2147483647).toString();
     if (!seed.trim()) onSeedChange(effectiveSeed);
-    onGenerate(effectiveSeed, { enablePrereqs, logic, playersEnabled: playersCount > 1, playersCount, playersActs, startingItems: { teleportStaff, teleportStaffLevel }, hirelingAura, hirelingSkills });
+    onGenerate(effectiveSeed, {
+      enablePrereqs,
+      playersEnabled: playersCount > 1,
+      playersCount,
+      playersActs,
+      startingItems: { teleportStaff, teleportStaffLevel },
+      hirelingAura,
+      hirelingSkills,
+    });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Seed row */}
+
+      {/* Seed + Preset */}
       <div>
-        <label htmlFor="seed" className="block font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] mb-2">
-          Seed
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label htmlFor="seed" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870]">
+            Seed
+          </label>
+          <div className="flex items-center gap-2">
+            <label htmlFor="preset" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870]">
+              Preset
+            </label>
+            <div className="relative">
+              <select
+                id="preset"
+                value={preset}
+                onChange={e => applyPreset(e.target.value as Preset)}
+                className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1.5
+                  text-xs text-[#e8d5a0]
+                  focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                  transition-colors cursor-pointer"
+              >
+                <option value="custom">Custom</option>
+                <option value="season1race">Season 1 Race</option>
+              </select>
+              <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+            </div>
+          </div>
+        </div>
         <input
           id="seed"
           type="text"
@@ -48,146 +160,73 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
         />
       </div>
 
-      {/* Options row */}
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-3 pt-1">
-        {/* Prerequisites checkbox */}
-        <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor="enablePrereqs">
-          <div className="relative flex-shrink-0">
+      {/* Gameplay section */}
+      <div className="space-y-3 pt-1">
+        <SectionDivider label="Gameplay" />
+
+        <Checkbox
+          id="enablePrereqs"
+          checked={enablePrereqs}
+          onChange={field(setEnablePrereqs)}
+          label="Skill prerequisites"
+        />
+
+        <div>
+          <div className="flex items-center gap-3">
+            <label htmlFor="playersCount" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
+              Players
+            </label>
             <input
-              id="enablePrereqs"
-              type="checkbox"
-              checked={enablePrereqs}
-              onChange={e => setEnablePrereqs(e.target.checked)}
-              className="sr-only"
-            />
-            <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
-              ${enablePrereqs
-                ? 'bg-[#7a1010] border-[#c42020]'
-                : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}
-            >
-              {enablePrereqs && (
-                <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
-                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </div>
-          </div>
-          <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
-            Skill prerequisites
-          </span>
-        </label>
-
-        {/* Logic level dropdown */}
-        <div className="flex items-center gap-3 ml-auto">
-          <label htmlFor="logic" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
-            Logic
-          </label>
-          <div className="relative">
-            <select
-              id="logic"
-              value={logic}
-              onChange={e => setLogic(e.target.value as 'minimal' | 'normal')}
-              className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-2
-                text-sm text-[#e8d5a0]
+              id="playersCount"
+              type="number"
+              min={1}
+              max={8}
+              value={playersCount}
+              onChange={e => { setPreset('custom'); setPlayersCount(Math.min(8, Math.max(1, Number(e.target.value) || 1))); }}
+              className="w-16 rounded border border-[#3a1510] bg-[#090203] px-3 py-2
+                text-sm text-[#e8d5a0] text-center
                 focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-                transition-colors cursor-pointer"
-            >
-              <option value="minimal">Minimal</option>
-              <option value="normal">Normal</option>
-            </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">
-              ▾
-            </div>
+                transition-colors"
+            />
           </div>
-        </div>
-      </div>
-
-      {/* Players row */}
-      <div className="pt-1">
-        <div className="flex items-center gap-3">
-          <label htmlFor="playersCount" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
-            Players
-          </label>
-          <input
-            id="playersCount"
-            type="number"
-            min={1}
-            max={8}
-            value={playersCount}
-            onChange={e => setPlayersCount(Math.min(8, Math.max(1, Number(e.target.value) || 1)))}
-            className="w-16 rounded border border-[#3a1510] bg-[#090203] px-3 py-2
-              text-sm text-[#e8d5a0] text-center
-              focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-              transition-colors"
-          />
-        </div>
-        {playersCount > 1 && (
-          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
-            {([1, 2, 3, 4, 5] as const).map(act => {
-              const labels = ['Act I', 'Act II', 'Act III', 'Act IV', 'Act V'];
-              const checked = playersActs.includes(act);
-              return (
-                <label key={act} className="flex items-center gap-2 cursor-pointer group select-none">
-                  <div className="relative flex-shrink-0">
-                    <input type="checkbox" checked={checked}
-                      onChange={() => toggleAct(act)} className="sr-only" />
-                    <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
-                      ${checked ? 'bg-[#7a1010] border-[#c42020]'
-                                : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}>
-                      {checked && (
-                        <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
-                          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2"
-                            strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
+          {playersCount > 1 && (
+            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
+              {([1, 2, 3, 4, 5] as const).map(act => {
+                const actLabels = ['Act I', 'Act II', 'Act III', 'Act IV', 'Act V'];
+                const checked = playersActs.includes(act);
+                return (
+                  <label key={act} className="flex items-center gap-2 cursor-pointer group select-none">
+                    <div className="relative flex-shrink-0">
+                      <input type="checkbox" checked={checked} onChange={() => toggleAct(act)} className="sr-only" />
+                      <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
+                        ${checked ? 'bg-[#7a1010] border-[#c42020]' : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}>
+                        {checked && (
+                          <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
-                    {labels[act - 1]}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        )}
+                    <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">{actLabels[act - 1]}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Starting Items section */}
       <div className="space-y-3 pt-1">
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-[#3a1510]/50" />
-          <span className="font-cinzel text-[10px] tracking-[0.28em] uppercase text-[#c8a870]">
-            Starting Items
-          </span>
-          <div className="h-px flex-1 bg-[#3a1510]/50" />
-        </div>
+        <SectionDivider label="Starting Items" />
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor="teleportStaff">
-            <div className="relative flex-shrink-0">
-              <input
-                id="teleportStaff"
-                type="checkbox"
-                checked={teleportStaff}
-                onChange={e => setTeleportStaff(e.target.checked)}
-                className="sr-only"
-              />
-              <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
-                ${teleportStaff
-                  ? 'bg-[#7a1010] border-[#c42020]'
-                  : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}
-              >
-                {teleportStaff && (
-                  <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
-                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </div>
-            </div>
-            <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
-              Start with Teleport Staff
-            </span>
-          </label>
+          <Checkbox
+            id="teleportStaff"
+            checked={teleportStaff}
+            onChange={field(setTeleportStaff)}
+            label="Start with Teleport Staff"
+          />
 
           {teleportStaff && (
             <div className="flex items-center gap-3 ml-auto">
@@ -198,7 +237,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
                 <select
                   id="teleportStaffLevel"
                   value={teleportStaffLevel}
-                  onChange={e => setTeleportStaffLevel(Number(e.target.value))}
+                  onChange={e => { setPreset('custom'); setTeleportStaffLevel(Number(e.target.value)); }}
                   className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-2
                     text-sm text-[#e8d5a0]
                     focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
@@ -210,9 +249,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
                   <option value={18}>18</option>
                   <option value={24}>24</option>
                 </select>
-                <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">
-                  ▾
-                </div>
+                <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
               </div>
             </div>
           )}
@@ -221,68 +258,21 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
 
       {/* Hirelings section */}
       <div className="space-y-3 pt-1">
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-[#3a1510]/50" />
-          <span className="font-cinzel text-[10px] tracking-[0.28em] uppercase text-[#c8a870]">
-            Hirelings
-          </span>
-          <div className="h-px flex-1 bg-[#3a1510]/50" />
-        </div>
+        <SectionDivider label="Hirelings" />
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          {/* Hireling aura toggle */}
-          <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor="hirelingAura">
-            <div className="relative flex-shrink-0">
-              <input
-                id="hirelingAura"
-                type="checkbox"
-                checked={hirelingAura}
-                onChange={e => setHirelingAura(e.target.checked)}
-                className="sr-only"
-              />
-              <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
-                ${hirelingAura
-                  ? 'bg-[#7a1010] border-[#c42020]'
-                  : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}
-              >
-                {hirelingAura && (
-                  <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
-                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </div>
-            </div>
-            <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
-              Randomize aura
-            </span>
-          </label>
-
-          {/* Hireling attack skills toggle */}
-          <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor="hirelingSkills">
-            <div className="relative flex-shrink-0">
-              <input
-                id="hirelingSkills"
-                type="checkbox"
-                checked={hirelingSkills}
-                onChange={e => setHirelingSkills(e.target.checked)}
-                className="sr-only"
-              />
-              <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
-                ${hirelingSkills
-                  ? 'bg-[#7a1010] border-[#c42020]'
-                  : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}
-              >
-                {hirelingSkills && (
-                  <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
-                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </div>
-            </div>
-            <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">
-              Shuffle attack skills
-            </span>
-          </label>
+          <Checkbox
+            id="hirelingAura"
+            checked={hirelingAura}
+            onChange={field(setHirelingAura)}
+            label="All hirelings have an aura"
+          />
+          <Checkbox
+            id="hirelingSkills"
+            checked={hirelingSkills}
+            onChange={field(setHirelingSkills)}
+            label="Shuffle attack skills"
+          />
         </div>
       </div>
 
