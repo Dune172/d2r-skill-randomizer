@@ -121,43 +121,26 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
 
-      {/* Seed + Preset */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <label htmlFor="seed" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870]">
-            Seed
-          </label>
-          <div className="flex items-center gap-2">
-            <label htmlFor="preset" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870]">
-              Preset
-            </label>
-            <div className="relative">
-              <select
-                id="preset"
-                value={preset}
-                onChange={e => applyPreset(e.target.value as Preset)}
-                className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1.5
-                  text-xs text-[#e8d5a0]
-                  focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-                  transition-colors cursor-pointer"
-              >
-                <option value="custom">Custom</option>
-                <option value="season1race">Season 1 Race</option>
-              </select>
-              <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
-            </div>
-          </div>
+      {/* Preset */}
+      <div className="flex items-center justify-end gap-2">
+        <label htmlFor="preset" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870]">
+          Preset
+        </label>
+        <div className="relative">
+          <select
+            id="preset"
+            value={preset}
+            onChange={e => applyPreset(e.target.value as Preset)}
+            className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1.5
+              text-xs text-[#e8d5a0]
+              focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+              transition-colors cursor-pointer"
+          >
+            <option value="custom">Custom</option>
+            <option value="season1race">Season 1 Race</option>
+          </select>
+          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
         </div>
-        <input
-          id="seed"
-          type="text"
-          value={seed}
-          onChange={e => onSeedChange(e.target.value)}
-          placeholder="Leave blank for random…"
-          className="w-full rounded bg-[#090203] border border-[#3a1510] px-4 py-2.5 text-[#e8d5a0] placeholder-[#4a3020]
-            focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-            transition-colors text-sm"
-        />
       </div>
 
       {/* Gameplay section */}
@@ -274,6 +257,21 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
             label="Shuffle attack skills"
           />
         </div>
+      </div>
+
+      {/* Seed */}
+      <div className="space-y-3 pt-1">
+        <SectionDivider label="Seed" />
+        <input
+          id="seed"
+          type="text"
+          value={seed}
+          onChange={e => onSeedChange(e.target.value)}
+          placeholder="Leave blank for random…"
+          className="w-full rounded bg-[#090203] border border-[#3a1510] px-4 py-2.5 text-[#e8d5a0] placeholder-[#4a3020]
+            focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+            transition-colors text-sm"
+        />
       </div>
 
       {/* Submit */}
