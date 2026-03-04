@@ -138,6 +138,7 @@ export function loadSkillDescs(): Map<string, SkillDescEntry> {
       SkillRow: (v.SkillRow as number) || 0,
       SkillColumn: (v.SkillColumn as number) || 0,
       IconCel: (v.IconCel as number) || 0,
+      hireableIconCel: typeof v.HireableIconCel === 'number' ? v.HireableIconCel : undefined,
       strName: (v['str name'] as string) || '',
       lineNumber: parseInt(key),
       dsc3textb,

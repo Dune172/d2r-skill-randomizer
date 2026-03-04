@@ -41,7 +41,9 @@ export function writeHirelingRows(
   placements: SkillPlacement[],
   rng: SeededRNG,
   options: { aura: boolean; skills: boolean } = { aura: true, skills: true },
-): void {
+): Set<string> {
+  const assignedSkills = new Set<string>();
+
   // Clear equivalentcharclass for all rows so D2R uses the skill's own charclass
   // (= targetClass) to pick the icon sprite in the hiring panel.
   const eqCharclassCol = headers.indexOf('equivalentcharclass');
@@ -51,7 +53,7 @@ export function writeHirelingRows(
     }
   }
 
-  if (!options.aura && !options.skills) return;
+  if (!options.aura && !options.skills) return assignedSkills;
 
   // ── Helper predicates ─────────────────────────────────────────────────────
 
@@ -145,7 +147,7 @@ export function writeHirelingRows(
 
   if (poolAll.length === 0) {
     console.warn('hireling-writer: no paladin auras found in placements, skipping hireling aura assignment');
-    return;
+    return assignedSkills;
   }
 
   // ── Resolve column indices ────────────────────────────────────────────────
@@ -231,7 +233,9 @@ export function writeHirelingRows(
           for (const s of attackSlotIndices) {
             const cols = slotCols[s];
             if (row[cols.skill] && ATTACK_MODES.has(row[cols.mode])) {
-              row[cols.skill] = chosenAttacks.get(s)!;
+              const chosen = chosenAttacks.get(s)!;
+              row[cols.skill] = chosen;
+              assignedSkills.add(chosen);
             }
           }
         }
@@ -250,6 +254,7 @@ export function writeHirelingRows(
       }
 
       const auraName = auraPool[rng.randInt(0, auraPool.length - 1)];
+      assignedSkills.add(auraName);
 
       for (let gi = 0; gi < indices.length; gi++) {
         const ri = indices[gi];
@@ -302,4 +307,6 @@ export function writeHirelingRows(
       }
     } // end options.aura
   }
+
+  return assignedSkills;
 }

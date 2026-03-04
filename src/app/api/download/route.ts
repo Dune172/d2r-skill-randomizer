@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(new Uint8Array(zip.toBuffer()), {
       headers: {
         'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="d2r_skill_randomizer_seed${seed}.zip"`,
+        'Content-Disposition': `attachment; filename="d2r_randomizer_seed${seed}.zip"`,
       },
     });
   } catch (error) {

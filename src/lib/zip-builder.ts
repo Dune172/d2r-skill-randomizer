@@ -15,6 +15,7 @@ export interface ZipContents {
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
   itemNamesJson?: string;           // item-names strings (display name for unique staff)
   hirelingTxt?: string;             // hireling.txt with randomized auras
+  hireableSprite?: Buffer;          // hireable sprite for mercenary hiring panel icons
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -101,6 +102,17 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     // Add tree sprites (hd path)
     for (const [filename, buf] of contents.treeSprites.entries()) {
       archive.append(buf, { name: `${d}/data/hd/global/ui/spells/skill_trees/${filename}` });
+    }
+
+    // Add hireable sprite to both non-hd and hd paths
+    if (contents.hireableSprite) {
+      const HIREABLE_FILENAME = 'hrskillicon.sprite';
+      archive.append(contents.hireableSprite, {
+        name: `${d}/data/global/ui/spells/hireables/${HIREABLE_FILENAME}`,
+      });
+      archive.append(contents.hireableSprite, {
+        name: `${d}/data/hd/global/ui/spells/hireables/${HIREABLE_FILENAME}`,
+      });
     }
 
     // Add icon sprites to both non-hd and hd paths

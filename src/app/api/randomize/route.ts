@@ -13,7 +13,7 @@ import { writeSkillDescRows } from '@/lib/randomizer/skilldesc-writer';
 import { writeSkillStrings } from '@/lib/randomizer/strings-writer';
 import { assignPrerequisites } from '@/lib/randomizer/prereq-assigner';
 import { buildAllTreeSprites, clearSpriteCache } from '@/lib/sprites/tree-stitcher';
-import { buildAllIconSprites } from '@/lib/sprites/icon-assembler';
+import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-assembler';
 import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
@@ -104,10 +104,11 @@ export async function POST(request: NextRequest) {
 
     // Hireling randomization (aura and/or attack skills, per user options)
     let hirelingTxtContent: string | undefined;
+    let assignedHirelingSkills = new Set<string>();
     if (hirelingAura || hirelingSkills) {
       const hirelingTxtFile = loadTxtFile('hireling.txt');
-      writeHirelingRows(hirelingTxtFile.headers, hirelingTxtFile.rows, placements, rng,
-        { aura: hirelingAura, skills: hirelingSkills });
+      assignedHirelingSkills = writeHirelingRows(hirelingTxtFile.headers, hirelingTxtFile.rows,
+        placements, rng, { aura: hirelingAura, skills: hirelingSkills });
       hirelingTxtContent = serializeTxtFile(hirelingTxtFile.headers, hirelingTxtFile.rows);
     }
 
@@ -136,7 +137,6 @@ export async function POST(request: NextRequest) {
     }
 
     const skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
-    const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
 
     // Always load skill strings so all skills (including Warlock) have description text.
     // Under Normal Logic, additionally rewrite weapon-type references in the strings.
@@ -241,6 +241,38 @@ export async function POST(request: NextRequest) {
 
     const iconSprites = await buildAllIconSprites(placementsByClass, skillDescIconCels);
 
+    // Build skill-name → placement lookup for hireable sprite
+    const skillToPlacement = new Map(placements.map(p => [p.skill.skill, p]));
+
+    // Build hireable sprite and collect HireableIconCel values
+    let hireableSprite: Buffer | undefined;
+    let hireableIconCelMap = new Map<string, number>();
+    if (assignedHirelingSkills.size > 0) {
+      const result = await buildHireableSprite(assignedHirelingSkills, skillToPlacement, skillDescIconCels);
+      hireableSprite = result.sprite;
+      hireableIconCelMap = result.hireableIconCels;
+    }
+
+    // Add HireableIconCel column to skilldesc.txt and write values
+    const hirIconCelCol = (() => {
+      let idx = skillDescTxt.headers.indexOf('HireableIconCel');
+      if (idx === -1) {
+        idx = skillDescTxt.headers.length;
+        skillDescTxt.headers.push('HireableIconCel');
+        for (const row of skillDescTxt.rows) row.push('0');
+      }
+      return idx;
+    })();
+
+    for (const [skillName, cel] of hireableIconCelMap) {
+      const placement = skillToPlacement.get(skillName);
+      if (!placement?.skill.skilldesc) continue;
+      const row = skillDescTxt.rows.find(r => r[0] === placement.skill.skilldesc);
+      if (row) row[hirIconCelCol] = String(cel);
+    }
+
+    const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
+
     // Step 11b: Modify monstats for players scaling
     let monstatsTxt: string | undefined;
     if (playersEnabled && playersCount > 1) {
@@ -267,6 +299,7 @@ export async function POST(request: NextRequest) {
       uniqueitemsTxt,
       itemNamesJson,
       hirelingTxt: hirelingTxtContent,
+      hireableSprite,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)

@@ -100,6 +100,44 @@ export async function buildClassIconSprite(
 }
 
 /**
+ * Build the hireable icon sprite for the hiring panel.
+ * Each assigned skill gets 2 consecutive frames (normal at i*2, pressed at i*2+1).
+ * Returns the sprite buffer and a map of skillName → HireableIconCel frame index.
+ */
+export async function buildHireableSprite(
+  assignedSkills: Set<string>,
+  skillToPlacement: Map<string, SkillPlacement>,
+  skillDescIconCels: Map<string, number>,
+): Promise<{ sprite: Buffer; hireableIconCels: Map<string, number> }> {
+  const hireableIconCels = new Map<string, number>();
+  const frames: Buffer[] = [];
+
+  // Sort deterministically for reproducible output
+  const sorted = [...assignedSkills].sort();
+
+  for (let i = 0; i < sorted.length; i++) {
+    const skillName = sorted[i];
+    const placement = skillToPlacement.get(skillName);
+    if (!placement) {
+      frames.push(Buffer.alloc(ICON_WIDTH * ICON_HEIGHT * 4));
+      frames.push(Buffer.alloc(ICON_WIDTH * ICON_HEIGHT * 4));
+      hireableIconCels.set(skillName, i * 2);
+      continue;
+    }
+
+    const originalClass = placement.skill.charclass;
+    const originalIconCel = skillDescIconCels.get(placement.skill.skilldesc) ?? 0;
+    const { normalPath, pressedPath } = getIconPaths(originalClass, originalIconCel);
+
+    frames.push(await loadIconToRGBA(normalPath));
+    frames.push(await loadIconToRGBA(pressedPath));
+    hireableIconCels.set(skillName, i * 2);
+  }
+
+  return { sprite: buildSprite(frames, ICON_WIDTH, ICON_HEIGHT), hireableIconCels };
+}
+
+/**
  * Build all class icon sprites.
  * Returns filename → sprite Buffer map.
  */

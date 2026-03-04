@@ -60,6 +60,7 @@ export interface SkillDescEntry {
   SkillRow: number;
   SkillColumn: number;
   IconCel: number;
+  hireableIconCel?: number; // vanilla HireableIconCel from skilldesc.json (if present)
   strName: string;
   lineNumber: number; // index in skilldesc.json
   // dsc3 synergy display columns
