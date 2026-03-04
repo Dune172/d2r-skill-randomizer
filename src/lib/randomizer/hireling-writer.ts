@@ -1,10 +1,7 @@
 import { SkillEntry, SkillPlacement } from './types';
 import { SeededRNG } from './seed';
 
-// Native class of each hireling type.
-// Attack pools are built from this class's tree so D2R's hiring panel can
-// look up the skill's IconCel in the native class sprite and display the
-// correct icon.
+// Native class of each hireling type — used to group icon injection targets.
 const HIRELING_NATIVE_CLASS: Record<string, string> = {
   'Rogue Scout':      'ama',
   'Desert Mercenary': 'ama',
@@ -17,10 +14,8 @@ const HIRELING_NATIVE_CLASS: Record<string, string> = {
  * subtype, tiered by Act and Difficulty.
  *
  * ATTACK SKILLS (Mode=4, 7, 14)
- * Attack pools are built from placements in the hireling's NATIVE class tree,
- * filtered by weapon type.  Using the native class ensures the skill's IconCel
- * is valid in the native class sprite that D2R's hiring panel opens.
- * Skills are tiered by row (same logic as auras):
+ * Attack pools are built from ALL randomized placements, filtered by weapon type.
+ * Skills are tiered by row:
  *   - Normal Acts 1–3 (Diff=1): rows 1–2
  *   - Normal Act 4–5  (Diff=1): rows 2–3
  *   - Nightmare/Hell  (Diff≥2): any row
@@ -39,6 +34,11 @@ const HIRELING_NATIVE_CLASS: Record<string, string> = {
  *
  * Mode=5 (passive/utility) slots are never touched.
  *
+ * Returns a Map<nativeClass, Set<skillName>> of every skill name written to
+ * every hireling slot. This is used by the icon assembler to inject the correct
+ * icons into the native class sprite at extra frame positions, ensuring the
+ * hiring panel displays the right icon for each assigned skill.
+ *
  * Modifies hireling rows in-place.
  */
 export function writeHirelingRows(
@@ -47,8 +47,11 @@ export function writeHirelingRows(
   placements: SkillPlacement[],
   rng: SeededRNG,
   options: { aura: boolean; skills: boolean } = { aura: true, skills: true },
-): void {
-  if (!options.aura && !options.skills) return;
+): Map<string, Set<string>> {
+  // Tracks all skill names written to hireling slots, grouped by native class.
+  const hirelingSkillsByNativeClass = new Map<string, Set<string>>();
+
+  if (!options.aura && !options.skills) return hirelingSkillsByNativeClass;
 
   // ── Helper predicates ─────────────────────────────────────────────────────
 
@@ -66,21 +69,27 @@ export function writeHirelingRows(
     return [...new Set(names)];
   }
 
+  function recordHirelingSkill(hireling: string, skillName: string): void {
+    const nativeCode = HIRELING_NATIVE_CLASS[hireling] ?? '';
+    if (!nativeCode) return;
+    if (!hirelingSkillsByNativeClass.has(nativeCode))
+      hirelingSkillsByNativeClass.set(nativeCode, new Set());
+    hirelingSkillsByNativeClass.get(nativeCode)!.add(skillName);
+  }
+
   const ELEM_TYPES = new Set(['fire', 'cold', 'ltng']);
 
-  // ── Build per-hireling attack tier maps ───────────────────────────────────
-  // Each map: row → [skill names], built only from the native class tree so
-  // the skill's IconCel is valid in that class's sprite.
-  //
-  // Barbarian: two maps — '1hs' (all melee) and '2hs' (melee, weapsel !== 3).
+  // ── Build attack tier maps from ALL placements ────────────────────────────
+  // Row maps are built from the full placement set (any class), filtered only
+  // by weapon type and attackability. Icon correctness is guaranteed by the
+  // icon assembler injecting each assigned skill's icon into the native class
+  // sprite at extra frame positions.
 
   function buildRowMap(
-    nativeCode: string,
     predicate: (skill: SkillEntry) => boolean,
   ): Map<number, string[]> {
     const rowMap = new Map<number, string[]>();
     for (const p of placements) {
-      if (p.targetClass !== nativeCode) continue;
       if (!predicate(p.skill)) continue;
       if (!rowMap.has(p.row)) rowMap.set(p.row, []);
       rowMap.get(p.row)!.push(p.skill.skill);
@@ -89,11 +98,11 @@ export function writeHirelingRows(
   }
 
   const attackRowMaps: Record<string, Map<number, string[]>> = {
-    'Rogue Scout':       buildRowMap('ama', s => isAttackable(s) && hasType(s, 'miss') && s.weapsel !== 3),
-    'Desert Mercenary':  buildRowMap('ama', s => isAttackable(s) && (hasType(s, 'spea') || hasType(s, 'mele')) && s.weapsel !== 3),
-    'Eastern Sorceror':  buildRowMap('sor', s => isAttackable(s) && ELEM_TYPES.has(s.etype ?? '') && !s.itypea1 && !s.itypea2 && !s.itypea3 && !s.itypeb1 && s.weapsel !== 3),
-    'Barbarian_2hs':     buildRowMap('bar', s => isAttackable(s) && hasType(s, 'mele') && s.weapsel !== 3),
-    'Barbarian_1hs':     buildRowMap('bar', s => isAttackable(s) && hasType(s, 'mele')),
+    'Rogue Scout':      buildRowMap(s => isAttackable(s) && hasType(s, 'miss') && s.weapsel !== 3),
+    'Desert Mercenary': buildRowMap(s => isAttackable(s) && (hasType(s, 'spea') || hasType(s, 'mele')) && s.weapsel !== 3),
+    'Eastern Sorceror': buildRowMap(s => isAttackable(s) && ELEM_TYPES.has(s.etype ?? '') && !s.itypea1 && !s.itypea2 && !s.itypea3 && !s.itypeb1 && s.weapsel !== 3),
+    'Barbarian_2hs':    buildRowMap(s => isAttackable(s) && hasType(s, 'mele') && s.weapsel !== 3),
+    'Barbarian_1hs':    buildRowMap(s => isAttackable(s) && hasType(s, 'mele')),
   };
 
   function getAttackRowMap(hireling: string, subType: string): Map<number, string[]> {
@@ -148,7 +157,7 @@ export function writeHirelingRows(
 
   if (poolAll.length === 0) {
     console.warn('hireling-writer: no paladin auras found in placements, skipping hireling aura assignment');
-    return;
+    return hirelingSkillsByNativeClass;
   }
 
   // ── Resolve column indices ────────────────────────────────────────────────
@@ -223,7 +232,9 @@ export function writeHirelingRows(
         // Pick one skill per attack slot index (independent rolls → varied skills)
         const chosenAttacks = new Map<number, string>();
         for (const s of attackSlotIndices) {
-          chosenAttacks.set(s, tierPool[rng.randInt(0, tierPool.length - 1)]);
+          const chosenSkill = tierPool[rng.randInt(0, tierPool.length - 1)];
+          chosenAttacks.set(s, chosenSkill);
+          recordHirelingSkill(hireling, chosenSkill);
         }
 
         // Apply chosen skills to every row in the group, preserving all other columns.
@@ -252,6 +263,7 @@ export function writeHirelingRows(
       }
 
       const auraName = auraPool[rng.randInt(0, auraPool.length - 1)];
+      recordHirelingSkill(hireling, auraName);
 
       for (let gi = 0; gi < indices.length; gi++) {
         const ri = indices[gi];
@@ -304,4 +316,6 @@ export function writeHirelingRows(
       }
     } // end options.aura
   }
+
+  return hirelingSkillsByNativeClass;
 }

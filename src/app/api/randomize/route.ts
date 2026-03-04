@@ -104,9 +104,10 @@ export async function POST(request: NextRequest) {
 
     // Hireling randomization (aura and/or attack skills, per user options)
     let hirelingTxtContent: string | undefined;
+    let hirelingSkillsByNativeClass = new Map<string, Set<string>>();
     if (hirelingAura || hirelingSkills) {
       const hirelingTxtFile = loadTxtFile('hireling.txt');
-      writeHirelingRows(hirelingTxtFile.headers, hirelingTxtFile.rows, placements, rng,
+      hirelingSkillsByNativeClass = writeHirelingRows(hirelingTxtFile.headers, hirelingTxtFile.rows, placements, rng,
         { aura: hirelingAura, skills: hirelingSkills });
       hirelingTxtContent = serializeTxtFile(hirelingTxtFile.headers, hirelingTxtFile.rows);
     }
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     const skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
-    const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
+    // skillDescTxtContent is serialized below, after extra IconCel values are applied.
 
     // Always load skill strings so all skills (including Warlock) have description text.
     // Under Normal Logic, additionally rewrite weapon-type references in the strings.
@@ -239,7 +240,33 @@ export async function POST(request: NextRequest) {
       skillDescIconCels.set(name, desc.IconCel);
     }
 
-    const iconSprites = await buildAllIconSprites(placementsByClass, skillDescIconCels);
+    // Build skill-name → placement lookup for icon injection
+    const skillToPlacement = new Map(placements.map(p => [p.skill.skill, p]));
+
+    // Build sprites; for hireling skills, extra frames are injected into the
+    // skill's own class sprite and the hireling's native class sprite so the
+    // hiring panel shows the correct icon regardless of which class the skill
+    // was shuffled into.
+    const { sprites: iconSprites, extraIconCels } = await buildAllIconSprites(
+      placementsByClass, skillDescIconCels,
+      hirelingSkillsByNativeClass, skillToPlacement,
+    );
+
+    // Apply extra IconCel positions to skilldesc.txt rows for all hireling skills.
+    // This overrides the skillIndex*2 value set by writeSkillDescRows so that
+    // D2R reads from the injected extra frame position in the class sprite.
+    const iconCelColIdx = skillDescTxt.headers.indexOf('IconCel');
+    if (iconCelColIdx >= 0) {
+      for (const [skillName, extraPos] of extraIconCels) {
+        const placement = skillToPlacement.get(skillName);
+        if (!placement?.skill.skilldesc) continue;
+        const row = skillDescTxt.rows.find(r => r[0] === placement.skill.skilldesc);
+        if (row) row[iconCelColIdx] = String(extraPos);
+      }
+    }
+
+    // Serialize skilldesc.txt now that all IconCel values are finalised.
+    const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
 
     // Step 11b: Modify monstats for players scaling
     let monstatsTxt: string | undefined;
