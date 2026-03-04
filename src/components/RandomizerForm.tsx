@@ -71,14 +71,14 @@ function SectionDivider({ label }: { label: string }) {
 }
 
 export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChange }: RandomizerFormProps) {
-  const [preset, setPreset] = useState<Preset>('custom');
-  const [enablePrereqs, setEnablePrereqs] = useState(DEFAULT_STATE.enablePrereqs);
-  const [playersCount, setPlayersCount] = useState(DEFAULT_STATE.playersCount);
-  const [playersActs, setPlayersActs] = useState<number[]>(DEFAULT_STATE.playersActs);
-  const [teleportStaff, setTeleportStaff] = useState(DEFAULT_STATE.teleportStaff);
-  const [teleportStaffLevel, setTeleportStaffLevel] = useState(DEFAULT_STATE.teleportStaffLevel);
-  const [hirelingAura, setHirelingAura] = useState(DEFAULT_STATE.hirelingAura);
-  const [hirelingSkills, setHirelingSkills] = useState(DEFAULT_STATE.hirelingSkills);
+  const [preset, setPreset] = useState<Preset>('season1race');
+  const [enablePrereqs, setEnablePrereqs] = useState(SEASON1_PRESET.enablePrereqs);
+  const [playersCount, setPlayersCount] = useState(SEASON1_PRESET.playersCount);
+  const [playersActs, setPlayersActs] = useState<number[]>(SEASON1_PRESET.playersActs);
+  const [teleportStaff, setTeleportStaff] = useState(SEASON1_PRESET.teleportStaff);
+  const [teleportStaffLevel, setTeleportStaffLevel] = useState(SEASON1_PRESET.teleportStaffLevel);
+  const [hirelingAura, setHirelingAura] = useState(SEASON1_PRESET.hirelingAura);
+  const [hirelingSkills, setHirelingSkills] = useState(SEASON1_PRESET.hirelingSkills);
 
   const applyPreset = (p: Preset) => {
     setPreset(p);
@@ -272,7 +272,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
             value={seed}
             onChange={e => onSeedChange(e.target.value)}
             placeholder="Leave blank for random…"
-            className="flex-1 rounded bg-[#090203] border border-[#3a1510] px-3 py-2 text-[#e8d5a0] placeholder-[#4a3020]
+            className="flex-1 rounded bg-[#090203] border border-[#3a1510] px-3 py-1.5 text-[#e8d5a0] placeholder-[#4a3020]
               focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
               transition-colors text-sm"
           />
