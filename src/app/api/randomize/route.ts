@@ -17,7 +17,7 @@ import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-ass
 import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
-import { applyTeleportStaff, applyTeleportStaffUnique } from '@/lib/randomizer/starting-items';
+import { applyTeleportStaff, applyTeleportStaffUnique, applyTeleportSkillCost } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 
@@ -136,6 +136,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (startingTeleportStaff) {
+      applyTeleportSkillCost(skillsTxt.headers, skillsTxt.rows);
+    }
     const skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
 
     // Always load skill strings so all skills (including Warlock) have description text.

@@ -86,3 +86,21 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
 
   return [...updated, newRow];
 }
+
+/**
+ * Set Teleport's recharge-cost columns in skills.txt so the charged staff
+ * costs meaningful gold to refill at a vendor.
+ * Only called when the Teleport Staff starting-item option is enabled.
+ */
+export function applyTeleportSkillCost(headers: string[], rows: string[][]): void {
+  const skillCol = headers.indexOf('skill');
+  const costMult = headers.indexOf('cost mult');
+  const costAdd  = headers.indexOf('cost add');
+  if (skillCol === -1 || costMult === -1 || costAdd === -1) return;
+
+  const row = rows.find(r => r[skillCol] === 'Teleport');
+  if (!row) return;
+
+  row[costMult] = '3000';  // ≈ 168 × 3000 / 1024 ≈ 492 gold per charge
+  row[costAdd]  = '0';     // → ~9,840 gold to fully refill 20 charges
+}
