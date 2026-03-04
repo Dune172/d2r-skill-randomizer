@@ -261,17 +261,22 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
 
       {/* Seed */}
       <div className="space-y-3 pt-1">
-        <SectionDivider label="Seed" />
-        <input
-          id="seed"
-          type="text"
-          value={seed}
-          onChange={e => onSeedChange(e.target.value)}
-          placeholder="Leave blank for random…"
-          className="w-full rounded bg-[#090203] border border-[#3a1510] px-4 py-2.5 text-[#e8d5a0] placeholder-[#4a3020]
-            focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-            transition-colors text-sm"
-        />
+        <div className="h-px bg-[#3a1510]/50" />
+        <div className="flex items-center gap-3">
+          <label htmlFor="seed" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap flex-shrink-0">
+            Seed
+          </label>
+          <input
+            id="seed"
+            type="text"
+            value={seed}
+            onChange={e => onSeedChange(e.target.value)}
+            placeholder="Leave blank for random…"
+            className="flex-1 rounded bg-[#090203] border border-[#3a1510] px-3 py-2 text-[#e8d5a0] placeholder-[#4a3020]
+              focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+              transition-colors text-sm"
+          />
+        </div>
       </div>
 
       {/* Submit */}
