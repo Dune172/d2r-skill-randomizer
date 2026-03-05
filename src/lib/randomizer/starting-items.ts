@@ -80,9 +80,9 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
   set('par1',     '54');   // Teleport skill ID
   set('min1',     '20');   // 20 charges
   set('max1',     '1');    // charge level 1
-  set('cost mult', '0');        // no base-cost contribution
-  set('cost add',  '81920000'); // floor(81920000 / 1024) = 80,000 gold vendor value
-  // → recharge ≈ 80,000 × 12.5% = 10,000 gold for 20 charges
+  set('cost mult', '1');        // must be non-zero for cost_add to be applied
+  set('cost add',  '81920000'); // effective_cost ≈ 81920168 → ~500 gold/charge recharge
+  // → recharge ≈ floor(81920168 / 1024 / 20 × 0.125) × 20 ≈ 10,000 gold total
 
   return [...updated, newRow];
 }
