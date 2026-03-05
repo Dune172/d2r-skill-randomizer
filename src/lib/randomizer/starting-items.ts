@@ -55,29 +55,36 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
  * Mutates both row arrays in-place.
  */
 export function applyBloodRavenQuestDrop(
-  monstatsHeaders: string[],
-  monstatsRows: string[][],
+  superuniquesHeaders: string[],
+  superuniquesRows: string[][],
   tcHeaders: string[],
   tcRows: string[][]
 ): void {
-  // 1. Append TC_AstralWayfarer to treasureclassex.txt
+  // 1. Append TC_AstralWayfarer to treasureclassex.txt.
+  // Reference the unique item by its UniqueItems index name so D2R drops
+  // exactly that unique — no quality-roll flags needed.
   const tcRow = new Array(tcHeaders.length).fill('');
   const setTc = (col: string, val: string) => {
     const i = tcHeaders.indexOf(col);
     if (i !== -1) tcRow[i] = val;
   };
   setTc('Treasure Class', 'TC_AstralWayfarer');
-  setTc('Picks',  '1');
-  setTc('Unique', '1024');  // 100% unique quality
+  setTc('Picks', '1');
   setTc('NoDrop', '0');
-  setTc('Item1',  'sst');
-  setTc('Prob1',  '1');
+  setTc('Item1', 'Astral Wayfarer');  // UniqueItems.txt index name → guaranteed drop
+  setTc('Prob1', '1');
   tcRows.push(tcRow);
 
-  // 2. Set Blood Raven's TreasureClassQuest to TC_AstralWayfarer
-  const idCol    = monstatsHeaders.indexOf('Id');
-  const questCol = monstatsHeaders.indexOf('TreasureClassQuest');
-  if (idCol === -1 || questCol === -1) return;
-  const bloodRaven = monstatsRows.find(r => r[idCol] === 'bloodraven');
-  if (bloodRaven) bloodRaven[questCol] = 'TC_AstralWayfarer';
+  // 2. Add Blood Raven to superuniques.txt with TC=TC_AstralWayfarer (Normal only).
+  // Blood Raven is not in superuniques.txt by default; adding her here makes D2R
+  // use TC_AstralWayfarer as her drop table when killed in Normal difficulty.
+  const nameCol  = superuniquesHeaders.indexOf('Superunique');
+  const classCol = superuniquesHeaders.indexOf('Class');
+  const tcCol    = superuniquesHeaders.indexOf('TC');
+  if (nameCol === -1 || classCol === -1 || tcCol === -1) return;
+  const suRow = new Array(superuniquesHeaders.length).fill('');
+  suRow[nameCol]  = 'Blood Raven';
+  suRow[classCol] = 'bloodraven';
+  suRow[tcCol]    = 'TC_AstralWayfarer';
+  superuniquesRows.push(suRow);
 }

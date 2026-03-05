@@ -196,6 +196,7 @@ export async function POST(request: NextRequest) {
     let charstatsTxt: string | undefined;
     let uniqueitemsTxt: string | undefined;
     let tcTxt: string | undefined;
+    let superuniquesTxt: string | undefined;
     const charstatsPath = path.join(DATA_DIR, 'txt', 'charstats.txt');
     if (fs.existsSync(charstatsPath)) {
       const charstats = loadTxtFile('charstats.txt');
@@ -271,25 +272,25 @@ export async function POST(request: NextRequest) {
 
     const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
 
-    // Step 11b: monstats — players scaling and/or Blood Raven quest drop
+    // Step 11b: monstats (players scaling) and superuniques/treasureclassex (Blood Raven drop)
     let monstatsTxt: string | undefined;
-    if ((playersEnabled && playersCount > 1) || startingTeleportStaff) {
+    if (playersEnabled && playersCount > 1) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
         const monstats = loadTxtFile('monstats.txt');
-        let { headers, rows } = monstats;
-        if (playersEnabled && playersCount > 1) {
-          rows = scaleMonstats(headers, rows, playersCount, playersActs);
-        }
-        if (startingTeleportStaff) {
-          const tcPath = path.join(DATA_DIR, 'txt', 'treasureclassex.txt');
-          if (fs.existsSync(tcPath)) {
-            const tc = loadTxtFile('treasureclassex.txt');
-            applyBloodRavenQuestDrop(headers, rows, tc.headers, tc.rows);
-            tcTxt = serializeTxtFile(tc.headers, tc.rows);
-          }
-        }
-        monstatsTxt = serializeTxtFile(headers, rows);
+        const rows = scaleMonstats(monstats.headers, monstats.rows, playersCount, playersActs);
+        monstatsTxt = serializeTxtFile(monstats.headers, rows);
+      }
+    }
+    if (startingTeleportStaff) {
+      const suPath = path.join(DATA_DIR, 'txt', 'superuniques.txt');
+      const tcPath = path.join(DATA_DIR, 'txt', 'treasureclassex.txt');
+      if (fs.existsSync(suPath) && fs.existsSync(tcPath)) {
+        const su = loadTxtFile('superuniques.txt');
+        const tc = loadTxtFile('treasureclassex.txt');
+        applyBloodRavenQuestDrop(su.headers, su.rows, tc.headers, tc.rows);
+        superuniquesTxt = serializeTxtFile(su.headers, su.rows);
+        tcTxt = serializeTxtFile(tc.headers, tc.rows);
       }
     }
 
@@ -307,6 +308,7 @@ export async function POST(request: NextRequest) {
       monstatsTxt,
       uniqueitemsTxt,
       treasureClassExTxt: tcTxt,
+      superuniquesTxt,
       itemNamesJson,
       hirelingTxt: hirelingTxtContent,
       hireableSprite,

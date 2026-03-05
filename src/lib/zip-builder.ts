@@ -14,6 +14,7 @@ export interface ZipContents {
   monstatsTxt?: string;             // monstats with HP/Exp scaled for players simulation
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
   treasureClassExTxt?: string;      // treasureclassex with Blood Raven quest drop TC
+  superuniquesTxt?: string;         // superuniques with Blood Raven entry pointing to TC
   itemNamesJson?: string;           // item-names strings (display name for unique staff)
   hirelingTxt?: string;             // hireling.txt with randomized auras
   hireableSprite?: Buffer;          // hireable sprite for mercenary hiring panel icons
@@ -98,6 +99,11 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     // Treasure class for Blood Raven quest drop
     if (contents.treasureClassExTxt) {
       archive.append(contents.treasureClassExTxt, { name: `${d}/data/global/excel/treasureclassex.txt` });
+    }
+
+    // Super uniques with Blood Raven entry
+    if (contents.superuniquesTxt) {
+      archive.append(contents.superuniquesTxt, { name: `${d}/data/global/excel/superuniques.txt` });
     }
 
     // Item name strings (display name for unique staff)
