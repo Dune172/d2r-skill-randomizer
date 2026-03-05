@@ -101,6 +101,6 @@ export function applyTeleportSkillCost(headers: string[], rows: string[][]): voi
   const row = rows.find(r => r[skillCol] === 'Teleport');
   if (!row) return;
 
-  row[costMult] = '3000';  // ≈ 168 × 3000 / 1024 ≈ 492 gold per charge
-  row[costAdd]  = '0';     // → ~9,840 gold to fully refill 20 charges
+  row[costMult] = '10240000';  // floor(10240000 × 1 / 1024 / 20) = 500 gold/charge
+  row[costAdd]  = '0';         // → 10,000 gold to fully refill 20 charges
 }
