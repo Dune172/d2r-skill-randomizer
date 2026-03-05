@@ -17,7 +17,7 @@ import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-ass
 import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
-import { applyTeleportStaff, applyTeleportStaffUnique, applyTeleportSkillCost } from '@/lib/randomizer/starting-items';
+import { applyTeleportStaffUnique, applyBloodRavenQuestDrop } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 
@@ -136,9 +136,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (startingTeleportStaff) {
-      applyTeleportSkillCost(skillsTxt.headers, skillsTxt.rows);
-    }
     const skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
 
     // Always load skill strings so all skills (including Warlock) have description text.
@@ -198,6 +195,7 @@ export async function POST(request: NextRequest) {
     // Update charstats.txt: set StartSkill and starting items for each class
     let charstatsTxt: string | undefined;
     let uniqueitemsTxt: string | undefined;
+    let tcTxt: string | undefined;
     const charstatsPath = path.join(DATA_DIR, 'txt', 'charstats.txt');
     if (fs.existsSync(charstatsPath)) {
       const charstats = loadTxtFile('charstats.txt');
@@ -216,10 +214,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Starting items: add Teleport Staff to inventory for all classes
       if (startingTeleportStaff) {
-        applyTeleportStaff(charstats.headers, charstats.rows);
-
         const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
         if (fs.existsSync(uiPath)) {
           const ui = loadTxtFile('uniqueitems.txt');
@@ -276,14 +271,25 @@ export async function POST(request: NextRequest) {
 
     const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
 
-    // Step 11b: Modify monstats for players scaling
+    // Step 11b: monstats — players scaling and/or Blood Raven quest drop
     let monstatsTxt: string | undefined;
-    if (playersEnabled && playersCount > 1) {
+    if ((playersEnabled && playersCount > 1) || startingTeleportStaff) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
         const monstats = loadTxtFile('monstats.txt');
-        const rows = scaleMonstats(monstats.headers, monstats.rows, playersCount, playersActs);
-        monstatsTxt = serializeTxtFile(monstats.headers, rows);
+        let { headers, rows } = monstats;
+        if (playersEnabled && playersCount > 1) {
+          rows = scaleMonstats(headers, rows, playersCount, playersActs);
+        }
+        if (startingTeleportStaff) {
+          const tcPath = path.join(DATA_DIR, 'txt', 'treasureclassex.txt');
+          if (fs.existsSync(tcPath)) {
+            const tc = loadTxtFile('treasureclassex.txt');
+            applyBloodRavenQuestDrop(headers, rows, tc.headers, tc.rows);
+            tcTxt = serializeTxtFile(tc.headers, tc.rows);
+          }
+        }
+        monstatsTxt = serializeTxtFile(headers, rows);
       }
     }
 
@@ -300,6 +306,7 @@ export async function POST(request: NextRequest) {
       itemModifiersJson,
       monstatsTxt,
       uniqueitemsTxt,
+      treasureClassExTxt: tcTxt,
       itemNamesJson,
       hirelingTxt: hirelingTxtContent,
       hireableSprite,

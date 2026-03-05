@@ -1,45 +1,3 @@
-import { CLASS_DEFS } from './config';
-
-/**
- * Add a Short Staff (sst) to the first empty item slot (item6) of every class
- * in charstats.txt, placed in inventory with unique quality (6).
- * Modifies rows in-place.
- */
-export function applyTeleportStaff(headers: string[], rows: string[][]): void {
-  // Find the first empty item slot across all class rows (item1–item10)
-  // In practice item6 is always free, but we scan to be safe
-  let slotNum = -1;
-  for (let n = 1; n <= 10; n++) {
-    const col = headers.indexOf(`item${n}`);
-    if (col === -1) continue;
-    // Check if this slot is empty for ALL class rows
-    const classCol = headers.indexOf('class');
-    const allEmpty = rows
-      .filter(r => classCol !== -1 && CLASS_DEFS.some(d => d.name === r[classCol]))
-      .every(r => !r[col] || r[col] === '' || r[col] === '0');
-    if (allEmpty) {
-      slotNum = n;
-      break;
-    }
-  }
-  if (slotNum === -1) return; // No free slot found
-
-  const itemCol = headers.indexOf(`item${slotNum}`);
-  const locCol  = headers.indexOf(`item${slotNum}loc`);
-  const cntCol  = headers.indexOf(`item${slotNum}count`);
-  const qualCol = headers.indexOf(`item${slotNum}quality`);
-  if (itemCol === -1) return;
-
-  const classCol = headers.indexOf('class');
-  for (const row of rows) {
-    if (classCol !== -1 && !CLASS_DEFS.some(d => d.name === row[classCol])) continue;
-    row[itemCol] = 'sst';
-    if (locCol  !== -1) row[locCol]  = '';  // empty = inventory
-    if (cntCol  !== -1) row[cntCol]  = '1';
-    if (qualCol !== -1) row[qualCol] = '7'; // 7 = unique quality (D2 EITEMQUALITY enum)
-  }
-}
-
 /**
  * Modify uniqueitems.txt rows:
  *  - Disable "Bane Ash" (the only vanilla sst unique) so it doesn't conflict
@@ -88,19 +46,38 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
 }
 
 /**
- * Set Teleport's recharge-cost columns in skills.txt so the charged staff
- * costs meaningful gold to refill at a vendor.
- * Only called when the Teleport Staff starting-item option is enabled.
+ * Give the Astral Wayfarer as a guaranteed Blood Raven quest drop instead of
+ * as a starting item, so it gets proper item value (not the 1-gold starting-item bug).
+ *
+ * - Appends TC "TC_AstralWayfarer" to treasureclassex.txt: 1 pick, 100% unique, sst
+ * - Sets Blood Raven's TreasureClassQuest column in monstats.txt to "TC_AstralWayfarer"
+ *
+ * Mutates both row arrays in-place.
  */
-export function applyTeleportSkillCost(headers: string[], rows: string[][]): void {
-  const skillCol = headers.indexOf('skill');
-  const costMult = headers.indexOf('cost mult');
-  const costAdd  = headers.indexOf('cost add');
-  if (skillCol === -1 || costMult === -1 || costAdd === -1) return;
+export function applyBloodRavenQuestDrop(
+  monstatsHeaders: string[],
+  monstatsRows: string[][],
+  tcHeaders: string[],
+  tcRows: string[][]
+): void {
+  // 1. Append TC_AstralWayfarer to treasureclassex.txt
+  const tcRow = new Array(tcHeaders.length).fill('');
+  const setTc = (col: string, val: string) => {
+    const i = tcHeaders.indexOf(col);
+    if (i !== -1) tcRow[i] = val;
+  };
+  setTc('Treasure Class', 'TC_AstralWayfarer');
+  setTc('Picks',  '1');
+  setTc('Unique', '1024');  // 100% unique quality
+  setTc('NoDrop', '0');
+  setTc('Item1',  'sst');
+  setTc('Prob1',  '1');
+  tcRows.push(tcRow);
 
-  const row = rows.find(r => r[skillCol] === 'Teleport');
-  if (!row) return;
-
-  row[costMult] = '10240000';  // floor(10240000 × 1 / 1024 / 20) = 500 gold/charge
-  row[costAdd]  = '0';         // → 10,000 gold to fully refill 20 charges
+  // 2. Set Blood Raven's TreasureClassQuest to TC_AstralWayfarer
+  const idCol    = monstatsHeaders.indexOf('Id');
+  const questCol = monstatsHeaders.indexOf('TreasureClassQuest');
+  if (idCol === -1 || questCol === -1) return;
+  const bloodRaven = monstatsRows.find(r => r[idCol] === 'bloodraven');
+  if (bloodRaven) bloodRaven[questCol] = 'TC_AstralWayfarer';
 }
