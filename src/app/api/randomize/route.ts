@@ -282,16 +282,18 @@ export async function POST(request: NextRequest) {
         monstatsTxt = serializeTxtFile(monstats.headers, rows);
       }
     }
-    if (startingTeleportStaff) {
-      const suPath = path.join(DATA_DIR, 'txt', 'superuniques.txt');
-      const tcPath = path.join(DATA_DIR, 'txt', 'treasureclassex.txt');
-      if (fs.existsSync(suPath) && fs.existsSync(tcPath)) {
-        const su = loadTxtFile('superuniques.txt');
-        const tc = loadTxtFile('treasureclassex.txt');
-        applyBloodRavenQuestDrop(su.headers, su.rows, tc.headers, tc.rows);
-        superuniquesTxt = serializeTxtFile(su.headers, su.rows);
-        tcTxt = serializeTxtFile(tc.headers, tc.rows);
+    const suPath = path.join(DATA_DIR, 'txt', 'superuniques.txt');
+    if (fs.existsSync(suPath)) {
+      const su = loadTxtFile('superuniques.txt');
+      if (startingTeleportStaff) {
+        const tcPath = path.join(DATA_DIR, 'txt', 'treasureclassex.txt');
+        if (fs.existsSync(tcPath)) {
+          const tc = loadTxtFile('treasureclassex.txt');
+          applyBloodRavenQuestDrop(su.headers, su.rows, tc.headers, tc.rows);
+          tcTxt = serializeTxtFile(tc.headers, tc.rows);
+        }
       }
+      superuniquesTxt = serializeTxtFile(su.headers, su.rows);
     }
 
     // Step 12: Build zip
