@@ -199,20 +199,37 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
         </div>
       </div>
 
-      {/* Starting Items section */}
+      {/* Items section */}
       <div className="space-y-3 pt-1">
-        <SectionDivider label="Starting Items" />
+        <SectionDivider label="Items" />
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <Checkbox
             id="teleportStaff"
             checked={teleportStaff}
             onChange={field(setTeleportStaff)}
-            label="Start with Teleport Staff"
+            label="Teleport Staff"
           />
 
           {teleportStaff && (
             <div className="flex items-center gap-3 ml-auto">
+              <label htmlFor="teleportStaffDropSource" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
+                Dropped By
+              </label>
+              <div className="relative">
+                <select
+                  id="teleportStaffDropSource"
+                  value="Corpsefire"
+                  disabled
+                  className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-2
+                    text-sm text-[#e8d5a0]
+                    focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                    transition-colors cursor-pointer"
+                >
+                  <option value="Corpsefire">Corpsefire</option>
+                </select>
+                <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+              </div>
               <label htmlFor="teleportStaffLevel" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
                 Req. Level
               </label>
