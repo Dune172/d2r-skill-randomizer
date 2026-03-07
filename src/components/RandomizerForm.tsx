@@ -203,7 +203,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
       <div className="space-y-3 pt-1">
         <SectionDivider label="Items" />
 
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div>
           <Checkbox
             id="teleportStaff"
             checked={teleportStaff}
@@ -212,44 +212,48 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
           />
 
           {teleportStaff && (
-            <div className="flex items-center gap-3 ml-auto">
-              <label htmlFor="teleportStaffDropSource" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
-                Dropped By
-              </label>
-              <div className="relative">
-                <select
-                  id="teleportStaffDropSource"
-                  value="Corpsefire"
-                  disabled
-                  className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-2
-                    text-sm text-[#e8d5a0]
-                    focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-                    transition-colors cursor-pointer"
-                >
-                  <option value="Corpsefire">Corpsefire</option>
-                </select>
-                <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2">
+              <div className="flex items-center gap-3">
+                <label htmlFor="teleportStaffDropSource" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
+                  Dropped By
+                </label>
+                <div className="relative">
+                  <select
+                    id="teleportStaffDropSource"
+                    value="Corpsefire"
+                    disabled
+                    className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-2
+                      text-sm text-[#e8d5a0]
+                      focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                      transition-colors cursor-pointer"
+                  >
+                    <option value="Corpsefire">Corpsefire</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+                </div>
               </div>
-              <label htmlFor="teleportStaffLevel" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
-                Req. Level
-              </label>
-              <div className="relative">
-                <select
-                  id="teleportStaffLevel"
-                  value={teleportStaffLevel}
-                  onChange={e => { setPreset('custom'); setTeleportStaffLevel(Number(e.target.value)); }}
-                  className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-2
-                    text-sm text-[#e8d5a0]
-                    focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-                    transition-colors cursor-pointer"
-                >
-                  <option value={1}>1</option>
-                  <option value={6}>6</option>
-                  <option value={12}>12</option>
-                  <option value={18}>18</option>
-                  <option value={24}>24</option>
-                </select>
-                <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+              <div className="flex items-center gap-3">
+                <label htmlFor="teleportStaffLevel" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
+                  Req. Level
+                </label>
+                <div className="relative">
+                  <select
+                    id="teleportStaffLevel"
+                    value={teleportStaffLevel}
+                    onChange={e => { setPreset('custom'); setTeleportStaffLevel(Number(e.target.value)); }}
+                    className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-2
+                      text-sm text-[#e8d5a0]
+                      focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                      transition-colors cursor-pointer"
+                  >
+                    <option value={1}>1</option>
+                    <option value={6}>6</option>
+                    <option value={12}>12</option>
+                    <option value={18}>18</option>
+                    <option value={24}>24</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+                </div>
               </div>
             </div>
           )}
