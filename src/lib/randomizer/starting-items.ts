@@ -39,8 +39,8 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
   set('min1',     '20');   // 20 charges
   set('max1',     '1');    // charge level 1
   set('cost mult', '1');        // must be non-zero for cost_add to be applied
-  set('cost add',  '81920000'); // effective_cost ≈ 81920168 → ~500 gold/charge recharge
-  // → recharge ≈ floor(81920168 / 1024 / 20 × 0.125) × 20 ≈ 10,000 gold total
+  set('cost add',  '32768000'); // targets ~1,000 gold/charge recharge (20,000 gold total for 20 charges)
+  // actual formula runs ~5× the theoretical floor(cost_add/1024/max_charges×0.125)
 
   return [...updated, newRow];
 }
