@@ -39,7 +39,7 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
   set('min1',     '20');   // 20 charges
   set('max1',     '1');    // charge level 1
   set('cost mult', '1');        // must be non-zero for cost_add to be applied
-  set('cost add',  '6000'); // recharge cost calibration
+  set('cost add',  '1000'); // recharge cost calibration
 
   return [...updated, newRow];
 }
