@@ -50,7 +50,8 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
  * as a starting item, so it gets proper item value (not the 1-gold starting-item bug).
  *
  * - Appends TC "TC_AstralWayfarer" to treasureclassex.txt: 1 pick, 100% unique, sst
- * - Sets Blood Raven's TreasureClassQuest column in monstats.txt to "TC_AstralWayfarer"
+ * - Sets Blood Raven's TreasureClass column in monstats.txt to "TC_AstralWayfarer"
+ *   so she drops the Astral Wayfarer on every kill (not just quest completion).
  *
  * Mutates both row arrays in-place.
  */
@@ -75,19 +76,13 @@ export function applyBloodRavenQuestDrop(
   setTc('Prob1', '1');
   tcRows.push(tcRow);
 
-  // 2. Set Blood Raven's TreasureClassQuest in monstats.txt.
-  // Blood Raven is Act 1 Quest 2 (Sisters' Burial Grounds).
-  // TCQuestId=2 identifies the quest; TCQuestCP=1 is the checkpoint flag,
-  // matching the same pattern used by Andariel (TCQuestId=6, TCQuestCP=1).
-  // Without TCQuestId/TCQuestCP the quest TC column is never triggered.
-  const idCol       = monstatsHeaders.indexOf('Id');
-  const questTcCol  = monstatsHeaders.indexOf('TreasureClassQuest');
-  const questIdCol  = monstatsHeaders.indexOf('TCQuestId');
-  const questCpCol  = monstatsHeaders.indexOf('TCQuestCP');
-  if (idCol === -1 || questTcCol === -1) return;
+  // 2. Set Blood Raven's TreasureClass in monstats.txt.
+  // Using TreasureClass (normal drop column) instead of TreasureClassQuest
+  // so the drop fires on every kill, not just quest completion.
+  const idCol = monstatsHeaders.indexOf('Id');
+  const tcCol = monstatsHeaders.indexOf('TreasureClass');
+  if (idCol === -1 || tcCol === -1) return;
   const bloodRaven = monstatsRows.find(r => r[idCol] === 'bloodraven');
   if (!bloodRaven) return;
-  bloodRaven[questTcCol] = 'TC_AstralWayfarer';
-  if (questIdCol !== -1) bloodRaven[questIdCol] = '2';
-  if (questCpCol !== -1) bloodRaven[questCpCol] = '1';
+  bloodRaven[tcCol] = 'TC_AstralWayfarer';
 }
