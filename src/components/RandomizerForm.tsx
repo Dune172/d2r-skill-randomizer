@@ -222,7 +222,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
                     id="teleportStaffDropSource"
                     value="Corpsefire"
                     disabled
-                    className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-2
+                    className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-1
                       text-sm text-[#e8d5a0]
                       focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
                       transition-colors cursor-pointer"
@@ -241,7 +241,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
                     id="teleportStaffLevel"
                     value={teleportStaffLevel}
                     onChange={e => { setPreset('custom'); setTeleportStaffLevel(Number(e.target.value)); }}
-                    className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-2
+                    className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-1
                       text-sm text-[#e8d5a0]
                       focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
                       transition-colors cursor-pointer"
