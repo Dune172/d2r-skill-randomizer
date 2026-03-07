@@ -55,8 +55,8 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
  * Mutates both row arrays in-place.
  */
 export function applyBloodRavenQuestDrop(
-  superuniquesHeaders: string[],
-  superuniquesRows: string[][],
+  monstatsHeaders: string[],
+  monstatsRows: string[][],
   tcHeaders: string[],
   tcRows: string[][]
 ): void {
@@ -75,16 +75,19 @@ export function applyBloodRavenQuestDrop(
   setTc('Prob1', '1');
   tcRows.push(tcRow);
 
-  // 2. Add Blood Raven to superuniques.txt with TC=TC_AstralWayfarer (Normal only).
-  // Blood Raven is not in superuniques.txt by default; adding her here makes D2R
-  // use TC_AstralWayfarer as her drop table when killed in Normal difficulty.
-  const nameCol  = superuniquesHeaders.indexOf('Superunique');
-  const classCol = superuniquesHeaders.indexOf('Class');
-  const tcCol    = superuniquesHeaders.indexOf('TC');
-  if (nameCol === -1 || classCol === -1 || tcCol === -1) return;
-  const suRow = new Array(superuniquesHeaders.length).fill('');
-  suRow[nameCol]  = 'Blood Raven';
-  suRow[classCol] = 'bloodraven';
-  suRow[tcCol]    = 'TC_AstralWayfarer';
-  superuniquesRows.push(suRow);
+  // 2. Set Blood Raven's TreasureClassQuest in monstats.txt.
+  // Blood Raven is Act 1 Quest 2 (Sisters' Burial Grounds).
+  // TCQuestId=2 identifies the quest; TCQuestCP=1 is the checkpoint flag,
+  // matching the same pattern used by Andariel (TCQuestId=6, TCQuestCP=1).
+  // Without TCQuestId/TCQuestCP the quest TC column is never triggered.
+  const idCol       = monstatsHeaders.indexOf('Id');
+  const questTcCol  = monstatsHeaders.indexOf('TreasureClassQuest');
+  const questIdCol  = monstatsHeaders.indexOf('TCQuestId');
+  const questCpCol  = monstatsHeaders.indexOf('TCQuestCP');
+  if (idCol === -1 || questTcCol === -1) return;
+  const bloodRaven = monstatsRows.find(r => r[idCol] === 'bloodraven');
+  if (!bloodRaven) return;
+  bloodRaven[questTcCol] = 'TC_AstralWayfarer';
+  if (questIdCol !== -1) bloodRaven[questIdCol] = '2';
+  if (questCpCol !== -1) bloodRaven[questCpCol] = '1';
 }

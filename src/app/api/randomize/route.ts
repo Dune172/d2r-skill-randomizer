@@ -272,27 +272,31 @@ export async function POST(request: NextRequest) {
 
     const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
 
-    // Step 11b: monstats (players scaling) and superuniques/treasureclassex (Blood Raven drop)
+    // Step 11b: monstats — players scaling and/or Blood Raven quest drop
     let monstatsTxt: string | undefined;
-    if (playersEnabled && playersCount > 1) {
+    if ((playersEnabled && playersCount > 1) || startingTeleportStaff) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
         const monstats = loadTxtFile('monstats.txt');
-        const rows = scaleMonstats(monstats.headers, monstats.rows, playersCount, playersActs);
-        monstatsTxt = serializeTxtFile(monstats.headers, rows);
+        let { headers, rows } = monstats;
+        if (playersEnabled && playersCount > 1) {
+          rows = scaleMonstats(headers, rows, playersCount, playersActs);
+        }
+        if (startingTeleportStaff) {
+          const tcPath = path.join(DATA_DIR, 'txt', 'treasureclassex.txt');
+          if (fs.existsSync(tcPath)) {
+            const tc = loadTxtFile('treasureclassex.txt');
+            applyBloodRavenQuestDrop(headers, rows, tc.headers, tc.rows);
+            tcTxt = serializeTxtFile(tc.headers, tc.rows);
+          }
+        }
+        monstatsTxt = serializeTxtFile(headers, rows);
       }
     }
+    // Always include superuniques.txt (unmodified pass-through)
     const suPath = path.join(DATA_DIR, 'txt', 'superuniques.txt');
     if (fs.existsSync(suPath)) {
       const su = loadTxtFile('superuniques.txt');
-      if (startingTeleportStaff) {
-        const tcPath = path.join(DATA_DIR, 'txt', 'treasureclassex.txt');
-        if (fs.existsSync(tcPath)) {
-          const tc = loadTxtFile('treasureclassex.txt');
-          applyBloodRavenQuestDrop(su.headers, su.rows, tc.headers, tc.rows);
-          tcTxt = serializeTxtFile(tc.headers, tc.rows);
-        }
-      }
       superuniquesTxt = serializeTxtFile(su.headers, su.rows);
     }
 
