@@ -81,4 +81,8 @@ export function applyBloodRavenQuestDrop(
   const corpsefire = suRows.find(r => r[suCol] === 'Corpsefire');
   if (!corpsefire) return;
   corpsefire[tcCol] = 'TC_AstralWayfarer';
+  const tcNCol = suHeaders.indexOf('TC(N)');
+  const tcHCol = suHeaders.indexOf('TC(H)');
+  if (tcNCol !== -1) corpsefire[tcNCol] = 'TC_AstralWayfarer';
+  if (tcHCol !== -1) corpsefire[tcHCol] = 'TC_AstralWayfarer';
 }
