@@ -46,18 +46,16 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
 }
 
 /**
- * Give the Astral Wayfarer as a guaranteed Blood Raven quest drop instead of
- * as a starting item, so it gets proper item value (not the 1-gold starting-item bug).
+ * Give the Astral Wayfarer as a guaranteed Corpsefire drop on every kill.
  *
- * - Appends TC "TC_AstralWayfarer" to treasureclassex.txt: 1 pick, 100% unique, sst
- * - Sets Blood Raven's TreasureClass column in monstats.txt to "TC_AstralWayfarer"
- *   so she drops the Astral Wayfarer on every kill (not just quest completion).
+ * - Appends TC "TC_AstralWayfarer" to treasureclassex.txt: 1 pick, 100% Astral Wayfarer
+ * - Sets Corpsefire's TC column in superuniques.txt to "TC_AstralWayfarer"
  *
  * Mutates both row arrays in-place.
  */
 export function applyBloodRavenQuestDrop(
-  monstatsHeaders: string[],
-  monstatsRows: string[][],
+  suHeaders: string[],
+  suRows: string[][],
   tcHeaders: string[],
   tcRows: string[][]
 ): void {
@@ -76,13 +74,11 @@ export function applyBloodRavenQuestDrop(
   setTc('Prob1', '1');
   tcRows.push(tcRow);
 
-  // 2. Set Blood Raven's TreasureClass in monstats.txt.
-  // Using TreasureClass (normal drop column) instead of TreasureClassQuest
-  // so the drop fires on every kill, not just quest completion.
-  const idCol = monstatsHeaders.indexOf('Id');
-  const tcCol = monstatsHeaders.indexOf('TreasureClass');
-  if (idCol === -1 || tcCol === -1) return;
-  const bloodRaven = monstatsRows.find(r => r[idCol] === 'bloodraven');
-  if (!bloodRaven) return;
-  bloodRaven[tcCol] = 'TC_AstralWayfarer';
+  // 2. Set Corpsefire's TC in superuniques.txt.
+  const suCol = suHeaders.indexOf('Superunique');
+  const tcCol = suHeaders.indexOf('TC');
+  if (suCol === -1 || tcCol === -1) return;
+  const corpsefire = suRows.find(r => r[suCol] === 'Corpsefire');
+  if (!corpsefire) return;
+  corpsefire[tcCol] = 'TC_AstralWayfarer';
 }
