@@ -21,7 +21,8 @@ export function makeCacheKey(
   logic: string = 'minimal',
   hirelingAura: boolean = true,
   hirelingSkills: boolean = true,
+  dropSource: string = 'Corpsefire',
 ): string {
   const actsKey = [...playersActs].sort((a, b) => a - b).join('');
-  return `${STARTUP_TOKEN}:${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${logic}:${hirelingAura?1:0}${hirelingSkills?1:0}`;
+  return `${STARTUP_TOKEN}:${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${logic}:${hirelingAura?1:0}${hirelingSkills?1:0}:${dropSource}`;
 }

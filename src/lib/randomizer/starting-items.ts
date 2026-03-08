@@ -56,7 +56,8 @@ export function applyBloodRavenQuestDrop(
   suHeaders: string[],
   suRows: string[][],
   tcHeaders: string[],
-  tcRows: string[][]
+  tcRows: string[][],
+  dropSource: string = 'Corpsefire',
 ): void {
   // 1. Append TC_AstralWayfarer to treasureclassex.txt.
   // Reference the unique item by its UniqueItems index name so D2R drops
@@ -77,7 +78,7 @@ export function applyBloodRavenQuestDrop(
   const suCol = suHeaders.indexOf('Superunique');
   const tcCol = suHeaders.indexOf('TC');
   if (suCol === -1 || tcCol === -1) return;
-  const corpsefire = suRows.find(r => r[suCol] === 'Corpsefire');
+  const corpsefire = suRows.find(r => r[suCol] === dropSource);
   if (!corpsefire) return;
   corpsefire[tcCol] = 'TC_AstralWayfarer';
   const tcNCol = suHeaders.indexOf('TC(N)');

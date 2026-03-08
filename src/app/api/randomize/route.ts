@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
     const teleportStaffLevel = startingTeleportStaff
       ? (Number(body.startingItems?.teleportStaffLevel) || 1)
       : 0;
+    const teleportStaffDropSource: string = body.startingItems?.teleportStaffDropSource || 'Corpsefire';
     const hirelingAura   = body.hirelingAura   !== false;  // default true
     const hirelingSkills = body.hirelingSkills !== false;  // default true
 
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, hirelingAura, hirelingSkills);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, hirelingAura, hirelingSkills, teleportStaffDropSource);
     const zipCache = getZipCache();
 
     // Check cache
@@ -290,7 +291,7 @@ export async function POST(request: NextRequest) {
         const tcPath = path.join(DATA_DIR, 'txt', 'treasureclassex.txt');
         if (fs.existsSync(tcPath)) {
           const tc = loadTxtFile('treasureclassex.txt');
-          applyBloodRavenQuestDrop(su.headers, su.rows, tc.headers, tc.rows);
+          applyBloodRavenQuestDrop(su.headers, su.rows, tc.headers, tc.rows, teleportStaffDropSource);
           tcTxt = serializeTxtFile(tc.headers, tc.rows);
         }
       }

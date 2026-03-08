@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     const teleportParam = searchParams.get('teleportStaff');
+    const dropSourceParam = searchParams.get('dropSource') || 'Corpsefire';
     const actsParam = searchParams.get('acts');
     const seed = isNaN(Number(seedParam)) ? seedFromString(seedParam) : Number(seedParam);
     const playersCount = Math.min(8, Math.max(1, Number(playersParam) || 1));
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     const hirelingAura   = searchParams.get('hirelingAura')   !== '0';  // default true
     const hirelingSkills = searchParams.get('hirelingSkills') !== '0';  // default true
 
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam, hirelingAura, hirelingSkills);
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam, hirelingAura, hirelingSkills, dropSourceParam);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 

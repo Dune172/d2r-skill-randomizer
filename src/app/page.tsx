@@ -13,7 +13,7 @@ interface Options {
   playersEnabled: boolean;
   playersCount: number;
   playersActs: number[];
-  startingItems: { teleportStaff: boolean; teleportStaffLevel: number };
+  startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string };
   hirelingAura: boolean;
   hirelingSkills: boolean;
 }
@@ -23,7 +23,7 @@ export default function Home() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
-  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1 }, hirelingAura: true, hirelingSkills: true });
+  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1, teleportStaffDropSource: 'Corpsefire' }, hirelingAura: true, hirelingSkills: true });
   // Seed state owned here so we can update the textbox after generation
   const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
@@ -35,7 +35,7 @@ export default function Home() {
       ? `&players=${currentOptions.playersCount}`
       : '';
     const staffParam = currentOptions.startingItems.teleportStaff
-      ? `&teleportStaff=${currentOptions.startingItems.teleportStaffLevel}`
+      ? `&teleportStaff=${currentOptions.startingItems.teleportStaffLevel}&dropSource=${currentOptions.startingItems.teleportStaffDropSource}`
       : '';
     const actsParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
       ? `&acts=${[...currentOptions.playersActs].sort((a, b) => a - b).join(',')}`

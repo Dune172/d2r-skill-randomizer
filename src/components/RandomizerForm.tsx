@@ -10,6 +10,7 @@ interface FormState {
   playersActs: number[];
   teleportStaff: boolean;
   teleportStaffLevel: number;
+  teleportStaffDropSource: string;
   hirelingAura: boolean;
   hirelingSkills: boolean;
 }
@@ -20,6 +21,7 @@ const SEASON1_PRESET: FormState = {
   playersActs: [1],
   teleportStaff: true,
   teleportStaffLevel: 6,
+  teleportStaffDropSource: 'Corpsefire',
   hirelingAura: true,
   hirelingSkills: true,
 };
@@ -30,12 +32,13 @@ const DEFAULT_STATE: FormState = {
   playersActs: [1, 2, 3, 4, 5],
   teleportStaff: false,
   teleportStaffLevel: 1,
+  teleportStaffDropSource: 'Corpsefire',
   hirelingAura: true,
   hirelingSkills: true,
 };
 
 interface RandomizerFormProps {
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number }; hirelingAura: boolean; hirelingSkills: boolean }) => void;
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string }; hirelingAura: boolean; hirelingSkills: boolean }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -77,6 +80,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
   const [playersActs, setPlayersActs] = useState<number[]>(SEASON1_PRESET.playersActs);
   const [teleportStaff, setTeleportStaff] = useState(SEASON1_PRESET.teleportStaff);
   const [teleportStaffLevel, setTeleportStaffLevel] = useState(SEASON1_PRESET.teleportStaffLevel);
+  const [teleportStaffDropSource, setTeleportStaffDropSource] = useState(SEASON1_PRESET.teleportStaffDropSource);
   const [hirelingAura, setHirelingAura] = useState(SEASON1_PRESET.hirelingAura);
   const [hirelingSkills, setHirelingSkills] = useState(SEASON1_PRESET.hirelingSkills);
 
@@ -88,6 +92,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
       setPlayersActs(SEASON1_PRESET.playersActs);
       setTeleportStaff(SEASON1_PRESET.teleportStaff);
       setTeleportStaffLevel(SEASON1_PRESET.teleportStaffLevel);
+      setTeleportStaffDropSource(SEASON1_PRESET.teleportStaffDropSource);
       setHirelingAura(SEASON1_PRESET.hirelingAura);
       setHirelingSkills(SEASON1_PRESET.hirelingSkills);
     }
@@ -112,7 +117,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
       playersEnabled: playersCount > 1,
       playersCount,
       playersActs,
-      startingItems: { teleportStaff, teleportStaffLevel },
+      startingItems: { teleportStaff, teleportStaffLevel, teleportStaffDropSource },
       hirelingAura,
       hirelingSkills,
     });
@@ -220,14 +225,15 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
                 <div className="relative">
                   <select
                     id="teleportStaffDropSource"
-                    value="Corpsefire"
-                    disabled
+                    value={teleportStaffDropSource}
+                    onChange={e => { setPreset('custom'); setTeleportStaffDropSource(e.target.value); }}
                     className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-1
                       text-sm text-[#e8d5a0]
                       focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
                       transition-colors cursor-pointer"
                   >
                     <option value="Corpsefire">Corpsefire</option>
+                    <option value="Griswold">Griswold</option>
                   </select>
                   <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
                 </div>
