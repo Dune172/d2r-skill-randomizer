@@ -154,9 +154,9 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
 
         <Checkbox
           id="enablePrereqs"
-          checked={enablePrereqs}
-          onChange={field(setEnablePrereqs)}
-          label="Skill prerequisites"
+          checked={!enablePrereqs}
+          onChange={v => field(setEnablePrereqs)(!v)}
+          label="No skill prerequisites"
         />
 
         <div>
