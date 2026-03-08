@@ -234,6 +234,7 @@ export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChan
                   >
                     <option value="Corpsefire">Corpsefire</option>
                     <option value="Griswold">Griswold</option>
+                    <option value="Coldworm the Burrower">Coldworm the Burrower</option>
                   </select>
                   <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
                 </div>
