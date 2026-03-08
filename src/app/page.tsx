@@ -18,31 +18,67 @@ interface Options {
   hirelingSkills: boolean;
 }
 
+const defaultOptions: Options = {
+  enablePrereqs: true,
+  playersEnabled: false,
+  playersCount: 1,
+  playersActs: [1, 2, 3, 4, 5],
+  startingItems: { teleportStaff: false, teleportStaffLevel: 1, teleportStaffDropSource: 'Corpsefire' },
+  hirelingAura: true,
+  hirelingSkills: true,
+};
+
+function parseOptionsFromURL(): Options | null {
+  if (typeof window === 'undefined') return null;
+  const p = new URLSearchParams(window.location.search);
+  if (!p.has('seed')) return null;
+  const playersCount = Math.min(8, Math.max(1, Number(p.get('players')) || 1));
+  const staffLevel = Number(p.get('teleportStaff')) || 0;
+  return {
+    enablePrereqs: p.get('noPrereqs') !== '1',
+    playersEnabled: playersCount > 1,
+    playersCount,
+    playersActs: p.has('acts')
+      ? p.get('acts')!.split(',').map(Number).filter(n => n >= 1 && n <= 5)
+      : [1, 2, 3, 4, 5],
+    startingItems: {
+      teleportStaff: staffLevel > 0,
+      teleportStaffLevel: staffLevel || 1,
+      teleportStaffDropSource: p.get('dropSource') || 'Corpsefire',
+    },
+    hirelingAura: p.get('hirelingAura') !== '0',
+    hirelingSkills: p.get('hirelingSkills') !== '0',
+  };
+}
+
 export default function Home() {
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
-  const [currentOptions, setCurrentOptions] = useState<Options>({ enablePrereqs: true, playersEnabled: false, playersCount: 1, playersActs: [1, 2, 3, 4, 5], startingItems: { teleportStaff: false, teleportStaffLevel: 1, teleportStaffDropSource: 'Corpsefire' }, hirelingAura: true, hirelingSkills: true });
+  const [currentOptions, setCurrentOptions] = useState<Options>(
+    () => parseOptionsFromURL() ?? { ...defaultOptions }
+  );
   // Seed state owned here so we can update the textbox after generation
   const [seed, setSeed] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
     return new URLSearchParams(window.location.search).get('seed') ?? '';
   });
 
-  const buildQueryParams = (seed: number) => {
-    const playersParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
-      ? `&players=${currentOptions.playersCount}`
+  const buildQueryParams = (seed: number, opts: Options = currentOptions) => {
+    const playersParam = opts.playersEnabled && opts.playersCount > 1
+      ? `&players=${opts.playersCount}`
       : '';
-    const staffParam = currentOptions.startingItems.teleportStaff
-      ? `&teleportStaff=${currentOptions.startingItems.teleportStaffLevel}&dropSource=${currentOptions.startingItems.teleportStaffDropSource}`
+    const staffParam = opts.startingItems.teleportStaff
+      ? `&teleportStaff=${opts.startingItems.teleportStaffLevel}&dropSource=${opts.startingItems.teleportStaffDropSource}`
       : '';
-    const actsParam = currentOptions.playersEnabled && currentOptions.playersCount > 1
-      ? `&acts=${[...currentOptions.playersActs].sort((a, b) => a - b).join(',')}`
+    const actsParam = opts.playersEnabled && opts.playersCount > 1
+      ? `&acts=${[...opts.playersActs].sort((a, b) => a - b).join(',')}`
       : '';
-    const hirelingAuraParam   = !currentOptions.hirelingAura   ? '&hirelingAura=0'   : '';
-    const hirelingSkillsParam = !currentOptions.hirelingSkills ? '&hirelingSkills=0' : '';
-    return `seed=${seed}${playersParam}${staffParam}${actsParam}&logic=normal${hirelingAuraParam}${hirelingSkillsParam}`;
+    const noPrereqsParam  = !opts.enablePrereqs    ? '&noPrereqs=1'      : '';
+    const hirelingAuraParam   = !opts.hirelingAura   ? '&hirelingAura=0'   : '';
+    const hirelingSkillsParam = !opts.hirelingSkills ? '&hirelingSkills=0' : '';
+    return `seed=${seed}${playersParam}${staffParam}${actsParam}&logic=normal${noPrereqsParam}${hirelingAuraParam}${hirelingSkillsParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -69,10 +105,9 @@ export default function Home() {
       setCurrentSeed(data.seed);
       setSeed(String(data.seed));
 
-      // Update URL so this result is shareable
-      const url = new URL(window.location.href);
-      url.searchParams.set('seed', String(data.seed));
-      window.history.replaceState(null, '', url.toString());
+      // Update URL so this result is shareable (includes all options)
+      const params = buildQueryParams(data.seed, options);
+      window.history.replaceState(null, '', `${new URL(window.location.href).pathname}?${params}`);
 
       // Step 2: Build the mod
       setStatus('building');
@@ -139,6 +174,7 @@ export default function Home() {
         {/* ── Form panel ── */}
         <div className="rounded-lg border border-[#4a1e14] bg-[#0c0405]/80 p-6 panel-shadow">
           <RandomizerForm
+            initialOptions={parseOptionsFromURL() ?? undefined}
             onGenerate={handleGenerate}
             isLoading={status === 'generating' || status === 'building'}
             seed={seed}

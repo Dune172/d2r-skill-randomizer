@@ -38,6 +38,7 @@ const DEFAULT_STATE: FormState = {
 };
 
 interface RandomizerFormProps {
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string }; hirelingAura: boolean; hirelingSkills: boolean };
   onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string }; hirelingAura: boolean; hirelingSkills: boolean }) => void;
   isLoading: boolean;
   seed: string;
@@ -73,16 +74,16 @@ function SectionDivider({ label }: { label: string }) {
   );
 }
 
-export default function RandomizerForm({ onGenerate, isLoading, seed, onSeedChange }: RandomizerFormProps) {
-  const [preset, setPreset] = useState<Preset>('season1race');
-  const [enablePrereqs, setEnablePrereqs] = useState(SEASON1_PRESET.enablePrereqs);
-  const [playersCount, setPlayersCount] = useState(SEASON1_PRESET.playersCount);
-  const [playersActs, setPlayersActs] = useState<number[]>(SEASON1_PRESET.playersActs);
-  const [teleportStaff, setTeleportStaff] = useState(SEASON1_PRESET.teleportStaff);
-  const [teleportStaffLevel, setTeleportStaffLevel] = useState(SEASON1_PRESET.teleportStaffLevel);
-  const [teleportStaffDropSource, setTeleportStaffDropSource] = useState(SEASON1_PRESET.teleportStaffDropSource);
-  const [hirelingAura, setHirelingAura] = useState(SEASON1_PRESET.hirelingAura);
-  const [hirelingSkills, setHirelingSkills] = useState(SEASON1_PRESET.hirelingSkills);
+export default function RandomizerForm({ initialOptions, onGenerate, isLoading, seed, onSeedChange }: RandomizerFormProps) {
+  const [preset, setPreset] = useState<Preset>(initialOptions ? 'custom' : 'season1race');
+  const [enablePrereqs, setEnablePrereqs] = useState(initialOptions?.enablePrereqs ?? SEASON1_PRESET.enablePrereqs);
+  const [playersCount, setPlayersCount] = useState(initialOptions?.playersCount ?? SEASON1_PRESET.playersCount);
+  const [playersActs, setPlayersActs] = useState<number[]>(initialOptions?.playersActs ?? SEASON1_PRESET.playersActs);
+  const [teleportStaff, setTeleportStaff] = useState(initialOptions?.startingItems.teleportStaff ?? SEASON1_PRESET.teleportStaff);
+  const [teleportStaffLevel, setTeleportStaffLevel] = useState(initialOptions?.startingItems.teleportStaffLevel ?? SEASON1_PRESET.teleportStaffLevel);
+  const [teleportStaffDropSource, setTeleportStaffDropSource] = useState(initialOptions?.startingItems.teleportStaffDropSource ?? SEASON1_PRESET.teleportStaffDropSource);
+  const [hirelingAura, setHirelingAura] = useState(initialOptions?.hirelingAura ?? SEASON1_PRESET.hirelingAura);
+  const [hirelingSkills, setHirelingSkills] = useState(initialOptions?.hirelingSkills ?? SEASON1_PRESET.hirelingSkills);
 
   const applyPreset = (p: Preset) => {
     setPreset(p);
