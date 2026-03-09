@@ -59,7 +59,7 @@ export default function Home() {
         </div>
       </header>
 
-      <p className="text-center text-sm text-amber-900/60 max-w-xl mx-auto pt-6 -mb-2 px-4">
+      <p className="text-center text-sm text-amber-700/80 max-w-xl mx-auto pt-6 -mb-2 px-4">
         A free mod generator for Diablo 2: Resurrected. Enter a seed to shuffle all skill trees
         across every class — then download and install the mod in minutes.
       </p>
