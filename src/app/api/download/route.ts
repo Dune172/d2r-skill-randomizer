@@ -28,8 +28,9 @@ export async function GET(request: NextRequest) {
     const logicParam = searchParams.get('logic') === 'normal' ? 'normal' : 'minimal';
     const hirelingAura   = searchParams.get('hirelingAura')   !== '0';  // default true
     const hirelingSkills = searchParams.get('hirelingSkills') !== '0';  // default true
+    const disableChat    = searchParams.get('disableChat')    === '1';  // default false
 
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam, hirelingAura, hirelingSkills, dropSourceParam);
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam, hirelingAura, hirelingSkills, dropSourceParam, disableChat);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 
