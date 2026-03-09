@@ -1,0 +1,17 @@
+{
+    "type": "ChatPanel", "name": "ChatPanel",
+    "fields": {
+        "anchor": { "x": 0.5, "y": 1.0 },
+        "rect": { "x": -273, "y": -105, "width": 546, "height": 47 },
+        "priority": 1999999999
+    },
+    "children": [
+        {
+            "type": "RectangleWidget", "name": "BackgroundBox",
+            "fields": {
+                "fitToParent": true,
+                "color": [ 0.0, 0.0, 0.0, 0.5 ]
+            }
+        }
+    ]
+}

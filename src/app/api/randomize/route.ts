@@ -20,6 +20,8 @@ import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { applyTeleportStaffUnique, applyBloodRavenQuestDrop } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
+import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
+import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -294,6 +296,8 @@ export async function POST(request: NextRequest) {
 
     // Step 12: Build zip
     const modName = `seed${seed}`;
+    const formatUiJson = (obj: unknown) =>
+      '\uFEFF' + JSON.stringify(obj, null, 4).replace(/\n/g, '\r\n');
     const zipBuffer = await buildZip({
       modName,
       skillsTxt: skillsTxtContent,
@@ -310,6 +314,8 @@ export async function POST(request: NextRequest) {
       itemNamesJson,
       hirelingTxt: hirelingTxtContent,
       hireableSprite,
+      chatPanelJson: formatUiJson(chatPanelRaw),
+      chatPanelHdJson: formatUiJson(chatPanelHdRaw),
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)
