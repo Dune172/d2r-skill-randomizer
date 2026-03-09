@@ -12,6 +12,18 @@
                 "fitToParent": true,
                 "color": [ 0.0, 0.0, 0.0, 0.5 ]
             }
+        },
+        {
+            "type": "TextBoxWidget", "name": "InputBox",
+            "fields": {
+                "fitToParent": true,
+                "text": "Chat disabled",
+                "style": {
+                    "fontColor": { "r": 150, "g": 100, "b": 60, "a": 180 },
+                    "options": { "pipeCharacterBehavior": "handle" },
+                    "alignment": { "h": "center", "v": "center" }
+                }
+            }
         }
     ]
 }

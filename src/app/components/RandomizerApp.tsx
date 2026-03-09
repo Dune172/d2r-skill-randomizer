@@ -16,6 +16,7 @@ interface Options {
   startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string };
   hirelingAura: boolean;
   hirelingSkills: boolean;
+  disableChat: boolean;
 }
 
 const defaultOptions: Options = {
@@ -26,6 +27,7 @@ const defaultOptions: Options = {
   startingItems: { teleportStaff: false, teleportStaffLevel: 1, teleportStaffDropSource: 'Corpsefire' },
   hirelingAura: true,
   hirelingSkills: true,
+  disableChat: false,
 };
 
 function parseOptionsFromURL(): Options | null {
@@ -48,6 +50,7 @@ function parseOptionsFromURL(): Options | null {
     },
     hirelingAura: p.get('hirelingAura') !== '0',
     hirelingSkills: p.get('hirelingSkills') !== '0',
+    disableChat: p.get('disableChat') === '1',
   };
 }
 
@@ -77,7 +80,8 @@ export default function RandomizerApp() {
     const noPrereqsParam  = !opts.enablePrereqs    ? '&noPrereqs=1'      : '';
     const hirelingAuraParam   = !opts.hirelingAura   ? '&hirelingAura=0'   : '';
     const hirelingSkillsParam = !opts.hirelingSkills ? '&hirelingSkills=0' : '';
-    return `seed=${seed}${playersParam}${staffParam}${actsParam}&logic=normal${noPrereqsParam}${hirelingAuraParam}${hirelingSkillsParam}`;
+    const disableChatParam    = opts.disableChat      ? '&disableChat=1'   : '';
+    return `seed=${seed}${playersParam}${staffParam}${actsParam}&logic=normal${noPrereqsParam}${hirelingAuraParam}${hirelingSkillsParam}${disableChatParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -110,7 +114,7 @@ export default function RandomizerApp() {
       const buildRes = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: 'normal', playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, hirelingSkills: options.hirelingSkills }),
+        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: 'normal', playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, hirelingSkills: options.hirelingSkills, disableChat: options.disableChat }),
       });
 
       if (!buildRes.ok) {

@@ -18,8 +18,8 @@ export interface ZipContents {
   itemNamesJson?: string;           // item-names strings (display name for unique staff)
   hirelingTxt?: string;             // hireling.txt with randomized auras
   hireableSprite?: Buffer;          // hireable sprite for mercenary hiring panel icons
-  chatPanelJson: string;            // chatpanel.json with input disabled
-  chatPanelHdJson: string;          // chatpanelhd.json with input disabled
+  chatPanelJson?: string;           // chatpanel.json with input disabled (optional)
+  chatPanelHdJson?: string;         // chatpanelhd.json with input disabled (optional)
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -113,9 +113,13 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
       archive.append(contents.itemNamesJson, { name: `${d}/data/local/lng/strings/item-names.json` });
     }
 
-    // Disable chat input to prevent /players x commands
-    archive.append(contents.chatPanelJson, { name: `${d}/data/global/ui/layouts/chatpanel.json` });
-    archive.append(contents.chatPanelHdJson, { name: `${d}/data/global/ui/layouts/chatpanelhd.json` });
+    // Disable chat input to prevent /players x commands (optional)
+    if (contents.chatPanelJson) {
+      archive.append(contents.chatPanelJson, { name: `${d}/data/global/ui/layouts/chatpanel.json` });
+    }
+    if (contents.chatPanelHdJson) {
+      archive.append(contents.chatPanelHdJson, { name: `${d}/data/global/ui/layouts/chatpanelhd.json` });
+    }
 
     // Add tree sprites (hd path)
     for (const [filename, buf] of contents.treeSprites.entries()) {

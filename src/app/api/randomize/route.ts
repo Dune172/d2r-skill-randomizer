@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
     const teleportStaffDropSource: string = body.startingItems?.teleportStaffDropSource || 'Corpsefire';
     const hirelingAura   = body.hirelingAura   !== false;  // default true
     const hirelingSkills = body.hirelingSkills !== false;  // default true
+    const disableChat    = body.disableChat    === true;   // default false
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, hirelingAura, hirelingSkills, teleportStaffDropSource);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, hirelingAura, hirelingSkills, teleportStaffDropSource, disableChat);
     const zipCache = getZipCache();
 
     // Check cache
@@ -314,8 +315,8 @@ export async function POST(request: NextRequest) {
       itemNamesJson,
       hirelingTxt: hirelingTxtContent,
       hireableSprite,
-      chatPanelJson: formatUiJson(chatPanelRaw),
-      chatPanelHdJson: formatUiJson(chatPanelHdRaw),
+      chatPanelJson: disableChat ? formatUiJson(chatPanelRaw) : undefined,
+      chatPanelHdJson: disableChat ? formatUiJson(chatPanelHdRaw) : undefined,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)

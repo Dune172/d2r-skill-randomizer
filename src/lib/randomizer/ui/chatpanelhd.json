@@ -27,15 +27,17 @@
             }
         },
         {
-            "type": "TextBoxWidget", "name": "ChannelName",
-            "fields": {
-                "rect": { "x": 120, "y": 854, "width": 100, "height": 70 },
+            "type": "TextBoxWidget", "name": "InputBox",
+            "fields":
+            {
+                "rect": { "x": 220, "y": 854, "width": 970, "height": 70 },
+                "text": "Chat disabled",
                 "style": {
-                    "fontColor": { "r": 255, "g": 255, "b": 255, "a": 255 },
-                    "fontFace": "BlizzardGlobal",
+                    "fontColor": { "r": 150, "g": 100, "b": 60, "a": 180 },
                     "pointSize": "$MediumFontSize",
-                    "options": { "pipeCharacterBehavior" : "handle" },
-                    "alignment": { "h": "left", "v": "center" }
+                    "fontFace": "BlizzardGlobal",
+                    "alignment": { "h": "center", "v": "center" },
+                    "options": { "pipeCharacterBehavior": "handle" }
                 }
             }
         },
