@@ -159,39 +159,27 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       <div className="space-y-3 pt-1">
         <SectionDivider label="Gameplay" />
 
-        <Checkbox
-          id="enablePrereqs"
-          checked={!enablePrereqs}
-          onChange={v => field(setEnablePrereqs)(!v)}
-          label="No skill prerequisites"
-        />
-
-        <Checkbox
-          id="disableChat"
-          checked={disableChat}
-          onChange={field(setDisableChat)}
-          label="Disable chat (blocks /players commands)"
-        />
-
-        <div>
-          <div className="flex items-center gap-3">
-            <label htmlFor="playersCount" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
-              Players
-            </label>
-            <input
-              id="playersCount"
-              type="number"
-              min={1}
-              max={8}
-              value={playersCount}
-              onChange={e => { setPreset('custom'); setPlayersCount(Math.min(8, Math.max(1, Number(e.target.value) || 1))); }}
-              className="w-16 rounded border border-[#3a1510] bg-[#090203] px-3 py-2
-                text-sm text-[#e8d5a0] text-center
-                focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-                transition-colors"
-            />
-          </div>
-          {playersCount > 1 && (
+        <div className="grid grid-cols-2 gap-4">
+          {/* Left: Players */}
+          <div>
+            <div className="flex items-center gap-3">
+              <label htmlFor="playersCount" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
+                Players
+              </label>
+              <input
+                id="playersCount"
+                type="number"
+                min={1}
+                max={8}
+                value={playersCount}
+                onChange={e => { setPreset('custom'); setPlayersCount(Math.min(8, Math.max(1, Number(e.target.value) || 1))); }}
+                className="w-16 rounded border border-[#3a1510] bg-[#090203] px-3 py-2
+                  text-sm text-[#e8d5a0] text-center
+                  focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                  transition-colors"
+              />
+            </div>
+            {playersCount > 1 && (
             <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
               {([1, 2, 3, 4, 5] as const).map(act => {
                 const actLabels = ['Act I', 'Act II', 'Act III', 'Act IV', 'Act V'];
@@ -215,6 +203,23 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               })}
             </div>
           )}
+          </div>
+
+          {/* Right: Checkboxes */}
+          <div className="flex flex-col justify-start gap-3">
+            <Checkbox
+              id="enablePrereqs"
+              checked={!enablePrereqs}
+              onChange={v => field(setEnablePrereqs)(!v)}
+              label="No skill prerequisites"
+            />
+            <Checkbox
+              id="disableChat"
+              checked={disableChat}
+              onChange={field(setDisableChat)}
+              label="Disable chat (blocks /players commands)"
+            />
+          </div>
         </div>
       </div>
 
