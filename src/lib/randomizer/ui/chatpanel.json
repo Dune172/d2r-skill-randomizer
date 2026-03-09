@@ -14,15 +14,18 @@
             }
         },
         {
-            "type": "TextBoxWidget", "name": "InputBox",
+            "type": "InputTextBoxWidget", "name": "InputBox",
             "fields": {
                 "fitToParent": true,
-                "text": "Chat disabled",
-                "style": {
-                    "fontColor": { "r": 150, "g": 100, "b": 60, "a": 180 },
-                    "options": { "pipeCharacterBehavior": "handle" },
-                    "alignment": { "h": "center", "v": "center" }
-                }
+                "fontType": "Chat",
+                "alwaysAcceptsKeyInput": false,
+                "fontStyle": {
+                    "fontColor": { "r": 255, "g": 255, "b": 255, "a": 255 },
+                    "options": { "lineWrap": true, "pipeCharacterBehavior": "handle" },
+                    "spacing": { "leading": 0.62 }
+                },
+                "backgroundColor": [ 0.0, 0.0, 0.0, 0.0 ],
+                "maxStringLength": 0
             }
         }
     ]
