@@ -119,12 +119,6 @@ export async function POST(request: NextRequest) {
     const charclassColIdx = skillsTxt.headers.indexOf('charclass') !== -1
       ? skillsTxt.headers.indexOf('charclass') : 2;
 
-    // Diagnostic: verify charclass was updated for a known cross-class skill.
-    // If this logs the original class (e.g. 'nec') instead of the placed class,
-    // skillToPlacement lookup is failing for that skill (name mismatch, etc.).
-    const ccCheck = skillsTxt.rows.find(r => r[0] === 'Clay Golem');
-    console.log('Clay Golem charclass after update:', ccCheck?.[charclassColIdx]);
-
     const reqlevelColIdx = skillsTxt.headers.indexOf('reqlevel') !== -1
       ? skillsTxt.headers.indexOf('reqlevel') : 174;
     const row1SkillsByClass = new Map<string, string[]>();
