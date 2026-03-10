@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import RandomizerForm from '@/components/RandomizerForm';
 import SkillTreePreview from '@/components/SkillTreePreview';
 import ProgressIndicator from '@/components/ProgressIndicator';
@@ -59,6 +59,11 @@ export default function RandomizerApp() {
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
+  const [modCount, setModCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('/api/counter').then(r => r.json()).then(d => setModCount(d.count)).catch(() => {});
+  }, []);
   const [currentOptions, setCurrentOptions] = useState<Options>(
     () => parseOptionsFromURL() ?? { ...defaultOptions }
   );
@@ -123,6 +128,7 @@ export default function RandomizerApp() {
       }
 
       setStatus('ready');
+      fetch('/api/counter').then(r => r.json()).then(d => setModCount(d.count)).catch(() => {});
     } catch (err) {
       setStatus('error');
       setErrorMessage(err instanceof Error ? err.message : 'Unknown error');
@@ -208,6 +214,12 @@ export default function RandomizerApp() {
 
       {preview && (
         <SkillTreePreview data={preview} />
+      )}
+
+      {modCount !== null && (
+        <p className="text-center font-cinzel text-[11px] tracking-[0.3em] uppercase text-[#7a5818] pt-2">
+          {modCount.toLocaleString()} mods generated
+        </p>
       )}
     </div>
   );

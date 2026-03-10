@@ -16,6 +16,7 @@ import { buildAllTreeSprites, clearSpriteCache } from '@/lib/sprites/tree-stitch
 import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-assembler';
 import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
+import { incrementCount } from '@/lib/counter';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { applyTeleportStaffUnique, applyBloodRavenQuestDrop } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
@@ -327,6 +328,7 @@ export async function POST(request: NextRequest) {
 
     // Cache the result
     zipCache.set(cacheKey, zipBuffer);
+    incrementCount();
 
     return NextResponse.json({ seed, status: 'ready' });
   } catch (error) {
