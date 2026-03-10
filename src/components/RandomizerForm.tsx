@@ -131,10 +131,10 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4">
 
       {/* Preset */}
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-2 pb-0">
         <label htmlFor="preset" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870]">
           Preset
         </label>
