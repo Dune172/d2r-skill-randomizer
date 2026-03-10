@@ -131,7 +131,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-1">
 
       {/* Preset */}
       <div className="flex items-center justify-end gap-2 pb-0">
