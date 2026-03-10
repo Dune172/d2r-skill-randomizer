@@ -156,7 +156,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       </div>
 
       {/* Gameplay section */}
-      <div className="space-y-3 pt-1">
+      <div className="space-y-3 pt-1 pb-2">
         <SectionDivider label="Gameplay" />
 
         <div className="grid grid-cols-2 gap-4">
@@ -224,7 +224,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       </div>
 
       {/* Items section */}
-      <div className="space-y-3 pt-1">
+      <div className="space-y-3 pt-1 pb-2">
         <SectionDivider label="Items" />
 
         <div>
@@ -287,7 +287,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       </div>
 
       {/* Hirelings section */}
-      <div className="space-y-3 pt-1">
+      <div className="space-y-3 pt-1 pb-2">
         <SectionDivider label="Hirelings" />
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -307,7 +307,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       </div>
 
       {/* Seed */}
-      <div className="space-y-3 pt-1">
+      <div className="space-y-3 pt-1 pb-2">
         <div className="h-px bg-[#3a1510]/50" />
         <div className="flex items-center gap-3">
           <label htmlFor="seed" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap flex-shrink-0">
