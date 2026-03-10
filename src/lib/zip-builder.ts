@@ -48,7 +48,7 @@ const PREFIX_TO_FOLDER: Record<string, string> = {
 export async function buildZip(contents: ZipContents): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
-    const archive = archiver('zip', { zlib: { level: 5 } });
+    const archive = archiver('zip', { zlib: { level: 1 } });
 
     archive.on('data', (chunk: Buffer) => chunks.push(chunk));
     archive.on('end', () => resolve(Buffer.concat(chunks)));

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
+sharp.concurrency(1); // Limit libvips threads to prevent process limit exhaustion on shared hosting
 import { ClassCode, SkillPlacement } from '../randomizer/types';
 import { CLASS_BY_CODE, ICON_WIDTH, ICON_HEIGHT, ICONS_PER_CLASS } from '../randomizer/config';
 import { buildSprite } from './sprite-parser';
