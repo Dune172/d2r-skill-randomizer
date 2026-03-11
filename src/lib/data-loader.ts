@@ -104,6 +104,7 @@ export function loadSkills(): SkillEntry[] {
       etype: (v.EType as string) || undefined,
       weapsel: v.weapsel != null ? Number(v.weapsel) : undefined,
       restrict: v.restrict != null && v.restrict !== '' ? Number(v.restrict) : undefined,
+      summon: (v.summon as string) || undefined,
     });
   }
 

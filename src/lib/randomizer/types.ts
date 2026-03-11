@@ -52,6 +52,7 @@ export interface SkillEntry {
   // class-usability restrictions
   weapsel?: number;  // 3 = requires dual weapons (Barbarian/Assassin only)
   restrict?: number; // 2 = requires shapeshifted form (Druid only)
+  summon?: string;   // non-empty if skill summons a pet (e.g. 'wargoatman', 'ClayGolem')
 }
 
 export interface SkillDescEntry {
