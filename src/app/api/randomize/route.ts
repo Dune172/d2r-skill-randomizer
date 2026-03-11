@@ -277,13 +277,15 @@ export async function POST(request: NextRequest) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
         const monstats = loadTxtFile('monstats.txt');
-        // Exclude rows for player-summoned pets — their definitions live in the
-        // Reign of the Warlock mod's monstats.txt and must not be clobbered by
-        // the vanilla stub entries (enabled=0, empty AI/stats) in data/txt/monstats.txt.
         const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
         const worldRows = monstats.rows.filter(row => !summonIds.has(row[0]));
-        const rows = scaleMonstats(monstats.headers, worldRows, playersCount, playersActs);
-        monstatsTxt = serializeTxtFile(monstats.headers, rows);
+        const summonRows = monstats.rows.filter(row => summonIds.has(row[0]));
+        // Scale world monsters only. Summon pet rows are passed through unscaled so
+        // that D2R has a valid monstats entry to serialize live pets on save-and-exit.
+        // (enabled=0 in vanilla stubs prevents wild spawning but does not affect
+        // skill-summoned pets or save/load serialization.)
+        const scaledRows = scaleMonstats(monstats.headers, worldRows, playersCount, playersActs);
+        monstatsTxt = serializeTxtFile(monstats.headers, [...scaledRows, ...summonRows]);
       }
     }
     // Step 11c: superuniques — Corpsefire TC drop (always included in zip)
