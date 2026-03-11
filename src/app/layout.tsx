@@ -37,13 +37,17 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} antialiased`}>
         <script dangerouslySetInnerHTML={{ __html: `(function(){
-  function reload(k){if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');location.reload();}}
+  function maybeReload(){
+    var n=parseInt(sessionStorage.getItem('_cr')||'0');
+    if(n<3){sessionStorage.setItem('_cr',String(n+1));location.reload();}
+  }
   window.addEventListener('error',function(e){
-    if(e.error&&(e.error.name==='ChunkLoadError'||String(e.message).indexOf('chunk')!==-1)){reload('ce:'+e.message);}
+    if(e.error&&e.error.name==='ChunkLoadError'){maybeReload();}
+    else if(String(e.message||'').toLowerCase().indexOf('chunk')!==-1){maybeReload();}
   });
   window.addEventListener('unhandledrejection',function(e){
     var r=e.reason;
-    if(r&&(r.name==='ChunkLoadError'||String(r.message).indexOf('chunk')!==-1)){reload('ce:'+r.message);}
+    if(r&&(r.name==='ChunkLoadError'||String(r.message||'').toLowerCase().indexOf('chunk')!==-1)){maybeReload();}
   });
 })();` }} />
         {children}
