@@ -279,11 +279,14 @@ export async function POST(request: NextRequest) {
         const monstats = loadTxtFile('monstats.txt');
         const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
         const worldRows = monstats.rows.filter(row => !summonIds.has(row[0]));
-        const summonRows = monstats.rows.filter(row => summonIds.has(row[0]));
-        // Scale world monsters only. Summon pet rows are passed through unscaled so
-        // that D2R has a valid monstats entry to serialize live pets on save-and-exit.
-        // (enabled=0 in vanilla stubs prevents wild spawning but does not affect
-        // skill-summoned pets or save/load serialization.)
+        // Load summon pet rows from the mod's monstats (proper AI/stats) if available;
+        // fall back to vanilla stubs (no AI, but still allows save/load without crashing).
+        const modMonstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats_mod.txt');
+        const summonSource = fs.existsSync(modMonstatsTxtPath)
+          ? loadTxtFile('monstats_mod.txt')
+          : monstats;
+        const summonRows = summonSource.rows.filter(row => summonIds.has(row[0]));
+        // Scale world monsters only; pass summon pet rows through unscaled.
         const scaledRows = scaleMonstats(monstats.headers, worldRows, playersCount, playersActs);
         monstatsTxt = serializeTxtFile(monstats.headers, [...scaledRows, ...summonRows]);
       }
