@@ -60,7 +60,6 @@ export function writeSkillsRows(
   const itypea3Idx = safeGetCol(headers, 'itypea3', COL.itypea3);
   const itypeb1Idx = safeGetCol(headers, 'itypeb1', COL.itypeb1);
   const leftskillIdx = safeGetCol(headers, 'leftskill', -1);
-  const aurastateIdx = safeGetCol(headers, 'aurastate', -1);
 
   for (const row of rows) {
     const skillName = row[0]; // skill column is always first
@@ -72,12 +71,6 @@ export function writeSkillsRows(
 
     // Update charclass
     row[charclassIdx] = classDef.charclass;
-
-    // Summon skills with a class-specific aurastate (e.g. 'warlockdemonground') will fail
-    // to spawn their pet on a different class. Clear it when moving cross-class.
-    if (aurastateIdx >= 0 && placement.skill.summon && placement.targetClass !== placement.skill.charclass) {
-      row[aurastateIdx] = '';
-    }
 
     // Update reqlevel to match the assigned row
     const newLevel = ROW_TO_LEVEL[placement.row] ?? 1;
