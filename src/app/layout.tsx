@@ -36,6 +36,16 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} antialiased`}>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){
+  function reload(k){if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');location.reload();}}
+  window.addEventListener('error',function(e){
+    if(e.error&&(e.error.name==='ChunkLoadError'||String(e.message).indexOf('chunk')!==-1)){reload('ce:'+e.message);}
+  });
+  window.addEventListener('unhandledrejection',function(e){
+    var r=e.reason;
+    if(r&&(r.name==='ChunkLoadError'||String(r.message).indexOf('chunk')!==-1)){reload('ce:'+r.message);}
+  });
+})();` }} />
         {children}
       </body>
     </html>
