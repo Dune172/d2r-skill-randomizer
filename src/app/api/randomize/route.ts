@@ -277,7 +277,12 @@ export async function POST(request: NextRequest) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
         const monstats = loadTxtFile('monstats.txt');
-        const rows = scaleMonstats(monstats.headers, monstats.rows, playersCount, playersActs);
+        // Exclude rows for player-summoned pets — their definitions live in the
+        // Reign of the Warlock mod's monstats.txt and must not be clobbered by
+        // the vanilla stub entries (enabled=0, empty AI/stats) in data/txt/monstats.txt.
+        const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
+        const worldRows = monstats.rows.filter(row => !summonIds.has(row[0]));
+        const rows = scaleMonstats(monstats.headers, worldRows, playersCount, playersActs);
         monstatsTxt = serializeTxtFile(monstats.headers, rows);
       }
     }
