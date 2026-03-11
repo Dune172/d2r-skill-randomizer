@@ -276,19 +276,17 @@ export async function POST(request: NextRequest) {
     if (playersEnabled && playersCount > 1) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
-        const monstats = loadTxtFile('monstats.txt');
-        const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
-        const worldRows = monstats.rows.filter(row => !summonIds.has(row[0]));
-        // Load summon pet rows from the mod's monstats (proper AI/stats) if available;
-        // fall back to vanilla stubs (no AI, but still allows save/load without crashing).
         const modMonstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats_mod.txt');
-        const summonSource = fs.existsSync(modMonstatsTxtPath)
+        // Prefer the mod's monstats (preserves world monster changes); fall back to vanilla.
+        const monstatsSrc = fs.existsSync(modMonstatsTxtPath)
           ? loadTxtFile('monstats_mod.txt')
-          : monstats;
-        const summonRows = summonSource.rows.filter(row => summonIds.has(row[0]));
+          : loadTxtFile('monstats.txt');
+        const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
+        const worldRows = monstatsSrc.rows.filter(row => !summonIds.has(row[0]));
+        const summonRows = monstatsSrc.rows.filter(row => summonIds.has(row[0]));
         // Scale world monsters only; pass summon pet rows through unscaled.
-        const scaledRows = scaleMonstats(monstats.headers, worldRows, playersCount, playersActs);
-        monstatsTxt = serializeTxtFile(monstats.headers, [...scaledRows, ...summonRows]);
+        const scaledRows = scaleMonstats(monstatsSrc.headers, worldRows, playersCount, playersActs);
+        monstatsTxt = serializeTxtFile(monstatsSrc.headers, [...scaledRows, ...summonRows]);
       }
     }
     // Step 11c: superuniques — Corpsefire TC drop (always included in zip)
