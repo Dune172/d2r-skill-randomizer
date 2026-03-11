@@ -282,11 +282,9 @@ export async function POST(request: NextRequest) {
           ? loadTxtFile('monstats_mod.txt')
           : loadTxtFile('monstats.txt');
         const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
-        const worldRows = monstatsSrc.rows.filter(row => !summonIds.has(row[0]));
-        const summonRows = monstatsSrc.rows.filter(row => summonIds.has(row[0]));
-        // Scale world monsters only; pass summon pet rows through unscaled.
-        const scaledRows = scaleMonstats(monstatsSrc.headers, worldRows, playersCount, playersActs);
-        monstatsTxt = serializeTxtFile(monstatsSrc.headers, [...scaledRows, ...summonRows]);
+        // Scale world monsters only; summon pets passed through unscaled, in original row order.
+        const scaledRows = scaleMonstats(monstatsSrc.headers, monstatsSrc.rows, playersCount, playersActs, summonIds);
+        monstatsTxt = serializeTxtFile(monstatsSrc.headers, scaledRows);
       }
     }
     // Step 11c: superuniques — Corpsefire TC drop (always included in zip)

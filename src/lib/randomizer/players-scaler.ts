@@ -60,6 +60,7 @@ export function scaleMonstats(
   rows: string[][],
   playerCount: number,
   acts: number[] = [1, 2, 3, 4, 5],
+  skipIds: Set<string> = new Set(),
 ): string[][] {
   const hpExpMultiplier = (playerCount + 1) / 2;
   const damageArMultiplier = 1 + (playerCount - 1) / 16;
@@ -68,6 +69,7 @@ export function scaleMonstats(
 
   return rows.map(row => {
     const id = row[0];
+    if (skipIds.has(id)) return row;
     let monsterAct: number | null = null;
     if (tcIdx !== -1) {
       const tc = row[tcIdx] ?? '';
