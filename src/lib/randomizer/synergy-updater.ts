@@ -6,6 +6,8 @@ import { SeededRNG } from './seed';
  * and remap synergy references to point to co-located skills.
  */
 
+const SYNERGY_REGEX = /skill\('([^']+)'\.blvl\)/g;
+
 /**
  * Update skills.txt synergy formulas.
  * Columns: EDmgSymPerCalc, ELenSymPerCalc, DmgSymPerCalc
@@ -24,13 +26,17 @@ export function updateSkillsSynergies(
     skillToPlacement.set(p.skill.skill, p);
   }
 
-  const synergyRegex = /skill\('([^']+)'\.blvl\)/g;
+  // Pre-compute per-skill "other classmates" list once
+  const otherClassmatesBySkill = new Map<string, SkillPlacement[]>();
+  for (const classmates of placementsByClass.values()) {
+    for (const p of classmates) {
+      otherClassmatesBySkill.set(p.skill.skill, classmates.filter(c => c !== p));
+    }
+  }
 
   for (const placement of placements) {
     const skill = placement.skill;
-    const classmates = placementsByClass.get(placement.targetClass) || [];
-    // Get other skills in the same class (excluding self)
-    const otherClassmates = classmates.filter(p => p.skill.skill !== skill.skill);
+    const otherClassmates = otherClassmatesBySkill.get(skill.skill) ?? [];
 
     const result: { EDmgSymPerCalc?: string; ELenSymPerCalc?: string; DmgSymPerCalc?: string } = {};
     let hasUpdate = false;
@@ -42,7 +48,7 @@ export function updateSkillsSynergies(
       if (!formula.includes("skill('")) continue;
 
       // Find all skill references in this formula
-      const matches = [...formula.matchAll(synergyRegex)];
+      const matches = [...formula.matchAll(SYNERGY_REGEX)];
       if (matches.length === 0) continue;
 
       let newFormula = formula;

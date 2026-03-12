@@ -11,6 +11,7 @@ let _treeGrid: Map<string, TreePage> | null = null;
 let _skills: SkillEntry[] | null = null;
 let _skillDescs: Map<string, SkillDescEntry> | null = null;
 let _skillStrings: StringEntry[] | null = null;
+let _txtCache: Map<string, { headers: string[]; rows: string[][] }> | null = null;
 
 /**
  * Clear the skill strings cache so the next call to loadSkillStrings()
@@ -154,8 +155,16 @@ export function loadSkillDescs(): Map<string, SkillDescEntry> {
  * Parse tab-delimited TXT file → { headers: string[], rows: string[][] }
  * Each row is an array of column values (strings).
  * Handles mixed line endings (CRLF/LF) and normalizes rows to match header column count.
+ * Parsed results are cached at module level; rows are cloned per-call so callers can
+ * mutate them without corrupting the cache.
  */
 export function loadTxtFile(filename: string): { headers: string[]; rows: string[][] } {
+  if (!_txtCache) _txtCache = new Map();
+  const cached = _txtCache.get(filename);
+  if (cached) {
+    return { headers: cached.headers, rows: cached.rows.map(r => [...r]) };
+  }
+
   const filePath = path.join(DATA_DIR, 'txt', filename);
   const content = fs.readFileSync(filePath, 'utf-8');
   // Handle mixed line endings: normalize all to \n
@@ -181,7 +190,17 @@ export function loadTxtFile(filename: string): { headers: string[]; rows: string
     }
   }
 
-  return { headers, rows };
+  _txtCache.set(filename, { headers, rows });
+  return { headers, rows: rows.map(r => [...r]) };
+}
+
+/**
+ * Clear the TXT file cache. Pass a filename to clear one entry, or omit to clear all.
+ */
+export function clearTxtCache(filename?: string): void {
+  if (!_txtCache) return;
+  if (filename) _txtCache.delete(filename);
+  else _txtCache.clear();
 }
 
 /**
