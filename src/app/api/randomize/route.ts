@@ -276,13 +276,8 @@ export async function POST(request: NextRequest) {
     if (playersEnabled && playersCount > 1) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
-        const modMonstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats_mod.txt');
-        // Prefer the mod's monstats (preserves world monster changes); fall back to vanilla.
-        const monstatsSrc = fs.existsSync(modMonstatsTxtPath)
-          ? loadTxtFile('monstats_mod.txt')
-          : loadTxtFile('monstats.txt');
+        const monstatsSrc = loadTxtFile('monstats.txt');
         const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
-        // Scale world monsters only; summon pets passed through unscaled, in original row order.
         const scaledRows = scaleMonstats(monstatsSrc.headers, monstatsSrc.rows, playersCount, playersActs, summonIds);
         monstatsTxt = serializeTxtFile(monstatsSrc.headers, scaledRows);
       }
