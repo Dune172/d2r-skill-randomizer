@@ -168,7 +168,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           {/* Left: Players */}
           <div>
             <div className="flex items-center gap-3">
-              <label htmlFor="playersCount" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
+              <label htmlFor="playersCount" className="text-sm text-[#c8a870] whitespace-nowrap">
                 /Players
               </label>
               <input
