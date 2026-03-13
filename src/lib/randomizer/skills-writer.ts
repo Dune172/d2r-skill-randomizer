@@ -3,6 +3,20 @@ import { getColumnIndex } from '../data-loader';
 import { CLASS_BY_CODE, CLASS_NATURAL_WEAPON, CLASS_RESTRICTED_TYPES } from './config';
 import { PrereqAssignment } from './prereq-assigner';
 
+// Animation codes each class's character model supports.
+// If a skill's anim is not in this set, substitute SC (universal cast animation)
+// to avoid game freezes when an unsupported animation is triggered.
+const CLASS_SUPPORTED_ANIMS: Record<string, Set<string>> = {
+  ama: new Set(['A1', 'S1', 'SC', 'SQ', 'TH']),
+  sor: new Set(['SC', 'SQ']),
+  nec: new Set(['A1', 'SC']),
+  pal: new Set(['A1', 'S1', 'SC', 'SQ']),
+  bar: new Set(['A1', 'SC', 'SQ']),
+  dru: new Set(['A1', 'S3', 'SC', 'SQ']),
+  ass: new Set(['A1', 'KK', 'S2', 'SC', 'SQ']),
+  war: new Set(['SC', 'SQ']),
+};
+
 // Column indices in skills.txt (0-based)
 const COL = {
   skill: 0,
@@ -60,6 +74,7 @@ export function writeSkillsRows(
   const itypea3Idx = safeGetCol(headers, 'itypea3', COL.itypea3);
   const itypeb1Idx = safeGetCol(headers, 'itypeb1', COL.itypeb1);
   const leftskillIdx = safeGetCol(headers, 'leftskill', -1);
+  const animIdx = safeGetCol(headers, 'anim', 147);
 
   for (const row of rows) {
     const skillName = row[0]; // skill column is always first
@@ -71,6 +86,16 @@ export function writeSkillsRows(
 
     // Update charclass
     row[charclassIdx] = classDef.charclass;
+
+    // Remap unsupported animations to SC (universal cast) to prevent game freezes.
+    // Some anim codes (S1, A1, SQ, etc.) only exist on certain class models.
+    const supportedAnims = CLASS_SUPPORTED_ANIMS[placement.targetClass];
+    if (supportedAnims && animIdx >= 0) {
+      const currentAnim = row[animIdx];
+      if (currentAnim && !supportedAnims.has(currentAnim)) {
+        row[animIdx] = 'SC';
+      }
+    }
 
     // Update reqlevel to match the assigned row
     const newLevel = ROW_TO_LEVEL[placement.row] ?? 1;

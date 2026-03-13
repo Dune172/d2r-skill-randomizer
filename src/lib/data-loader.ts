@@ -162,7 +162,7 @@ export function loadTxtFile(filename: string): { headers: string[]; rows: string
   if (!_txtCache) _txtCache = new Map();
   const cached = _txtCache.get(filename);
   if (cached) {
-    return { headers: cached.headers, rows: cached.rows.map(r => [...r]) };
+    return { headers: [...cached.headers], rows: cached.rows.map(r => [...r]) };
   }
 
   const filePath = path.join(DATA_DIR, 'txt', filename);
@@ -191,7 +191,7 @@ export function loadTxtFile(filename: string): { headers: string[]; rows: string
   }
 
   _txtCache.set(filename, { headers, rows });
-  return { headers, rows: rows.map(r => [...r]) };
+  return { headers: [...headers], rows: rows.map(r => [...r]) };
 }
 
 /**
