@@ -18,7 +18,7 @@ interface FormState {
 
 const SEASON1_PRESET: FormState = {
   enablePrereqs: true,
-  playersCount: 4,
+  playersCount: 3,
   playersActs: [1],
   teleportStaff: true,
   teleportStaffLevel: 6,
