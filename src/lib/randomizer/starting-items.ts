@@ -45,6 +45,30 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
 }
 
 /**
+ * Add Horadric Cube (code "box") to the first empty starting item slot for each class.
+ * Mutates rows in-place.
+ */
+export function applyHoradricCube(headers: string[], rows: string[][]): void {
+  for (const row of rows) {
+    for (let n = 1; n <= 10; n++) {
+      const itemCol = headers.indexOf(`item${n}`);
+      if (itemCol === -1) continue;
+      const val = row[itemCol];
+      if (val === '0' || val === '') {
+        row[itemCol] = 'box';
+        const locCol = headers.indexOf(`item${n}loc`);
+        const cntCol = headers.indexOf(`item${n}count`);
+        const qCol   = headers.indexOf(`item${n}quality`);
+        if (locCol !== -1) row[locCol] = '';
+        if (cntCol !== -1) row[cntCol] = '1';
+        if (qCol   !== -1) row[qCol]   = '2';
+        break;
+      }
+    }
+  }
+}
+
+/**
  * Give the Astral Wayfarer as a guaranteed Corpsefire drop on every kill.
  *
  * - Appends TC "TC_AstralWayfarer" to treasureclassex.txt: 1 pick, 100% Astral Wayfarer

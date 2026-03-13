@@ -18,7 +18,7 @@ import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { incrementCount } from '@/lib/counter';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
-import { applyTeleportStaffUnique, applyBloodRavenQuestDrop } from '@/lib/randomizer/starting-items';
+import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
     const hirelingAura   = body.hirelingAura   !== false;  // default true
     const hirelingSkills = body.hirelingSkills !== false;  // default true
     const disableChat    = body.disableChat    === true;   // default false
+    const startingHoradricCube = body.startingItems?.horadricCube === true;
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, hirelingAura, hirelingSkills, teleportStaffDropSource, disableChat);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, hirelingAura, hirelingSkills, teleportStaffDropSource, disableChat, startingHoradricCube);
     const zipCache = getZipCache();
 
     // Check cache
@@ -221,6 +222,10 @@ export async function POST(request: NextRequest) {
           const uiRows = applyTeleportStaffUnique(ui.headers, ui.rows, teleportStaffLevel);
           uniqueitemsTxt = serializeTxtFile(ui.headers, uiRows);
         }
+      }
+
+      if (startingHoradricCube) {
+        applyHoradricCube(charstats.headers, charstats.rows);
       }
 
       charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);

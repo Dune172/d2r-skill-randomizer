@@ -23,7 +23,8 @@ export function makeCacheKey(
   hirelingSkills: boolean = true,
   dropSource: string = 'Corpsefire',
   disableChat: boolean = false,
+  horadricCube: boolean = false,
 ): string {
   const actsKey = [...playersActs].sort((a, b) => a - b).join('');
-  return `${STARTUP_TOKEN}:${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${logic}:${hirelingAura?1:0}${hirelingSkills?1:0}:${dropSource}:${disableChat?1:0}`;
+  return `${STARTUP_TOKEN}:${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${logic}:${hirelingAura?1:0}${hirelingSkills?1:0}:${dropSource}:${disableChat?1:0}:${horadricCube?1:0}`;
 }

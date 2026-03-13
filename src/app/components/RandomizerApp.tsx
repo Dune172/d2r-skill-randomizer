@@ -13,7 +13,7 @@ interface Options {
   playersEnabled: boolean;
   playersCount: number;
   playersActs: number[];
-  startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string };
+  startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean };
   hirelingAura: boolean;
   hirelingSkills: boolean;
   disableChat: boolean;
@@ -24,7 +24,7 @@ const defaultOptions: Options = {
   playersEnabled: false,
   playersCount: 1,
   playersActs: [1, 2, 3, 4, 5],
-  startingItems: { teleportStaff: false, teleportStaffLevel: 1, teleportStaffDropSource: 'Corpsefire' },
+  startingItems: { teleportStaff: false, teleportStaffLevel: 1, teleportStaffDropSource: 'Corpsefire', horadricCube: false },
   hirelingAura: true,
   hirelingSkills: true,
   disableChat: false,
@@ -47,6 +47,7 @@ function parseOptionsFromURL(): Options | null {
       teleportStaff: staffLevel > 0,
       teleportStaffLevel: staffLevel || 1,
       teleportStaffDropSource: p.get('dropSource') || 'Corpsefire',
+      horadricCube: p.get('cube') === '1',
     },
     hirelingAura: p.get('hirelingAura') !== '0',
     hirelingSkills: p.get('hirelingSkills') !== '0',
@@ -79,6 +80,7 @@ export default function RandomizerApp() {
     const staffParam = opts.startingItems.teleportStaff
       ? `&teleportStaff=${opts.startingItems.teleportStaffLevel}&dropSource=${opts.startingItems.teleportStaffDropSource}`
       : '';
+    const cubeParam = opts.startingItems.horadricCube ? '&cube=1' : '';
     const actsParam = opts.playersEnabled && opts.playersCount > 1
       ? `&acts=${[...opts.playersActs].sort((a, b) => a - b).join(',')}`
       : '';
@@ -86,7 +88,7 @@ export default function RandomizerApp() {
     const hirelingAuraParam   = !opts.hirelingAura   ? '&hirelingAura=0'   : '';
     const hirelingSkillsParam = !opts.hirelingSkills ? '&hirelingSkills=0' : '';
     const disableChatParam    = opts.disableChat      ? '&disableChat=1'   : '';
-    return `seed=${seed}${playersParam}${staffParam}${actsParam}&logic=normal${noPrereqsParam}${hirelingAuraParam}${hirelingSkillsParam}${disableChatParam}`;
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}&logic=normal${noPrereqsParam}${hirelingAuraParam}${hirelingSkillsParam}${disableChatParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
