@@ -294,7 +294,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           id="horadricCube"
           checked={horadricCube}
           onChange={field(setHoradricCube)}
-          label="Horadric Cube"
+          label="Start with Horadric Cube"
         />
       </div>
 
