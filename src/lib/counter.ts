@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 
-const COUNTER_FILE = path.join(process.cwd(), 'counter.json');
+// Default to one directory above the project so deployments (fresh clone/pull) can't wipe it.
+// Override by setting COUNTER_FILE env var to any absolute path on the server.
+const COUNTER_FILE = process.env.COUNTER_FILE || path.join(process.cwd(), '..', 'counter.json');
 
 let writeLock: Promise<void> = Promise.resolve();
 
