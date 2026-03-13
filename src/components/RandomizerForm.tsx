@@ -232,70 +232,76 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       <div className="space-y-3 pt-1 pb-2">
         <SectionDivider label="Items" />
 
-        <div>
-          <Checkbox
-            id="teleportStaff"
-            checked={teleportStaff}
-            onChange={field(setTeleportStaff)}
-            label="Teleport Staff"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          {/* Left: Teleport Staff */}
+          <div>
+            <Checkbox
+              id="teleportStaff"
+              checked={teleportStaff}
+              onChange={field(setTeleportStaff)}
+              label="Teleport Staff"
+            />
 
-          {teleportStaff && (
-            <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2">
-              <div className="flex items-center gap-3">
-                <label htmlFor="teleportStaffDropSource" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
-                  Dropped By
-                </label>
-                <div className="relative">
-                  <select
-                    id="teleportStaffDropSource"
-                    value={teleportStaffDropSource}
-                    onChange={e => { setPreset('custom'); setTeleportStaffDropSource(e.target.value); }}
-                    className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-1
-                      text-sm text-[#e8d5a0]
-                      focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-                      transition-colors cursor-pointer"
-                  >
-                    <option value="Corpsefire">Corpsefire</option>
-                    <option value="Griswold">Griswold</option>
-                    <option value="Coldworm the Burrower">Coldworm the Burrower</option>
-                  </select>
-                  <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+            {teleportStaff && (
+              <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2">
+                <div className="flex items-center gap-3">
+                  <label htmlFor="teleportStaffDropSource" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
+                    Dropped By
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="teleportStaffDropSource"
+                      value={teleportStaffDropSource}
+                      onChange={e => { setPreset('custom'); setTeleportStaffDropSource(e.target.value); }}
+                      className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-1
+                        text-sm text-[#e8d5a0]
+                        focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                        transition-colors cursor-pointer"
+                    >
+                      <option value="Corpsefire">Corpsefire</option>
+                      <option value="Griswold">Griswold</option>
+                      <option value="Coldworm the Burrower">Coldworm the Burrower</option>
+                    </select>
+                    <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label htmlFor="teleportStaffLevel" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
+                    Req. Level
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="teleportStaffLevel"
+                      value={teleportStaffLevel}
+                      onChange={e => { setPreset('custom'); setTeleportStaffLevel(Number(e.target.value)); }}
+                      className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-1
+                        text-sm text-[#e8d5a0]
+                        focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                        transition-colors cursor-pointer"
+                    >
+                      <option value={1}>1</option>
+                      <option value={6}>6</option>
+                      <option value={12}>12</option>
+                      <option value={18}>18</option>
+                      <option value={24}>24</option>
+                    </select>
+                    <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <label htmlFor="teleportStaffLevel" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap">
-                  Req. Level
-                </label>
-                <div className="relative">
-                  <select
-                    id="teleportStaffLevel"
-                    value={teleportStaffLevel}
-                    onChange={e => { setPreset('custom'); setTeleportStaffLevel(Number(e.target.value)); }}
-                    className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-1
-                      text-sm text-[#e8d5a0]
-                      focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-                      transition-colors cursor-pointer"
-                  >
-                    <option value={1}>1</option>
-                    <option value={6}>6</option>
-                    <option value={12}>12</option>
-                    <option value={18}>18</option>
-                    <option value={24}>24</option>
-                  </select>
-                  <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Right: Horadric Cube */}
+          <div className="flex flex-col justify-start">
+            <Checkbox
+              id="horadricCube"
+              checked={horadricCube}
+              onChange={field(setHoradricCube)}
+              label="Start with Horadric Cube"
+            />
+          </div>
         </div>
-
-        <Checkbox
-          id="horadricCube"
-          checked={horadricCube}
-          onChange={field(setHoradricCube)}
-          label="Start with Horadric Cube"
-        />
       </div>
 
       {/* Hirelings section */}
