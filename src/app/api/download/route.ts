@@ -27,11 +27,10 @@ export async function GET(request: NextRequest) {
       : [1, 2, 3, 4, 5];
     const logicParam = searchParams.get('logic') === 'normal' ? 'normal' : 'minimal';
     const hirelingAura   = searchParams.get('hirelingAura')   !== '0';  // default true
-    const hirelingSkills = searchParams.get('hirelingSkills') !== '0';  // default true
     const disableChat    = searchParams.get('disableChat')    === '1';  // default false
     const horadricCube   = searchParams.get('cube')           === '1';  // default false
 
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam, hirelingAura, hirelingSkills, dropSourceParam, disableChat, horadricCube);
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam, hirelingAura, dropSourceParam, disableChat, horadricCube);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 

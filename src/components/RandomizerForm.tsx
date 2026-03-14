@@ -13,7 +13,6 @@ interface FormState {
   teleportStaffDropSource: string;
   horadricCube: boolean;
   hirelingAura: boolean;
-  hirelingSkills: boolean;
   disableChat: boolean;
 }
 
@@ -26,7 +25,6 @@ const SEASON1_PRESET: FormState = {
   teleportStaffDropSource: 'Corpsefire',
   horadricCube: false,
   hirelingAura: true,
-  hirelingSkills: true,
   disableChat: true,
 };
 
@@ -39,13 +37,12 @@ const DEFAULT_STATE: FormState = {
   teleportStaffDropSource: 'Corpsefire',
   horadricCube: false,
   hirelingAura: true,
-  hirelingSkills: true,
   disableChat: false,
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; hirelingSkills: boolean; disableChat: boolean };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; hirelingSkills: boolean; disableChat: boolean }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -90,7 +87,6 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [teleportStaffDropSource, setTeleportStaffDropSource] = useState(initialOptions?.startingItems.teleportStaffDropSource ?? SEASON1_PRESET.teleportStaffDropSource);
   const [horadricCube, setHoradricCube] = useState(initialOptions?.startingItems.horadricCube ?? SEASON1_PRESET.horadricCube);
   const [hirelingAura, setHirelingAura] = useState(initialOptions?.hirelingAura ?? SEASON1_PRESET.hirelingAura);
-  const [hirelingSkills, setHirelingSkills] = useState(initialOptions?.hirelingSkills ?? SEASON1_PRESET.hirelingSkills);
   const [disableChat, setDisableChat] = useState(initialOptions?.disableChat ?? SEASON1_PRESET.disableChat);
 
   const applyPreset = (p: Preset) => {
@@ -104,7 +100,6 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setTeleportStaffDropSource(SEASON1_PRESET.teleportStaffDropSource);
       setHoradricCube(SEASON1_PRESET.horadricCube);
       setHirelingAura(SEASON1_PRESET.hirelingAura);
-      setHirelingSkills(SEASON1_PRESET.hirelingSkills);
       setDisableChat(SEASON1_PRESET.disableChat);
     }
   };
@@ -130,7 +125,6 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       playersActs,
       startingItems: { teleportStaff, teleportStaffLevel, teleportStaffDropSource, horadricCube },
       hirelingAura,
-      hirelingSkills,
       disableChat,
     });
   };
@@ -314,12 +308,6 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
             checked={hirelingAura}
             onChange={field(setHirelingAura)}
             label="All hirelings have an aura"
-          />
-          <Checkbox
-            id="hirelingSkills"
-            checked={hirelingSkills}
-            onChange={field(setHirelingSkills)}
-            label="Shuffle attack skills"
           />
         </div>
       </div>

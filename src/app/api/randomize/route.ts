@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
       : 0;
     const teleportStaffDropSource: string = body.startingItems?.teleportStaffDropSource || 'Corpsefire';
     const hirelingAura   = body.hirelingAura   !== false;  // default true
-    const hirelingSkills = body.hirelingSkills !== false;  // default true
     const disableChat    = body.disableChat    === true;   // default false
     const startingHoradricCube = body.startingItems?.horadricCube === true;
 
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, hirelingAura, hirelingSkills, teleportStaffDropSource, disableChat, startingHoradricCube);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube);
     const zipCache = getZipCache();
 
     // Check cache (fast path — bypasses queue)
@@ -118,10 +117,10 @@ export async function POST(request: NextRequest) {
     // Hireling randomization (aura and/or attack skills, per user options)
     let hirelingTxtContent: string | undefined;
     let assignedHirelingSkills = new Set<string>();
-    if (hirelingAura || hirelingSkills) {
+    if (hirelingAura) {
       const hirelingTxtFile = loadTxtFile('hireling.txt');
       assignedHirelingSkills = writeHirelingRows(hirelingTxtFile.headers, hirelingTxtFile.rows,
-        placements, rng, { aura: hirelingAura, skills: hirelingSkills });
+        placements, rng, { aura: hirelingAura, skills: false });
       hirelingTxtContent = serializeTxtFile(hirelingTxtFile.headers, hirelingTxtFile.rows);
     }
 
