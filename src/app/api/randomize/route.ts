@@ -17,6 +17,7 @@ import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-ass
 import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { incrementCount } from '@/lib/counter';
+import { enqueueGeneration } from '@/lib/generation-queue';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
@@ -63,10 +64,16 @@ export async function POST(request: NextRequest) {
     const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, hirelingAura, hirelingSkills, teleportStaffDropSource, disableChat, startingHoradricCube);
     const zipCache = getZipCache();
 
-    // Check cache
+    // Check cache (fast path — bypasses queue)
     if (zipCache.has(cacheKey)) {
       return NextResponse.json({ seed, status: 'ready' });
     }
+
+    // Serialize generation so only one mod builds at a time
+    await enqueueGeneration(async () => {
+
+    // Re-check cache inside the queue in case another request built it while we waited
+    if (zipCache.has(cacheKey)) return;
 
     const rng = createRNG(seed);
 
@@ -327,7 +334,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)
-    if (zipCache.size >= 10) {
+    if (zipCache.size >= 3) {
       const firstKey = zipCache.keys().next().value;
       if (firstKey !== undefined) zipCache.delete(firstKey);
     }
@@ -335,6 +342,8 @@ export async function POST(request: NextRequest) {
     // Cache the result
     zipCache.set(cacheKey, zipBuffer);
     incrementCount();
+
+    }); // end enqueueGeneration
 
     return NextResponse.json({ seed, status: 'ready' });
   } catch (error) {

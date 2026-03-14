@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "UV_THREADPOOL_SIZE=1 next start"
   },
   "dependencies": {
     "@types/archiver": "^7.0.0",
