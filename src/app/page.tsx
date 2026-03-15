@@ -60,6 +60,19 @@ export default function Home() {
       </header>
 
       <p className="text-center text-sm text-amber-700/80 max-w-xl mx-auto pt-6 -mb-2 px-4">
+        If you encountered a bug, please submit it in our{" "}
+        <a
+          href="https://discord.gg/y5r2sTxwS5"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-amber-500 transition-colors"
+        >
+          Discord
+        </a>
+        .
+      </p>
+
+      <p className="text-center text-sm text-amber-700/80 max-w-xl mx-auto pt-2 -mb-2 px-4">
         A free mod generator for Diablo 2: Resurrected. Enter a seed to shuffle all skill trees
         across every class — then download and install the mod in minutes.
       </p>
