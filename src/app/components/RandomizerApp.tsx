@@ -181,7 +181,7 @@ export default function RandomizerApp() {
                     Use the included shortcut{' '}
                     <code className="text-[#a89858]">D2R Randomizer {currentSeed}.lnk</code>
                     {' '}— or add{' '}
-                    <code className="text-[#a89858]">-mod seed_{currentSeed} -txt</code>
+                    <code className="text-[#a89858]">-mod seed_{currentSeed} -txt -seed {currentSeed! >>> 0}</code>
                     {' '}in your Battle.net launcher settings.
                   </li>
                 </ol>
@@ -199,7 +199,7 @@ export default function RandomizerApp() {
                   </li>
                   <li>
                     In Steam: right-click D2R → <em>Properties</em> → <em>General</em> → Launch Options, and add:{' '}
-                    <code className="text-[#a89858]">-mod seed_{currentSeed} -txt</code>
+                    <code className="text-[#a89858]">-mod seed_{currentSeed} -txt -seed {currentSeed! >>> 0}</code>
                   </li>
                 </ol>
               </div>

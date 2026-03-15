@@ -42,8 +42,9 @@ export async function GET(request: NextRequest) {
     }
 
     const modName = `seed${seed}`;
+    const mapSeed = seed >>> 0;
     const zip = new AdmZip(Buffer.from(zipBuffer));
-    zip.addFile(`D2R Randomizer ${seed}.lnk`, createD2RShortcut(modName));
+    zip.addFile(`D2R Randomizer ${seed}.lnk`, createD2RShortcut(modName, mapSeed));
 
     return new NextResponse(new Uint8Array(zip.toBuffer()), {
       headers: {
