@@ -215,7 +215,7 @@ export default function RandomizerApp() {
       )}
 
       <p className="text-center text-sm text-amber-700/80 pt-4">
-        If you encountered a bug, please submit it in our{" "}
+        If you encounter a bug, please submit it in our{" "}
         <a
           href="https://discord.gg/y5r2sTxwS5"
           target="_blank"
