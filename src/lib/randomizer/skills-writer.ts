@@ -19,7 +19,7 @@ const CLASS_SUPPORTED_ANIMS: Record<string, Set<string>> = {
 // Weapon types that indicate a hand-to-hand / melee skill.
 const MELEE_TYPES = new Set([
   'mele', 'swor', 'axe', 'mace', 'hamm', 'spea', 'pole',
-  'wand', 'staf', 'club', 'scep', 'knif', 'tkni',
+  'club', 'scep', 'knif', 'tkni',
 ]);
 
 type SkillCategory = 'melee' | 'aura' | 'default';
@@ -60,19 +60,21 @@ const COL = {
   id: 1,
   charclass: 2,
   skilldesc: 3,
-  reqskill1: 161,
-  reqskill2: 162,
-  reqskill3: 163,
-  DmgSymPerCalc: 237,
-  EDmgSymPerCalc: 251,
-  ELenSymPerCalc: 256,
+  reqskill1: 184,
+  reqskill2: 185,
+  reqskill3: 186,
+  DmgSymPerCalc: 297,
+  EDmgSymPerCalc: 311,
+  ELenSymPerCalc: 316,
   passiveitype: 49,
   itypea1: 136,
   itypea2: 137,
   itypea3: 138,
   itypeb1: 141,
-  anim: 147,
-  seqtrans: 148,
+  anim: 146,
+  seqtrans: 147,
+  seqnum: 149,
+  seqinput: 150,
 };
 
 /**
@@ -100,7 +102,7 @@ export function writeSkillsRows(
 
   // Resolve column indices dynamically (fallback to hardcoded)
   const charclassIdx = safeGetCol(headers, 'charclass', COL.charclass);
-  const reqlevelIdx = safeGetCol(headers, 'reqlevel', 174);
+  const reqlevelIdx = safeGetCol(headers, 'reqlevel', 178);
   const reqskill1Idx = safeGetCol(headers, 'reqskill1', COL.reqskill1);
   const reqskill2Idx = safeGetCol(headers, 'reqskill2', COL.reqskill2);
   const reqskill3Idx = safeGetCol(headers, 'reqskill3', COL.reqskill3);
@@ -115,6 +117,8 @@ export function writeSkillsRows(
   const leftskillIdx = safeGetCol(headers, 'leftskill', -1);
   const animIdx = safeGetCol(headers, 'anim', COL.anim);
   const seqtransIdx = safeGetCol(headers, 'seqtrans', COL.seqtrans);
+  const seqnumIdx   = safeGetCol(headers, 'seqnum',   COL.seqnum);
+  const seqinputIdx = safeGetCol(headers, 'seqinput', COL.seqinput);
 
   for (const row of rows) {
     const skillName = row[0]; // skill column is always first
@@ -137,6 +141,12 @@ export function writeSkillsRows(
         const bestAnim = pickBestAnim(placement.skill, originalAnim, supportedAnims);
         row[animIdx] = bestAnim;
         if (seqtransIdx >= 0) row[seqtransIdx] = bestAnim;
+        // Clear sequence data when animation changes — seqnum is SQ-variant-specific
+        // and becomes garbage for a different animation type.
+        if (bestAnim !== originalAnim) {
+          if (seqnumIdx >= 0)   row[seqnumIdx]   = '';
+          if (seqinputIdx >= 0) row[seqinputIdx] = '';
+        }
       }
     }
 
