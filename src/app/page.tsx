@@ -60,9 +60,9 @@ export default function Home() {
       </header>
 
       <p className="text-center text-sm text-amber-700/80 max-w-xl mx-auto pt-6 -mb-2 px-4">
-        This is a free mod generator for Diablo 2: Resurrected. Change settings to randomize your D2R experience — then download and install the mod in minutes.
+        This is a free mod generator for Diablo 2: Resurrected that shuffles skills and skill trees between classes.
         <br /><br />
-        Whether you&apos;re wanting to race, or just vibe, this mod does both.
+        Click &quot;Generate Mod&quot; to get started.
 </p>
 
       <RandomizerApp />
