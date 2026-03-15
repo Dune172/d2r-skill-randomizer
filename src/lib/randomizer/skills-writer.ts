@@ -1,11 +1,10 @@
-import { ClassCode, SkillPlacement } from './types';
+import { ClassCode, SkillEntry, SkillPlacement } from './types';
 import { getColumnIndex } from '../data-loader';
 import { CLASS_BY_CODE, CLASS_NATURAL_WEAPON, CLASS_RESTRICTED_TYPES } from './config';
 import { PrereqAssignment } from './prereq-assigner';
 
 // Animation codes each class's character model supports.
-// If a skill's anim is not in this set, substitute SC (universal cast animation)
-// to avoid game freezes when an unsupported animation is triggered.
+// Using an animation code not in this set causes game freezes.
 const CLASS_SUPPORTED_ANIMS: Record<string, Set<string>> = {
   ama: new Set(['A1', 'S1', 'SC', 'SQ', 'TH']),
   sor: new Set(['SC', 'SQ']),
@@ -16,6 +15,44 @@ const CLASS_SUPPORTED_ANIMS: Record<string, Set<string>> = {
   ass: new Set(['A1', 'KK', 'S2', 'SC', 'SQ']),
   war: new Set(['SC', 'SQ']),
 };
+
+// Weapon types that indicate a hand-to-hand / melee skill.
+const MELEE_TYPES = new Set([
+  'mele', 'swor', 'axe', 'mace', 'hamm', 'spea', 'pole',
+  'wand', 'staf', 'club', 'scep', 'knif', 'tkni',
+]);
+
+type SkillCategory = 'melee' | 'aura' | 'default';
+
+function getSkillCategory(skill: SkillEntry): SkillCategory {
+  if ([skill.itypea1, skill.itypea2, skill.itypea3].some(t => t && MELEE_TYPES.has(t))) {
+    return 'melee';
+  }
+  if (skill.aurastate) return 'aura';
+  return 'default';
+}
+
+// Ordered animation preference per category — first supported entry wins.
+const ANIM_PREFERENCES: Record<SkillCategory, string[]> = {
+  melee:   ['A1', 'SQ', 'SC'],
+  aura:    ['SC'],
+  default: [], // 'default' preserves original if supported; falls back to SC
+};
+
+function pickBestAnim(
+  skill: SkillEntry,
+  originalAnim: string,
+  supported: Set<string>,
+): string {
+  const category = getSkillCategory(skill);
+  if (category === 'default') {
+    return supported.has(originalAnim) ? originalAnim : 'SC';
+  }
+  for (const anim of ANIM_PREFERENCES[category]) {
+    if (supported.has(anim)) return anim;
+  }
+  return 'SC';
+}
 
 // Column indices in skills.txt (0-based)
 const COL = {
@@ -34,6 +71,8 @@ const COL = {
   itypea2: 137,
   itypea3: 138,
   itypeb1: 141,
+  anim: 147,
+  seqtrans: 148,
 };
 
 /**
@@ -74,7 +113,8 @@ export function writeSkillsRows(
   const itypea3Idx = safeGetCol(headers, 'itypea3', COL.itypea3);
   const itypeb1Idx = safeGetCol(headers, 'itypeb1', COL.itypeb1);
   const leftskillIdx = safeGetCol(headers, 'leftskill', -1);
-  const animIdx = safeGetCol(headers, 'anim', 147);
+  const animIdx = safeGetCol(headers, 'anim', COL.anim);
+  const seqtransIdx = safeGetCol(headers, 'seqtrans', COL.seqtrans);
 
   for (const row of rows) {
     const skillName = row[0]; // skill column is always first
@@ -87,13 +127,16 @@ export function writeSkillsRows(
     // Update charclass
     row[charclassIdx] = classDef.charclass;
 
-    // Remap unsupported animations to SC (universal cast) to prevent game freezes.
-    // Some anim codes (S1, A1, SQ, etc.) only exist on certain class models.
+    // Pick the best animation for this skill+class combo, then sync seqtrans.
+    // Melee skills prefer A1 (weapon swing) over SQ/SC; others preserve original
+    // if supported, else fall back to SC.
     const supportedAnims = CLASS_SUPPORTED_ANIMS[placement.targetClass];
     if (supportedAnims && animIdx >= 0) {
-      const currentAnim = row[animIdx];
-      if (currentAnim && !supportedAnims.has(currentAnim)) {
-        row[animIdx] = 'SC';
+      const originalAnim = row[animIdx];
+      if (originalAnim) {
+        const bestAnim = pickBestAnim(placement.skill, originalAnim, supportedAnims);
+        row[animIdx] = bestAnim;
+        if (seqtransIdx >= 0) row[seqtransIdx] = bestAnim;
       }
     }
 
