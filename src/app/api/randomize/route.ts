@@ -122,6 +122,21 @@ export async function POST(request: NextRequest) {
       assignedHirelingSkills = writeHirelingRows(hirelingTxtFile.headers, hirelingTxtFile.rows,
         placements, rng, { aura: hirelingAura, skills: false });
       hirelingTxtContent = serializeTxtFile(hirelingTxtFile.headers, hirelingTxtFile.rows);
+
+      // Also collect vanilla attack skills (Mode ∈ {4,7,14}) so they get correct
+      // HireableIconCel values in the hireable sprite. Without this, all attack
+      // skills default to HireableIconCel=0 and show the wrong icon.
+      const HIRELING_ATTACK_MODES = new Set(['4', '7', '14']);
+      for (let i = 1; i <= 6; i++) {
+        const sCol = hirelingTxtFile.headers.indexOf(`Skill${i}`);
+        const mCol = hirelingTxtFile.headers.indexOf(`Mode${i}`);
+        if (sCol === -1 || mCol === -1) continue;
+        for (const row of hirelingTxtFile.rows) {
+          if (row[sCol] && HIRELING_ATTACK_MODES.has(row[mCol])) {
+            assignedHirelingSkills.add(row[sCol]);
+          }
+        }
+      }
     }
 
     // Build StartSkill candidates from the verified, already-updated skillsTxt rows.

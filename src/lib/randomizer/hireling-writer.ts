@@ -14,8 +14,9 @@ import { SeededRNG } from './seed';
  *
  * AURA (Mode=1)
  * Tier pools are built from all randomized paladin placements:
- *   - Normal Acts 1–3 (Diff=1): rows 1–2
- *   - Normal Act 5    (Diff=1): rows 2–3
+ *   - Normal Acts 1–2 (Diff=1): rows 1–2
+ *   - Normal Acts 3–4 (Diff=1): rows 3–4
+ *   - Normal Act 5    (Diff=1): rows 4–5
  *   - Nightmare/Hell  (Diff≥2): any row
  *
  * Desert Mercenaries already have an aura in Skill2 (Mode=1); we replace it
@@ -246,11 +247,13 @@ export function writeHirelingRows(
     if (options.aura) {
       let auraPool: string[];
       if (diff >= 2) {
-        auraPool = poolAll;
-      } else if (act >= 4) {
-        auraPool = buildAuraPool(2, 3);
+        auraPool = poolAll;                  // Nightmare/Hell: any row
+      } else if (act >= 5) {
+        auraPool = buildAuraPool(4, 5);      // Normal Act 5: rows 4–5 (level req 18, 24)
+      } else if (act >= 3) {
+        auraPool = buildAuraPool(3, 4);      // Normal Acts 3–4: rows 3–4 (level req 12, 18)
       } else {
-        auraPool = buildAuraPool(1, 2);
+        auraPool = buildAuraPool(1, 2);      // Normal Acts 1–2: rows 1–2 (level req 1, 6)
       }
 
       const auraName = auraPool[rng.randInt(0, auraPool.length - 1)];
