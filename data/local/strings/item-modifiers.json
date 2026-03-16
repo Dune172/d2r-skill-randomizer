@@ -3385,7 +3385,7 @@
   {
     "id": 10054,
     "Key": "StrSklTabItem1",
-    "enUS": "Random 3",
+    "enUS": "%+d to Random 3",
     "zhTW": "%+d 標槍與長矛技能",
     "deDE": "%+d zu Wurfspieß- und Speerfertigkeiten",
     "esES": "%+d a las habilidades de jabalina y lanza",
@@ -3402,7 +3402,7 @@
   {
     "id": 10055,
     "Key": "StrSklTabItem2",
-    "enUS": "Random 2",
+    "enUS": "%+d to Random 2",
     "zhTW": "%+d 被動與魔法技能",
     "deDE": "%+d zu passiven und magischen Fertigkeiten",
     "esES": "%+d a las habilidades pasivas y mágicas",
@@ -3419,7 +3419,7 @@
   {
     "id": 10056,
     "Key": "StrSklTabItem3",
-    "enUS": "Random 1",
+    "enUS": "%+d to Random 1",
     "zhTW": "%+d 弓與弩技能",
     "deDE": "%+d zu Bogen- und Armbrustfertigkeiten",
     "esES": "%+d a las habilidades de arco y ballesta",
@@ -3436,7 +3436,7 @@
   {
     "id": 10057,
     "Key": "StrSklTabItem4",
-    "enUS": "Random 3",
+    "enUS": "%+d to Random 3",
     "zhTW": "%+d 防禦靈氣",
     "deDE": "%+d zu Defensivauren",
     "esES": "%+d a las auras defensivas",
@@ -3453,7 +3453,7 @@
   {
     "id": 10058,
     "Key": "StrSklTabItem5",
-    "enUS": "Random 2",
+    "enUS": "%+d to Random 2",
     "zhTW": "%+d 攻擊靈氣",
     "deDE": "%+d zu Offensivauren",
     "esES": "%+d a las auras ofensivas",
@@ -3470,7 +3470,7 @@
   {
     "id": 10059,
     "Key": "StrSklTabItem6",
-    "enUS": "Random 1",
+    "enUS": "%+d to Random 1",
     "zhTW": "%+d 戰鬥技能",
     "deDE": "%+d zu Kampffertigkeiten",
     "esES": "%+d a las habilidades de combate",
@@ -3487,7 +3487,7 @@
   {
     "id": 10061,
     "Key": "StrSklTabItem7",
-    "enUS": "Random 2",
+    "enUS": "%+d to Random 2",
     "zhTW": "%+d 毒素與骸骨技能",
     "deDE": "%+d zu Gift- und Knochenfertigkeiten",
     "esES": "%+d a las habilidades de veneno y hueso",
@@ -3504,7 +3504,7 @@
   {
     "id": 10062,
     "Key": "StrSklTabItem8",
-    "enUS": "Random 1",
+    "enUS": "%+d to Random 1",
     "zhTW": "%+d 詛咒",
     "deDE": "%+d zu Flüchen",
     "esES": "%+d a las maldiciones",
@@ -3521,7 +3521,7 @@
   {
     "id": 10063,
     "Key": "StrSklTabItem10",
-    "enUS": "Random 3",
+    "enUS": "%+d to Random 3",
     "zhTW": "%+d 戰吼",
     "deDE": "%+d zu Kriegsschreien",
     "esES": "%+d a los gritos de guerra",
@@ -3538,7 +3538,7 @@
   {
     "id": 10064,
     "Key": "StrSklTabItem11",
-    "enUS": "Random 1",
+    "enUS": "%+d to Random 1",
     "zhTW": "%+d 戰鬥技能",
     "deDE": "%+d zu Kampffertigkeiten",
     "esES": "%+d a las habilidades de combate",
@@ -3555,7 +3555,7 @@
   {
     "id": 10065,
     "Key": "StrSklTabItem12",
-    "enUS": "Random 2",
+    "enUS": "%+d to Random 2",
     "zhTW": "%+d 戰鬥專精",
     "deDE": "%+d zu Beherrschungsfertigkeiten",
     "esES": "%+d a dominio del combate",
@@ -3572,7 +3572,7 @@
   {
     "id": 10066,
     "Key": "StrSklTabItem13",
-    "enUS": "Random 3",
+    "enUS": "%+d to Random 3",
     "zhTW": "%+d 冰寒技能",
     "deDE": "%+d zu Kältefertigkeiten",
     "esES": "%+d a los hechizos de frío",
@@ -3589,7 +3589,7 @@
   {
     "id": 10067,
     "Key": "StrSklTabItem14",
-    "enUS": "Random 2",
+    "enUS": "%+d to Random 2",
     "zhTW": "%+d 閃電技能",
     "deDE": "%+d zu Blitzfertigkeiten",
     "esES": "%+d a los hechizos de rayos",
@@ -3606,7 +3606,7 @@
   {
     "id": 10068,
     "Key": "StrSklTabItem15",
-    "enUS": "Random 1",
+    "enUS": "%+d to Random 1",
     "zhTW": "%+d 火焰技能",
     "deDE": "%+d zu Feuerfertigkeiten",
     "esES": "%+d a los hechizos de fuego",
@@ -3623,7 +3623,7 @@
   {
     "id": 10069,
     "Key": "StrSklTabItem16",
-    "enUS": "Random 1",
+    "enUS": "%+d to Random 1",
     "zhTW": "%+d 召喚技能",
     "deDE": "%+d zu Herbeirufungfertigkeiten",
     "esES": "%+d a las habilidades de invocación",
@@ -3640,7 +3640,7 @@
   {
     "id": 10070,
     "Key": "StrSklTabItem17",
-    "enUS": "Random 2",
+    "enUS": "%+d to Random 2",
     "zhTW": "%+d 變形技能",
     "deDE": "%+d zu Gestaltwandlerfertigkeiten",
     "esES": "%+d a las habilidades de cambio de forma",
@@ -3657,7 +3657,7 @@
   {
     "id": 10071,
     "Key": "StrSklTabItem18",
-    "enUS": "Random 3",
+    "enUS": "%+d to Random 3",
     "zhTW": "%+d 元素技能",
     "deDE": "%+d zu Elementarfertigkeiten",
     "esES": "%+d a las habilidades elementales",
@@ -3674,7 +3674,7 @@
   {
     "id": 10072,
     "Key": "StrSklTabItem19",
-    "enUS": "Random 1",
+    "enUS": "%+d to Random 1",
     "zhTW": "%+d 陷阱",
     "deDE": "%+d zu Fallen",
     "esES": "%+d a las trampas",
@@ -3691,7 +3691,7 @@
   {
     "id": 10073,
     "Key": "StrSklTabItem20",
-    "enUS": "Random 2",
+    "enUS": "%+d to Random 2",
     "zhTW": "%+d 暗影修行",
     "deDE": "%+d zu Schattendisziplinen",
     "esES": "%+d a la disciplina de las sombras",
@@ -3708,7 +3708,7 @@
   {
     "id": 10074,
     "Key": "StrSklTabItem21",
-    "enUS": "Random 3",
+    "enUS": "%+d to Random 3",
     "zhTW": "%+d 武學技藝",
     "deDE": "%+d zu Kampfkünsten",
     "esES": "%+d a las artes marciales",
@@ -4201,7 +4201,7 @@
   {
     "id": 11003,
     "Key": "StrSklTabItem9",
-    "enUS": "Random 3",
+    "enUS": "+%d to Random 3",
     "zhTW": "+%d 召喚技能",
     "deDE": "+%d zu Herbeirufungfertigkeiten",
     "esES": "+%d a las habilidades de invocación",
@@ -6122,7 +6122,7 @@
   {
     "id": 27888,
     "Key": "StrSklTabItem24",
-    "enUS": "Random 1",
+    "enUS": "+%d to Random 1",
     "zhTW": "+%d 惡魔技能",
     "deDE": "+%d zu Dämonenfertigkeiten",
     "esES": "+%d a las habilidades demoníacas",
@@ -6139,7 +6139,7 @@
   {
     "id": 27889,
     "Key": "StrSklTabItem22",
-    "enUS": "Random 2",
+    "enUS": "+%d to Random 2",
     "zhTW": "+%d 邪異技能",
     "deDE": "+%d zu abscheuliche Fertigkeiten",
     "esES": "+%d a las habilidades sobrenaturales",
@@ -6156,7 +6156,7 @@
   {
     "id": 27890,
     "Key": "StrSklTabItem23",
-    "enUS": "Random 3",
+    "enUS": "+%d to Random 3",
     "zhTW": "+%d 混沌技能",
     "deDE": "+%d zu Chaosfertigkeiten",
     "esES": "+%d a las habilidades del caos",
