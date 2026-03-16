@@ -4,7 +4,7 @@ export const maxDuration = 60;
 import fs from 'fs';
 import path from 'path';
 import { createRNG, seedFromString } from '@/lib/randomizer/seed';
-import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings, clearSkillStringsCache } from '@/lib/data-loader';
+import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings, clearSkillStringsCache, StringEntry } from '@/lib/data-loader';
 import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
@@ -164,6 +164,24 @@ export async function POST(request: NextRequest) {
     const skillStrings = loadSkillStrings();
     if (logic === 'normal') {
       writeSkillStrings(skillStrings, skillDescStrNames, placements);
+    }
+
+    // Add skillname{id} aliases for skills that use non-numeric str name keys
+    // (e.g. Warlock skills use AbyssName instead of skillname402).
+    // D2R uses skillname{id} format for proc item display (descfunc 15 "Proc Skill"),
+    // so without these aliases items like "Guardian's Light" show Tristram text.
+    const entryByKey = new Map(skillStrings.map(e => [e.Key.toLowerCase(), e]));
+    for (const skill of skills) {
+      if (skill.id == null || !skill.skilldesc) continue;
+      const aliasKey = `skillname${skill.id}`;
+      if (entryByKey.has(aliasKey)) continue; // vanilla skills already have this
+      const strName = skillDescStrNames.get(skill.skilldesc);
+      if (!strName) continue;
+      const target = entryByKey.get(strName.toLowerCase());
+      if (!target) continue;
+      const alias = { ...target, Key: aliasKey, id: 50000 + skill.id };
+      skillStrings.push(alias as StringEntry);
+      entryByKey.set(aliasKey, alias as StringEntry);
     }
 
     // Override SkillCategoryXxN tab titles to "Random 1/2/3" for all 8 classes.
