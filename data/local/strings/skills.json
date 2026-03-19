@@ -28953,7 +28953,7 @@
   {
     "id": 11193,
     "Key": "SkillCategoryAm1",
-    "enUS": "Javelin and Spear",
+    "enUS": "Random 1",
     "zhTW": "標槍與長矛",
     "deDE": "Wurfspieß und Speer",
     "esES": "Jabalina y lanza",
@@ -28970,7 +28970,7 @@
   {
     "id": 11194,
     "Key": "SkillCategoryAm2",
-    "enUS": "Passive and Magic",
+    "enUS": "Random 2",
     "zhTW": "被動與魔法",
     "deDE": "Passiv und magisch",
     "esES": "Pasivas y mágicas",
@@ -28987,7 +28987,7 @@
   {
     "id": 11195,
     "Key": "SkillCategoryAm3",
-    "enUS": "Bow and Crossbow",
+    "enUS": "Random 3",
     "zhTW": "弓與弩",
     "deDE": "Bogen und Armbrust",
     "esES": "Arco y ballesta",
@@ -29004,7 +29004,7 @@
   {
     "id": 11196,
     "Key": "SkillCategorySo1",
-    "enUS": "Cold Spells",
+    "enUS": "Random 1",
     "zhTW": "冰寒法術",
     "deDE": "Kältezauber",
     "esES": "Hechizos de frío",
@@ -29021,7 +29021,7 @@
   {
     "id": 11197,
     "Key": "SkillCategorySo2",
-    "enUS": "Lightning Spells",
+    "enUS": "Random 2",
     "zhTW": "閃電法術",
     "deDE": "Blitzzauber",
     "esES": "Hechizos de rayos",
@@ -29038,7 +29038,7 @@
   {
     "id": 11198,
     "Key": "SkillCategorySo3",
-    "enUS": "Fire Spells",
+    "enUS": "Random 3",
     "zhTW": "火焰法術",
     "deDE": "Feuerzauber",
     "esES": "Hechizos de fuego",
@@ -29055,7 +29055,7 @@
   {
     "id": 11199,
     "Key": "SkillCategoryNe1",
-    "enUS": "Summoning",
+    "enUS": "Random 1",
     "zhTW": "召喚法術",
     "deDE": "Herbei-\nrufung",
     "esES": "Invocación",
@@ -29072,7 +29072,7 @@
   {
     "id": 11200,
     "Key": "SkillCategoryNe2",
-    "enUS": "Poison and Bone",
+    "enUS": "Random 2",
     "zhTW": "毒素與骸骨法術",
     "deDE": "Gift- und Knochen",
     "esES": "Veneno y hueso",
@@ -29089,7 +29089,7 @@
   {
     "id": 11201,
     "Key": "SkillCategoryNe3",
-    "enUS": "Curses",
+    "enUS": "Random 3",
     "zhTW": "詛咒",
     "deDE": "Flüche",
     "esES": "Maldiciones",
@@ -29106,7 +29106,7 @@
   {
     "id": 11202,
     "Key": "SkillCategoryPa1",
-    "enUS": "Defensive Auras",
+    "enUS": "Random 1",
     "zhTW": "防禦靈氣",
     "deDE": "Defensiv-\nauren",
     "esES": "Auras defensivas",
@@ -29123,7 +29123,7 @@
   {
     "id": 11203,
     "Key": "SkillCategoryPa2",
-    "enUS": "Offensive Auras",
+    "enUS": "Random 2",
     "zhTW": "攻擊靈氣",
     "deDE": "Offensiv-\nauren",
     "esES": "Auras ofensivas",
@@ -29140,7 +29140,7 @@
   {
     "id": 11204,
     "Key": "SkillCategoryPa3",
-    "enUS": "Combat Skills",
+    "enUS": "Random 3",
     "zhTW": "戰鬥技能",
     "deDE": "Kampf-\nfertigkeiten",
     "esES": "Habilidades de combate",
@@ -29157,7 +29157,7 @@
   {
     "id": 11205,
     "Key": "SkillCategoryBa1",
-    "enUS": "Warcries",
+    "enUS": "Random 1",
     "zhTW": "戰吼",
     "deDE": "Kriegs-\nschreie",
     "esES": "Gritos de guerra",
@@ -29174,7 +29174,7 @@
   {
     "id": 11206,
     "Key": "SkillCategoryBa2",
-    "enUS": "Combat Masteries",
+    "enUS": "Random 2",
     "zhTW": "戰鬥專精",
     "deDE": "Kampfbe-\nherrschung",
     "esES": "Dominio del combate",
@@ -29191,7 +29191,7 @@
   {
     "id": 11207,
     "Key": "SkillCategoryBa3",
-    "enUS": "Combat Skills",
+    "enUS": "Random 3",
     "zhTW": "戰鬥技能",
     "deDE": "Kampf-\nfertigkeiten",
     "esES": "Habilidades de combate",
@@ -29208,7 +29208,7 @@
   {
     "id": 11208,
     "Key": "SkillCategoryDr1",
-    "enUS": "Elemental",
+    "enUS": "Random 1",
     "zhTW": "元素法術",
     "deDE": "Elementar-\nzauber",
     "esES": "Elementales",
@@ -29225,7 +29225,7 @@
   {
     "id": 11209,
     "Key": "SkillCategoryDr2",
-    "enUS": "Shape Shifting",
+    "enUS": "Random 2",
     "zhTW": "變形技能",
     "deDE": "Gestalt-\nwandel",
     "esES": "Cambio de forma",
@@ -29242,7 +29242,7 @@
   {
     "id": 11210,
     "Key": "SkillCategoryDr3",
-    "enUS": "Summoning",
+    "enUS": "Random 3",
     "zhTW": "召喚法術",
     "deDE": "Herbei-\nrufung",
     "esES": "Invocación",
@@ -29259,7 +29259,7 @@
   {
     "id": 11211,
     "Key": "SkillCategoryAs1",
-    "enUS": "Martial Arts",
+    "enUS": "Random 1",
     "zhTW": "武學技藝",
     "deDE": "Kampfkünste",
     "esES": "Artes marciales",
@@ -29276,7 +29276,7 @@
   {
     "id": 11212,
     "Key": "SkillCategoryAs2",
-    "enUS": "Shadow Disciplines",
+    "enUS": "Random 2",
     "zhTW": "暗影修行",
     "deDE": "Schatten-\ndisziplinen",
     "esES": "Disciplina de las sombras",
@@ -29293,7 +29293,7 @@
   {
     "id": 11213,
     "Key": "SkillCategoryAs3",
-    "enUS": "Traps",
+    "enUS": "Random 3",
     "zhTW": "陷阱",
     "deDE": "Fallen",
     "esES": "Trampas",
@@ -38575,7 +38575,7 @@
   {
     "id": 27563,
     "Key": "SkillCategoryWa1",
-    "enUS": "Demon",
+    "enUS": "Random 3",
     "zhTW": "惡魔",
     "deDE": "Dämon",
     "esES": "Demonio",
@@ -38592,7 +38592,7 @@
   {
     "id": 27564,
     "Key": "SkillCategoryWa2",
-    "enUS": "Eldritch",
+    "enUS": "Random 2",
     "zhTW": "邪異",
     "deDE": "Abscheulich",
     "esES": "Sobrenatural",
@@ -38609,7 +38609,7 @@
   {
     "id": 27565,
     "Key": "SkillCategoryWa3",
-    "enUS": "Chaos",
+    "enUS": "Random 1",
     "zhTW": "混沌",
     "deDE": "Chaos",
     "esES": "Del Caos",

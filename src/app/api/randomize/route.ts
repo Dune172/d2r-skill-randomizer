@@ -4,7 +4,7 @@ export const maxDuration = 60;
 import fs from 'fs';
 import path from 'path';
 import { createRNG, seedFromString } from '@/lib/randomizer/seed';
-import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings, clearSkillStringsCache, StringEntry } from '@/lib/data-loader';
+import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings, clearSkillStringsCache } from '@/lib/data-loader';
 import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
@@ -159,33 +159,22 @@ export async function POST(request: NextRequest) {
 
     const skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
 
-    // Always load skill strings so all skills (including Warlock) have description text.
-    // Under Normal Logic, additionally rewrite weapon-type references in the strings.
-    const skillStrings = loadSkillStrings();
+    // Under Normal Logic, load and rewrite weapon-type references in skill strings, then
+    // serialize with BOM + CRLF. Under Minimal Logic, pass the source file through as raw
+    // text (BOM + CRLF normalized) to avoid a JSON round-trip that D2R rejects, which would
+    // cause all skill name lookups to fall back to classic TBL (Tristram text on proc items).
+    // SkillCategoryXxN "Random 1/2/3" values are pre-baked directly in the source file.
+    let skillStringsJson: string;
     if (logic === 'normal') {
+      const skillStrings = loadSkillStrings();
       writeSkillStrings(skillStrings, skillDescStrNames, placements);
+      skillStringsJson = '\uFEFF' + JSON.stringify(skillStrings, null, 2).replace(/\n/g, '\r\n');
+    } else {
+      const raw = fs.readFileSync(
+        path.join(DATA_DIR, 'local', 'strings', 'skills.json'), 'utf-8'
+      ).replace(/^\uFEFF/, '');
+      skillStringsJson = '\uFEFF' + raw.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
     }
-
-    // Override SkillCategoryXxN tab titles to "Random 1/2/3" for all 8 classes.
-    // These keys in skills.json drive the in-tree tab label display in D2R.
-    // Suffix 1/2/3 maps directly to SkillPage (left/middle/right tab).
-    const SKILL_CATEGORY_OVERRIDES: Record<string, string> = {
-      SkillCategoryAm1: 'Random 1', SkillCategoryAm2: 'Random 2', SkillCategoryAm3: 'Random 3',
-      SkillCategorySo1: 'Random 1', SkillCategorySo2: 'Random 2', SkillCategorySo3: 'Random 3',
-      SkillCategoryNe1: 'Random 1', SkillCategoryNe2: 'Random 2', SkillCategoryNe3: 'Random 3',
-      SkillCategoryPa1: 'Random 1', SkillCategoryPa2: 'Random 2', SkillCategoryPa3: 'Random 3',
-      SkillCategoryBa1: 'Random 1', SkillCategoryBa2: 'Random 2', SkillCategoryBa3: 'Random 3',
-      SkillCategoryDr1: 'Random 1', SkillCategoryDr2: 'Random 2', SkillCategoryDr3: 'Random 3',
-      SkillCategoryAs1: 'Random 1', SkillCategoryAs2: 'Random 2', SkillCategoryAs3: 'Random 3',
-      SkillCategoryWa1: 'Random 3', SkillCategoryWa2: 'Random 2', SkillCategoryWa3: 'Random 1',
-    };
-    for (const [key, text] of Object.entries(SKILL_CATEGORY_OVERRIDES)) {
-      const entry = skillStrings.find(e => e.Key === key);
-      if (entry) entry.enUS = text;
-    }
-
-    // Serialize with BOM + CRLF to match D2R's expected JSON string file format.
-    const skillStringsJson = '\uFEFF' + JSON.stringify(skillStrings, null, 2).replace(/\n/g, '\r\n');
 
     // Load item-modifiers.json; normalize BOM + CRLF like other D2R string files.
     // If the source file has LF-only endings, D2R may fail to parse it and silently
