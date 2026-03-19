@@ -159,21 +159,53 @@ export async function POST(request: NextRequest) {
 
     const skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
 
+    // Minimal 24-entry override for the skill tree tab labels (SkillCategoryXxN).
+    // D2R merges mod JSON with vanilla by Key, so all other skill name lookups (including
+    // proc item display) resolve correctly against the vanilla game's skills.json.
+    // Including the full 2327-entry file risks D2R rejecting it and falling back to TBL
+    // (Tristram text on all proc items). A 24-entry file has no parsing risk.
+    const SKILL_CATEGORY_OVERRIDES: { id: number; Key: string; enUS: string }[] = [
+      { id: 11193, Key: 'SkillCategoryAm1', enUS: 'Random 1' },
+      { id: 11194, Key: 'SkillCategoryAm2', enUS: 'Random 2' },
+      { id: 11195, Key: 'SkillCategoryAm3', enUS: 'Random 3' },
+      { id: 11196, Key: 'SkillCategorySo1', enUS: 'Random 1' },
+      { id: 11197, Key: 'SkillCategorySo2', enUS: 'Random 2' },
+      { id: 11198, Key: 'SkillCategorySo3', enUS: 'Random 3' },
+      { id: 11199, Key: 'SkillCategoryNe1', enUS: 'Random 1' },
+      { id: 11200, Key: 'SkillCategoryNe2', enUS: 'Random 2' },
+      { id: 11201, Key: 'SkillCategoryNe3', enUS: 'Random 3' },
+      { id: 11202, Key: 'SkillCategoryPa1', enUS: 'Random 1' },
+      { id: 11203, Key: 'SkillCategoryPa2', enUS: 'Random 2' },
+      { id: 11204, Key: 'SkillCategoryPa3', enUS: 'Random 3' },
+      { id: 11205, Key: 'SkillCategoryBa1', enUS: 'Random 1' },
+      { id: 11206, Key: 'SkillCategoryBa2', enUS: 'Random 2' },
+      { id: 11207, Key: 'SkillCategoryBa3', enUS: 'Random 3' },
+      { id: 11208, Key: 'SkillCategoryDr1', enUS: 'Random 1' },
+      { id: 11209, Key: 'SkillCategoryDr2', enUS: 'Random 2' },
+      { id: 11210, Key: 'SkillCategoryDr3', enUS: 'Random 3' },
+      { id: 11211, Key: 'SkillCategoryAs1', enUS: 'Random 1' },
+      { id: 11212, Key: 'SkillCategoryAs2', enUS: 'Random 2' },
+      { id: 11213, Key: 'SkillCategoryAs3', enUS: 'Random 3' },
+      { id: 27563, Key: 'SkillCategoryWa1', enUS: 'Random 3' },
+      { id: 27564, Key: 'SkillCategoryWa2', enUS: 'Random 2' },
+      { id: 27565, Key: 'SkillCategoryWa3', enUS: 'Random 1' },
+    ];
+
     // Under Normal Logic, load and rewrite weapon-type references in skill strings, then
-    // serialize with BOM + CRLF. Under Minimal Logic, pass the source file through as raw
-    // text (BOM + CRLF normalized) to avoid a JSON round-trip that D2R rejects, which would
-    // cause all skill name lookups to fall back to classic TBL (Tristram text on proc items).
-    // SkillCategoryXxN "Random 1/2/3" values are pre-baked directly in the source file.
+    // apply SkillCategory overrides, and serialize with BOM + CRLF.
+    // Under Minimal Logic, generate a 24-entry file with only the tab-label overrides.
+    // D2R fills all other skill name keys (including proc item names) from vanilla skills.json.
     let skillStringsJson: string;
     if (logic === 'normal') {
       const skillStrings = loadSkillStrings();
       writeSkillStrings(skillStrings, skillDescStrNames, placements);
+      for (const override of SKILL_CATEGORY_OVERRIDES) {
+        const entry = skillStrings.find(e => e.Key === override.Key);
+        if (entry) entry.enUS = override.enUS;
+      }
       skillStringsJson = '\uFEFF' + JSON.stringify(skillStrings, null, 2).replace(/\n/g, '\r\n');
     } else {
-      const raw = fs.readFileSync(
-        path.join(DATA_DIR, 'local', 'strings', 'skills.json'), 'utf-8'
-      ).replace(/^\uFEFF/, '');
-      skillStringsJson = '\uFEFF' + raw.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+      skillStringsJson = '\uFEFF' + JSON.stringify(SKILL_CATEGORY_OVERRIDES, null, 2).replace(/\n/g, '\r\n');
     }
 
     // Load item-modifiers.json; normalize BOM + CRLF like other D2R string files.
