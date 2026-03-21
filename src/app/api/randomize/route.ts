@@ -154,11 +154,8 @@ export async function POST(request: NextRequest) {
 
     const skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
 
-    // Minimal 24-entry override for the skill tree tab labels (SkillCategoryXxN).
-    // D2R merges mod JSON with vanilla by Key, so all other skill name lookups (including
-    // proc item display) resolve correctly against the vanilla game's skills.json.
-    // Including the full 2327-entry file risks D2R rejecting it and falling back to TBL
-    // (Tristram text on all proc items). A 24-entry file has no parsing risk.
+    // Tab-label overrides for all 7 class skill trees (3 tabs each) + Warcraft.
+    // Applied on top of the official skills.json so all skill name keys remain intact.
     const SKILL_CATEGORY_OVERRIDES: { id: number; Key: string; enUS: string }[] = [
       { id: 11193, Key: 'SkillCategoryAm1', enUS: 'Random 1' },
       { id: 11194, Key: 'SkillCategoryAm2', enUS: 'Random 2' },
@@ -186,9 +183,17 @@ export async function POST(request: NextRequest) {
       { id: 27565, Key: 'SkillCategoryWa3', enUS: 'Random 1' },
     ];
 
-    // Minimal 24-entry override: D2R merges mod JSON with vanilla by Key, so all other skill
-    // name lookups (including proc item display) resolve from vanilla skills.json.
-    const skillStringsJson = '\uFEFF' + JSON.stringify(SKILL_CATEGORY_OVERRIDES, null, 2).replace(/\n/g, '\r\n');
+    // Load the full official skills.json, patch the 24 tab-label overrides, and re-serialize.
+    // Using the complete file ensures proc item skill names (and all other keys) resolve
+    // correctly — D2R already ships this exact file so it will not reject it.
+    const skillStringsPath = path.join(DATA_DIR, 'local', 'strings', 'skills.json');
+    const skillStringsRaw = fs.readFileSync(skillStringsPath, 'utf-8').replace(/^\uFEFF/, '');
+    const skillStringsEntries = JSON.parse(skillStringsRaw) as { Key: string; enUS: string }[];
+    for (const override of SKILL_CATEGORY_OVERRIDES) {
+      const entry = skillStringsEntries.find(e => e.Key === override.Key);
+      if (entry) entry.enUS = override.enUS;
+    }
+    const skillStringsJson = '\uFEFF' + JSON.stringify(skillStringsEntries, null, 2).replace(/\n/g, '\r\n');
 
     // Load item-modifiers.json; normalize BOM + CRLF like other D2R string files.
     // If the source file has LF-only endings, D2R may fail to parse it and silently
