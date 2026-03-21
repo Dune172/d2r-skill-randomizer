@@ -4,13 +4,12 @@ export const maxDuration = 60;
 import fs from 'fs';
 import path from 'path';
 import { createRNG, seedFromString } from '@/lib/randomizer/seed';
-import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings, clearSkillStringsCache } from '@/lib/data-loader';
+import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile } from '@/lib/data-loader';
 import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
 import { writeSkillsRows } from '@/lib/randomizer/skills-writer';
 import { writeSkillDescRows } from '@/lib/randomizer/skilldesc-writer';
-import { writeSkillStrings } from '@/lib/randomizer/strings-writer';
 import { assignPrerequisites } from '@/lib/randomizer/prereq-assigner';
 import { buildAllTreeSprites, clearSpriteCache } from '@/lib/sprites/tree-stitcher';
 import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-assembler';
@@ -29,13 +28,9 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 
 export async function POST(request: NextRequest) {
   try {
-    // Clear skill strings cache so any on-disk update to skills.json is picked up.
-    clearSkillStringsCache();
-
     const body = await request.json();
     const seedInput = body.seed;
     const enablePrereqs = body.enablePrereqs !== false; // default true
-    const logic: 'minimal' | 'normal' = body.logic === 'normal' ? 'normal' : 'minimal';
     const playersEnabled = body.playersEnabled === true;
     const playersCount = Math.min(8, Math.max(1, Number(body.playersCount) || 1));
     const playersActs: number[] = Array.isArray(body.playersActs)
@@ -60,7 +55,7 @@ export async function POST(request: NextRequest) {
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, logic, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube);
     const zipCache = getZipCache();
 
     // Check cache (fast path — bypasses queue)
@@ -111,7 +106,7 @@ export async function POST(request: NextRequest) {
       : new Map();
 
     // Step 8: Write modified txt files
-    writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments, logic);
+    writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments);
     writeSkillDescRows(skillDescTxt.headers, skillDescTxt.rows, placements, descSynergyUpdates);
 
     // Hireling randomization (aura and/or attack skills, per user options)
@@ -191,22 +186,9 @@ export async function POST(request: NextRequest) {
       { id: 27565, Key: 'SkillCategoryWa3', enUS: 'Random 1' },
     ];
 
-    // Under Normal Logic, load and rewrite weapon-type references in skill strings, then
-    // apply SkillCategory overrides, and serialize with BOM + CRLF.
-    // Under Minimal Logic, generate a 24-entry file with only the tab-label overrides.
-    // D2R fills all other skill name keys (including proc item names) from vanilla skills.json.
-    let skillStringsJson: string;
-    if (logic === 'normal') {
-      const skillStrings = loadSkillStrings();
-      writeSkillStrings(skillStrings, skillDescStrNames, placements);
-      for (const override of SKILL_CATEGORY_OVERRIDES) {
-        const entry = skillStrings.find(e => e.Key === override.Key);
-        if (entry) entry.enUS = override.enUS;
-      }
-      skillStringsJson = '\uFEFF' + JSON.stringify(skillStrings, null, 2).replace(/\n/g, '\r\n');
-    } else {
-      skillStringsJson = '\uFEFF' + JSON.stringify(SKILL_CATEGORY_OVERRIDES, null, 2).replace(/\n/g, '\r\n');
-    }
+    // Minimal 24-entry override: D2R merges mod JSON with vanilla by Key, so all other skill
+    // name lookups (including proc item display) resolve from vanilla skills.json.
+    const skillStringsJson = '\uFEFF' + JSON.stringify(SKILL_CATEGORY_OVERRIDES, null, 2).replace(/\n/g, '\r\n');
 
     // Load item-modifiers.json; normalize BOM + CRLF like other D2R string files.
     // If the source file has LF-only endings, D2R may fail to parse it and silently

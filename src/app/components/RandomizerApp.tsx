@@ -84,7 +84,7 @@ export default function RandomizerApp() {
     const noPrereqsParam  = !opts.enablePrereqs    ? '&noPrereqs=1'      : '';
     const hirelingAuraParam   = !opts.hirelingAura   ? '&hirelingAura=0'   : '';
     const disableChatParam    = opts.disableChat      ? '&disableChat=1'   : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}&logic=normal${noPrereqsParam}${hirelingAuraParam}${disableChatParam}`;
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -117,7 +117,7 @@ export default function RandomizerApp() {
       const buildRes = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, logic: 'normal', playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat }),
+        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat }),
       });
 
       if (!buildRes.ok) {

@@ -1,6 +1,5 @@
 import { ClassCode, SkillEntry, SkillPlacement } from './types';
-import { getColumnIndex } from '../data-loader';
-import { CLASS_BY_CODE, CLASS_NATURAL_WEAPON, CLASS_RESTRICTED_TYPES } from './config';
+import { CLASS_BY_CODE } from './config';
 import { PrereqAssignment } from './prereq-assigner';
 
 // Animation codes each class's character model supports.
@@ -89,7 +88,6 @@ export function writeSkillsRows(
   placements: SkillPlacement[],
   synergyUpdates: Map<string, { EDmgSymPerCalc?: string; ELenSymPerCalc?: string; DmgSymPerCalc?: string }>,
   prereqAssignments: Map<string, PrereqAssignment>,
-  logic: 'minimal' | 'normal' = 'minimal',
 ): void {
   // Build lookup: skill name → placement
   const skillToPlacement = new Map<string, SkillPlacement>();
@@ -175,20 +173,6 @@ export function writeSkillsRows(
       row[leftskillIdx] = '1';
     }
 
-    // Normal Logic: remap class-restricted weapon types to the target class's natural weapon
-    if (logic === 'normal') {
-      const naturalWeapon = CLASS_NATURAL_WEAPON[placement.targetClass];
-      if (naturalWeapon) {
-        if (CLASS_RESTRICTED_TYPES.has(row[passiveitypeIdx])) {
-          row[passiveitypeIdx] = naturalWeapon;
-        }
-        for (const idx of [itypea1Idx, itypea2Idx, itypea3Idx, itypeb1Idx]) {
-          if (CLASS_RESTRICTED_TYPES.has(row[idx])) {
-            row[idx] = naturalWeapon;
-          }
-        }
-      }
-    }
   }
 }
 

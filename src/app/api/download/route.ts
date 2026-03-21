@@ -25,12 +25,11 @@ export async function GET(request: NextRequest) {
     const playersActs = actsParam
       ? actsParam.split(',').map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
-    const logicParam = searchParams.get('logic') === 'normal' ? 'normal' : 'minimal';
     const hirelingAura   = searchParams.get('hirelingAura')   !== '0';  // default true
     const disableChat    = searchParams.get('disableChat')    === '1';  // default false
     const horadricCube   = searchParams.get('cube')           === '1';  // default false
 
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, logicParam, hirelingAura, dropSourceParam, disableChat, horadricCube);
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 
