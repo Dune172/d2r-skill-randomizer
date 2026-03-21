@@ -68,9 +68,11 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     archive.append(contents.skillsTxt, { name: `${d}/data/global/excel/skills.txt` });
     archive.append(contents.skillDescTxt, { name: `${d}/data/global/excel/skilldesc.txt` });
 
-    // Skill string table (always included — ensures all skills have description text)
+    // Skill string table — include in both current and legacy paths so D2R
+    // resolves skill names for proc items regardless of which path it uses.
     if (contents.skillStringsJson) {
       archive.append(contents.skillStringsJson, { name: `${d}/data/local/lng/strings/skills.json` });
+      archive.append(contents.skillStringsJson, { name: `${d}/data/local/lng/strings-legacy/skills.json` });
     }
 
     // Charstats with randomised StartSkill per class
