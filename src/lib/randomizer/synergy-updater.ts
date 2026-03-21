@@ -53,15 +53,25 @@ export function updateSkillsSynergies(
 
       let newFormula = formula;
       // For each referenced skill, replace with a random classmate
+      let crossTabUsed = 0;
       const usedClassmates = new Set<string>();
 
       for (const match of matches) {
         const refSkillName = match[1];
-        // Pick a classmate that hasn't been used yet in this formula
-        const available = otherClassmates.filter(p => !usedClassmates.has(p.skill.skill));
+        // Prefer same-tab classmates; allow at most 1 cross-tab per skill
+        const sameTabAvailable = otherClassmates.filter(
+          p => !usedClassmates.has(p.skill.skill) && p.tabIndex === placement.tabIndex
+        );
+        const otherTabAvailable = otherClassmates.filter(
+          p => !usedClassmates.has(p.skill.skill) && p.tabIndex !== placement.tabIndex
+        );
+        const available = sameTabAvailable.length > 0
+          ? sameTabAvailable
+          : crossTabUsed < 1 ? otherTabAvailable : [];
         if (available.length === 0) continue;
 
         const replacement = available[rng.randInt(0, available.length - 1)];
+        if (replacement.tabIndex !== placement.tabIndex) crossTabUsed++;
         usedClassmates.add(replacement.skill.skill);
         newFormula = newFormula.replace(
           `skill('${refSkillName}'.blvl)`,
@@ -113,10 +123,16 @@ export function updateSkillDescSynergies(
 
     if (otherClassmates.length === 0) continue;
 
-    // Pick the same number of classmates as the original synergy count
+    // Pick the same number of classmates as the original synergy count,
+    // preferring same-tab skills with a hard cap of 1 cross-tab per skill.
     const synergyCount = Math.min(otherClassmates.length, originalCount);
-    const shuffled = rng.shuffle(otherClassmates);
-    const newTextBs = shuffled.slice(0, synergyCount).map(p => {
+    const sameTab = rng.shuffle(otherClassmates.filter(c => c.tabIndex === placement.tabIndex));
+    const otherTab = rng.shuffle(otherClassmates.filter(c => c.tabIndex !== placement.tabIndex));
+    const selected = sameTab.slice(0, synergyCount);
+    if (selected.length < synergyCount && otherTab.length > 0) {
+      selected.push(otherTab[0]);
+    }
+    const newTextBs = selected.map(p => {
       const sd = p.skill.skilldesc;
       return skillDescStrNames.get(sd) || '';
     }).filter(s => s !== '');
