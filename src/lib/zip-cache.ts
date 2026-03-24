@@ -22,7 +22,8 @@ export function makeCacheKey(
   dropSource: string = 'Corpsefire',
   disableChat: boolean = false,
   horadricCube: boolean = false,
+  enablePrereqs: boolean = true,
 ): string {
   const actsKey = [...playersActs].sort((a, b) => a - b).join('');
-  return `${STARTUP_TOKEN}:${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${hirelingAura?1:0}:${dropSource}:${disableChat?1:0}:${horadricCube?1:0}`;
+  return `${STARTUP_TOKEN}:${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${hirelingAura?1:0}:${dropSource}:${disableChat?1:0}:${horadricCube?1:0}:${enablePrereqs?1:0}`;
 }

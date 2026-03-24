@@ -38,11 +38,23 @@ const ANIM_PREFERENCES: Record<SkillCategory, string[]> = {
   default: [], // 'default' preserves original if supported; falls back to SC
 };
 
+// Skills whose client animation functions depend on SQ sequence completion.
+// Their cltdofunc waits for a SQ sequence event to release the action lock —
+// changing anim to A1 means that event never fires and the character stays frozen.
+// Charge and other melee-SQ skills do NOT need this: their movement is server-side
+// and the animation is just visual, so normal melee preference (A1 > SQ) is fine.
+const SQ_DEPENDENT_SKILLS = new Set(['Leap', 'LeapAttack']);
+
 function pickBestAnim(
   skill: SkillEntry,
   originalAnim: string,
   supported: Set<string>,
 ): string {
+  // Preserve SQ only for skills whose mechanics require it.
+  if (originalAnim === 'SQ' && supported.has('SQ') && SQ_DEPENDENT_SKILLS.has(skill.skill)) {
+    return 'SQ';
+  }
+
   const category = getSkillCategory(skill);
   if (category === 'default') {
     return supported.has(originalAnim) ? originalAnim : 'SC';
@@ -137,11 +149,34 @@ export function writeSkillsRows(
       const originalAnim = row[animIdx];
       if (originalAnim) {
         const bestAnim = pickBestAnim(placement.skill, originalAnim, supportedAnims);
+        const isSameAnim = bestAnim === originalAnim;
+        const isNativeClass = classDef.charclass === placement.skill.charclass;
+
         row[animIdx] = bestAnim;
-        if (seqtransIdx >= 0) row[seqtransIdx] = bestAnim;
-        // Clear sequence data when animation changes — seqnum is SQ-variant-specific
-        // and becomes garbage for a different animation type.
-        if (bestAnim !== originalAnim) {
+
+        if (seqtransIdx >= 0) {
+          if (!isSameAnim) {
+            // Anim changed: sync seqtrans to the new anim type.
+            row[seqtransIdx] = bestAnim;
+          } else {
+            // Anim unchanged (e.g. SQ stays SQ): do NOT blindly overwrite seqtrans.
+            // seqtrans is the exit state after the sequence — for Leap it's A1 (landing
+            // attack), which is what releases the action lock. Setting seqtrans=SQ here
+            // would create an infinite loop and permanently freeze the character.
+            // Instead, only fix it if the original seqtrans is unsupported on the target class.
+            const origSeqtrans = row[seqtransIdx];
+            if (origSeqtrans && !supportedAnims.has(origSeqtrans)) {
+              // Unsupported seqtrans would freeze the game; pick the safest supported exit.
+              row[seqtransIdx] = supportedAnims.has('A1') ? 'A1' : 'SC';
+            }
+            // else: preserve original seqtrans (e.g. A1 on Barbarian → lock releases correctly)
+          }
+        }
+
+        // Clear seqnum/seqinput when anim changes OR when placed on a different class.
+        // seqnum is a variant index into the original class's sequence table — it is
+        // meaningless (and can crash/loop) on a different class's skeleton.
+        if (!isSameAnim || !isNativeClass) {
           if (seqnumIdx >= 0)   row[seqnumIdx]   = '';
           if (seqinputIdx >= 0) row[seqinputIdx] = '';
         }
