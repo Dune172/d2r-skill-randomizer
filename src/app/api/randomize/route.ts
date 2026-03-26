@@ -21,10 +21,12 @@ import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
+import { scaleExperience } from '@/lib/randomizer/experience-scaler';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
 import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,9 +43,10 @@ export async function POST(request: NextRequest) {
       ? (Number(body.startingItems?.teleportStaffLevel) || 1)
       : 0;
     const teleportStaffDropSource: string = body.startingItems?.teleportStaffDropSource || 'Corpsefire';
-    const hirelingAura   = body.hirelingAura   !== false;  // default true
-    const disableChat    = body.disableChat    === true;   // default false
+    const hirelingAura       = body.hirelingAura       !== false;  // default true
+    const disableChat        = body.disableChat        === true;   // default false
     const startingHoradricCube = body.startingItems?.horadricCube === true;
+    const xpMultiplier = Math.min(3, Math.max(1, Number(body.xpMultiplier) || 1));
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier);
     const zipCache = getZipCache();
 
     // Check cache (fast path — bypasses queue)
@@ -331,6 +334,12 @@ export async function POST(request: NextRequest) {
       superuniquesTxt = serializeTxtFile(su.headers, su.rows);
     }
 
+    // Optional: fast leveling
+    let experienceTxt: string | undefined;
+    if (xpMultiplier > 1) {
+      experienceTxt = scaleExperience(xpMultiplier);
+    }
+
     // Step 12: Build zip
     const modName = `seed${seed}`;
     const formatUiJson = (obj: unknown) =>
@@ -353,6 +362,7 @@ export async function POST(request: NextRequest) {
       hireableSprite,
       chatPanelJson: disableChat ? formatUiJson(chatPanelRaw) : undefined,
       chatPanelHdJson: disableChat ? formatUiJson(chatPanelHdRaw) : undefined,
+      experienceTxt,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)

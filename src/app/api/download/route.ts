@@ -28,8 +28,10 @@ export async function GET(request: NextRequest) {
     const hirelingAura   = searchParams.get('hirelingAura')   !== '0';  // default true
     const disableChat    = searchParams.get('disableChat')    === '1';  // default false
     const horadricCube   = searchParams.get('cube')           === '1';  // default false
+    const enablePrereqs  = searchParams.get('noPrereqs')      !== '1';  // default true
+    const xpMultiplier   = Math.min(3, Math.max(1, Number(searchParams.get('xpMultiplier')) || 1));
 
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube);
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 

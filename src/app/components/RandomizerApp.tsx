@@ -16,6 +16,7 @@ interface Options {
   startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean };
   hirelingAura: boolean;
   disableChat: boolean;
+  xpMultiplier: number;
 }
 
 const defaultOptions: Options = {
@@ -26,6 +27,7 @@ const defaultOptions: Options = {
   startingItems: { teleportStaff: false, teleportStaffLevel: 1, teleportStaffDropSource: 'Corpsefire', horadricCube: false },
   hirelingAura: true,
   disableChat: false,
+  xpMultiplier: 1,
 };
 
 function parseOptionsFromURL(): Options | null {
@@ -49,6 +51,7 @@ function parseOptionsFromURL(): Options | null {
     },
     hirelingAura: p.get('hirelingAura') !== '0',
     disableChat: p.get('disableChat') === '1',
+    xpMultiplier: Math.min(3, Math.max(1, Number(p.get('xpMultiplier')) || 1)),
   };
 }
 
@@ -81,10 +84,11 @@ export default function RandomizerApp() {
     const actsParam = opts.playersEnabled && opts.playersCount > 1
       ? `&acts=${[...opts.playersActs].sort((a, b) => a - b).join(',')}`
       : '';
-    const noPrereqsParam  = !opts.enablePrereqs    ? '&noPrereqs=1'      : '';
-    const hirelingAuraParam   = !opts.hirelingAura   ? '&hirelingAura=0'   : '';
-    const disableChatParam    = opts.disableChat      ? '&disableChat=1'   : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}`;
+    const noPrereqsParam    = !opts.enablePrereqs  ? '&noPrereqs=1'    : '';
+    const hirelingAuraParam = !opts.hirelingAura   ? '&hirelingAura=0' : '';
+    const disableChatParam  = opts.disableChat     ? '&disableChat=1'  : '';
+    const xpParam           = opts.xpMultiplier > 1 ? `&xpMultiplier=${opts.xpMultiplier}` : '';
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -117,7 +121,7 @@ export default function RandomizerApp() {
       const buildRes = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat }),
+        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier }),
       });
 
       if (!buildRes.ok) {

@@ -45,13 +45,21 @@ const ANIM_PREFERENCES: Record<SkillCategory, string[]> = {
 // and the animation is just visual, so normal melee preference (A1 > SQ) is fine.
 const SQ_DEPENDENT_SKILLS = new Set(['Leap', 'LeapAttack']);
 
+// Channeled-spray skills: seqtrans=SQ creates an infinite channel loop, and seqnum/seqinput
+// drive the hold-to-channel mechanism. If seqnum/seqinput are cleared on a non-native class
+// the spray fires once then stops. These skills must preserve seqnum/seqinput whenever the
+// SQ animation is preserved (i.e. anim didn't change), even across classes.
+// They also need SQ preserved on all SQ-capable classes (same logic as SQ_DEPENDENT_SKILLS).
+const CHANNELED_SQ_SKILLS = new Set(['Inferno', 'Arctic Blast']);
+
 function pickBestAnim(
   skill: SkillEntry,
   originalAnim: string,
   supported: Set<string>,
 ): string {
-  // Preserve SQ only for skills whose mechanics require it.
-  if (originalAnim === 'SQ' && supported.has('SQ') && SQ_DEPENDENT_SKILLS.has(skill.skill)) {
+  // Preserve SQ for skills whose mechanics require it (action-lock or channeling loop).
+  if (originalAnim === 'SQ' && supported.has('SQ') &&
+      (SQ_DEPENDENT_SKILLS.has(skill.skill) || CHANNELED_SQ_SKILLS.has(skill.skill))) {
     return 'SQ';
   }
 
@@ -173,10 +181,11 @@ export function writeSkillsRows(
           }
         }
 
-        // Clear seqnum/seqinput when anim changes OR when placed on a different class.
-        // seqnum is a variant index into the original class's sequence table — it is
-        // meaningless (and can crash/loop) on a different class's skeleton.
-        if (!isSameAnim || !isNativeClass) {
+        // Clear seqnum/seqinput when anim changes OR when placed on a different class,
+        // EXCEPT for channeled-SQ skills: their seqnum/seqinput drive the hold-to-channel
+        // loop and must be preserved whenever the SQ animation is kept (isSameAnim=true).
+        const preserveSeq = isSameAnim && CHANNELED_SQ_SKILLS.has(placement.skill.skill);
+        if (!preserveSeq && (!isSameAnim || !isNativeClass)) {
           if (seqnumIdx >= 0)   row[seqnumIdx]   = '';
           if (seqinputIdx >= 0) row[seqinputIdx] = '';
         }

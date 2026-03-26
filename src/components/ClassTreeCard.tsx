@@ -34,6 +34,9 @@ const DEFAULT_THEME = {
   headerBg: 'bg-[#0e0808]', headerText: 'text-[#888]', accent: 'border-[#2a1a1a]', badge: 'bg-[#1a1010] text-[#aaa]',
 };
 
+// Maps row number (1-6) to required character level
+const REQ_LEVEL = [1, 6, 12, 18, 24, 30];
+
 export default function ClassTreeCard({ code, name, tabs }: ClassTreeCardProps) {
   const theme = CLASS_THEME[code] || DEFAULT_THEME;
 
@@ -71,13 +74,16 @@ export default function ClassTreeCard({ code, name, tabs }: ClassTreeCardProps) 
                   <div
                     key={i}
                     className="h-8 rounded-sm bg-[#2e2e2e] border border-[#404040] flex items-center px-1.5 gap-1 hover:border-[#606060] transition-colors"
-                    title={`${skill.name} (from ${skill.originalClass})`}
+                    title={`${skill.name} (from ${skill.originalClass}) — Req Lvl ${REQ_LEVEL[skill.row - 1] ?? skill.row}`}
                   >
                     <span className={`text-[8px] px-1 py-px rounded-sm flex-shrink-0 font-mono font-bold leading-none ${skillTheme.badge}`}>
                       {skill.originalClass}
                     </span>
-                    <span className="text-[10px] text-[#d8ccc0] truncate leading-none">
+                    <span className="text-[10px] text-[#d8ccc0] truncate leading-none flex-1">
                       {skill.name}
+                    </span>
+                    <span className="text-[8px] text-[#7a7058] flex-shrink-0 leading-none font-mono">
+                      {REQ_LEVEL[skill.row - 1] ?? skill.row}
                     </span>
                   </div>
                 );

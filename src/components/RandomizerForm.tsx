@@ -14,18 +14,20 @@ interface FormState {
   horadricCube: boolean;
   hirelingAura: boolean;
   disableChat: boolean;
+  xpMultiplier: number;
 }
 
 const SEASON1_PRESET: FormState = {
   enablePrereqs: true,
-  playersCount: 3,
+  playersCount: 2,
   playersActs: [1],
   teleportStaff: true,
   teleportStaffLevel: 6,
   teleportStaffDropSource: 'Corpsefire',
-  horadricCube: false,
+  horadricCube: true,
   hirelingAura: true,
   disableChat: true,
+  xpMultiplier: 1,
 };
 
 const DEFAULT_STATE: FormState = {
@@ -38,11 +40,12 @@ const DEFAULT_STATE: FormState = {
   horadricCube: false,
   hirelingAura: true,
   disableChat: false,
+  xpMultiplier: 1,
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -88,7 +91,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [horadricCube, setHoradricCube] = useState(initialOptions?.startingItems.horadricCube ?? SEASON1_PRESET.horadricCube);
   const [hirelingAura, setHirelingAura] = useState(initialOptions?.hirelingAura ?? SEASON1_PRESET.hirelingAura);
   const [disableChat, setDisableChat] = useState(initialOptions?.disableChat ?? SEASON1_PRESET.disableChat);
-
+  const [xpMultiplier, setXpMultiplier] = useState(initialOptions?.xpMultiplier ?? SEASON1_PRESET.xpMultiplier);
   const applyPreset = (p: Preset) => {
     setPreset(p);
     if (p === 'season1race') {
@@ -101,6 +104,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setHoradricCube(SEASON1_PRESET.horadricCube);
       setHirelingAura(SEASON1_PRESET.hirelingAura);
       setDisableChat(SEASON1_PRESET.disableChat);
+      setXpMultiplier(SEASON1_PRESET.xpMultiplier);
     }
   };
 
@@ -126,6 +130,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       startingItems: { teleportStaff, teleportStaffLevel, teleportStaffDropSource, horadricCube },
       hirelingAura,
       disableChat,
+      xpMultiplier,
     });
   };
 
@@ -218,6 +223,27 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               onChange={field(setDisableChat)}
               label="Disable chat (blocks /players commands)"
             />
+            <div className="flex items-center gap-2.5">
+              <label htmlFor="xpMultiplier" className="text-sm text-[#c8a870] whitespace-nowrap">Fast leveling</label>
+              <div className="relative">
+                <select
+                  id="xpMultiplier"
+                  value={xpMultiplier}
+                  onChange={e => { setPreset('custom'); setXpMultiplier(Number(e.target.value)); }}
+                  className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1
+                    text-xs text-[#e8d5a0]
+                    focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                    transition-colors cursor-pointer"
+                >
+                  <option value={1}>1×</option>
+                  <option value={1.5}>1.5×</option>
+                  <option value={2}>2×</option>
+                  <option value={2.5}>2.5×</option>
+                  <option value={3}>3×</option>
+                </select>
+                <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
