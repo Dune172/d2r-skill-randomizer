@@ -73,6 +73,41 @@ function Checkbox({ id, checked, onChange, label }: { id: string; checked: boole
   );
 }
 
+function ActPillRow({
+  acts,
+  selected,
+  onToggle,
+}: {
+  acts: readonly number[];
+  selected: number[];
+  onToggle: (act: number) => void;
+}) {
+  const actLabels = ['I', 'II', 'III', 'IV', 'V'];
+  return (
+    <div className="ml-1 pl-3 border-l-2 border-[#7a1010]/60 mt-2">
+      <div className="flex gap-1.5">
+        {acts.map(act => {
+          const active = selected.includes(act);
+          return (
+            <button
+              key={act}
+              type="button"
+              onClick={() => onToggle(act)}
+              className={
+                active
+                  ? 'px-2.5 py-0.5 rounded text-xs font-cinzel tracking-wide border border-[#8b2820] bg-[#3a0808] text-[#f0c040] transition-all duration-150 select-none'
+                  : 'px-2.5 py-0.5 rounded text-xs font-cinzel tracking-wide border border-[#3a1510] bg-[#090203] text-[#7a5030] transition-all duration-150 hover:border-[#5c2218] hover:text-[#c8a870] select-none'
+              }
+            >
+              {actLabels[act - 1]}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function SectionDivider({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3">
@@ -158,8 +193,8 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
             id="preset"
             value={preset}
             onChange={e => applyPreset(e.target.value as Preset)}
-            className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1.5
-              text-xs text-[#e8d5a0]
+            className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-2
+              text-sm text-[#e8d5a0]
               focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
               transition-colors cursor-pointer"
           >
@@ -174,10 +209,16 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       <div className="space-y-3 pt-1 pb-2">
         <SectionDivider label="Gameplay" />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 items-start">
           {/* Left: Players */}
           <div>
-            <div className="flex items-center gap-3">
+            <Checkbox
+              id="disableChat"
+              checked={disableChat}
+              onChange={field(setDisableChat)}
+              label="Disable chat"
+            />
+            <div className="flex items-center gap-3 mt-2.5">
               <label htmlFor="playersCount" className="text-sm text-[#c8a870] whitespace-nowrap">
                 /Players
               </label>
@@ -195,29 +236,8 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               />
             </div>
             {playersCount > 1 && (
-            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
-              {([1, 2, 3, 4, 5] as const).map(act => {
-                const actLabels = ['Act I', 'Act II', 'Act III', 'Act IV', 'Act V'];
-                const checked = playersActs.includes(act);
-                return (
-                  <label key={act} className="flex items-center gap-2 cursor-pointer group select-none">
-                    <div className="relative flex-shrink-0">
-                      <input type="checkbox" checked={checked} onChange={() => toggleAct(act)} className="sr-only" />
-                      <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
-                        ${checked ? 'bg-[#7a1010] border-[#c42020]' : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}>
-                        {checked && (
-                          <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
-                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">{actLabels[act - 1]}</span>
-                  </label>
-                );
-              })}
-            </div>
-          )}
+              <ActPillRow acts={[1, 2, 3, 4, 5]} selected={playersActs} onToggle={toggleAct} />
+            )}
           </div>
 
           {/* Right: Checkboxes */}
@@ -228,22 +248,16 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               onChange={v => field(setEnablePrereqs)(!v)}
               label="No skill prerequisites"
             />
-            <Checkbox
-              id="disableChat"
-              checked={disableChat}
-              onChange={field(setDisableChat)}
-              label="Disable chat (blocks /players commands)"
-            />
             <div>
               <div className="flex items-center gap-2.5">
-                <label htmlFor="xpMultiplier" className="text-sm text-[#c8a870] whitespace-nowrap">Fast leveling</label>
+                <label htmlFor="xpMultiplier" className="text-sm text-[#c8a870] whitespace-nowrap">XP Boost</label>
                 <div className="relative">
                   <select
                     id="xpMultiplier"
                     value={xpMultiplier}
                     onChange={e => { setPreset('custom'); setXpMultiplier(Number(e.target.value)); }}
-                    className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1
-                      text-xs text-[#e8d5a0]
+                    className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-2
+                      text-sm text-[#e8d5a0]
                       focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
                       transition-colors cursor-pointer"
                   >
@@ -257,28 +271,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
                 </div>
               </div>
               {xpMultiplier > 1 && (
-                <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
-                  {([1, 2, 3, 4, 5] as const).map(act => {
-                    const actLabels = ['Act I', 'Act II', 'Act III', 'Act IV', 'Act V'];
-                    const checked = xpActs.includes(act);
-                    return (
-                      <label key={act} className="flex items-center gap-2 cursor-pointer group select-none">
-                        <div className="relative flex-shrink-0">
-                          <input type="checkbox" checked={checked} onChange={() => toggleXpAct(act)} className="sr-only" />
-                          <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
-                            ${checked ? 'bg-[#7a1010] border-[#c42020]' : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}>
-                            {checked && (
-                              <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
-                                <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            )}
-                          </div>
-                        </div>
-                        <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">{actLabels[act - 1]}</span>
-                      </label>
-                    );
-                  })}
-                </div>
+                <ActPillRow acts={[1, 2, 3, 4, 5]} selected={xpActs} onToggle={toggleXpAct} />
               )}
             </div>
           </div>
@@ -310,7 +303,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
                       id="teleportStaffDropSource"
                       value={teleportStaffDropSource}
                       onChange={e => { setPreset('custom'); setTeleportStaffDropSource(e.target.value); }}
-                      className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-1
+                      className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-2
                         text-sm text-[#e8d5a0]
                         focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
                         transition-colors cursor-pointer"
@@ -319,7 +312,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
                       <option value="Griswold">Griswold</option>
                       <option value="Coldworm the Burrower">Coldworm the Burrower</option>
                     </select>
-                    <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+                    <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -331,7 +324,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
                       id="teleportStaffLevel"
                       value={teleportStaffLevel}
                       onChange={e => { setPreset('custom'); setTeleportStaffLevel(Number(e.target.value)); }}
-                      className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-4 pr-8 py-1
+                      className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-2
                         text-sm text-[#e8d5a0]
                         focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
                         transition-colors cursor-pointer"
@@ -342,7 +335,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
                       <option value={18}>18</option>
                       <option value={24}>24</option>
                     </select>
-                    <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+                    <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
                   </div>
                 </div>
               </div>
