@@ -1,17 +1,18 @@
 // Column names as they appear in monstats.txt (mixed case)
 const HP_COLS = ['minHP', 'maxHP', 'MinHP(N)', 'MaxHP(N)', 'MinHP(H)', 'MaxHP(H)'];
-const EXP_COLS = ['Exp', 'Exp(N)', 'Exp(H)'];
+export const EXP_COLS = ['Exp', 'Exp(N)', 'Exp(H)'];
 const DAMAGE_AR_COLS = [
   'A1MinD', 'A1MaxD', 'A1TH', 'A2MinD', 'A2MaxD', 'A2TH', 'S1MinD', 'S1MaxD', 'S1TH',
   'A1MinD(N)', 'A1MaxD(N)', 'A1TH(N)', 'A2MinD(N)', 'A2MaxD(N)', 'A2TH(N)', 'S1MinD(N)', 'S1MaxD(N)', 'S1TH(N)',
   'A1MinD(H)', 'A1MaxD(H)', 'A1TH(H)', 'A2MinD(H)', 'A2MaxD(H)', 'A2TH(H)', 'S1MinD(H)', 'S1MaxD(H)', 'S1TH(H)',
 ];
-const TC_COL = 'TreasureClass';
-const ACT_RE = /^Act (\d)/;
+export const TC_COL = 'TreasureClass';
+export const ACT_RE = /^Act (\d)/;
 
 // Combat monsters whose TreasureClass doesn't contain "Act N" but belong to a specific act.
+// Exported so experience-scaler can reuse the same act mapping.
 // Player summons (golem, valkyrie, druidbear), Uber bosses, Cow Level, and map objects are omitted.
-const BOSS_ACTS: Record<string, number> = {
+export const BOSS_ACTS: Record<string, number> = {
   // Act 1
   andariel: 1, bloodraven: 1, griswold: 1, smith: 1,
   quillrat1: 1, quillrat2: 1, quillrat3: 1, quillrat4: 1, quillrat5: 1,

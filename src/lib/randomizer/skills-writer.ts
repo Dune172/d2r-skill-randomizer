@@ -152,13 +152,15 @@ export function writeSkillsRows(
     // Pick the best animation for this skill+class combo, then sync seqtrans.
     // Melee skills prefer A1 (weapon swing) over SQ/SC; others preserve original
     // if supported, else fall back to SC.
+    // Skip animation updates entirely for skills on their native class — the
+    // original animation is already correct and shouldn't be touched.
+    const isNativeClass = classDef.charclass === placement.skill.charclass;
     const supportedAnims = CLASS_SUPPORTED_ANIMS[placement.targetClass];
-    if (supportedAnims && animIdx >= 0) {
+    if (!isNativeClass && supportedAnims && animIdx >= 0) {
       const originalAnim = row[animIdx];
       if (originalAnim) {
         const bestAnim = pickBestAnim(placement.skill, originalAnim, supportedAnims);
         const isSameAnim = bestAnim === originalAnim;
-        const isNativeClass = classDef.charclass === placement.skill.charclass;
 
         row[animIdx] = bestAnim;
 
@@ -181,11 +183,11 @@ export function writeSkillsRows(
           }
         }
 
-        // Clear seqnum/seqinput when anim changes OR when placed on a different class,
-        // EXCEPT for channeled-SQ skills: their seqnum/seqinput drive the hold-to-channel
-        // loop and must be preserved whenever the SQ animation is kept (isSameAnim=true).
+        // Clear seqnum/seqinput when anim changes, EXCEPT for channeled-SQ skills:
+        // their seqnum/seqinput drive the hold-to-channel loop and must be preserved
+        // whenever the SQ animation is kept (isSameAnim=true).
         const preserveSeq = isSameAnim && CHANNELED_SQ_SKILLS.has(placement.skill.skill);
-        if (!preserveSeq && (!isSameAnim || !isNativeClass)) {
+        if (!preserveSeq && !isSameAnim) {
           if (seqnumIdx >= 0)   row[seqnumIdx]   = '';
           if (seqinputIdx >= 0) row[seqinputIdx] = '';
         }

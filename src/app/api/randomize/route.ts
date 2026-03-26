@@ -21,7 +21,7 @@ import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
-import { scaleExperience } from '@/lib/randomizer/experience-scaler';
+import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
 import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
 
@@ -47,6 +47,9 @@ export async function POST(request: NextRequest) {
     const disableChat        = body.disableChat        === true;   // default false
     const startingHoradricCube = body.startingItems?.horadricCube === true;
     const xpMultiplier = Math.min(3, Math.max(1, Number(body.xpMultiplier) || 1));
+    const xpActs: number[] = Array.isArray(body.xpActs)
+      ? (body.xpActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
+      : [1, 2, 3, 4, 5];
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -58,7 +61,8 @@ export async function POST(request: NextRequest) {
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier);
+    const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs);
     const zipCache = getZipCache();
 
     // Check cache (fast path — bypasses queue)
@@ -308,14 +312,19 @@ export async function POST(request: NextRequest) {
 
     const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
 
-    // Step 11b: monstats — players scaling only
+    // Step 11b: monstats — players scaling and/or xp boost
     let monstatsTxt: string | undefined;
-    if (playersEnabled && playersCount > 1) {
+    const needsMonstats = (playersEnabled && playersCount > 1) || xpMultiplier > 1;
+    if (needsMonstats) {
       const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
       if (fs.existsSync(monstatsTxtPath)) {
         const monstatsSrc = loadTxtFile('monstats.txt');
         const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
-        const scaledRows = scaleMonstats(monstatsSrc.headers, monstatsSrc.rows, playersCount, playersActs, summonIds);
+        let scaledRows = monstatsSrc.rows;
+        if (playersEnabled && playersCount > 1)
+          scaledRows = scaleMonstats(monstatsSrc.headers, scaledRows, playersCount, playersActs, summonIds);
+        if (xpMultiplier > 1)
+          scaledRows = scaleExperienceRows(monstatsSrc.headers, scaledRows, xpMultiplier, xpActs, summonIds);
         monstatsTxt = serializeTxtFile(monstatsSrc.headers, scaledRows);
       }
     }
@@ -332,12 +341,6 @@ export async function POST(request: NextRequest) {
         }
       }
       superuniquesTxt = serializeTxtFile(su.headers, su.rows);
-    }
-
-    // Optional: fast leveling
-    let experienceTxt: string | undefined;
-    if (xpMultiplier > 1) {
-      experienceTxt = scaleExperience(xpMultiplier);
     }
 
     // Step 12: Build zip
@@ -362,7 +365,6 @@ export async function POST(request: NextRequest) {
       hireableSprite,
       chatPanelJson: disableChat ? formatUiJson(chatPanelRaw) : undefined,
       chatPanelHdJson: disableChat ? formatUiJson(chatPanelHdRaw) : undefined,
-      experienceTxt,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)

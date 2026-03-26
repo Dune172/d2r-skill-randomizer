@@ -15,6 +15,7 @@ interface FormState {
   hirelingAura: boolean;
   disableChat: boolean;
   xpMultiplier: number;
+  xpActs: number[];
 }
 
 const SEASON1_PRESET: FormState = {
@@ -28,6 +29,7 @@ const SEASON1_PRESET: FormState = {
   hirelingAura: true,
   disableChat: true,
   xpMultiplier: 1,
+  xpActs: [1, 2, 3, 4, 5],
 };
 
 const DEFAULT_STATE: FormState = {
@@ -41,11 +43,12 @@ const DEFAULT_STATE: FormState = {
   hirelingAura: true,
   disableChat: false,
   xpMultiplier: 1,
+  xpActs: [1, 2, 3, 4, 5],
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[] };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[] }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -92,6 +95,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [hirelingAura, setHirelingAura] = useState(initialOptions?.hirelingAura ?? SEASON1_PRESET.hirelingAura);
   const [disableChat, setDisableChat] = useState(initialOptions?.disableChat ?? SEASON1_PRESET.disableChat);
   const [xpMultiplier, setXpMultiplier] = useState(initialOptions?.xpMultiplier ?? SEASON1_PRESET.xpMultiplier);
+  const [xpActs, setXpActs] = useState<number[]>(initialOptions?.xpActs ?? SEASON1_PRESET.xpActs);
   const applyPreset = (p: Preset) => {
     setPreset(p);
     if (p === 'season1race') {
@@ -105,6 +109,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setHirelingAura(SEASON1_PRESET.hirelingAura);
       setDisableChat(SEASON1_PRESET.disableChat);
       setXpMultiplier(SEASON1_PRESET.xpMultiplier);
+      setXpActs(SEASON1_PRESET.xpActs);
     }
   };
 
@@ -116,6 +121,11 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const toggleAct = (act: number) => {
     setPreset('custom');
     setPlayersActs(prev => prev.includes(act) ? prev.filter(a => a !== act) : [...prev, act]);
+  };
+
+  const toggleXpAct = (act: number) => {
+    setPreset('custom');
+    setXpActs(prev => prev.includes(act) ? prev.filter(a => a !== act) : [...prev, act]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -131,6 +141,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       hirelingAura,
       disableChat,
       xpMultiplier,
+      xpActs,
     });
   };
 
@@ -223,26 +234,52 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               onChange={field(setDisableChat)}
               label="Disable chat (blocks /players commands)"
             />
-            <div className="flex items-center gap-2.5">
-              <label htmlFor="xpMultiplier" className="text-sm text-[#c8a870] whitespace-nowrap">Fast leveling</label>
-              <div className="relative">
-                <select
-                  id="xpMultiplier"
-                  value={xpMultiplier}
-                  onChange={e => { setPreset('custom'); setXpMultiplier(Number(e.target.value)); }}
-                  className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1
-                    text-xs text-[#e8d5a0]
-                    focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-                    transition-colors cursor-pointer"
-                >
-                  <option value={1}>1×</option>
-                  <option value={1.5}>1.5×</option>
-                  <option value={2}>2×</option>
-                  <option value={2.5}>2.5×</option>
-                  <option value={3}>3×</option>
-                </select>
-                <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+            <div>
+              <div className="flex items-center gap-2.5">
+                <label htmlFor="xpMultiplier" className="text-sm text-[#c8a870] whitespace-nowrap">Fast leveling</label>
+                <div className="relative">
+                  <select
+                    id="xpMultiplier"
+                    value={xpMultiplier}
+                    onChange={e => { setPreset('custom'); setXpMultiplier(Number(e.target.value)); }}
+                    className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1
+                      text-xs text-[#e8d5a0]
+                      focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                      transition-colors cursor-pointer"
+                  >
+                    <option value={1}>1×</option>
+                    <option value={1.5}>1.5×</option>
+                    <option value={2}>2×</option>
+                    <option value={2.5}>2.5×</option>
+                    <option value={3}>3×</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+                </div>
               </div>
+              {xpMultiplier > 1 && (
+                <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
+                  {([1, 2, 3, 4, 5] as const).map(act => {
+                    const actLabels = ['Act I', 'Act II', 'Act III', 'Act IV', 'Act V'];
+                    const checked = xpActs.includes(act);
+                    return (
+                      <label key={act} className="flex items-center gap-2 cursor-pointer group select-none">
+                        <div className="relative flex-shrink-0">
+                          <input type="checkbox" checked={checked} onChange={() => toggleXpAct(act)} className="sr-only" />
+                          <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
+                            ${checked ? 'bg-[#7a1010] border-[#c42020]' : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}>
+                            {checked && (
+                              <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
+                                <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">{actLabels[act - 1]}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

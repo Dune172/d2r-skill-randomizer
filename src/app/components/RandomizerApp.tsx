@@ -17,6 +17,7 @@ interface Options {
   hirelingAura: boolean;
   disableChat: boolean;
   xpMultiplier: number;
+  xpActs: number[];
 }
 
 const defaultOptions: Options = {
@@ -28,6 +29,7 @@ const defaultOptions: Options = {
   hirelingAura: true,
   disableChat: false,
   xpMultiplier: 1,
+  xpActs: [1, 2, 3, 4, 5],
 };
 
 function parseOptionsFromURL(): Options | null {
@@ -52,6 +54,9 @@ function parseOptionsFromURL(): Options | null {
     hirelingAura: p.get('hirelingAura') !== '0',
     disableChat: p.get('disableChat') === '1',
     xpMultiplier: Math.min(3, Math.max(1, Number(p.get('xpMultiplier')) || 1)),
+    xpActs: p.has('xpActs')
+      ? p.get('xpActs')!.split(',').map(Number).filter(n => n >= 1 && n <= 5)
+      : [1, 2, 3, 4, 5],
   };
 }
 
@@ -88,7 +93,8 @@ export default function RandomizerApp() {
     const hirelingAuraParam = !opts.hirelingAura   ? '&hirelingAura=0' : '';
     const disableChatParam  = opts.disableChat     ? '&disableChat=1'  : '';
     const xpParam           = opts.xpMultiplier > 1 ? `&xpMultiplier=${opts.xpMultiplier}` : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}`;
+    const xpActsParam       = opts.xpMultiplier > 1 ? `&xpActs=${[...opts.xpActs].sort((a, b) => a - b).join(',')}` : '';
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -121,7 +127,7 @@ export default function RandomizerApp() {
       const buildRes = await fetch('/api/randomize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier }),
+        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs }),
       });
 
       if (!buildRes.ok) {
@@ -176,6 +182,11 @@ export default function RandomizerApp() {
                 <ol className="space-y-1 list-decimal list-inside">
                   <li>Extract the ZIP.</li>
                   <li>
+                    In your D2R install folder, create a{' '}
+                    <code className="text-[#a89858]">mods\</code>
+                    {' '}folder if it doesn&apos;t already exist.
+                  </li>
+                  <li>
                     Copy{' '}
                     <code className="text-[#a89858]">seed_{currentSeed}/</code>
                     {' '}to{' '}
@@ -196,6 +207,11 @@ export default function RandomizerApp() {
                 <p className="font-cinzel text-[11px] tracking-[0.22em] uppercase text-[#c8942a] mb-2">Steam</p>
                 <ol className="space-y-1 list-decimal list-inside">
                   <li>Extract the ZIP.</li>
+                  <li>
+                    In your D2R install folder, create a{' '}
+                    <code className="text-[#a89858]">mods/</code>
+                    {' '}folder if it doesn&apos;t already exist.
+                  </li>
                   <li>
                     Copy{' '}
                     <code className="text-[#a89858]">seed_{currentSeed}/</code>

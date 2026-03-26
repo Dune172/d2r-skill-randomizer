@@ -30,8 +30,12 @@ export async function GET(request: NextRequest) {
     const horadricCube   = searchParams.get('cube')           === '1';  // default false
     const enablePrereqs  = searchParams.get('noPrereqs')      !== '1';  // default true
     const xpMultiplier   = Math.min(3, Math.max(1, Number(searchParams.get('xpMultiplier')) || 1));
+    const xpActsParam    = searchParams.get('xpActs');
+    const xpActs = xpActsParam
+      ? xpActsParam.split(',').map(Number).filter(n => n >= 1 && n <= 5)
+      : [1, 2, 3, 4, 5];
 
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier);
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 

@@ -20,7 +20,6 @@ export interface ZipContents {
   hireableSprite?: Buffer;          // hireable sprite for mercenary hiring panel icons
   chatPanelJson?: string;           // chatpanel.json with input disabled (optional)
   chatPanelHdJson?: string;         // chatpanelhd.json with input disabled (optional)
-  experienceTxt?: string;           // experience.txt with scaled XP thresholds (fast leveling)
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -122,11 +121,6 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     }
     if (contents.chatPanelHdJson) {
       archive.append(contents.chatPanelHdJson, { name: `${d}/data/global/ui/layouts/chatpanelhd.json` });
-    }
-
-    // Fast leveling — scaled XP thresholds
-    if (contents.experienceTxt) {
-      archive.append(contents.experienceTxt, { name: `${d}/data/global/excel/experience.txt` });
     }
 
     // Add tree sprites (hd path)
