@@ -21,15 +21,15 @@ interface FormState {
 const SEASON1_PRESET: FormState = {
   enablePrereqs: true,
   playersCount: 2,
-  playersActs: [1],
+  playersActs: [2, 3, 4, 5],
   teleportStaff: true,
   teleportStaffLevel: 6,
   teleportStaffDropSource: 'Corpsefire',
   horadricCube: true,
   hirelingAura: true,
   disableChat: true,
-  xpMultiplier: 1,
-  xpActs: [1, 2, 3, 4, 5],
+  xpMultiplier: 2,
+  xpActs: [1, 2],
 };
 
 const DEFAULT_STATE: FormState = {
