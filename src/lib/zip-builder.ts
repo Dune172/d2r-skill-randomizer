@@ -20,6 +20,8 @@ export interface ZipContents {
   hireableSprite?: Buffer;          // hireable sprite for mercenary hiring panel icons
   chatPanelJson?: string;           // chatpanel.json with input disabled (optional)
   chatPanelHdJson?: string;         // chatpanelhd.json with input disabled (optional)
+  magicPrefixTxt?: string;          // magicprefix.txt with remapped class-skill affixes
+  magicSuffixTxt?: string;          // magicsuffix.txt with remapped class-skill affixes
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -113,6 +115,14 @@ export async function buildZip(contents: ZipContents): Promise<Buffer> {
     // Item name strings (display name for unique staff)
     if (contents.itemNamesJson) {
       archive.append(contents.itemNamesJson, { name: `${d}/data/local/lng/strings/item-names.json` });
+    }
+
+    // Magic affix files with remapped class-skill references
+    if (contents.magicPrefixTxt) {
+      archive.append(contents.magicPrefixTxt, { name: `${d}/data/global/excel/magicprefix.txt` });
+    }
+    if (contents.magicSuffixTxt) {
+      archive.append(contents.magicSuffixTxt, { name: `${d}/data/global/excel/magicsuffix.txt` });
     }
 
     // Disable chat input to prevent /players x commands (optional)

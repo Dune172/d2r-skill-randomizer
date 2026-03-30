@@ -38,8 +38,11 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
   set('par1',     '54');   // Teleport skill ID
   set('min1',     '20');   // 20 charges
   set('max1',     '1');    // charge level 1
+  set('prop2',    'move1');
+  set('min2',     '10');   // 10% Faster Run/Walk
+  set('max2',     '10');
   set('cost mult', '1');        // must be non-zero for cost_add to be applied
-  set('cost add',  '100'); // recharge cost calibration
+  set('cost add',  '50');  // recharge cost calibration (halved from 100)
 
   return [...updated, newRow];
 }

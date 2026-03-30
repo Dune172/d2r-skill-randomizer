@@ -20,6 +20,7 @@ import { enqueueGeneration } from '@/lib/generation-queue';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
+import { remapClassItemSkills } from '@/lib/randomizer/item-skills-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
@@ -140,6 +141,14 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+
+    // Remap class-restricted item skill affixes (magicprefix / magicsuffix)
+    const magicPrefixTxt = loadTxtFile('magicprefix.txt');
+    const magicSuffixTxt = loadTxtFile('magicsuffix.txt');
+    const remappedPrefixRows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements);
+    const remappedSuffixRows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements);
+    const magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, remappedPrefixRows);
+    const magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, remappedSuffixRows);
 
     // Build StartSkill candidates from the verified, already-updated skillsTxt rows.
     // Reading directly from the txt we just wrote guarantees the skill name matches
@@ -365,6 +374,8 @@ export async function POST(request: NextRequest) {
       hireableSprite,
       chatPanelJson: disableChat ? formatUiJson(chatPanelRaw) : undefined,
       chatPanelHdJson: disableChat ? formatUiJson(chatPanelHdRaw) : undefined,
+      magicPrefixTxt: magicPrefixContent,
+      magicSuffixTxt: magicSuffixContent,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)
