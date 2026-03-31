@@ -1,4 +1,20 @@
 /**
+ * Set Teleport's cost add in skills.txt to control the recharge cost per charge.
+ * Mutates rows in-place.
+ */
+export function applyTeleportSkillCost(headers: string[], rows: string[][]): void {
+  const skillCol   = headers.indexOf('skill');
+  const costAddCol = headers.indexOf('cost add');
+  if (skillCol === -1 || costAddCol === -1) return;
+  for (const row of rows) {
+    if (row[skillCol] === 'Teleport') {
+      row[costAddCol] = '9000';
+      break;
+    }
+  }
+}
+
+/**
  * Modify uniqueitems.txt rows:
  *  - Disable "Bane Ash" (the only vanilla sst unique) so it doesn't conflict
  *  - Append a new "Teleport Staff" unique entry with 20× Teleport charges (level 1)

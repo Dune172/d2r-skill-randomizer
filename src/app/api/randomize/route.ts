@@ -18,7 +18,7 @@ import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { incrementCount } from '@/lib/counter';
 import { enqueueGeneration } from '@/lib/generation-queue';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
-import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
+import { applyTeleportStaffUnique, applyTeleportSkillCost, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills } from '@/lib/randomizer/item-skills-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
@@ -261,6 +261,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (startingTeleportStaff) {
+        applyTeleportSkillCost(skillsTxt.headers, skillsTxt.rows);
         const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
         if (fs.existsSync(uiPath)) {
           const ui = loadTxtFile('uniqueitems.txt');
