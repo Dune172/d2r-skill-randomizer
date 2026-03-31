@@ -115,6 +115,9 @@ export async function POST(request: NextRequest) {
 
     // Step 8: Write modified txt files
     writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments);
+    if (startingTeleportStaff) {
+      applyTeleportSkillCost(skillsTxt.headers, skillsTxt.rows);
+    }
     writeSkillDescRows(skillDescTxt.headers, skillDescTxt.rows, placements, descSynergyUpdates);
 
     // Hireling randomization (aura and/or attack skills, per user options)
@@ -261,7 +264,6 @@ export async function POST(request: NextRequest) {
       }
 
       if (startingTeleportStaff) {
-        applyTeleportSkillCost(skillsTxt.headers, skillsTxt.rows);
         const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
         if (fs.existsSync(uiPath)) {
           const ui = loadTxtFile('uniqueitems.txt');

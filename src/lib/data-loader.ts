@@ -166,7 +166,7 @@ export function loadTxtFile(filename: string): { headers: string[]; rows: string
   }
 
   const filePath = path.join(DATA_DIR, 'txt', filename);
-  const content = fs.readFileSync(filePath, 'utf-8');
+  const content = fs.readFileSync(filePath, 'utf-8').replace(/^\uFEFF/, '');
   // Handle mixed line endings: normalize all to \n
   const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 
