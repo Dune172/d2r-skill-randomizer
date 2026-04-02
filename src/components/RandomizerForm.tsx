@@ -54,7 +54,18 @@ interface RandomizerFormProps {
   onSeedChange: (s: string) => void;
 }
 
-function Checkbox({ id, checked, onChange, label }: { id: string; checked: boolean; onChange: (v: boolean) => void; label: string }) {
+function Tip({ text }: { text: string }) {
+  return (
+    <span className="relative group/tip inline-flex items-center ml-1.5 cursor-default" onClick={e => e.preventDefault()}>
+      <span className="text-[#5a3820] hover:text-[#c8a870] text-[11px] leading-none select-none transition-colors">ⓘ</span>
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 w-56 rounded border border-[#3a1510] bg-[#0d0305] px-2.5 py-1.5 text-xs text-[#c8a870] leading-relaxed shadow-lg opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 text-left whitespace-normal">
+        {text}
+      </span>
+    </span>
+  );
+}
+
+function Checkbox({ id, checked, onChange, label, tooltip }: { id: string; checked: boolean; onChange: (v: boolean) => void; label: string; tooltip?: string }) {
   return (
     <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor={id}>
       <div className="relative flex-shrink-0">
@@ -68,7 +79,10 @@ function Checkbox({ id, checked, onChange, label }: { id: string; checked: boole
           )}
         </div>
       </div>
-      <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors">{label}</span>
+      <span className="text-sm text-[#c8a870] group-hover:text-[#f0d090] transition-colors flex items-center">
+        {label}
+        {tooltip && <Tip text={tooltip} />}
+      </span>
     </label>
   );
 }
@@ -223,10 +237,12 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               checked={disableChat}
               onChange={field(setDisableChat)}
               label="Disable chat"
+              tooltip="Removes the in-game chat box. Keeps the screen clean during races and prevents /players from being used."
             />
             <div className="flex items-center gap-3 mt-2.5">
-              <label htmlFor="playersCount" className="text-sm text-[#c8a870] whitespace-nowrap">
+              <label htmlFor="playersCount" className="text-sm text-[#c8a870] whitespace-nowrap flex items-center">
                 /Players
+                <Tip text="Simulates more players on the server, increasing monster HP and XP. Set to 1 for standard difficulty." />
               </label>
               <input
                 id="playersCount"
@@ -253,10 +269,14 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               checked={!enablePrereqs}
               onChange={v => field(setEnablePrereqs)(!v)}
               label="No skill prerequisites"
+              tooltip="Removes skill prerequisites, letting you invest points in any skill freely without unlocking earlier ones first."
             />
             <div>
               <div className="flex items-center gap-2.5">
-                <label htmlFor="xpMultiplier" className="text-sm text-[#c8a870] whitespace-nowrap">XP Boost</label>
+                <label htmlFor="xpMultiplier" className="text-sm text-[#c8a870] whitespace-nowrap flex items-center">
+                  XP Boost
+                  <Tip text="Multiplies experience gained from monsters. Select which acts it applies to below." />
+                </label>
                 <div className="relative">
                   <select
                     id="xpMultiplier"
@@ -296,6 +316,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               checked={teleportStaff}
               onChange={field(setTeleportStaff)}
               label="Teleport Staff"
+              tooltip="Starts you with a staff that has Teleport charges. Use 'Dropped By' to set which boss drops it, and 'Req. Level' to control when it becomes usable."
             />
 
             {teleportStaff && (
@@ -355,6 +376,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               checked={horadricCube}
               onChange={field(setHoradricCube)}
               label="Start with Horadric Cube"
+              tooltip="Adds a Horadric Cube to your starting inventory, giving you extra stash space from the very beginning."
             />
           </div>
         </div>
@@ -370,6 +392,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
             checked={hirelingAura}
             onChange={field(setHirelingAura)}
             label="All mercenaries have an aura"
+            tooltip="Randomizes each mercenary to grant a random Paladin aura, giving a passive bonus to you and your party."
           />
         </div>
       </div>
