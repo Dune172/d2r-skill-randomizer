@@ -366,7 +366,7 @@ export async function POST(request: NextRequest) {
     const modName = `seed${seed}`;
     const formatUiJson = (obj: unknown) =>
       '\uFEFF' + JSON.stringify(obj, null, 4).replace(/\n/g, '\r\n');
-    const zipBuffer = await buildZip({
+    const zipBuffer = buildZip({
       modName,
       skillsTxt: skillsTxtContent,
       skillDescTxt: skillDescTxtContent,

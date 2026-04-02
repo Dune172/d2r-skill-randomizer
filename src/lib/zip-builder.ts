@@ -1,4 +1,4 @@
-import archiver from 'archiver';
+import AdmZip from 'adm-zip';
 import { ClassCode } from './randomizer/types';
 import { CLASS_BY_CODE, CLASS_DEFS } from './randomizer/config';
 
@@ -37,7 +37,7 @@ const PREFIX_TO_FOLDER: Record<string, string> = {
 };
 
 /**
- * Build the mod zip file as a Buffer.
+ * Build the mod zip file as a Buffer using pure-JS adm-zip (no native threads).
  * Structure matches D2R mod format — modinfo.json at the mod root, all data
  * files under the required {modName}.mpq subfolder:
  *   {modName}/{modName}.mpq/modinfo.json
@@ -47,122 +47,105 @@ const PREFIX_TO_FOLDER: Record<string, string> = {
  *   {modName}/{modName}.mpq/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.lowend.sprite
  *   {modName}/{modName}.mpq/data/global/ui/spells/{classname}/{prefix}skillicon.sprite
  */
-export async function buildZip(contents: ZipContents): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    const archive = archiver('zip', { zlib: { level: 1 } });
+export function buildZip(contents: ZipContents): Buffer {
+  const zip = new AdmZip();
+  const m = contents.modName;
+  const d = `${m}/${m}.mpq`; // data root — D2R requires this subfolder name
 
-    archive.on('data', (chunk: Buffer) => chunks.push(chunk));
-    archive.on('end', () => resolve(Buffer.concat(chunks)));
-    archive.on('error', reject);
+  const str = (s: string) => Buffer.from(s, 'utf-8');
 
-    const m = contents.modName;
-    const d = `${m}/${m}.mpq`; // data root — D2R requires this subfolder name
+  // Add modinfo.json
+  const modinfo = JSON.stringify({ name: m, savepath: 'D2RRandomizer' });
+  zip.addFile(`${d}/modinfo.json`, str(modinfo));
 
-    // Add modinfo.json
-    const modinfo = JSON.stringify({
-      name: m,
-      savepath: "D2RRandomizer",
-    });
-    archive.append(modinfo, { name: `${d}/modinfo.json` });
+  // Add text files
+  zip.addFile(`${d}/data/global/excel/skills.txt`, str(contents.skillsTxt));
+  zip.addFile(`${d}/data/global/excel/skilldesc.txt`, str(contents.skillDescTxt));
 
-    // Add text files
-    archive.append(contents.skillsTxt, { name: `${d}/data/global/excel/skills.txt` });
-    archive.append(contents.skillDescTxt, { name: `${d}/data/global/excel/skilldesc.txt` });
+  // Skill string table — include in both current and legacy paths so D2R
+  // resolves skill names for proc items regardless of which path it uses.
+  if (contents.skillStringsJson) {
+    zip.addFile(`${d}/data/local/lng/strings/skills.json`, str(contents.skillStringsJson));
+    zip.addFile(`${d}/data/local/lng/strings-legacy/skills.json`, str(contents.skillStringsJson));
+  }
 
-    // Skill string table — include in both current and legacy paths so D2R
-    // resolves skill names for proc items regardless of which path it uses.
-    if (contents.skillStringsJson) {
-      archive.append(contents.skillStringsJson, { name: `${d}/data/local/lng/strings/skills.json` });
-      archive.append(contents.skillStringsJson, { name: `${d}/data/local/lng/strings-legacy/skills.json` });
+  // Charstats with randomised StartSkill per class
+  if (contents.charstatsTxt) {
+    zip.addFile(`${d}/data/global/excel/charstats.txt`, str(contents.charstatsTxt));
+  }
+
+  // Skill tab label strings (StrSklTabItem1–24 for all 8 classes)
+  if (contents.itemModifiersJson) {
+    zip.addFile(`${d}/data/local/lng/strings/item-modifiers.json`, str(contents.itemModifiersJson));
+  }
+
+  // Hireling auras
+  if (contents.hirelingTxt) {
+    zip.addFile(`${d}/data/global/excel/hireling.txt`, str(contents.hirelingTxt));
+  }
+
+  // Monster stats scaled for players simulation
+  if (contents.monstatsTxt) {
+    zip.addFile(`${d}/data/global/excel/monstats.txt`, str(contents.monstatsTxt));
+  }
+
+  // Unique items with Teleport Staff added
+  if (contents.uniqueitemsTxt) {
+    zip.addFile(`${d}/data/global/excel/uniqueitems.txt`, str(contents.uniqueitemsTxt));
+  }
+
+  // Treasure class for Blood Raven quest drop
+  if (contents.treasureClassExTxt) {
+    zip.addFile(`${d}/data/global/excel/treasureclassex.txt`, str(contents.treasureClassExTxt));
+  }
+
+  // Super uniques with Blood Raven entry
+  if (contents.superuniquesTxt) {
+    zip.addFile(`${d}/data/global/excel/superuniques.txt`, str(contents.superuniquesTxt));
+  }
+
+  // Item name strings (display name for unique staff)
+  if (contents.itemNamesJson) {
+    zip.addFile(`${d}/data/local/lng/strings/item-names.json`, str(contents.itemNamesJson));
+  }
+
+  // Magic affix files with remapped class-skill references
+  if (contents.magicPrefixTxt) {
+    zip.addFile(`${d}/data/global/excel/magicprefix.txt`, str(contents.magicPrefixTxt));
+  }
+  if (contents.magicSuffixTxt) {
+    zip.addFile(`${d}/data/global/excel/magicsuffix.txt`, str(contents.magicSuffixTxt));
+  }
+
+  // Disable chat input to prevent /players x commands (optional)
+  if (contents.chatPanelJson) {
+    zip.addFile(`${d}/data/global/ui/layouts/chatpanel.json`, str(contents.chatPanelJson));
+  }
+  if (contents.chatPanelHdJson) {
+    zip.addFile(`${d}/data/global/ui/layouts/chatpanelhd.json`, str(contents.chatPanelHdJson));
+  }
+
+  // Add tree sprites (hd path)
+  for (const [filename, buf] of contents.treeSprites.entries()) {
+    zip.addFile(`${d}/data/hd/global/ui/spells/skill_trees/${filename}`, buf);
+  }
+
+  // Add hireable sprite to both non-hd and hd paths
+  if (contents.hireableSprite) {
+    const HIREABLE_FILENAME = 'hrskillicon.sprite';
+    zip.addFile(`${d}/data/global/ui/spells/hireables/${HIREABLE_FILENAME}`, contents.hireableSprite);
+    zip.addFile(`${d}/data/hd/global/ui/spells/hireables/${HIREABLE_FILENAME}`, contents.hireableSprite);
+  }
+
+  // Add icon sprites to both non-hd and hd paths
+  for (const [filename, buf] of contents.iconSprites.entries()) {
+    const prefix = filename.replace('skillicon.sprite', '');
+    const folderName = PREFIX_TO_FOLDER[prefix];
+    if (folderName) {
+      zip.addFile(`${d}/data/global/ui/spells/${folderName}/${filename}`, buf);
+      zip.addFile(`${d}/data/hd/global/ui/spells/${folderName}/${filename}`, buf);
     }
+  }
 
-    // Charstats with randomised StartSkill per class
-    if (contents.charstatsTxt) {
-      archive.append(contents.charstatsTxt, { name: `${d}/data/global/excel/charstats.txt` });
-    }
-
-    // Skill tab label strings (StrSklTabItem1–24 for all 8 classes)
-    if (contents.itemModifiersJson) {
-      archive.append(contents.itemModifiersJson, { name: `${d}/data/local/lng/strings/item-modifiers.json` });
-    }
-
-    // Hireling auras
-    if (contents.hirelingTxt) {
-      archive.append(contents.hirelingTxt, { name: `${d}/data/global/excel/hireling.txt` });
-    }
-
-    // Monster stats scaled for players simulation
-    if (contents.monstatsTxt) {
-      archive.append(contents.monstatsTxt, { name: `${d}/data/global/excel/monstats.txt` });
-    }
-
-    // Unique items with Teleport Staff added
-    if (contents.uniqueitemsTxt) {
-      archive.append(contents.uniqueitemsTxt, { name: `${d}/data/global/excel/uniqueitems.txt` });
-    }
-
-    // Treasure class for Blood Raven quest drop
-    if (contents.treasureClassExTxt) {
-      archive.append(contents.treasureClassExTxt, { name: `${d}/data/global/excel/treasureclassex.txt` });
-    }
-
-    // Super uniques with Blood Raven entry
-    if (contents.superuniquesTxt) {
-      archive.append(contents.superuniquesTxt, { name: `${d}/data/global/excel/superuniques.txt` });
-    }
-
-    // Item name strings (display name for unique staff)
-    if (contents.itemNamesJson) {
-      archive.append(contents.itemNamesJson, { name: `${d}/data/local/lng/strings/item-names.json` });
-    }
-
-    // Magic affix files with remapped class-skill references
-    if (contents.magicPrefixTxt) {
-      archive.append(contents.magicPrefixTxt, { name: `${d}/data/global/excel/magicprefix.txt` });
-    }
-    if (contents.magicSuffixTxt) {
-      archive.append(contents.magicSuffixTxt, { name: `${d}/data/global/excel/magicsuffix.txt` });
-    }
-
-    // Disable chat input to prevent /players x commands (optional)
-    if (contents.chatPanelJson) {
-      archive.append(contents.chatPanelJson, { name: `${d}/data/global/ui/layouts/chatpanel.json` });
-    }
-    if (contents.chatPanelHdJson) {
-      archive.append(contents.chatPanelHdJson, { name: `${d}/data/global/ui/layouts/chatpanelhd.json` });
-    }
-
-    // Add tree sprites (hd path)
-    for (const [filename, buf] of contents.treeSprites.entries()) {
-      archive.append(buf, { name: `${d}/data/hd/global/ui/spells/skill_trees/${filename}` });
-    }
-
-    // Add hireable sprite to both non-hd and hd paths
-    if (contents.hireableSprite) {
-      const HIREABLE_FILENAME = 'hrskillicon.sprite';
-      archive.append(contents.hireableSprite, {
-        name: `${d}/data/global/ui/spells/hireables/${HIREABLE_FILENAME}`,
-      });
-      archive.append(contents.hireableSprite, {
-        name: `${d}/data/hd/global/ui/spells/hireables/${HIREABLE_FILENAME}`,
-      });
-    }
-
-    // Add icon sprites to both non-hd and hd paths
-    for (const [filename, buf] of contents.iconSprites.entries()) {
-      const prefix = filename.replace('skillicon.sprite', '');
-      const folderName = PREFIX_TO_FOLDER[prefix];
-      if (folderName) {
-        archive.append(buf, {
-          name: `${d}/data/global/ui/spells/${folderName}/${filename}`,
-        });
-        archive.append(buf, {
-          name: `${d}/data/hd/global/ui/spells/${folderName}/${filename}`,
-        });
-      }
-    }
-
-    archive.finalize();
-  });
+  return zip.toBuffer();
 }

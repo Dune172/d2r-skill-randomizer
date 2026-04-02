@@ -80,15 +80,12 @@ export async function buildClassIconSprite(
 
   const frames: Buffer[] = [];
 
-  const framePairs = await Promise.all(
-    sorted.map(async (placement) => {
-      const originalClass = placement.skill.charclass;
-      const originalIconCel = skillDescIconCels.get(placement.skill.skilldesc) ?? 0;
-      const { normalPath, pressedPath } = getIconPaths(originalClass, originalIconCel);
-      return Promise.all([loadIconToRGBA(normalPath), loadIconToRGBA(pressedPath)]);
-    })
-  );
-  for (const [normal, pressed] of framePairs) {
+  for (const placement of sorted) {
+    const originalClass = placement.skill.charclass;
+    const originalIconCel = skillDescIconCels.get(placement.skill.skilldesc) ?? 0;
+    const { normalPath, pressedPath } = getIconPaths(originalClass, originalIconCel);
+    const normal = await loadIconToRGBA(normalPath);
+    const pressed = await loadIconToRGBA(pressedPath);
     frames.push(normal, pressed);
   }
 
@@ -116,20 +113,19 @@ export async function buildHireableSprite(
   // Sort deterministically for reproducible output
   const sorted = [...assignedSkills].sort();
 
-  const framePairs = await Promise.all(
-    sorted.map(async (skillName, i) => {
-      hireableIconCels.set(skillName, i * 2);
-      const placement = skillToPlacement.get(skillName);
-      if (!placement) {
-        return [Buffer.alloc(ICON_WIDTH * ICON_HEIGHT * 4), Buffer.alloc(ICON_WIDTH * ICON_HEIGHT * 4)];
-      }
-      const originalClass = placement.skill.charclass;
-      const originalIconCel = skillDescIconCels.get(placement.skill.skilldesc) ?? 0;
-      const { normalPath, pressedPath } = getIconPaths(originalClass, originalIconCel);
-      return Promise.all([loadIconToRGBA(normalPath), loadIconToRGBA(pressedPath)]);
-    })
-  );
-  for (const [normal, pressed] of framePairs) {
+  for (let i = 0; i < sorted.length; i++) {
+    const skillName = sorted[i];
+    hireableIconCels.set(skillName, i * 2);
+    const placement = skillToPlacement.get(skillName);
+    if (!placement) {
+      frames.push(Buffer.alloc(ICON_WIDTH * ICON_HEIGHT * 4), Buffer.alloc(ICON_WIDTH * ICON_HEIGHT * 4));
+      continue;
+    }
+    const originalClass = placement.skill.charclass;
+    const originalIconCel = skillDescIconCels.get(placement.skill.skilldesc) ?? 0;
+    const { normalPath, pressedPath } = getIconPaths(originalClass, originalIconCel);
+    const normal = await loadIconToRGBA(normalPath);
+    const pressed = await loadIconToRGBA(pressedPath);
     frames.push(normal, pressed);
   }
 
@@ -146,14 +142,12 @@ export async function buildAllIconSprites(
 ): Promise<Map<string, Buffer>> {
   const results = new Map<string, Buffer>();
 
-  await Promise.all(
-    [...placementsByClass.entries()].map(async ([classCode, placements]) => {
-      const classDef = CLASS_BY_CODE.get(classCode);
-      if (!classDef) return;
-      const sprite = await buildClassIconSprite(classCode, placements, skillDescIconCels);
-      results.set(`${classDef.spritePrefix}skillicon.sprite`, sprite);
-    })
-  );
+  for (const [classCode, placements] of placementsByClass.entries()) {
+    const classDef = CLASS_BY_CODE.get(classCode);
+    if (!classDef) continue;
+    const sprite = await buildClassIconSprite(classCode, placements, skillDescIconCels);
+    results.set(`${classDef.spritePrefix}skillicon.sprite`, sprite);
+  }
 
   return results;
 }
