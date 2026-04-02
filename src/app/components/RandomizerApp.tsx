@@ -197,7 +197,7 @@ export default function RandomizerApp() {
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">3</span>
                     <div>
                       Copy the extracted folder (e.g.{' '}
-                      <code className="text-[#a89858]">seed_{currentSeed}\</code>
+                      <code className="text-[#a89858]">seed{currentSeed}\</code>
                       ) into the{' '}
                       <code className="text-[#a89858]">mods\</code>
                       {' '}folder.
@@ -221,7 +221,7 @@ export default function RandomizerApp() {
                       <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">4b</span>
                       <div>
                         <span className="text-[#c8a870]">Manual</span> — In Battle.net, go to D2R → <em>Settings</em> → <em>Game Settings</em> → <em>Additional Command Line Arguments</em> and add:
-                        <code className="block text-[#a89858] break-all mt-0.5">-mod seed_{currentSeed} -txt -seed {currentSeed! >>> 0}</code>
+                        <code className="block text-[#a89858] break-all mt-0.5">-mod seed{currentSeed} -txt -seed {currentSeed! >>> 0}</code>
                       </div>
                     </div>
                   </div>
@@ -252,7 +252,7 @@ export default function RandomizerApp() {
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">3</span>
                     <div>
                       Copy the extracted folder (e.g.{' '}
-                      <code className="text-[#a89858]">seed_{currentSeed}/</code>
+                      <code className="text-[#a89858]">seed{currentSeed}/</code>
                       ) into the{' '}
                       <code className="text-[#a89858]">mods/</code>
                       {' '}folder.
@@ -263,7 +263,7 @@ export default function RandomizerApp() {
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">4</span>
                     <div>
                       In Steam, right-click D2R → <em>Properties</em> → <em>General</em> → <em>Launch Options</em> and add:
-                      <code className="block text-[#a89858] break-all mt-0.5">-mod seed_{currentSeed} -txt -seed {currentSeed! >>> 0}</code>
+                      <code className="block text-[#a89858] break-all mt-0.5">-mod seed{currentSeed} -txt -seed {currentSeed! >>> 0}</code>
                     </div>
                   </div>
                 </div>
