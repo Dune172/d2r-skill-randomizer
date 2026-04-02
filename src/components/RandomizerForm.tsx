@@ -85,7 +85,8 @@ function ActPillRow({
   const actLabels = ['I', 'II', 'III', 'IV', 'V'];
   return (
     <div className="ml-1 pl-3 border-l-2 border-[#7a1010]/60 mt-2">
-      <div className="flex gap-1.5">
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs text-[#7a5030] font-cinzel tracking-wide mr-0.5">Acts</span>
         {acts.map(act => {
           const active = selected.includes(act);
           return (
