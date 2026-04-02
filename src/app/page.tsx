@@ -64,6 +64,7 @@ export default function Home() {
         <br />
         <span className="text-amber-500/90 font-semibold">Offline / single-player only.</span> Does not affect your online characters or Battle.net account.
         <br />
+        <br />
         Click &quot;Generate Mod&quot; to get started.
 </p>
 
