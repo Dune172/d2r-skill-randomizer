@@ -86,7 +86,7 @@ function ActPillRow({
   return (
     <div className="ml-1 pl-3 border-l-2 border-[#7a1010]/60 mt-2">
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-[#7a5030] font-cinzel tracking-wide mr-0.5">Acts</span>
+        <span className="text-xs text-[#c8a870] font-cinzel tracking-wide mr-0.5">Acts</span>
         {acts.map(act => {
           const active = selected.includes(act);
           return (
@@ -200,7 +200,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               transition-colors cursor-pointer"
           >
             <option value="custom">Custom</option>
-            <option value="season1race">Season Beta Race</option>
+            <option value="season1race" title="Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!">Season Beta Race</option>
           </select>
           <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
           {preset === 'season1race' && (
