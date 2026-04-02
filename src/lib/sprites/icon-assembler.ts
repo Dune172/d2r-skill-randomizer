@@ -48,20 +48,34 @@ function getIconPaths(
   };
 }
 
+// Global RGBA buffer cache — icon PNGs are static and never change at runtime.
+// Keyed by absolute file path; survives Next.js module reloads within the same process.
+const ICON_CACHE_KEY = '__d2r_icon_rgba_cache__';
+function getIconRGBACache(): Map<string, Buffer> {
+  const g = globalThis as Record<string, unknown>;
+  if (!g[ICON_CACHE_KEY]) g[ICON_CACHE_KEY] = new Map<string, Buffer>();
+  return g[ICON_CACHE_KEY] as Map<string, Buffer>;
+}
+
 /**
- * Load a PNG file (named .bmp) to raw RGBA buffer
+ * Load a PNG file (named .bmp) to raw RGBA buffer, caching the result globally.
  */
 async function loadIconToRGBA(filePath: string): Promise<Buffer> {
+  const cache = getIconRGBACache();
+  if (cache.has(filePath)) return cache.get(filePath)!;
   try {
     const { data } = await sharp(filePath)
       .ensureAlpha()
       .raw()
       .toBuffer({ resolveWithObject: true });
+    cache.set(filePath, data);
     return data;
   } catch {
-    // Return transparent frame if icon not found
+    // Cache transparent fallback so we don't retry the failed read on every request
     console.warn(`Icon not found: ${filePath}, using transparent`);
-    return Buffer.alloc(ICON_WIDTH * ICON_HEIGHT * 4);
+    const blank = Buffer.alloc(ICON_WIDTH * ICON_HEIGHT * 4);
+    cache.set(filePath, blank);
+    return blank;
   }
 }
 

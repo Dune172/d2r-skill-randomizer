@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Reject early if queue is already backed up to prevent cascade timeouts
-    if (getQueueDepth() >= 3) {
+    if (getQueueDepth() >= 2) {
       return NextResponse.json(
         { error: 'Server is busy — too many mods generating at once. Try again in a moment!' },
         { status: 503 },
@@ -389,7 +389,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)
-    if (zipCache.size >= 25) {
+    if (zipCache.size >= 10) {
       const firstKey = zipCache.keys().next().value;
       if (firstKey !== undefined) zipCache.delete(firstKey);
     }
