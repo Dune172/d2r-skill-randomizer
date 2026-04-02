@@ -198,8 +198,9 @@ export default function RandomizerApp() {
                     <div>
                       Copy the extracted folder (e.g.{' '}
                       <code className="text-[#a89858]">seed_{currentSeed}\</code>
-                      ) into{' '}
-                      <code className="text-[#a89858]">mods\</code>.
+                      ) into the{' '}
+                      <code className="text-[#a89858]">mods\</code>
+                      {' '}folder.
                       <div className="mt-1 text-[#7a7858] italic">The folder name matches your seed number — this is normal.</div>
                     </div>
                   </div>
@@ -252,8 +253,9 @@ export default function RandomizerApp() {
                     <div>
                       Copy the extracted folder (e.g.{' '}
                       <code className="text-[#a89858]">seed_{currentSeed}/</code>
-                      ) into{' '}
-                      <code className="text-[#a89858]">mods/</code>.
+                      ) into the{' '}
+                      <code className="text-[#a89858]">mods/</code>
+                      {' '}folder.
                       <div className="mt-1 text-[#7a7858] italic">The folder name matches your seed number — this is normal.</div>
                     </div>
                   </div>
