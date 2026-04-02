@@ -235,16 +235,15 @@ export default function RandomizerApp() {
       )}
 
       <p className="text-center text-sm text-amber-700/80 pt-4">
-        If you encounter a bug, please submit it in our{" "}
         <a
           href="https://discord.gg/y5r2sTxwS5"
           target="_blank"
           rel="noopener noreferrer"
           className="underline hover:text-amber-500 transition-colors"
         >
-          Discord
+          Join the Discord
         </a>
-        .
+        {" "}to find race partners, share seeds, and submit run times.
       </p>
 
       {modCount !== null && (

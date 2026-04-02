@@ -189,7 +189,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
         <label htmlFor="preset" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870]">
           Preset
         </label>
-        <div className="relative">
+        <div className="relative group">
           <select
             id="preset"
             value={preset}
@@ -200,9 +200,14 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               transition-colors cursor-pointer"
           >
             <option value="custom">Custom</option>
-            <option value="season1race">Season 1 Race</option>
+            <option value="season1race">Season Beta Race</option>
           </select>
           <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+          {preset === 'season1race' && (
+            <div className="pointer-events-none absolute right-0 top-full mt-1.5 z-10 w-72 rounded border border-[#3a1510] bg-[#0d0305] px-3 py-2 text-xs text-[#c8a870] leading-relaxed shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!
+            </div>
+          )}
         </div>
       </div>
 
@@ -381,7 +386,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
             type="text"
             value={seed}
             onChange={e => onSeedChange(e.target.value)}
-            placeholder="Leave blank for random…"
+            placeholder="Leave blank for random — or enter a seed to race on the same run"
             className="flex-1 rounded bg-[#090203] border border-[#3a1510] px-3 py-1.5 text-[#e8d5a0] placeholder-[#4a3020]
               focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
               transition-colors text-sm"
