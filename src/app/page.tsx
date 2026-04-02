@@ -60,7 +60,7 @@ export default function Home() {
       </header>
 
       <p className="text-center text-sm text-amber-700/80 max-w-2xl mx-auto pt-6 -mb-2 px-4">
-        This is a free mod generator for Diablo 2: Resurrected that shuffles skills and skill trees between classes.
+        This is a randomizer for Diablo 2: Resurrected that shuffles skills and skill trees between classes.
         <br />
         <span className="text-amber-500/90 font-semibold">Offline / single-player only.</span> Does not affect your online characters or Battle.net account.
         <br />
