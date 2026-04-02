@@ -251,6 +251,9 @@ export default function RandomizerApp() {
           {modCount.toLocaleString()} mods generated
         </p>
       )}
+      <p className="text-center font-cinzel text-[11px] tracking-[0.3em] uppercase text-[#7a5818]/60 pt-1">
+        v0.1 &mdash; updated April 2026
+      </p>
     </div>
   );
 }
