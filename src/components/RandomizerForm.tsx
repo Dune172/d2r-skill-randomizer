@@ -418,7 +418,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       </div>
 
       {/* Submit */}
-      <div className="pt-1">
+      <div className="pt-5">
         <button
           type="submit"
           disabled={isLoading}
