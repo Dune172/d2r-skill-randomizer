@@ -4,7 +4,7 @@ export const maxDuration = 60;
 import fs from 'fs';
 import path from 'path';
 import { createRNG, seedFromString } from '@/lib/randomizer/seed';
-import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile } from '@/lib/data-loader';
+import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings } from '@/lib/data-loader';
 import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
@@ -16,7 +16,7 @@ import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-ass
 import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { incrementCount } from '@/lib/counter';
-import { enqueueGeneration } from '@/lib/generation-queue';
+import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { applyTeleportStaffUnique, applyTeleportSkillCost, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
@@ -69,6 +69,14 @@ export async function POST(request: NextRequest) {
     // Check cache (fast path — bypasses queue)
     if (zipCache.has(cacheKey)) {
       return NextResponse.json({ seed, status: 'ready' });
+    }
+
+    // Reject early if queue is already backed up to prevent cascade timeouts
+    if (getQueueDepth() >= 3) {
+      return NextResponse.json(
+        { error: 'Server is busy — too many mods generating at once. Try again in a moment!' },
+        { status: 503 },
+      );
     }
 
     // Serialize generation so only one mod builds at a time
@@ -205,9 +213,8 @@ export async function POST(request: NextRequest) {
     // Load the full official skills.json, patch the 24 tab-label overrides, and re-serialize.
     // Using the complete file ensures proc item skill names (and all other keys) resolve
     // correctly — D2R already ships this exact file so it will not reject it.
-    const skillStringsPath = path.join(DATA_DIR, 'local', 'strings', 'skills.json');
-    const skillStringsRaw = fs.readFileSync(skillStringsPath, 'utf-8').replace(/^\uFEFF/, '');
-    const skillStringsEntries = JSON.parse(skillStringsRaw) as { Key: string; enUS: string }[];
+    // Use the module-level cache (loadSkillStrings) and clone so mutations don't corrupt it.
+    const skillStringsEntries = loadSkillStrings().map(e => ({ ...e })) as { Key: string; enUS: string }[];
     for (const override of SKILL_CATEGORY_OVERRIDES) {
       const entry = skillStringsEntries.find(e => e.Key === override.Key);
       if (entry) entry.enUS = override.enUS;
@@ -382,7 +389,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)
-    if (zipCache.size >= 10) {
+    if (zipCache.size >= 25) {
       const firstKey = zipCache.keys().next().value;
       if (firstKey !== undefined) zipCache.delete(firstKey);
     }
