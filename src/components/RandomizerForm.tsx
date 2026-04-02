@@ -362,14 +362,14 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
 
       {/* Hirelings section */}
       <div className="space-y-3 pt-1 pb-2">
-        <SectionDivider label="Hirelings" />
+        <SectionDivider label="Mercenaries" />
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <Checkbox
             id="hirelingAura"
             checked={hirelingAura}
             onChange={field(setHirelingAura)}
-            label="All hirelings have an aura"
+            label="All mercenaries have an aura"
           />
         </div>
       </div>
