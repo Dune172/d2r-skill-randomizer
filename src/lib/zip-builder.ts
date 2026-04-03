@@ -22,6 +22,7 @@ export interface ZipContents {
   chatPanelHdJson?: string;         // chatpanelhd.json with input disabled (optional)
   magicPrefixTxt?: string;          // magicprefix.txt with remapped class-skill affixes
   magicSuffixTxt?: string;          // magicsuffix.txt with remapped class-skill affixes
+  dataVersionBuild?: string;        // DataVersionBuild.txt — prevents version mismatch prompt
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -115,6 +116,11 @@ export function buildZip(contents: ZipContents): Buffer {
   }
   if (contents.magicSuffixTxt) {
     zip.addFile(`${d}/data/global/excel/magicsuffix.txt`, str(contents.magicSuffixTxt));
+  }
+
+  // Data version file — prevents "out of date data" prompt on startup
+  if (contents.dataVersionBuild) {
+    zip.addFile(`${d}/data/global/DataVersionBuild.txt`, str(contents.dataVersionBuild));
   }
 
   // Disable chat input to prevent /players x commands (optional)

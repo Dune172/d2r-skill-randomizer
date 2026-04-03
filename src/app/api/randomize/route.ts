@@ -366,6 +366,7 @@ export async function POST(request: NextRequest) {
     const modName = `seed${seed}`;
     const formatUiJson = (obj: unknown) =>
       '\uFEFF' + JSON.stringify(obj, null, 4).replace(/\n/g, '\r\n');
+    const dataVersionBuild = fs.readFileSync(path.join(DATA_DIR, 'dataversionbuild.txt'), 'utf-8').trim();
     const zipBuffer = buildZip({
       modName,
       skillsTxt: skillsTxtContent,
@@ -386,6 +387,7 @@ export async function POST(request: NextRequest) {
       chatPanelHdJson: disableChat ? formatUiJson(chatPanelHdRaw) : undefined,
       magicPrefixTxt: magicPrefixContent,
       magicSuffixTxt: magicSuffixContent,
+      dataVersionBuild,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)
