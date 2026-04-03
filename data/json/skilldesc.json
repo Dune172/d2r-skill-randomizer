@@ -111,7 +111,7 @@
   "desccalca2": "rng",
   "descline3": 74,
   "desctexta3": "StrSkill51",
-  "desccalca3": "-ln12",
+  "desccalca3": "ast1",
   "descline4": 75,
   "desctexta4": "StrSkill5",
   "desccalca4": "enma",
@@ -5550,6 +5550,7 @@
   "desccalca4": "5+(lvl-1)*2"
  },
  "159": {
+  "skilldesc": "map",
   "SkillPage": 0,
   "SkillRow": 0,
   "SkillColumn": 0,
