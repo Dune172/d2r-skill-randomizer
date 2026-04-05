@@ -8,7 +8,7 @@ export function applyTeleportSkillCost(headers: string[], rows: string[][]): voi
   if (skillCol === -1 || costAddCol === -1) return;
   for (const row of rows) {
     if (row[skillCol] === 'Teleport') {
-      row[costAddCol] = '9000';
+      row[costAddCol] = '900';
       break;
     }
   }
@@ -55,8 +55,8 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
   set('min1',     '20');   // 20 charges
   set('max1',     '1');    // charge level 1
   set('prop2',    'move1');
-  set('min2',     '10');   // 10% Faster Run/Walk
-  set('max2',     '10');
+  set('min2',     '15');   // 15% Faster Run/Walk
+  set('max2',     '15');
   set('cost mult', '1');        // must be non-zero for cost_add to be applied
   set('cost add',  '50');  // recharge cost calibration (halved from 100)
 
