@@ -6,9 +6,11 @@ export function applyTeleportSkillCost(headers: string[], rows: string[][]): voi
   const skillCol   = headers.indexOf('skill');
   const costAddCol = headers.indexOf('cost add');
   if (skillCol === -1 || costAddCol === -1) return;
+  const costMultCol = headers.indexOf('cost mult');
   for (const row of rows) {
     if (row[skillCol] === 'Teleport') {
       row[costAddCol] = '900';
+      if (costMultCol !== -1) row[costMultCol] = '142';
       break;
     }
   }
