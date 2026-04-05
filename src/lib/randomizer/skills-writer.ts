@@ -82,6 +82,7 @@ const COL = {
   reqskill1: 184,
   reqskill2: 185,
   reqskill3: 186,
+  restrict: 187,
   DmgSymPerCalc: 297,
   EDmgSymPerCalc: 311,
   ELenSymPerCalc: 316,
@@ -132,6 +133,7 @@ export function writeSkillsRows(
   const itypea2Idx = safeGetCol(headers, 'itypea2', COL.itypea2);
   const itypea3Idx = safeGetCol(headers, 'itypea3', COL.itypea3);
   const itypeb1Idx = safeGetCol(headers, 'itypeb1', COL.itypeb1);
+  const restrictIdx   = safeGetCol(headers, 'restrict',  COL.restrict);
   const leftskillIdx = safeGetCol(headers, 'leftskill', -1);
   const animIdx = safeGetCol(headers, 'anim', COL.anim);
   const seqtransIdx = safeGetCol(headers, 'seqtrans', COL.seqtrans);
@@ -217,6 +219,25 @@ export function writeSkillsRows(
     // randomized skills should be usable on either mouse button.
     if (leftskillIdx >= 0 && row[leftskillIdx] === '0') {
       row[leftskillIdx] = '1';
+    }
+
+    // Melee attacks, auras, and weapon masteries on the Druid's tree should be
+    // usable in shapeshifted form (restrict=1 = usable in any state).
+    // Spells, ranged, summons, and curses keep restrict=null (blocked while shifted).
+    // Form-exclusive skills (restrict=2, bear/wolf only) are never changed.
+    // Skills with SQ animation are excluded: bear/wolf models lack an SQ sequence,
+    // so using an SQ-animated skill while shifted would freeze the character.
+    // Whirlwind and Charge are also excluded: their movement mechanics don't work
+    // correctly in shapeshifted form regardless of animation.
+    const SHIFTED_FORM_BLOCKED = new Set(['Whirlwind', 'Charge']);
+    if (restrictIdx >= 0 && placement.targetClass === 'dru') {
+      const cat = getSkillCategory(placement.skill);
+      const isPassive = !!placement.skill.passiveitype;
+      const finalAnim = animIdx >= 0 ? row[animIdx] : '';
+      const animSafeInForm = !finalAnim || finalAnim === 'A1' || finalAnim === 'SC';
+      if (row[restrictIdx] !== '2' && animSafeInForm && !SHIFTED_FORM_BLOCKED.has(placement.skill.skill) && (cat === 'melee' || cat === 'aura' || isPassive)) {
+        row[restrictIdx] = '1';
+      }
     }
 
   }
