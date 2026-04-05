@@ -4,15 +4,16 @@ import { PrereqAssignment } from './prereq-assigner';
 
 // Animation codes each class's character model supports.
 // Using an animation code not in this set causes game freezes.
+// TH (throw) is supported by all classes — every character has throw animation frames.
 const CLASS_SUPPORTED_ANIMS: Record<string, Set<string>> = {
   ama: new Set(['A1', 'S1', 'SC', 'SQ', 'TH']),
-  sor: new Set(['SC', 'SQ']),
-  nec: new Set(['A1', 'SC']),
-  pal: new Set(['A1', 'S1', 'SC', 'SQ']),
-  bar: new Set(['A1', 'SC', 'SQ']),
-  dru: new Set(['A1', 'S3', 'SC', 'SQ']),
-  ass: new Set(['A1', 'KK', 'S2', 'SC', 'SQ']),
-  war: new Set(['SC', 'SQ']),
+  sor: new Set(['SC', 'SQ', 'TH']),
+  nec: new Set(['A1', 'SC', 'TH']),
+  pal: new Set(['A1', 'S1', 'SC', 'SQ', 'TH']),
+  bar: new Set(['A1', 'SC', 'SQ', 'TH']),
+  dru: new Set(['A1', 'S3', 'SC', 'SQ', 'TH']),
+  ass: new Set(['A1', 'KK', 'S2', 'SC', 'SQ', 'TH']),
+  war: new Set(['SC', 'SQ', 'TH']),
 };
 
 // Weapon types that indicate a hand-to-hand / melee skill.

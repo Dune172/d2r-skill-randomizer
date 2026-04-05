@@ -3,11 +3,14 @@ import { SeededRNG } from './seed';
 import { CLASS_DEFS, CLASS_RESTRICTED_TYPES } from './config';
 
 // Anim codes that only exist on one character class — skill breaks on any other class.
-// TH = Amazon only (javelin throw skills)
-// S3 = Druid only (Rabies, Hunger)
 // KK = Assassin only (Dragon Talon, Dragon Tail)
-// S2 = Assassin only (sentry traps and blade skills)
-const CLASS_SPECIFIC_ANIMS = new Set(['TH', 'S2', 'KK', 'S3']);
+// TH (throw) is NOT listed here: all classes have TH animation frames, so javelin
+// skills keep their TH animation on any class they land on.
+// S3 (Druid shapeshifted form) is NOT listed here: all S3 skills (Rabies, Hunger)
+// have restrict=2, so they're already pinned via the restrict check above.
+// S2 (Assassin trap/blade casting) is NOT listed here: on non-Assassin classes it
+// falls back to SC, which is the standard summon animation used by all other classes.
+const CLASS_SPECIFIC_ANIMS = new Set(['KK']);
 
 // Skills that cannot be placed on specific classes.
 // Charge requires SQ animation + seqinput=8 for smooth client-side movement;
@@ -16,11 +19,17 @@ const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
   nec: new Set(['Charge']),
 };
 
+// restrict=2 skills that are exempt from the class pin: they use shapeshift-only
+// mechanics but are co-placed with the transformation skills (Wearwolf/Wearbear)
+// via COPACEMENT_REQUIRES, so they'll always land on a class that can shift.
+const RESTRICT2_COPACED = new Set(['Rabies', 'Hunger']);
+
 /**
  * Returns true if this skill must stay on its original class:
  * - weapsel=3: requires dual weapons (only Barbarian and Assassin can dual-wield)
  * - itypeb1=h2h/h2h2: requires claw in off-hand (only Assassin can equip claws)
- * - restrict=2: requires shapeshifted form (only Druid can shapeshift)
+ * - restrict=2: requires shapeshifted form (only Druid can shapeshift),
+ *   except skills in RESTRICT2_COPACED which are kept with their transformation skill instead
  * - CLASS_RESTRICTED_TYPES on passiveitype/itypea: class-exclusive weapon types
  * - CLASS_SPECIFIC_ANIMS: animation only exists on the original class
  */
@@ -29,7 +38,7 @@ function isPinnedToOriginalClass(skill: SkillEntry): boolean {
     skill.weapsel === 3 ||
     skill.itypeb1 === 'h2h' ||
     skill.itypeb1 === 'h2h2' ||
-    skill.restrict === 2 ||
+    (skill.restrict === 2 && !RESTRICT2_COPACED.has(skill.skill)) ||
     CLASS_RESTRICTED_TYPES.has(skill.passiveitype ?? '') ||
     CLASS_RESTRICTED_TYPES.has(skill.itypea1 ?? '') ||
     CLASS_RESTRICTED_TYPES.has(skill.itypea2 ?? '') ||
@@ -190,8 +199,12 @@ function resolveExclusions(placements: SkillPlacement[]): void {
 
 // Co-placement constraints: a skill must share its class with at least one peer.
 // Skeleton Mastery is only useful if the player can also raise skeletons.
+// Rabies/Hunger (restrict=2, shapeshift-only) must land on the same class as a
+// transformation skill so they're actually usable.
 const COPACEMENT_REQUIRES: Record<string, string[]> = {
   'Skeleton Mastery': ['Raise Skeleton', 'Raise Skeletal Mage'],
+  'Rabies': ['Wearwolf', 'Wearbear'],
+  'Hunger': ['Wearwolf', 'Wearbear'],
 };
 
 /**
