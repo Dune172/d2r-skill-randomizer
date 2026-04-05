@@ -41,9 +41,10 @@ const ANIM_PREFERENCES: Record<SkillCategory, string[]> = {
 // Skills whose client animation functions depend on SQ sequence completion.
 // Their cltdofunc waits for a SQ sequence event to release the action lock —
 // changing anim to A1 means that event never fires and the character stays frozen.
-// Charge and other melee-SQ skills do NOT need this: their movement is server-side
-// and the animation is just visual, so normal melee preference (A1 > SQ) is fine.
-const SQ_DEPENDENT_SKILLS = new Set(['Leap', 'LeapAttack']);
+// Charge also requires SQ: cltdofunc=37 is a client-side movement function that uses
+// seqinput=8 to fire the rush at frame 8 of the SQ sequence. Without SQ+seqinput,
+// the movement has no timing anchor → position snapping (screen shake) and late movement.
+const SQ_DEPENDENT_SKILLS = new Set(['Leap', 'LeapAttack', 'Charge']);
 
 // Channeled-spray skills: seqtrans=SQ creates an infinite channel loop, and seqnum/seqinput
 // drive the hold-to-channel mechanism. If seqnum/seqinput are cleared on a non-native class
