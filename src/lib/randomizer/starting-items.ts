@@ -10,7 +10,7 @@ export function applyTeleportSkillCost(headers: string[], rows: string[][]): voi
   for (const row of rows) {
     if (row[skillCol] === 'Teleport') {
       row[costAddCol] = '900';
-      if (costMultCol !== -1) row[costMultCol] = '142';
+      if (costMultCol !== -1) row[costMultCol] = '107';
       break;
     }
   }
