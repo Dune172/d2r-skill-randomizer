@@ -28,7 +28,7 @@ const SEASON1_PRESET: FormState = {
   horadricCube: true,
   hirelingAura: true,
   disableChat: true,
-  xpMultiplier: 2.5,
+  xpMultiplier: 3,
   xpActs: [1, 2, 3],
 };
 

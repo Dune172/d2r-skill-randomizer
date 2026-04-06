@@ -28,7 +28,7 @@ const defaultOptions: Options = {
   startingItems: { teleportStaff: false, teleportStaffLevel: 1, teleportStaffDropSource: 'Corpsefire', horadricCube: false },
   hirelingAura: true,
   disableChat: false,
-  xpMultiplier: 3,
+  xpMultiplier: 1,
   xpActs: [1, 2, 3, 4, 5],
 };
 
