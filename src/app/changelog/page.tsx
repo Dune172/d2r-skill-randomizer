@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+export const dynamic = 'force-static';
+
 const description = 'Version history and patch notes for D2R Randomizer — free skill randomizer mod for Diablo 2 Resurrected.';
 
 export const metadata: Metadata = {

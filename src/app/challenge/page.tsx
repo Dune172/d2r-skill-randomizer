@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { WeekCard, WeekArchive } from './WeekData';
 
-export const revalidate = 3600;
+export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
   title: 'D2R Weekly Challenge Seed',
@@ -21,56 +21,19 @@ export const metadata: Metadata = {
   },
 };
 
-// Base Monday: April 7, 2026 = Week 1
-const BASE_DATE = new Date('2026-04-07T00:00:00Z');
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
-function getWeekSeed(weekNumber: number): number {
-  return weekNumber * 31337;
-}
-
-function getWeekStart(weekNumber: number): Date {
-  return new Date(BASE_DATE.getTime() + (weekNumber - 1) * WEEK_MS);
-}
-
-function formatDate(d: Date): string {
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-}
-
-function getWeekData() {
-  const now = new Date();
-  const weekNumber = Math.max(1, Math.floor((now.getTime() - BASE_DATE.getTime()) / WEEK_MS) + 1);
-  const currentSeed = getWeekSeed(weekNumber);
-  const currentStart = getWeekStart(weekNumber);
-  const currentEnd = new Date(currentStart.getTime() + WEEK_MS - 1);
-
-  const archive = [];
-  for (let i = weekNumber - 1; i >= Math.max(1, weekNumber - 4); i--) {
-    const start = getWeekStart(i);
-    const end = new Date(start.getTime() + WEEK_MS - 1);
-    archive.push({ weekNumber: i, seed: getWeekSeed(i), start, end });
-  }
-
-  return { weekNumber, currentSeed, currentStart, currentEnd, archive };
-}
+const eventSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Event',
+  name: 'D2R Randomizer Weekly Challenge',
+  description: 'A new D2R Randomizer challenge seed every Monday — same seed for everyone.',
+  url: 'https://d2rrandomizer.com/challenge',
+  eventStatus: 'https://schema.org/EventScheduled',
+  eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
+  location: { '@type': 'VirtualLocation', url: 'https://d2rrandomizer.com/challenge' },
+  organizer: { '@type': 'Organization', name: 'D2R Randomizer', url: 'https://d2rrandomizer.com' },
+};
 
 export default function ChallengePage() {
-  const { weekNumber, currentSeed, currentStart, currentEnd, archive } = getWeekData();
-
-  const eventSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Event',
-    name: `D2R Randomizer Weekly Challenge — Week ${weekNumber}`,
-    description: `This week's D2R Randomizer challenge seed is ${currentSeed}. Same seed for everyone — share your run in Discord.`,
-    startDate: currentStart.toISOString(),
-    endDate: currentEnd.toISOString(),
-    url: 'https://d2rrandomizer.com/challenge',
-    eventStatus: 'https://schema.org/EventScheduled',
-    eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
-    location: { '@type': 'VirtualLocation', url: 'https://d2rrandomizer.com/challenge' },
-    organizer: { '@type': 'Organization', name: 'D2R Randomizer', url: 'https://d2rrandomizer.com' },
-  };
-
   return (
     <main className="min-h-screen">
       <script
@@ -86,21 +49,7 @@ export default function ChallengePage() {
           This Week&apos;s Randomizer Seed
         </h2>
 
-        {/* Current challenge card */}
-        <div className="border border-[#3a1510] bg-[#0c0304] panel-shadow p-8 mb-8">
-          <p className="font-cinzel text-[11px] tracking-[0.4em] text-[#7a5818] uppercase mb-3">
-            Week {weekNumber} &nbsp;·&nbsp; {formatDate(currentStart)} – {formatDate(currentEnd)}
-          </p>
-          <div className="font-cinzel font-black text-5xl md:text-6xl text-[#c8942a] glow-gold tracking-widest mb-6">
-            {currentSeed.toLocaleString()}
-          </div>
-          <Link
-            href={`/generate?seed=${currentSeed}`}
-            className="inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow"
-          >
-            Generate This Seed
-          </Link>
-        </div>
+        <WeekCard />
 
         <p className="text-[#a89060]/70 text-sm leading-relaxed max-w-lg mx-auto mb-10">
           A new challenge seed drops every Monday. Everyone plays the same Diablo 2 Resurrected
@@ -141,41 +90,7 @@ export default function ChallengePage() {
         <div className="flex-1 h-px bg-gradient-to-l from-transparent via-[#7a5818] to-[#c8942a]" />
       </div>
 
-      {/* Archive */}
-      {archive.length > 0 && (
-        <section className="max-w-2xl mx-auto px-4 pb-16">
-          <h2 className="font-cinzel font-bold text-[#c8942a] tracking-[0.1em] uppercase text-base mb-5">
-            Past Challenges
-          </h2>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b border-[#3a1510]">
-                <th className="text-left font-cinzel text-[10px] tracking-[0.3em] uppercase text-[#7a5818] pb-2 pr-4">Week</th>
-                <th className="text-left font-cinzel text-[10px] tracking-[0.3em] uppercase text-[#7a5818] pb-2 pr-4">Dates</th>
-                <th className="text-left font-cinzel text-[10px] tracking-[0.3em] uppercase text-[#7a5818] pb-2 pr-4">Seed</th>
-                <th className="pb-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {archive.map(({ weekNumber: wn, seed, start, end }) => (
-                <tr key={wn} className="border-b border-[#1a0a06]">
-                  <td className="py-2 pr-4 text-[#7a5818] font-cinzel text-xs">{wn}</td>
-                  <td className="py-2 pr-4 text-[#a89060]/70 text-xs">{formatDate(start)} – {formatDate(end)}</td>
-                  <td className="py-2 pr-4 text-[#c8942a] font-mono text-sm">{seed.toLocaleString()}</td>
-                  <td className="py-2">
-                    <Link
-                      href={`/generate?seed=${seed}`}
-                      className="font-cinzel text-[9px] tracking-[0.3em] uppercase text-[#7a5818] hover:text-[#a87830] transition-colors"
-                    >
-                      Play
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      )}
+      <WeekArchive />
     </main>
   );
 }

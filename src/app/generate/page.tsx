@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import RandomizerApp from '@/app/components/RandomizerApp';
 
+export const dynamic = 'force-static';
+
 
 export const metadata: Metadata = {
   title: 'Generate Your D2R Randomizer Mod',
