@@ -9,7 +9,7 @@ const softwareSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   name: 'D2R Randomizer',
-  description: 'Free skill randomizer mod for Diablo 2 Resurrected. Shuffles all 7 class skill trees for unique playthroughs.',
+  description: 'Free skill randomizer mod for Diablo 2 Resurrected. Shuffles all 8 class skill trees for unique playthroughs.',
   url: 'https://d2rrandomizer.com',
   applicationCategory: 'GameApplication',
   operatingSystem: 'Windows',
@@ -35,7 +35,7 @@ const faqSchema = {
       name: 'What does the D2R Randomizer shuffle?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'The randomizer shuffles all 7 class skill trees — Sorceress, Necromancer, Amazon, Paladin, Barbarian, Druid, and Assassin. Each seed moves entire skill trees between classes, reassigns synergies, and adjusts prerequisites.',
+        text: 'The randomizer shuffles all 8 class skill trees — Sorceress, Necromancer, Amazon, Paladin, Barbarian, Druid, Assassin, and Warlock. Each seed moves entire skill trees between classes, reassigns synergies, and adjusts prerequisites.',
       },
     },
     {
@@ -54,27 +54,19 @@ const faqSchema = {
         text: 'D2R Randomizer generates a standalone mod ZIP. It can conflict with other mods that modify the same game files (skills.txt, skilldesc.txt). Running it alongside large overhaul mods is not supported.',
       },
     },
-    {
-      '@type': 'Question',
-      name: 'How do I install the D2R Randomizer mod?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Generate and download the mod ZIP from d2rrandomizer.com/generate. Extract the contents into your Diablo II Resurrected mods folder, then launch the game with -mod d2rrandomizer -txt in the launch options.',
-      },
-    },
   ],
 };
 
 const features = [
   {
     icon: '⚔',
-    title: '7 Class Trees Shuffled',
-    desc: 'Every skill tree from all seven classes gets redistributed. Your Sorceress might cast Barbarian war cries or your Necromancer might wield Amazon bows.',
+    title: '8 Class Trees Shuffled',
+    desc: 'Every skill tree from all eight classes gets redistributed. Your Sorceress might cast Barbarian war cries or your Necromancer might wield Amazon bows.',
   },
   {
     icon: '🧬',
     title: 'Full Synergy Remap',
-    desc: 'Synergy formulas in both skills.txt and skilldesc.txt are recalculated for every shuffled tree. Nothing breaks.',
+    desc: 'Synergy formulas are recalculated for every shuffled tree. Nothing breaks.',
   },
   {
     icon: '🔗',

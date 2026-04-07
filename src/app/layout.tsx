@@ -14,14 +14,14 @@ export const metadata: Metadata = {
     default: 'D2R Randomizer — Diablo 2 Resurrected Skill Randomizer Mod',
     template: '%s | D2R Randomizer',
   },
-  description: 'Generate a free skill randomizer mod for Diablo 2 Resurrected. Each seed shuffles all 7 class skill trees for a fresh playthrough.',
+  description: 'Generate a free skill randomizer mod for Diablo 2 Resurrected. Each seed shuffles all 8 class skill trees for a fresh playthrough.',
   keywords: ['Diablo 2 Resurrected', 'D2R', 'randomizer', 'mod', 'skill randomizer', 'Reign of the Warlock'],
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'D2R Randomizer — Diablo 2 Resurrected Skill Randomizer Mod',
-    description: 'Generate a free, unique skill randomizer mod for Diablo 2 Resurrected. Each seed shuffles all 7 class skill trees for a fresh playthrough.',
+    description: 'Generate a free, unique skill randomizer mod for Diablo 2 Resurrected. Each seed shuffles all 8 class skill trees for a fresh playthrough.',
     url: 'https://d2rrandomizer.com',
     siteName: 'D2R Randomizer',
     type: 'website',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'D2R Randomizer — Diablo 2 Resurrected Skill Randomizer Mod',
-    description: 'Generate a free, unique skill randomizer mod for Diablo 2 Resurrected. Each seed shuffles all 7 class skill trees for a fresh playthrough.',
+    description: 'Generate a free, unique skill randomizer mod for Diablo 2 Resurrected. Each seed shuffles all 8 class skill trees for a fresh playthrough.',
   },
 };
 

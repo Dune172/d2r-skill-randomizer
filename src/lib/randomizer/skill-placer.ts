@@ -15,8 +15,14 @@ const CLASS_SPECIFIC_ANIMS = new Set(['KK']);
 // Skills that cannot be placed on specific classes.
 // Charge requires SQ animation + seqinput=8 for smooth client-side movement;
 // Necromancer lacks SQ support, so Charge on nec always breaks movement/shake.
+//
+// Zeal (srvdofunc=13/cltdofunc=21) fires multiple hits on A1 frame events.
+// On classes without A1 (sor, nec, war), pickBestAnim falls back to SQ, which
+// means mana drains once but the multi-swing never triggers.
 const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
-  nec: new Set(['Charge']),
+  nec: new Set(['Charge', 'Zeal']),
+  sor: new Set(['Zeal']),
+  war: new Set(['Zeal']),
 };
 
 // restrict=2 skills that are exempt from the class pin: they use shapeshift-only

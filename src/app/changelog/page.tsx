@@ -69,8 +69,8 @@ export default function ChangelogPage() {
             experience. This page tracks every version with a full list of changes.
           </p>
           <p>
-            The randomizer shuffles all 7 class skill trees — Amazon, Sorceress, Necromancer,
-            Paladin, Barbarian, Druid, and Assassin — and recalculates synergies and
+            The randomizer shuffles all 8 class skill trees — Amazon, Sorceress, Necromancer,
+            Paladin, Barbarian, Druid, Assassin, and Warlock — and recalculates synergies and
             prerequisites for every generated seed. Updates here may change what options are
             available on the{' '}
             <Link href="/generate" className="text-[#a87830] hover:text-[#c8942a] transition-colors">
