@@ -31,7 +31,7 @@ export default function SiteNav() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-[#080204]/95 backdrop-blur-sm border-b border-[#3a1510]">
+    <header className="sticky top-0 z-50 bg-[#060203]/95 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-6">
         {/* Brand — left */}
         <Link
