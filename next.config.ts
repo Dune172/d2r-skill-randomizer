@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/',
+        source: '/generate',
         headers: [
           { key: 'Cache-Control', value: 'no-cache' },
         ],

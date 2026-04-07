@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cinzel } from "next/font/google";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import SiteNav from "@/app/components/SiteNav";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
     default: 'D2R Randomizer — Diablo 2 Resurrected Skill Randomizer Mod',
     template: '%s | D2R Randomizer',
   },
-  description: 'Generate a free, unique skill randomizer mod for Diablo 2 Resurrected. Each seed shuffles all 7 class skill trees for a fresh playthrough. Download and install in minutes.',
+  description: 'Generate a free skill randomizer mod for Diablo 2 Resurrected. Each seed shuffles all 7 class skill trees for a fresh playthrough.',
   keywords: ['Diablo 2 Resurrected', 'D2R', 'randomizer', 'mod', 'skill randomizer', 'Reign of the Warlock'],
   alternates: {
     canonical: '/',
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     if(r&&(r.name==='ChunkLoadError'||String(r.message||'').toLowerCase().indexOf('chunk')!==-1)){maybeReload();}
   });
 })();` }} />
+        <SiteNav />
         {children}
       </body>
     </html>
