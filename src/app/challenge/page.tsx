@@ -132,23 +132,6 @@ export default function ChallengePage() {
           completion, or just try a class you&apos;ve never played before, the weekly seed is a
           shared experience that gives the whole community something to talk about.
         </p>
-        <p>
-          To play: generate the seed above, install the mod ZIP into your D2R mods folder, and
-          launch with{' '}
-          <code className="text-[#c8942a] font-mono text-xs bg-[#0c0304] px-1 py-0.5">
-            -mod d2rrandomizer -txt
-          </code>{' '}
-          in your launch options. When you finish — or hit a wall — share your progress in{' '}
-          <a
-            href="https://discord.gg/y5r2sTxwS5"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#a87830] hover:text-[#c8942a] transition-colors"
-          >
-            the Discord
-          </a>
-          . Past seeds are listed in the archive below if you want to catch up on a previous week.
-        </p>
       </section>
 
       {/* Divider */}
