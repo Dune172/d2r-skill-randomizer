@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import RandomizerApp from '@/app/components/RandomizerApp';
 
 const howToSchema = {
@@ -64,7 +65,9 @@ export default function GeneratePage() {
         </p>
       </div>
 
-      <RandomizerApp />
+      <Suspense>
+        <RandomizerApp />
+      </Suspense>
 
       {/* How to Install */}
       <section className="max-w-3xl mx-auto px-4 pt-6 pb-16">

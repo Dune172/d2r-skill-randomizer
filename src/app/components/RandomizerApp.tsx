@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import RandomizerForm from '@/components/RandomizerForm';
 import SkillTreePreview from '@/components/SkillTreePreview';
 import ProgressIndicator from '@/components/ProgressIndicator';
@@ -32,9 +33,7 @@ const defaultOptions: Options = {
   xpActs: [1, 2, 3, 4, 5],
 };
 
-function parseOptionsFromURL(): Options | null {
-  if (typeof window === 'undefined') return null;
-  const p = new URLSearchParams(window.location.search);
+function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearchParams>): Options | null {
   if (!p.has('seed')) return null;
   const playersCount = Math.min(8, Math.max(1, Number(p.get('players')) || 1));
   const staffLevel = Number(p.get('teleportStaff')) || 0;
@@ -61,6 +60,8 @@ function parseOptionsFromURL(): Options | null {
 }
 
 export default function RandomizerApp() {
+  const searchParams = useSearchParams();
+
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -71,12 +72,9 @@ export default function RandomizerApp() {
     fetch('/api/counter').then(r => r.json()).then(d => setModCount(d.count)).catch(() => {});
   }, []);
   const [currentOptions, setCurrentOptions] = useState<Options>(
-    () => parseOptionsFromURL() ?? { ...defaultOptions }
+    () => parseOptionsFromParams(searchParams) ?? { ...defaultOptions }
   );
-  const [seed, setSeed] = useState<string>(() => {
-    if (typeof window === 'undefined') return '';
-    return new URLSearchParams(window.location.search).get('seed') ?? '';
-  });
+  const [seed, setSeed] = useState<string>(() => searchParams.get('seed') ?? '');
 
   const buildQueryParams = (seed: number, opts: Options = currentOptions) => {
     const playersParam = opts.playersEnabled && opts.playersCount > 1
@@ -153,7 +151,7 @@ export default function RandomizerApp() {
       {/* ── Form panel ── */}
       <div className="rounded-lg border border-[#4a1e14] bg-[#0c0405]/80 p-6 panel-shadow">
         <RandomizerForm
-          initialOptions={parseOptionsFromURL() ?? undefined}
+          initialOptions={parseOptionsFromParams(searchParams) ?? undefined}
           onGenerate={handleGenerate}
           isLoading={status === 'generating' || status === 'building'}
           seed={seed}
