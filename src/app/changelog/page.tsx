@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 const changelog = [
   {
-    version: 'v0.12',
+    version: 'v0.13',
     date: 'April 2026',
     notes: [
       'XP multiplier option — scale experience gain per act',
