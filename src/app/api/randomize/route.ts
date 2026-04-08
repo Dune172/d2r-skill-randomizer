@@ -20,7 +20,7 @@ import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { applyTeleportStaffUnique, applyTeleportSkillCost, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
-import { remapClassItemSkills } from '@/lib/randomizer/item-skills-writer';
+import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
@@ -270,11 +270,14 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (startingTeleportStaff) {
+      {
         const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
         if (fs.existsSync(uiPath)) {
           const ui = loadTxtFile('uniqueitems.txt');
-          const uiRows = applyTeleportStaffUnique(ui.headers, ui.rows, teleportStaffLevel);
+          let uiRows = remapUniqueItemSkills(ui.headers, ui.rows, placements);
+          if (startingTeleportStaff) {
+            uiRows = applyTeleportStaffUnique(ui.headers, uiRows, teleportStaffLevel);
+          }
           uniqueitemsTxt = serializeTxtFile(ui.headers, uiRows);
         }
       }
