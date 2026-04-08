@@ -22,6 +22,7 @@ export interface ZipContents {
   chatPanelHdJson?: string;         // chatpanelhd.json with input disabled (optional)
   magicPrefixTxt?: string;          // magicprefix.txt with remapped class-skill affixes
   magicSuffixTxt?: string;          // magicsuffix.txt with remapped class-skill affixes
+  itemtypesTxt?: string;            // itemtypes.txt with StaffMods set for all class item types
   dataVersionBuild?: string;        // DataVersionBuild.txt — prevents version mismatch prompt
 }
 
@@ -116,6 +117,9 @@ export function buildZip(contents: ZipContents): Buffer {
   }
   if (contents.magicSuffixTxt) {
     zip.addFile(`${d}/data/global/excel/magicsuffix.txt`, str(contents.magicSuffixTxt));
+  }
+  if (contents.itemtypesTxt) {
+    zip.addFile(`${d}/data/global/excel/itemtypes.txt`, str(contents.itemtypesTxt));
   }
 
   // Data version file — prevents "out of date data" prompt on startup

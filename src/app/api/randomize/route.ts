@@ -161,6 +161,14 @@ export async function POST(request: NextRequest) {
     const magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, remappedPrefixRows);
     const magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, remappedSuffixRows);
 
+    // itemtypes.txt — include as-is to ensure StaffMods is correct for all class item types
+    // (e.g. grim=war so white warlock grimoires get warlock staff mods, not Sorceress mods)
+    let itemtypesTxt: string | undefined;
+    const itemtypesPath = path.join(DATA_DIR, 'txt', 'itemtypes.txt');
+    if (fs.existsSync(itemtypesPath)) {
+      itemtypesTxt = fs.readFileSync(itemtypesPath, 'utf-8');
+    }
+
     // Build StartSkill candidates from the verified, already-updated skillsTxt rows.
     // Reading directly from the txt we just wrote guarantees the skill name matches
     // exactly what D2R will read, and that charclass was successfully updated.
@@ -390,6 +398,7 @@ export async function POST(request: NextRequest) {
       chatPanelHdJson: disableChat ? formatUiJson(chatPanelHdRaw) : undefined,
       magicPrefixTxt: magicPrefixContent,
       magicSuffixTxt: magicSuffixContent,
+      itemtypesTxt,
       dataVersionBuild,
     });
 
