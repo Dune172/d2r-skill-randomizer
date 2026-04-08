@@ -1,5 +1,7 @@
 import { ClassCode, SkillEntry, SkillPlacement } from './types';
-import { CLASS_BY_CODE } from './config';
+import { CLASS_BY_CODE, CLASS_DEFS } from './config';
+
+const CLASS_ORDER = CLASS_DEFS.map(d => d.code);
 import { PrereqAssignment } from './prereq-assigner';
 
 // Animation codes each class's character model supports.
@@ -248,4 +250,58 @@ export function writeSkillsRows(
 function safeGetCol(headers: string[], name: string, fallback: number): number {
   const idx = headers.indexOf(name);
   return idx !== -1 ? idx : fallback;
+}
+
+/**
+ * Reorder skills.txt rows so each class occupies a contiguous 30-row block in canonical
+ * class order (ama→sor→nec→pal→bar→dru→ass→war), followed by any non-class rows.
+ *
+ * This fixes the StaffMod bug: the D2R engine locates the first row with charclass=X
+ * and reads the next 30 rows as that class's skill pool without checking individual
+ * charclass values. Contiguous blocks guarantee the pool is the correct 30 skills.
+ *
+ * Must be called AFTER writeSkillsRows() has updated the charclass column.
+ *
+ * Returns reorderedRows (new row array) and idMapping (old row index → new row index)
+ * for updating all numeric skill-ID references in other files (monstats, uniqueitems, etc.).
+ */
+export function reorderSkillsRows(
+  rows: string[][],
+  placements: SkillPlacement[],
+): { reorderedRows: string[][]; idMapping: Map<number, number> } {
+  // Build: skill name → target class
+  const nameToTarget = new Map<string, ClassCode>();
+  for (const p of placements) nameToTarget.set(p.skill.skill, p.targetClass);
+
+  // Bucket rows by target class; unrecognized names go to nonClassRows
+  const classBuckets = new Map<ClassCode, { index: number; row: string[] }[]>(
+    CLASS_ORDER.map(c => [c, []] as [ClassCode, { index: number; row: string[] }[]])
+  );
+  const nonClassRows: { index: number; row: string[] }[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const target = nameToTarget.get(rows[i][0]);
+    if (target) {
+      classBuckets.get(target)!.push({ index: i, row: rows[i] });
+    } else {
+      nonClassRows.push({ index: i, row: rows[i] });
+    }
+  }
+
+  const reorderedRows: string[][] = [];
+  const idMapping = new Map<number, number>();
+
+  for (const code of CLASS_ORDER) {
+    const bucket = classBuckets.get(code)!.sort((a, b) => a.index - b.index);
+    for (const { index, row } of bucket) {
+      idMapping.set(index, reorderedRows.length);
+      reorderedRows.push(row);
+    }
+  }
+  for (const { index, row } of nonClassRows) {
+    idMapping.set(index, reorderedRows.length);
+    reorderedRows.push(row);
+  }
+
+  return { reorderedRows, idMapping };
 }

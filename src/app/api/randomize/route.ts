@@ -8,7 +8,7 @@ import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile
 import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
-import { writeSkillsRows } from '@/lib/randomizer/skills-writer';
+import { writeSkillsRows, reorderSkillsRows } from '@/lib/randomizer/skills-writer';
 import { writeSkillDescRows } from '@/lib/randomizer/skilldesc-writer';
 import { assignPrerequisites } from '@/lib/randomizer/prereq-assigner';
 import { buildAllTreeSprites, clearSpriteCache } from '@/lib/sprites/tree-stitcher';
@@ -18,6 +18,7 @@ import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { incrementCount } from '@/lib/counter';
 import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
+import { remapMonstatsSkillIds } from '@/lib/randomizer/monstats-skill-remapper';
 import { applyTeleportStaffUnique, applyTeleportSkillCost, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
@@ -123,6 +124,12 @@ export async function POST(request: NextRequest) {
 
     // Step 8: Write modified txt files
     writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments);
+
+    // Reorder skills.txt rows into contiguous class blocks (fixes StaffMod pool lookup).
+    // Must run after writeSkillsRows has updated all column values (charclass, reqlevel, etc.).
+    const { reorderedRows, idMapping } = reorderSkillsRows(skillsTxt.rows, placements);
+    skillsTxt.rows = reorderedRows;
+
     if (startingTeleportStaff) {
       applyTeleportSkillCost(skillsTxt.headers, skillsTxt.rows);
     }
@@ -156,8 +163,8 @@ export async function POST(request: NextRequest) {
     // Remap class-restricted item skill affixes (magicprefix / magicsuffix)
     const magicPrefixTxt = loadTxtFile('magicprefix.txt');
     const magicSuffixTxt = loadTxtFile('magicsuffix.txt');
-    const remappedPrefixRows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements);
-    const remappedSuffixRows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements);
+    const remappedPrefixRows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping);
+    const remappedSuffixRows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping);
     const magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, remappedPrefixRows);
     const magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, remappedSuffixRows);
 
@@ -282,7 +289,7 @@ export async function POST(request: NextRequest) {
         const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
         if (fs.existsSync(uiPath)) {
           const ui = loadTxtFile('uniqueitems.txt');
-          let uiRows = remapUniqueItemSkills(ui.headers, ui.rows, placements);
+          let uiRows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping);
           if (startingTeleportStaff) {
             uiRows = applyTeleportStaffUnique(ui.headers, uiRows, teleportStaffLevel);
           }
@@ -342,21 +349,20 @@ export async function POST(request: NextRequest) {
 
     const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
 
-    // Step 11b: monstats — players scaling and/or xp boost
+    // Step 11b: monstats — always included to remap skill IDs after row reordering,
+    // plus optional players scaling and/or xp boost.
     let monstatsTxt: string | undefined;
-    const needsMonstats = (playersEnabled && playersCount > 1) || xpMultiplier > 1;
-    if (needsMonstats) {
-      const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
-      if (fs.existsSync(monstatsTxtPath)) {
-        const monstatsSrc = loadTxtFile('monstats.txt');
-        const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
-        let scaledRows = monstatsSrc.rows;
-        if (playersEnabled && playersCount > 1)
-          scaledRows = scaleMonstats(monstatsSrc.headers, scaledRows, playersCount, playersActs, summonIds);
-        if (xpMultiplier > 1)
-          scaledRows = scaleExperienceRows(monstatsSrc.headers, scaledRows, xpMultiplier, xpActs, summonIds);
-        monstatsTxt = serializeTxtFile(monstatsSrc.headers, scaledRows);
-      }
+    const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
+    if (fs.existsSync(monstatsTxtPath)) {
+      const monstatsSrc = loadTxtFile('monstats.txt');
+      const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
+      // Remap Skill1–8 numeric IDs to match the new row positions in skills.txt
+      let scaledRows = remapMonstatsSkillIds(monstatsSrc.headers, monstatsSrc.rows, idMapping);
+      if (playersEnabled && playersCount > 1)
+        scaledRows = scaleMonstats(monstatsSrc.headers, scaledRows, playersCount, playersActs, summonIds);
+      if (xpMultiplier > 1)
+        scaledRows = scaleExperienceRows(monstatsSrc.headers, scaledRows, xpMultiplier, xpActs, summonIds);
+      monstatsTxt = serializeTxtFile(monstatsSrc.headers, scaledRows);
     }
     // Step 11c: superuniques — Corpsefire TC drop (always included in zip)
     const suPath = path.join(DATA_DIR, 'txt', 'superuniques.txt');

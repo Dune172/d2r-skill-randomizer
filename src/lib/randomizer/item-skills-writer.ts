@@ -60,6 +60,7 @@ export function remapUniqueItemSkills(
   headers: string[],
   rows: string[][],
   placements: SkillPlacement[],
+  idMapping?: Map<number, number>,
 ): string[][] {
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
   const byId = new Map<number, SkillPlacement>(placements.map(p => [p.skill.id, p]));
@@ -128,7 +129,7 @@ export function remapUniqueItemSkills(
       if (!destPlacement) continue;
 
       updated[parCol] = useNumeric
-        ? String(destPlacement.skill.id)
+        ? String(idMapping?.get(destPlacement.skill.id) ?? destPlacement.skill.id)
         : destPlacement.skill.skill;
     }
     return updated;
@@ -158,6 +159,7 @@ export function remapClassItemSkills(
   headers: string[],
   rows: string[][],
   placements: SkillPlacement[],
+  idMapping?: Map<number, number>,
 ): string[][] {
   // Build lookup: skillName → placement
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
@@ -217,7 +219,7 @@ export function remapClassItemSkills(
 
       updated[paramCol] = code === 'skill'
         ? destPlacement.skill.skill
-        : String(destPlacement.skill.id);
+        : String(idMapping?.get(destPlacement.skill.id) ?? destPlacement.skill.id);
     }
     return updated;
   });
