@@ -22,7 +22,7 @@ export function applyTeleportSkillCost(headers: string[], rows: string[][]): voi
  *  - Append a new "Teleport Staff" unique entry with 20× Teleport charges (level 1)
  * Returns a new rows array (does not mutate the original).
  */
-export function applyTeleportStaffUnique(headers: string[], rows: string[][], reqLevel = 1): string[][] {
+export function applyTeleportStaffUnique(headers: string[], rows: string[][], reqLevel = 1, idMapping?: Map<number, number>): string[][] {
   const indexCol    = headers.indexOf('index');
   const disabledCol = headers.indexOf('disabled');
   const codeCol     = headers.indexOf('code');
@@ -53,7 +53,7 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
   set('lvl req',  String(reqLevel));
   set('rarity',   '1');
   set('prop1',    'charged');
-  set('par1',     '54');   // Teleport skill ID
+  set('par1',     String(idMapping?.get(54) ?? 54));   // Teleport *Id=54, remapped to new row
   set('min1',     '20');   // 20 charges
   set('max1',     '1');    // charge level 1
   set('prop2',    'move1');

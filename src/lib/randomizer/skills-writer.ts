@@ -291,6 +291,19 @@ export function reorderSkillsRows(
   const reorderedRows: string[][] = [];
   const idMapping = new Map<number, number>();
 
+  // Split non-class rows: those originally before the first class skill stay at the
+  // front (e.g. Attack/Kick/Throw at rows 0-5 — hardcoded by the D2R engine).
+  // Everything else goes after the class blocks.
+  nonClassRows.sort((a, b) => a.index - b.index);
+  const allClassIndices = Array.from(classBuckets.values()).flat().map(x => x.index);
+  const firstClassIndex = allClassIndices.length > 0 ? Math.min(...allClassIndices) : Infinity;
+  const prefixNonClass = nonClassRows.filter(r => r.index < firstClassIndex);
+  const suffixNonClass = nonClassRows.filter(r => r.index >= firstClassIndex);
+
+  for (const { index, row } of prefixNonClass) {
+    idMapping.set(index, reorderedRows.length);
+    reorderedRows.push(row);
+  }
   for (const code of CLASS_ORDER) {
     const bucket = classBuckets.get(code)!.sort((a, b) => a.index - b.index);
     for (const { index, row } of bucket) {
@@ -298,7 +311,7 @@ export function reorderSkillsRows(
       reorderedRows.push(row);
     }
   }
-  for (const { index, row } of nonClassRows) {
+  for (const { index, row } of suffixNonClass) {
     idMapping.set(index, reorderedRows.length);
     reorderedRows.push(row);
   }

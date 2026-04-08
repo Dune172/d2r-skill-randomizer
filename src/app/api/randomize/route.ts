@@ -291,7 +291,7 @@ export async function POST(request: NextRequest) {
           const ui = loadTxtFile('uniqueitems.txt');
           let uiRows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping);
           if (startingTeleportStaff) {
-            uiRows = applyTeleportStaffUnique(ui.headers, uiRows, teleportStaffLevel);
+            uiRows = applyTeleportStaffUnique(ui.headers, uiRows, teleportStaffLevel, idMapping);
           }
           uniqueitemsTxt = serializeTxtFile(ui.headers, uiRows);
         }
