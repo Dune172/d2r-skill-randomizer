@@ -66,6 +66,18 @@ export function remapUniqueItemSkills(
   const byPos = new Map<string, SkillPlacement>(
     placements.map(p => [`${p.targetClass}_${p.tabIndex}_${p.row}_${p.col}`, p]),
   );
+  // Fallback 1: same class + same (row, col), any tab — first match wins
+  const byClassRowCol = new Map<string, SkillPlacement>();
+  for (const p of placements) {
+    const k = `${p.targetClass}_${p.row}_${p.col}`;
+    if (!byClassRowCol.has(k)) byClassRowCol.set(k, p);
+  }
+  // Fallback 2: same class + same row, any col/tab — first match wins
+  const byClassRow = new Map<string, SkillPlacement>();
+  for (const p of placements) {
+    const k = `${p.targetClass}_${p.row}`;
+    if (!byClassRow.has(k)) byClassRow.set(k, p);
+  }
 
   const codeCol = headers.indexOf('code');
   if (codeCol === -1) return rows;
@@ -109,8 +121,10 @@ export function remapUniqueItemSkills(
 
       if (!srcPlacement) continue;
 
-      const key = `${classRestriction}_${srcPlacement.tabIndex}_${srcPlacement.row}_${srcPlacement.col}`;
-      const destPlacement = byPos.get(key);
+      const destPlacement =
+        byPos.get(`${classRestriction}_${srcPlacement.tabIndex}_${srcPlacement.row}_${srcPlacement.col}`) ??
+        byClassRowCol.get(`${classRestriction}_${srcPlacement.row}_${srcPlacement.col}`) ??
+        byClassRow.get(`${classRestriction}_${srcPlacement.row}`);
       if (!destPlacement) continue;
 
       updated[parCol] = useNumeric
@@ -153,6 +167,18 @@ export function remapClassItemSkills(
   const byPos = new Map<string, SkillPlacement>(
     placements.map(p => [`${p.targetClass}_${p.tabIndex}_${p.row}_${p.col}`, p]),
   );
+  // Fallback 1: same class + same (row, col), any tab — first match wins
+  const byClassRowCol = new Map<string, SkillPlacement>();
+  for (const p of placements) {
+    const k = `${p.targetClass}_${p.row}_${p.col}`;
+    if (!byClassRowCol.has(k)) byClassRowCol.set(k, p);
+  }
+  // Fallback 2: same class + same row, any col/tab — first match wins
+  const byClassRow = new Map<string, SkillPlacement>();
+  for (const p of placements) {
+    const k = `${p.targetClass}_${p.row}`;
+    if (!byClassRow.has(k)) byClassRow.set(k, p);
+  }
 
   const classCol = headers.indexOf('class');
   if (classCol === -1) return rows;
@@ -183,8 +209,10 @@ export function remapClassItemSkills(
 
       if (!srcPlacement) continue;
 
-      const key = `${classRestriction}_${srcPlacement.tabIndex}_${srcPlacement.row}_${srcPlacement.col}`;
-      const destPlacement = byPos.get(key);
+      const destPlacement =
+        byPos.get(`${classRestriction}_${srcPlacement.tabIndex}_${srcPlacement.row}_${srcPlacement.col}`) ??
+        byClassRowCol.get(`${classRestriction}_${srcPlacement.row}_${srcPlacement.col}`) ??
+        byClassRow.get(`${classRestriction}_${srcPlacement.row}`);
       if (!destPlacement) continue;
 
       updated[paramCol] = code === 'skill'
