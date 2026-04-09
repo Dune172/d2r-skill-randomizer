@@ -1,6 +1,7 @@
 import type { MutationContext } from './index';
 
 const REGEN_MULT = 10;
+const REGEN_BASE = 1;
 
 export function applyBloodthirst(ctx: MutationContext): void {
   const { headers: mh, rows: mr } = ctx.monstats;
@@ -10,6 +11,7 @@ export function applyBloodthirst(ctx: MutationContext): void {
   for (const row of mr) {
     if (!row[0]) continue;
     const val = parseInt(row[regenIdx], 10);
-    if (!isNaN(val) && val > 0) row[regenIdx] = String(val * REGEN_MULT);
+    const effective = (!isNaN(val) && val > 0) ? val : REGEN_BASE;
+    row[regenIdx] = String(effective * REGEN_MULT);
   }
 }

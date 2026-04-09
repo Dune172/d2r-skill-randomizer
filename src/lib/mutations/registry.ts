@@ -78,6 +78,13 @@ export const MUTATIONS: Record<number, MutationDef> = {
     description:
       'All monsters spawn already cursed with Amplify Damage.',
   },
+  10: {
+    id: 'ironclad',
+    name: 'Ironclad',
+    emoji: '🛡️',
+    description:
+      'All monsters have triple the defense. Physical attackers will struggle to land hits without serious investment in attack rating.',
+  },
   11: {
     id: 'titans-grip',
     name: "Titan's Grip",
@@ -98,6 +105,13 @@ export const MUTATIONS: Record<number, MutationDef> = {
     emoji: '🌑',
     description:
       'Experience gain is reduced by 50%. Monsters drop significantly more gold and have increased treasure class picks.',
+  },
+  14: {
+    id: 'entropy',
+    name: 'Entropy',
+    emoji: '🔩',
+    description:
+      'All equipment degrades twice as fast — durability on every weapon and piece of armor is halved. Keep your gold and your whetstone ready.',
   },
 };
 
@@ -132,6 +146,11 @@ export const WEEKLY_PAIRS: [number, number][] = [
   [6, 13],  // 23
   [1, 9],   // 24
   [2, 12],  // 25
+  [10, 14], // 26
+  [10, 5],  // 27
+  [14, 7],  // 28
+  [10, 8],  // 29
+  [14, 4],  // 30
 ];
 
 /** Return the two active MutationDefs for the given week number (1-based). */
