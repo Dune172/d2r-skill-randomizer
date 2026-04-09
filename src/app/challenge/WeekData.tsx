@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
+import { getActivePair, type MutationDef } from '@/lib/mutations/registry';
 
 const BASE_DATE = new Date('2026-04-07T00:00:00Z');
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -34,8 +36,51 @@ function getWeekData() {
   return { weekNumber, currentSeed, currentStart, currentEnd, archive };
 }
 
+function MutationCard({ mutation }: { mutation: MutationDef }) {
+  const imgSrc = `/mutations/${mutation.id}.png`;
+  return (
+    <div className="group relative flex flex-col items-center border border-[#3a1510] bg-[#0c0304] panel-shadow p-4 w-40">
+      {/* Image with emoji fallback */}
+      <div className="w-24 h-24 flex items-center justify-center mb-3 overflow-hidden">
+        <Image
+          src={imgSrc}
+          alt={mutation.name}
+          width={96}
+          height={96}
+          className="object-contain"
+          onError={(e) => {
+            const target = e.currentTarget as HTMLImageElement;
+            target.style.display = 'none';
+            const fallback = target.nextElementSibling as HTMLElement | null;
+            if (fallback) fallback.style.display = 'block';
+          }}
+        />
+        <span className="text-5xl hidden" aria-hidden="true">{mutation.emoji}</span>
+      </div>
+
+      {/* Title */}
+      <p className="font-cinzel font-bold text-[#c8942a] text-xs tracking-[0.1em] text-center leading-tight">
+        {mutation.name}
+      </p>
+
+      {/* Hover tooltip */}
+      <div
+        className="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-150
+          absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10
+          w-56 border border-[#c8942a]/40 bg-[#0c0304]/95 p-3 text-xs text-[#a89060]/90
+          leading-relaxed font-sans pointer-events-none"
+      >
+        {mutation.description}
+        {/* Arrow */}
+        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#c8942a]/40" />
+      </div>
+    </div>
+  );
+}
+
 export function WeekCard() {
   const { weekNumber, currentSeed, currentStart, currentEnd } = getWeekData();
+  const [mutA, mutB] = getActivePair(weekNumber);
 
   return (
     <div className="border border-[#3a1510] bg-[#0c0304] panel-shadow p-8 mb-8">
@@ -45,6 +90,13 @@ export function WeekCard() {
       <div className="font-cinzel font-black text-5xl md:text-6xl text-[#c8942a] glow-gold tracking-widest mb-6">
         {currentSeed.toLocaleString()}
       </div>
+
+      {/* Active mutations */}
+      <div className="flex justify-center gap-4 mb-6">
+        <MutationCard mutation={mutA} />
+        <MutationCard mutation={mutB} />
+      </div>
+
       <Link
         href={`/generate?seed=${currentSeed}`}
         className="inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow"

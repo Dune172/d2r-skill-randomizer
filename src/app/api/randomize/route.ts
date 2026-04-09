@@ -24,6 +24,7 @@ import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
+import { applyWeeklyMutations } from '@/lib/randomizer/mutations';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
 import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
 
@@ -52,6 +53,11 @@ export async function POST(request: NextRequest) {
     const xpActs: number[] = Array.isArray(body.xpActs)
       ? (body.xpActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
+    const weeklyEnabled = body.weeklyChallenge?.enabled === true;
+    const weeklyOverride: number | undefined =
+      typeof body.weeklyChallenge?.weekOverride === 'number'
+        ? Math.max(1, Math.trunc(body.weeklyChallenge.weekOverride))
+        : undefined;
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -64,7 +70,7 @@ export async function POST(request: NextRequest) {
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0);
     const zipCache = getZipCache();
 
     // Check cache (fast path — bypasses queue)
@@ -194,7 +200,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
+    let skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
 
     // Tab-label overrides for all 7 class skill trees (3 tabs each) + Warcraft.
     // Applied on top of the official skills.json so all skill name keys remain intact.
@@ -267,9 +273,10 @@ export async function POST(request: NextRequest) {
     let uniqueitemsTxt: string | undefined;
     let tcTxt: string | undefined;
     let superuniquesTxt: string | undefined;
+    // Hoist charstats so the weekly mutations block can reference it
+    const charstats = loadTxtFile('charstats.txt');
     const charstatsPath = path.join(DATA_DIR, 'txt', 'charstats.txt');
     if (fs.existsSync(charstatsPath)) {
-      const charstats = loadTxtFile('charstats.txt');
       const classCol = charstats.headers.indexOf('class');
       const startSkillCol = charstats.headers.indexOf('StartSkill');
       if (classCol !== -1 && startSkillCol !== -1) {
@@ -352,31 +359,65 @@ export async function POST(request: NextRequest) {
     // Step 11b: monstats — always included to remap skill IDs after row reordering,
     // plus optional players scaling and/or xp boost.
     let monstatsTxt: string | undefined;
-    const monstatsTxtPath = path.join(DATA_DIR, 'txt', 'monstats.txt');
-    if (fs.existsSync(monstatsTxtPath)) {
-      const monstatsSrc = loadTxtFile('monstats.txt');
-      const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
-      // Remap Skill1–8 numeric IDs to match the new row positions in skills.txt
-      let scaledRows = remapMonstatsSkillIds(monstatsSrc.headers, monstatsSrc.rows, idMapping);
-      if (playersEnabled && playersCount > 1)
-        scaledRows = scaleMonstats(monstatsSrc.headers, scaledRows, playersCount, playersActs, summonIds);
-      if (xpMultiplier > 1)
-        scaledRows = scaleExperienceRows(monstatsSrc.headers, scaledRows, xpMultiplier, xpActs, summonIds);
-      monstatsTxt = serializeTxtFile(monstatsSrc.headers, scaledRows);
-    }
+    const monstatsSrc = loadTxtFile('monstats.txt');
+    const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
+    // Remap Skill1–8 numeric IDs to match the new row positions in skills.txt
+    let scaledMonRows = remapMonstatsSkillIds(monstatsSrc.headers, monstatsSrc.rows, idMapping);
+    if (playersEnabled && playersCount > 1)
+      scaledMonRows = scaleMonstats(monstatsSrc.headers, scaledMonRows, playersCount, playersActs, summonIds);
+    if (xpMultiplier > 1)
+      scaledMonRows = scaleExperienceRows(monstatsSrc.headers, scaledMonRows, xpMultiplier, xpActs, summonIds);
+    monstatsSrc.rows = scaledMonRows;
+
     // Step 11c: superuniques — Corpsefire TC drop (always included in zip)
-    const suPath = path.join(DATA_DIR, 'txt', 'superuniques.txt');
-    if (fs.existsSync(suPath)) {
-      const su = loadTxtFile('superuniques.txt');
-      if (startingTeleportStaff) {
-        const tcPath = path.join(DATA_DIR, 'txt', 'treasureclassex.txt');
-        if (fs.existsSync(tcPath)) {
-          const tc = loadTxtFile('treasureclassex.txt');
-          applyBloodRavenQuestDrop(su.headers, su.rows, tc.headers, tc.rows, teleportStaffDropSource);
-          tcTxt = serializeTxtFile(tc.headers, tc.rows);
-        }
-      }
-      superuniquesTxt = serializeTxtFile(su.headers, su.rows);
+    const suSrc = loadTxtFile('superuniques.txt');
+    const tcSrc = loadTxtFile('treasureclassex.txt');
+    if (startingTeleportStaff) {
+      applyBloodRavenQuestDrop(suSrc.headers, suSrc.rows, tcSrc.headers, tcSrc.rows, teleportStaffDropSource);
+    }
+
+    // Step 11d: weekly challenge mutations
+    let armorTxt: string | undefined;
+    let weaponsTxt: string | undefined;
+    let experienceTxt: string | undefined;
+
+    if (weeklyEnabled) {
+      const expSrc = loadTxtFile('experience.txt');
+      const armorSrc = loadTxtFile('armor.txt');
+      const weaponsSrc = loadTxtFile('weapons.txt');
+
+      // Determine week number using the same BASE_DATE logic as the challenge page
+      const BASE_DATE = new Date('2026-04-07T00:00:00Z');
+      const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+      const computedWeek = Math.max(1, Math.floor((Date.now() - BASE_DATE.getTime()) / WEEK_MS) + 1);
+      const weekNumber = weeklyOverride ?? computedWeek;
+
+      applyWeeklyMutations(weekNumber, {
+        monstats:      monstatsSrc,
+        charstats:     charstats,
+        skills:        skillsTxt,
+        superuniques:  suSrc,
+        treasureclass: tcSrc,
+        experience:    expSrc,
+        armor:         armorSrc,
+        weapons:       weaponsSrc,
+      });
+
+      // Re-serialize charstats (may have been modified by Hyperdrive/Hollow Shell)
+      charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
+      // Re-serialize tc (may have been modified by Pestilence/Scavenger's World/Dead Reckoning)
+      tcTxt = serializeTxtFile(tcSrc.headers, tcSrc.rows);
+
+      armorTxt     = serializeTxtFile(armorSrc.headers, armorSrc.rows);
+      weaponsTxt   = serializeTxtFile(weaponsSrc.headers, weaponsSrc.rows);
+      experienceTxt = serializeTxtFile(expSrc.headers, expSrc.rows);
+    }
+
+    monstatsTxt     = serializeTxtFile(monstatsSrc.headers, monstatsSrc.rows);
+    superuniquesTxt = serializeTxtFile(suSrc.headers, suSrc.rows);
+    // Serialize tcTxt if any feature modified tcSrc (teleport staff or weekly mutations)
+    if (startingTeleportStaff || weeklyEnabled) {
+      tcTxt = serializeTxtFile(tcSrc.headers, tcSrc.rows);
     }
 
     // Step 12: Build zip
@@ -406,6 +447,9 @@ export async function POST(request: NextRequest) {
       magicSuffixTxt: magicSuffixContent,
       itemtypesTxt,
       dataVersionBuild,
+      armorTxt,
+      weaponsTxt,
+      experienceTxt,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)

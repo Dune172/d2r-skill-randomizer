@@ -24,6 +24,9 @@ export interface ZipContents {
   magicSuffixTxt?: string;          // magicsuffix.txt with remapped class-skill affixes
   itemtypesTxt?: string;            // itemtypes.txt with StaffMods set for all class item types
   dataVersionBuild?: string;        // DataVersionBuild.txt — prevents version mismatch prompt
+  armorTxt?: string;                // armor.txt modified by weekly mutations
+  weaponsTxt?: string;              // weapons.txt modified by weekly mutations
+  experienceTxt?: string;           // experience.txt modified by weekly mutations
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -125,6 +128,17 @@ export function buildZip(contents: ZipContents): Buffer {
   // Data version file — prevents "out of date data" prompt on startup
   if (contents.dataVersionBuild) {
     zip.addFile(`${d}/data/global/DataVersionBuild.txt`, str(contents.dataVersionBuild));
+  }
+
+  // Weekly mutation files
+  if (contents.armorTxt) {
+    zip.addFile(`${d}/data/global/excel/armor.txt`, str(contents.armorTxt));
+  }
+  if (contents.weaponsTxt) {
+    zip.addFile(`${d}/data/global/excel/weapons.txt`, str(contents.weaponsTxt));
+  }
+  if (contents.experienceTxt) {
+    zip.addFile(`${d}/data/global/excel/experience.txt`, str(contents.experienceTxt));
   }
 
   // Disable chat input to prevent /players x commands (optional)
