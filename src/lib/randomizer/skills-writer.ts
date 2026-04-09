@@ -47,14 +47,20 @@ const ANIM_PREFERENCES: Record<SkillCategory, string[]> = {
 // Charge also requires SQ: cltdofunc=37 is a client-side movement function that uses
 // seqinput=8 to fire the rush at frame 8 of the SQ sequence. Without SQ+seqinput,
 // the movement has no timing anchor → position snapping (screen shake) and late movement.
-const SQ_DEPENDENT_SKILLS = new Set(['Leap', 'LeapAttack', 'Charge']);
+const SQ_DEPENDENT_SKILLS = new Set(['Leap', 'Leap Attack', 'Charge']);
 
 // Channeled-spray skills: seqtrans=SQ creates an infinite channel loop, and seqnum/seqinput
 // drive the hold-to-channel mechanism. If seqnum/seqinput are cleared on a non-native class
 // the spray fires once then stops. These skills must preserve seqnum/seqinput whenever the
 // SQ animation is preserved (i.e. anim didn't change), even across classes.
 // They also need SQ preserved on all SQ-capable classes (same logic as SQ_DEPENDENT_SKILLS).
-const CHANNELED_SQ_SKILLS = new Set(['Inferno', 'Arctic Blast']);
+const CHANNELED_SQ_SKILLS = new Set(['Inferno', 'Arctic Blast', 'Bind Demon']);
+
+// Skills whose seqnum encodes a Barbarian-specific SQ sub-sequence index.
+// Preserving seqnum on non-Barbarian classes fires the landing "crash" event at the
+// wrong frame (too early), then the rest of the SQ plays as a slide.
+// Clear seqnum/seqinput whenever these skills land on a non-native class.
+const BARB_SEQNUM_SKILLS = new Set(['Leap', 'Leap Attack']);
 
 function pickBestAnim(
   skill: SkillEntry,
@@ -179,9 +185,15 @@ export function writeSkillsRows(
             // seqtrans is the exit state after the sequence — for Leap it's A1 (landing
             // attack), which is what releases the action lock. Setting seqtrans=SQ here
             // would create an infinite loop and permanently freeze the character.
-            // Instead, only fix it if the original seqtrans is unsupported on the target class.
+            // Exception: channeled-SQ skills intentionally use seqtrans=SQ (channel loop).
             const origSeqtrans = row[seqtransIdx];
-            if (origSeqtrans && !supportedAnims.has(origSeqtrans)) {
+            const isChanneled = CHANNELED_SQ_SKILLS.has(placement.skill.skill);
+            if (origSeqtrans === 'SQ' && !isChanneled) {
+              // Non-channeled SQ→SQ seqtrans creates an infinite loop on any class that
+              // supports SQ (e.g. Cleave/Mirrored Blades on Paladin). Break it by exiting
+              // to A1 (recovery swing) if available, otherwise SC.
+              row[seqtransIdx] = supportedAnims.has('A1') ? 'A1' : 'SC';
+            } else if (origSeqtrans && !supportedAnims.has(origSeqtrans)) {
               // Unsupported seqtrans would freeze the game; pick the safest supported exit.
               row[seqtransIdx] = supportedAnims.has('A1') ? 'A1' : 'SC';
             }
@@ -192,8 +204,11 @@ export function writeSkillsRows(
         // Clear seqnum/seqinput when anim changes, EXCEPT for channeled-SQ skills:
         // their seqnum/seqinput drive the hold-to-channel loop and must be preserved
         // whenever the SQ animation is kept (isSameAnim=true).
+        // Also always clear for BARB_SEQNUM_SKILLS: their seqnum is a Barbarian-specific
+        // SQ sub-sequence index that fires the landing event at the wrong frame on other classes.
         const preserveSeq = isSameAnim && CHANNELED_SQ_SKILLS.has(placement.skill.skill);
-        if (!preserveSeq && !isSameAnim) {
+        const clearBarbSeq = BARB_SEQNUM_SKILLS.has(placement.skill.skill);
+        if ((!preserveSeq && !isSameAnim) || clearBarbSeq) {
           if (seqnumIdx >= 0)   row[seqnumIdx]   = '';
           if (seqinputIdx >= 0) row[seqinputIdx] = '';
         }
