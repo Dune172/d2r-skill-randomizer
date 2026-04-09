@@ -111,7 +111,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Entropy',
     emoji: '🔩',
     description:
-      'All equipment degrades three times as fast and costs four times as much to repair. Keep your gold and your whetstone ready.',
+      'All equipment degrades three times as fast and costs ten times as much to repair. Keep your gold and your whetstone ready.',
   },
 };
 
