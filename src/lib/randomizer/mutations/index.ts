@@ -17,8 +17,6 @@ import { applyScavengersWorld } from './scavengers-world';
 import { applyDeadReckoning } from './dead-reckoning';
 import { applyIronclad } from './ironclad';
 import { applyEntropy } from './entropy';
-import { applyWarded } from './warded';
-import { applyFamine } from './famine';
 
 export { getActivePair };
 
@@ -54,8 +52,6 @@ const APPLY_FNS: Record<number, ApplyFn> = {
   12: applyScavengersWorld,
   13: applyDeadReckoning,
   14: applyEntropy,
-  15: applyWarded,
-  16: applyFamine,
 };
 
 /** Apply both mutations for the given week number to the provided context. */

@@ -106,20 +106,6 @@ export const MUTATIONS: Record<number, MutationDef> = {
     description:
       'Experience gain is reduced by 50%. Monsters drop significantly more gold and have increased treasure class picks.',
   },
-  15: {
-    id: 'warded',
-    name: 'Warded',
-    emoji: '🔥',
-    description:
-      'All monsters gain +25 to fire, cold, lightning, and magic resistance. Elemental builds must adapt — raw damage output drops significantly across the board.',
-  },
-  16: {
-    id: 'famine',
-    name: 'Famine',
-    emoji: '🍂',
-    description:
-      'Health potions, mana potions, and rejuvenation potions no longer drop from monsters. Find other ways to survive.',
-  },
   14: {
     id: 'entropy',
     name: 'Entropy',
@@ -134,7 +120,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
  * Each pair is [mutationId, mutationId].
  */
 export const WEEKLY_PAIRS: [number, number][] = [
-  [15, 16], // 0
+  [10, 14], // 0
   [2, 5],   // 1
   [3, 6],   // 2
   [7, 9],   // 3
