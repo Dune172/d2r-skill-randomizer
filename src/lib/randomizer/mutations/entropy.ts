@@ -1,6 +1,6 @@
 import type { MutationContext } from './index';
 
-const DUR_MULT = 0.5;
+const DUR_MULT = 1 / 3;
 
 export function applyEntropy(ctx: MutationContext): void {
   for (const table of [ctx.armor, ctx.weapons]) {

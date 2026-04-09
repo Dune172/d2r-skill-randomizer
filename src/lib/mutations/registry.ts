@@ -111,7 +111,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Entropy',
     emoji: '🔩',
     description:
-      'All equipment degrades twice as fast — durability on every weapon and piece of armor is halved. Keep your gold and your whetstone ready.',
+      'All equipment degrades three times as fast — durability on every weapon and piece of armor is reduced to one third. Keep your gold and your whetstone ready.',
   },
 };
 
