@@ -48,7 +48,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'The Horde',
     emoji: '💀',
     description:
-      'Monster pack sizes are dramatically increased. Nothing spawns alone.',
+      'Monster pack sizes are dramatically increased. Nothing spawns alone. Experience gain is reduced to 3/4 of normal.',
   },
   6: {
     id: 'glass-cannon',

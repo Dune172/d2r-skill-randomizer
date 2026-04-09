@@ -3,6 +3,10 @@ import type { MutationContext } from './index';
 const MULT = 3;
 const MAX_GRP = 15;
 
+// 4/3 threshold multiplier = 3/4 effective XP rate
+const XP_MULT = 4 / 3;
+const SKIP_COLS = new Set(['Level', 'ExpRatio']);
+
 export function applyTheHorde(ctx: MutationContext): void {
   const { headers: mh, rows: mr } = ctx.monstats;
   const minGrpIdx = mh.indexOf('MinGrp');
@@ -17,5 +21,14 @@ export function applyTheHorde(ctx: MutationContext): void {
       row[minGrpIdx] = String(Math.min(MAX_GRP, minVal * MULT));
     if (!isNaN(maxVal) && maxVal > 0)
       row[maxGrpIdx] = String(Math.min(MAX_GRP, maxVal * MULT));
+  }
+
+  const { headers: eh, rows: er } = ctx.experience;
+  for (const row of er) {
+    for (let i = 0; i < eh.length; i++) {
+      if (SKIP_COLS.has(eh[i])) continue;
+      const val = parseInt(row[i], 10);
+      if (!isNaN(val) && val > 0) row[i] = String(Math.round(val * XP_MULT));
+    }
   }
 }
