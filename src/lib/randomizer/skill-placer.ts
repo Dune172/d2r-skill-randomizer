@@ -4,13 +4,15 @@ import { CLASS_DEFS, CLASS_RESTRICTED_TYPES } from './config';
 
 // Anim codes that only exist on one character class — skill breaks on any other class.
 // KK = Assassin only (Dragon Talon, Dragon Tail)
+// S1 = Amazon/Paladin only (Dodge, Avoid, Evade, Smite): on non-S1 classes the dodge
+//   reaction plays as a SC cast, which looks wrong. Pinning keeps the animation correct.
 // TH (throw) is NOT listed here: all classes have TH animation frames, so javelin
 // skills keep their TH animation on any class they land on.
 // S3 (Druid shapeshifted form) is NOT listed here: all S3 skills (Rabies, Hunger)
 // have restrict=2, so they're already pinned via the restrict check above.
 // S2 (Assassin trap/blade casting) is NOT listed here: on non-Assassin classes it
 // falls back to SC, which is the standard summon animation used by all other classes.
-const CLASS_SPECIFIC_ANIMS = new Set(['KK']);
+const CLASS_SPECIFIC_ANIMS = new Set(['KK', 'S1']);
 
 // Skills that cannot be placed on specific classes.
 // Charge requires SQ animation + seqinput=8 for smooth client-side movement;
@@ -33,6 +35,8 @@ const RESTRICT2_COPACED = new Set(['Rabies', 'Hunger']);
 /**
  * Returns true if this skill must stay on its original class:
  * - weapsel=3: requires dual weapons (only Barbarian and Assassin can dual-wield)
+ * - weapsel=4: combo/special interaction skills (Dragon Flight, Smite) — seqnum or
+ *   animation is specific to the original class and breaks visually on others
  * - itypeb1=h2h/h2h2: requires claw in off-hand (only Assassin can equip claws)
  * - restrict=2: requires shapeshifted form (only Druid can shapeshift),
  *   except skills in RESTRICT2_COPACED which are kept with their transformation skill instead
@@ -42,6 +46,7 @@ const RESTRICT2_COPACED = new Set(['Rabies', 'Hunger']);
 function isPinnedToOriginalClass(skill: SkillEntry): boolean {
   return (
     skill.weapsel === 3 ||
+    skill.weapsel === 4 ||
     skill.itypeb1 === 'h2h' ||
     skill.itypeb1 === 'h2h2' ||
     (skill.restrict === 2 && !RESTRICT2_COPACED.has(skill.skill)) ||
