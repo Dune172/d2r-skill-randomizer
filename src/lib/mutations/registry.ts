@@ -83,7 +83,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Ironclad',
     emoji: '🛡️',
     description:
-      'All monsters have triple the defense. Physical attackers will struggle to land hits without serious investment in attack rating.',
+      'All monsters gain 25% physical resistance. Elemental and skill damage remains unaffected, but raw physical hits deal significantly less damage.',
   },
   11: {
     id: 'titans-grip',
