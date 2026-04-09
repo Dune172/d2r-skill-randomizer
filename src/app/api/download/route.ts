@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
       ? xpActsParam.split(',').map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
 
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs);
+    const weeklyKey  = searchParams.get('weekly') === '1' ? -1 : 0;
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, weeklyKey);
     const zipCache = getZipCache();
     const zipBuffer = zipCache.get(cacheKey);
 

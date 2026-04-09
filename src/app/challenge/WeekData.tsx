@@ -1,11 +1,30 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getActivePair, type MutationDef } from '@/lib/mutations/registry';
 
 const BASE_DATE = new Date('2026-04-07T00:00:00Z');
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Season Beta Race preset — same settings as the randomizer's season1race preset
+const SEASON1_OPTIONS = {
+  enablePrereqs: true,
+  playersEnabled: true,
+  playersCount: 2,
+  playersActs: [4, 5],
+  startingItems: {
+    teleportStaff: true,
+    teleportStaffLevel: 6,
+    teleportStaffDropSource: 'Corpsefire',
+    horadricCube: true,
+  },
+  hirelingAura: true,
+  disableChat: true,
+  xpMultiplier: 3,
+  xpActs: [1, 2, 3],
+};
 
 function getWeekSeed(weekNumber: number): number {
   return weekNumber * 31337;
@@ -40,7 +59,6 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
   const imgSrc = `/mutations/${mutation.id}.png`;
   return (
     <div className="group relative flex flex-col items-center border border-[#3a1510] bg-[#0c0304] panel-shadow p-4 w-40">
-      {/* Image with emoji fallback */}
       <div className="w-24 h-24 flex items-center justify-center mb-3 overflow-hidden">
         <Image
           src={imgSrc}
@@ -57,13 +75,9 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
         />
         <span className="text-5xl hidden" aria-hidden="true">{mutation.emoji}</span>
       </div>
-
-      {/* Title */}
       <p className="font-cinzel font-bold text-[#c8942a] text-xs tracking-[0.1em] text-center leading-tight">
         {mutation.name}
       </p>
-
-      {/* Hover tooltip */}
       <div
         className="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-150
           absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10
@@ -71,10 +85,91 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
           leading-relaxed font-sans pointer-events-none"
       >
         {mutation.description}
-        {/* Arrow */}
         <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#c8942a]/40" />
       </div>
     </div>
+  );
+}
+
+type GenStatus = 'idle' | 'generating' | 'ready' | 'error';
+
+function ChallengeGenerator({ seed, weekNumber }: { seed: number; weekNumber: number }) {
+  const [status, setStatus] = useState<GenStatus>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const downloadUrl =
+    `/api/download?seed=${seed}` +
+    `&players=${SEASON1_OPTIONS.playersCount}` +
+    `&acts=${SEASON1_OPTIONS.playersActs.join(',')}` +
+    `&teleportStaff=${SEASON1_OPTIONS.startingItems.teleportStaffLevel}` +
+    `&dropSource=${SEASON1_OPTIONS.startingItems.teleportStaffDropSource}` +
+    `&cube=1` +
+    `&disableChat=1` +
+    `&xpMultiplier=${SEASON1_OPTIONS.xpMultiplier}` +
+    `&xpActs=${SEASON1_OPTIONS.xpActs.join(',')}` +
+    `&weekly=1`;
+
+  const handleGenerate = async () => {
+    setStatus('generating');
+    setErrorMsg('');
+    try {
+      const res = await fetch('/api/randomize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seed,
+          ...SEASON1_OPTIONS,
+          weeklyChallenge: { enabled: true },
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Generation failed');
+      }
+      setStatus('ready');
+    } catch (err) {
+      setStatus('error');
+      setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
+    }
+  };
+
+  if (status === 'ready') {
+    return (
+      <a
+        href={downloadUrl}
+        className="inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3
+          bg-gradient-to-b from-[#121838] to-[#0a1028]
+          border border-[#283878] text-[#c8d8f8]
+          hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
+          transition-colors panel-shadow"
+      >
+        Download Zip
+      </a>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-red-400">{errorMsg || 'Something went wrong.'}</p>
+        <button
+          onClick={handleGenerate}
+          className="inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={handleGenerate}
+      disabled={status === 'generating'}
+      className="inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {status === 'generating' ? 'Generating…' : 'Generate This Seed'}
+    </button>
   );
 }
 
@@ -97,12 +192,7 @@ export function WeekCard() {
         <MutationCard mutation={mutB} />
       </div>
 
-      <Link
-        href={`/generate?seed=${currentSeed}`}
-        className="inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow"
-      >
-        Generate This Seed
-      </Link>
+      <ChallengeGenerator seed={currentSeed} weekNumber={weekNumber} />
     </div>
   );
 }
