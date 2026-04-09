@@ -120,7 +120,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
  * Each pair is [mutationId, mutationId].
  */
 export const WEEKLY_PAIRS: [number, number][] = [
-  [10, 14], // 0
+  [5, 7],   // 0
   [2, 5],   // 1
   [3, 6],   // 2
   [7, 9],   // 3
