@@ -58,13 +58,13 @@ function getWeekData() {
 function MutationCard({ mutation }: { mutation: MutationDef }) {
   const imgSrc = `/mutations/${mutation.id}.png`;
   return (
-    <div className="group relative flex flex-col items-center border border-[#3a1510] bg-[#0c0304] panel-shadow p-4 w-40">
-      <div className="w-32 h-32 flex items-center justify-center mb-3 overflow-hidden">
+    <div className="group relative flex flex-col items-center border border-[#3a1510] bg-[#0c0304] panel-shadow p-4 w-48">
+      <div className="w-40 h-40 flex items-center justify-center mb-3 overflow-hidden">
         <Image
           src={imgSrc}
           alt={mutation.name}
-          width={128}
-          height={128}
+          width={160}
+          height={160}
           className="object-contain"
           onError={(e) => {
             const target = e.currentTarget as HTMLImageElement;
@@ -75,7 +75,7 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
         />
         <span className="text-5xl hidden" aria-hidden="true">{mutation.emoji}</span>
       </div>
-      <p className="font-cinzel font-bold text-[#c8942a] text-xs tracking-[0.1em] text-center leading-tight">
+      <p className="font-cinzel font-bold text-[#c8942a] text-sm tracking-[0.1em] text-center leading-tight">
         {mutation.name}
       </p>
       <div
