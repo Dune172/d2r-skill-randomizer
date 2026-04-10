@@ -18,9 +18,8 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans, Arial, sans-serif);
   background-image:
-    radial-gradient(ellipse 80% 60% at 10% 10%, rgba(140, 10, 10, 0.22) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 70% at 90% 90%, rgba(100, 5, 5, 0.16) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(60, 0, 0, 0.08) 0%, transparent 100%);
+    radial-gradient(ellipse 70% 50% at 10% 10%, rgba(100, 8, 8, 0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 60% at 90% 90%, rgba(70, 4, 4, 0.09) 0%, transparent 70%);
   min-height: 100vh;
 }
 
