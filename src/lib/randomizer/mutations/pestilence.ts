@@ -1,10 +1,18 @@
 import type { MutationContext } from './index';
+import { TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
 
 const POISON_TYPE = 'pois';
 const POISON_PCT  = '100';
 const POISON_DUR  = '200'; // 8 seconds at 25fps
-const POISON_MIN  = 100;   // ~4× PlagueBearer (27) — ratio scaled by MonLvl DM factor
-const POISON_MAX  = 200;   // ~4× PlagueBearer (54)
+
+const POISON_BY_ACT: Record<number, { min: number; max: number }> = {
+  1: { min: 30,  max: 60  },
+  2: { min: 50,  max: 100 },
+  3: { min: 70,  max: 140 },
+  4: { min: 90,  max: 180 },
+  5: { min: 110, max: 220 },
+};
+const POISON_FALLBACK = { min: 50, max: 100 }; // unknown/non-act monsters
 
 const EL_SLOTS = [
   {
@@ -31,9 +39,8 @@ const EL_SLOTS = [
 ] as const;
 
 // Attack modes to check, in priority order. For each mode with non-zero base
-// damage we write one poison El slot so the elemental effect fires on the
-// attacks the monster actually uses. Only the min column is needed to detect
-// whether the mode is active — damage values come from flat constants above.
+// damage that is NOT already covered by an existing El slot, we write one
+// poison El slot so the elemental effect fires on that attack.
 const ATTACK_MODES = [
   { mode: 'A1', minCol: 'A1MinD' },
   { mode: 'A2', minCol: 'A2MinD' },
@@ -48,23 +55,23 @@ type ResolvedSlot = {
   dur: number; durN: number; durH: number;
 };
 
-function writePoison(row: string[], slot: ResolvedSlot, modeStr: string): void {
+function writePoison(row: string[], slot: ResolvedSlot, modeStr: string, dmg: { min: number; max: number }): void {
   row[slot.type] = POISON_TYPE;
   if (slot.mode !== -1) row[slot.mode] = modeStr;
 
   if (slot.pct  !== -1) row[slot.pct]  = POISON_PCT;
-  if (slot.min  !== -1) row[slot.min]  = String(POISON_MIN);
-  if (slot.max  !== -1) row[slot.max]  = String(POISON_MAX);
+  if (slot.min  !== -1) row[slot.min]  = String(dmg.min);
+  if (slot.max  !== -1) row[slot.max]  = String(dmg.max);
   if (slot.dur  !== -1) row[slot.dur]  = POISON_DUR;
 
   if (slot.pctN !== -1) row[slot.pctN] = POISON_PCT;
-  if (slot.minN !== -1) row[slot.minN] = String(POISON_MIN);
-  if (slot.maxN !== -1) row[slot.maxN] = String(POISON_MAX);
+  if (slot.minN !== -1) row[slot.minN] = String(dmg.min);
+  if (slot.maxN !== -1) row[slot.maxN] = String(dmg.max);
   if (slot.durN !== -1) row[slot.durN] = POISON_DUR;
 
   if (slot.pctH !== -1) row[slot.pctH] = POISON_PCT;
-  if (slot.minH !== -1) row[slot.minH] = String(POISON_MIN);
-  if (slot.maxH !== -1) row[slot.maxH] = String(POISON_MAX);
+  if (slot.minH !== -1) row[slot.minH] = String(dmg.min);
+  if (slot.maxH !== -1) row[slot.maxH] = String(dmg.max);
   if (slot.durH !== -1) row[slot.durH] = POISON_DUR;
 }
 
@@ -82,11 +89,13 @@ export function applyPestilence(ctx: MutationContext): void {
   })).filter(s => s.type !== -1);
 
   // Pre-resolve attack mode activity columns (min damage only — used to detect
-  // whether a mode is actually used; values come from flat POISON_MIN/MAX)
+  // whether a mode is actually used by this monster)
   const attackModes = ATTACK_MODES.map(a => ({
     mode:   a.mode,
     minIdx: mh.indexOf(a.minCol),
   }));
+
+  const tcIdx = mh.indexOf(TC_COL);
 
   for (const row of mr) {
     if (!row[0]) continue;
@@ -101,11 +110,31 @@ export function applyPestilence(ctx: MutationContext): void {
     );
     if (activeModes.length === 0) continue; // non-combat monster, skip
 
-    // One poison El slot per active attack mode (A1 → A2 → S1)
+    // Build set of attack modes already covered by existing (occupied) El slots.
+    // D2 only fires the first El slot per attack mode, so writing a second slot
+    // for the same mode (e.g. El2=A1/pois when El1=A1/fire) has no effect.
+    const coveredModes = new Set(
+      slots
+        .filter(s => row[s.type])                      // slot has an elemental type
+        .map(s => (s.mode !== -1 ? row[s.mode] : ''))  // read its Mode column
+        .filter(Boolean)
+    );
+
+    // Only poison modes NOT already covered by an existing El slot
+    const uncoveredModes = activeModes.filter(a => !coveredModes.has(a.mode));
+    if (uncoveredModes.length === 0) continue;
+
+    // Determine act for damage scaling
+    const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
+    const m = tc.match(ACT_RE);
+    const act = m ? parseInt(m[1]) : (BOSS_ACTS[row[0]] ?? 0);
+    const dmg = POISON_BY_ACT[act] ?? POISON_FALLBACK;
+
+    // One poison El slot per uncovered active attack mode
     let slotIdx = 0;
-    for (const atk of activeModes) {
+    for (const atk of uncoveredModes) {
       if (slotIdx >= freeSlots.length) break;
-      writePoison(row, freeSlots[slotIdx], atk.mode);
+      writePoison(row, freeSlots[slotIdx], atk.mode, dmg);
       slotIdx++;
     }
   }
