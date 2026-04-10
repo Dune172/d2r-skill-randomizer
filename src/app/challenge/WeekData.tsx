@@ -59,12 +59,12 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
   const imgSrc = `/mutations/${mutation.id}.png`;
   return (
     <div className="group relative flex flex-col items-center border border-[#3a1510] bg-[#0c0304] panel-shadow p-4 w-40">
-      <div className="w-24 h-24 flex items-center justify-center mb-3 overflow-hidden">
+      <div className="w-32 h-32 flex items-center justify-center mb-3 overflow-hidden">
         <Image
           src={imgSrc}
           alt={mutation.name}
-          width={96}
-          height={96}
+          width={128}
+          height={128}
           className="object-contain"
           onError={(e) => {
             const target = e.currentTarget as HTMLImageElement;
