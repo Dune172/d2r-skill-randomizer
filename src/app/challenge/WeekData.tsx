@@ -58,14 +58,16 @@ function getWeekData() {
 function MutationCard({ mutation }: { mutation: MutationDef }) {
   const imgSrc = `/mutations/${mutation.id}.png`;
   return (
-    <div className="group relative flex flex-col items-center border border-[#3a1510] bg-[#0c0304] panel-shadow p-4 w-48">
+    <div className="card-ornate group relative flex flex-col items-center border border-[#3a1510] bg-[#0c0304] panel-shadow p-4 w-48
+      hover:-translate-y-1 hover:border-[#c8942a]/50 hover:shadow-[0_0_24px_rgba(200,148,42,0.12)]
+      transition-all duration-200">
       <div className="w-40 h-40 flex items-center justify-center mb-3 overflow-hidden">
         <Image
           src={imgSrc}
           alt={mutation.name}
           width={160}
           height={160}
-          className="object-contain"
+          className="object-contain group-hover:opacity-90 transition-opacity duration-200"
           onError={(e) => {
             const target = e.currentTarget as HTMLImageElement;
             target.style.display = 'none';
@@ -137,7 +139,7 @@ function ChallengeGenerator({ seed, weekNumber }: { seed: number; weekNumber: nu
     return (
       <a
         href={downloadUrl}
-        className="inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3
+        className="btn-shimmer inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3
           bg-gradient-to-b from-[#121838] to-[#0a1028]
           border border-[#283878] text-[#c8d8f8]
           hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
@@ -154,7 +156,7 @@ function ChallengeGenerator({ seed, weekNumber }: { seed: number; weekNumber: nu
         <p className="text-sm text-red-400">{errorMsg || 'Something went wrong.'}</p>
         <button
           onClick={handleGenerate}
-          className="inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow"
+          className="btn-shimmer inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow"
         >
           Try Again
         </button>
@@ -166,7 +168,7 @@ function ChallengeGenerator({ seed, weekNumber }: { seed: number; weekNumber: nu
     <button
       onClick={handleGenerate}
       disabled={status === 'generating'}
-      className="inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+      className="btn-shimmer inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {status === 'generating' ? 'Generating…' : 'Generate This Seed'}
     </button>
@@ -179,15 +181,15 @@ export function WeekCard() {
   const weekName = getWeekName(weekNumber);
 
   return (
-    <div className="border border-[#3a1510] bg-[#0c0304] panel-shadow p-8 mb-8">
+    <div className="card-ornate border border-t-2 border-[#3a1510] border-t-[#c8942a]/30 bg-[#0c0304] panel-shadow shadow-[inset_0_1px_0_rgba(200,148,42,0.15)] p-8 mb-8">
       <p className="font-cinzel text-[11px] tracking-[0.4em] text-[#7a5818] uppercase mb-3">
         Week {weekNumber} &nbsp;·&nbsp; {formatDate(currentStart)} – {formatDate(currentEnd)}
       </p>
-      <div className="font-cinzel font-black text-5xl md:text-6xl text-[#c8942a] glow-gold tracking-widest mb-2">
+      <div className="font-cinzel font-black text-5xl md:text-6xl text-[#c8942a] glow-pulse tracking-widest mb-2">
         {weekName}
       </div>
       <p className="font-mono text-[#7a5818] text-xs tracking-widest mb-6">
-        seed {currentSeed.toLocaleString()}
+        <span className="text-[#3a2808] mr-1">SEED</span>{currentSeed.toLocaleString()}
       </p>
 
       {/* Active mutations */}
@@ -222,7 +224,7 @@ export function WeekArchive() {
         </thead>
         <tbody>
           {archive.map(({ weekNumber: wn, seed, start, end }) => (
-            <tr key={wn} className="border-b border-[#1a0a06]">
+            <tr key={wn} className="border-b border-[#1a0a06] hover:bg-[#c8942a]/[0.03] transition-colors duration-150">
               <td className="py-2 pr-4 text-[#7a5818] font-cinzel text-xs">{wn}</td>
               <td className="py-2 pr-4 text-[#c8942a] font-cinzel text-xs">{getWeekName(wn)}</td>
               <td className="py-2 pr-4 text-[#a89060]/70 text-xs">{formatDate(start)} – {formatDate(end)}</td>

@@ -18,8 +18,9 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans, Arial, sans-serif);
   background-image:
-    radial-gradient(ellipse 70% 50% at 10% 10%, rgba(120, 10, 10, 0.14) 0%, transparent 100%),
-    radial-gradient(ellipse 60% 60% at 90% 90%, rgba(80, 5, 5, 0.10) 0%, transparent 100%);
+    radial-gradient(ellipse 80% 60% at 10% 10%, rgba(140, 10, 10, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 70% at 90% 90%, rgba(100, 5, 5, 0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(60, 0, 0, 0.08) 0%, transparent 100%);
   min-height: 100vh;
 }
 
@@ -35,6 +36,60 @@ body {
     0 0 18px rgba(200, 148, 42, 0.55),
     0 0 50px rgba(200, 148, 42, 0.25);
 }
+
+/* Pulsing gold glow for week name */
+@keyframes glow-pulse {
+  0%, 100% {
+    text-shadow:
+      0 0 18px rgba(200, 148, 42, 0.55),
+      0 0 50px rgba(200, 148, 42, 0.25);
+  }
+  50% {
+    text-shadow:
+      0 0 30px rgba(200, 148, 42, 0.80),
+      0 0 80px rgba(200, 148, 42, 0.40),
+      0 0 120px rgba(200, 148, 42, 0.15);
+  }
+}
+.glow-pulse { animation: glow-pulse 3.5s ease-in-out infinite; }
+
+/* Staggered entrance animations */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.anim-fade-up    { animation: fade-in-up 0.6s ease-out both; }
+.anim-fade-up-d1 { animation: fade-in-up 0.6s 0.15s ease-out both; }
+.anim-fade-up-d2 { animation: fade-in-up 0.6s 0.30s ease-out both; }
+.anim-fade-up-d3 { animation: fade-in-up 0.6s 0.50s ease-out both; }
+
+/* Ornate L-bracket corner accents on cards */
+.card-ornate { position: relative; }
+.card-ornate::before,
+.card-ornate::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: rgba(200, 148, 42, 0.5);
+  border-style: solid;
+  pointer-events: none;
+  z-index: 1;
+}
+.card-ornate::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.card-ornate::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+/* Button shimmer sweep on hover */
+.btn-shimmer { position: relative; overflow: hidden; }
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.07) 50%, transparent 60%);
+  transform: translateX(-100%);
+  transition: transform 0.45s ease;
+}
+.btn-shimmer:hover::after { transform: translateX(100%); }
 
 /* Panel inner shadow */
 .panel-shadow {

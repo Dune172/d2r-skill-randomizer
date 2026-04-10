@@ -42,16 +42,22 @@ export default function ChallengePage() {
       />
 
       <section className="max-w-2xl mx-auto px-4 pt-12 pb-6 text-center">
-        <h1 className="font-cinzel font-black tracking-[0.14em] text-3xl md:text-4xl text-[#c8942a] glow-gold uppercase mb-3">
+        <h1 className="anim-fade-up font-cinzel font-black tracking-[0.14em] text-3xl md:text-4xl text-[#c8942a] glow-gold uppercase mb-3">
           D2R Weekly Challenge
         </h1>
-        <h2 className="font-cinzel text-base text-[#a87830] tracking-[0.08em] mb-8">
-          This Week&apos;s Randomizer Seed
-        </h2>
+        <div className="anim-fade-up-d1 flex items-center gap-3 justify-center mb-8">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[#7a5818]/60 max-w-[80px]" />
+          <h2 className="font-cinzel text-sm text-[#a87830] tracking-[0.12em] uppercase">
+            This Week&apos;s Randomizer Seed
+          </h2>
+          <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[#7a5818]/60 max-w-[80px]" />
+        </div>
 
-        <WeekCard />
+        <div className="anim-fade-up-d2">
+          <WeekCard />
+        </div>
 
-        <p className="text-[#a89060]/70 text-sm leading-relaxed max-w-lg mx-auto mb-10">
+        <p className="anim-fade-up-d3 text-[#a89060]/70 text-sm leading-relaxed max-w-lg mx-auto mb-10">
           A new challenge seed drops every Monday. Everyone plays the same Diablo 2 Resurrected
           randomizer — same seed, same settings. Share your run and compare results in{' '}
           <a
