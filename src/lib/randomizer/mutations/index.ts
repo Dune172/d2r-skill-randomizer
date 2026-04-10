@@ -11,7 +11,6 @@ import { applyTheHorde } from './the-horde';
 import { applyGlassCannon } from './glass-cannon';
 import { applyPestilence } from './pestilence';
 import { applyArcaneSurge } from './arcane-surge';
-import { applyCursedGround } from './cursed-ground';
 import { applyTitansGrip } from './titans-grip';
 import { applyScavengersWorld } from './scavengers-world';
 import { applyDeadReckoning } from './dead-reckoning';
@@ -46,7 +45,6 @@ const APPLY_FNS: Record<number, ApplyFn> = {
   6:  applyGlassCannon,
   7:  applyPestilence,
   8:  applyArcaneSurge,
-  9:  applyCursedGround,
   10: applyIronclad,
   11: applyTitansGrip,
   12: applyScavengersWorld,

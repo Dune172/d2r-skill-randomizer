@@ -71,13 +71,6 @@ export const MUTATIONS: Record<number, MutationDef> = {
     description:
       'All skill mana costs are doubled. In return, all skills deal 30% increased elemental damage.',
   },
-  9: {
-    id: 'cursed-ground',
-    name: 'Cursed Ground',
-    emoji: '👹',
-    description:
-      'All monsters spawn already cursed with Amplify Damage.',
-  },
   10: {
     id: 'ironclad',
     name: 'Ironclad',
@@ -123,28 +116,28 @@ export const WEEKLY_PAIRS: [number, number][] = [
   [5, 7],   // 0
   [2, 5],   // 1
   [3, 6],   // 2
-  [7, 9],   // 3
+  [7, 4],   // 3
   [8, 12],  // 4
   [11, 13], // 5
   [1, 6],   // 6
-  [2, 9],   // 7
+  [2, 10],  // 7
   [3, 5],   // 8
   [4, 5],   // 9
   [7, 13],  // 10
   [8, 11],  // 11
   [1, 5],   // 12
   [2, 13],  // 13
-  [3, 9],   // 14
+  [3, 13],  // 14
   [4, 12],  // 15
   [6, 7],   // 16
   [8, 13],  // 17
   [1, 13],  // 18
   [2, 7],   // 19
   [3, 12],  // 20
-  [4, 9],   // 21
+  [4, 13],  // 21
   [5, 11],  // 22
   [6, 13],  // 23
-  [1, 9],   // 24
+  [1, 3],   // 24
   [2, 12],  // 25
   [10, 5],  // 26
   [14, 7],  // 27

@@ -1,9 +1,10 @@
 import type { MutationContext } from './index';
 
-const POISON_TYPE  = 'pois';
-const POISON_PCT   = '100';
-const POISON_DUR   = '150';
-const POISON_SCALE = 0.25;
+const POISON_TYPE = 'pois';
+const POISON_PCT  = '100';
+const POISON_DUR  = '200'; // 8 seconds at 25fps
+const POISON_MIN  = 100;   // ~4× PlagueBearer (27) — ratio scaled by MonLvl DM factor
+const POISON_MAX  = 200;   // ~4× PlagueBearer (54)
 
 const EL_SLOTS = [
   {
@@ -30,12 +31,13 @@ const EL_SLOTS = [
 ] as const;
 
 // Attack modes to check, in priority order. For each mode with non-zero base
-// damage, we write one poison El slot using that mode string so the elemental
-// effect fires on the attacks the monster actually uses.
+// damage we write one poison El slot so the elemental effect fires on the
+// attacks the monster actually uses. Only the min column is needed to detect
+// whether the mode is active — damage values come from flat constants above.
 const ATTACK_MODES = [
-  { mode: 'A1', min: 'A1MinD', max: 'A1MaxD', minN: 'A1MinD(N)', maxN: 'A1MaxD(N)', minH: 'A1MinD(H)', maxH: 'A1MaxD(H)' },
-  { mode: 'A2', min: 'A2MinD', max: 'A2MaxD', minN: 'A2MinD(N)', maxN: 'A2MaxD(N)', minH: 'A2MinD(H)', maxH: 'A2MaxD(H)' },
-  { mode: 'S1', min: 'S1MinD', max: 'S1MaxD', minN: 'S1MinD(N)', maxN: 'S1MaxD(N)', minH: 'S1MinD(H)', maxH: 'S1MaxD(H)' },
+  { mode: 'A1', minCol: 'A1MinD' },
+  { mode: 'A2', minCol: 'A2MinD' },
+  { mode: 'S1', minCol: 'S1MinD' },
 ] as const;
 
 type ResolvedSlot = {
@@ -46,34 +48,23 @@ type ResolvedSlot = {
   dur: number; durN: number; durH: number;
 };
 
-function scaledPoison(base: number): number {
-  return Math.max(1, Math.floor(base * POISON_SCALE));
-}
-
-function writePoison(
-  row: string[],
-  slot: ResolvedSlot,
-  modeStr: string,
-  poisMinBase: number, poisMaxBase: number,
-  poisMinNM: number,   poisMaxNM: number,
-  poisMinHell: number, poisMaxHell: number,
-): void {
+function writePoison(row: string[], slot: ResolvedSlot, modeStr: string): void {
   row[slot.type] = POISON_TYPE;
   if (slot.mode !== -1) row[slot.mode] = modeStr;
 
   if (slot.pct  !== -1) row[slot.pct]  = POISON_PCT;
-  if (slot.min  !== -1) row[slot.min]  = String(poisMinBase);
-  if (slot.max  !== -1) row[slot.max]  = String(poisMaxBase);
+  if (slot.min  !== -1) row[slot.min]  = String(POISON_MIN);
+  if (slot.max  !== -1) row[slot.max]  = String(POISON_MAX);
   if (slot.dur  !== -1) row[slot.dur]  = POISON_DUR;
 
   if (slot.pctN !== -1) row[slot.pctN] = POISON_PCT;
-  if (slot.minN !== -1) row[slot.minN] = String(poisMinNM);
-  if (slot.maxN !== -1) row[slot.maxN] = String(poisMaxNM);
+  if (slot.minN !== -1) row[slot.minN] = String(POISON_MIN);
+  if (slot.maxN !== -1) row[slot.maxN] = String(POISON_MAX);
   if (slot.durN !== -1) row[slot.durN] = POISON_DUR;
 
   if (slot.pctH !== -1) row[slot.pctH] = POISON_PCT;
-  if (slot.minH !== -1) row[slot.minH] = String(poisMinHell);
-  if (slot.maxH !== -1) row[slot.maxH] = String(poisMaxHell);
+  if (slot.minH !== -1) row[slot.minH] = String(POISON_MIN);
+  if (slot.maxH !== -1) row[slot.maxH] = String(POISON_MAX);
   if (slot.durH !== -1) row[slot.durH] = POISON_DUR;
 }
 
@@ -90,12 +81,11 @@ export function applyPestilence(ctx: MutationContext): void {
     dur:   mh.indexOf(s.dur),  durN: mh.indexOf(s.durN),  durH: mh.indexOf(s.durH),
   })).filter(s => s.type !== -1);
 
-  // Pre-resolve attack mode column indices
+  // Pre-resolve attack mode activity columns (min damage only — used to detect
+  // whether a mode is actually used; values come from flat POISON_MIN/MAX)
   const attackModes = ATTACK_MODES.map(a => ({
-    mode: a.mode,
-    min:  mh.indexOf(a.min),  max:  mh.indexOf(a.max),
-    minN: mh.indexOf(a.minN), maxN: mh.indexOf(a.maxN),
-    minH: mh.indexOf(a.minH), maxH: mh.indexOf(a.maxH),
+    mode:   a.mode,
+    minIdx: mh.indexOf(a.minCol),
   }));
 
   for (const row of mr) {
@@ -107,35 +97,15 @@ export function applyPestilence(ctx: MutationContext): void {
 
     // Collect attack modes that have non-zero base damage
     const activeModes = attackModes.filter(a =>
-      a.min !== -1 && parseInt(row[a.min] || '0', 10) > 0
+      a.minIdx !== -1 && parseInt(row[a.minIdx] || '0', 10) > 0
     );
     if (activeModes.length === 0) continue; // non-combat monster, skip
 
-    // One poison El slot per active attack mode (A1, then A2, then S1)
+    // One poison El slot per active attack mode (A1 → A2 → S1)
     let slotIdx = 0;
     for (const atk of activeModes) {
       if (slotIdx >= freeSlots.length) break;
-
-      const baseMin = parseInt(row[atk.min]  || '0', 10);
-      const baseMax = atk.max  !== -1 ? parseInt(row[atk.max]  || '0', 10) : baseMin;
-      const nmMin   = atk.minN !== -1 ? parseInt(row[atk.minN] || '0', 10) : 0;
-      const nmMax   = atk.maxN !== -1 ? parseInt(row[atk.maxN] || '0', 10) : 0;
-      const hellMin = atk.minH !== -1 ? parseInt(row[atk.minH] || '0', 10) : 0;
-      const hellMax = atk.maxH !== -1 ? parseInt(row[atk.maxH] || '0', 10) : 0;
-
-      const poisMinBase = scaledPoison(baseMin);
-      const poisMaxBase = scaledPoison(baseMax);
-      const poisMinNM   = nmMin   > 0 ? scaledPoison(nmMin)   : poisMinBase;
-      const poisMaxNM   = nmMax   > 0 ? scaledPoison(nmMax)   : poisMaxBase;
-      const poisMinHell = hellMin > 0 ? scaledPoison(hellMin) : poisMinNM;
-      const poisMaxHell = hellMax > 0 ? scaledPoison(hellMax) : poisMaxNM;
-
-      writePoison(
-        row, freeSlots[slotIdx], atk.mode,
-        poisMinBase, poisMaxBase,
-        poisMinNM,   poisMaxNM,
-        poisMinHell, poisMaxHell,
-      );
+      writePoison(row, freeSlots[slotIdx], atk.mode);
       slotIdx++;
     }
   }
