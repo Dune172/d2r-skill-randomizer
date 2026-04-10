@@ -146,8 +146,51 @@ export const WEEKLY_PAIRS: [number, number][] = [
   [1, 4],   // 30
 ];
 
+/**
+ * Thematic name for each rotation slot — one per WEEKLY_PAIRS entry.
+ * Index matches WEEKLY_PAIRS index (0-based).
+ */
+export const WEEK_NAMES: string[] = [
+  'Rotting Tide',        // 0  The Horde + Pestilence
+  'March of the Fallen', // 1  Heavy Burden + The Horde
+  'Fragile Fury',        // 2  Hollow Shell + Glass Cannon
+  'Sanguine Plague',     // 3  Pestilence + Bloodthirst
+  'Scraps of Power',     // 4  Arcane Surge + Scavenger's World
+  'The Long March',      // 5  Titan's Grip + Dead Reckoning
+  'Glass Rush',          // 6  Hyperdrive + Glass Cannon
+  'Immovable Object',    // 7  Heavy Burden + Ironclad
+  'Thin Ice',            // 8  Hollow Shell + The Horde
+  'Blood Ocean',         // 9  Bloodthirst + The Horde
+  'Slow Death',          // 10 Pestilence + Dead Reckoning
+  'Iron Mage',           // 11 Arcane Surge + Titan's Grip
+  'The Stampede',        // 12 Hyperdrive + The Horde
+  'Toil and Trouble',    // 13 Heavy Burden + Dead Reckoning
+  'Running on Fumes',    // 14 Hollow Shell + Dead Reckoning
+  'Slim Pickings',       // 15 Bloodthirst + Scavenger's World
+  'Shattered Venom',     // 16 Glass Cannon + Pestilence
+  'Magical Debt',        // 17 Arcane Surge + Dead Reckoning
+  'Race to the Bottom',  // 18 Hyperdrive + Dead Reckoning
+  'Poisoned Chains',     // 19 Heavy Burden + Pestilence
+  'Bare Bones',          // 20 Hollow Shell + Scavenger's World
+  'Pyrrhic Victory',     // 21 Bloodthirst + Dead Reckoning
+  'Iron Tide',           // 22 The Horde + Titan's Grip
+  'Brittle Fortune',     // 23 Glass Cannon + Dead Reckoning
+  'Fragile Flash',       // 24 Hyperdrive + Hollow Shell
+  'Grim Harvest',        // 25 Heavy Burden + Scavenger's World
+  'Fortress Siege',      // 26 Ironclad + The Horde
+  'Rust and Rot',        // 27 Entropy + Pestilence
+  'Spell and Steel',     // 28 Ironclad + Arcane Surge
+  'The Corrosion',       // 29 Entropy + Bloodthirst
+  'Blood Rush',          // 30 Hyperdrive + Bloodthirst
+];
+
 /** Return the two active MutationDefs for the given week number (1-based). */
 export function getActivePair(weekNumber: number): [MutationDef, MutationDef] {
   const [a, b] = WEEKLY_PAIRS[(weekNumber - 1) % WEEKLY_PAIRS.length];
   return [MUTATIONS[a], MUTATIONS[b]];
+}
+
+/** Return the thematic name for the given week number (1-based). */
+export function getWeekName(weekNumber: number): string {
+  return WEEK_NAMES[(weekNumber - 1) % WEEK_NAMES.length];
 }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getActivePair, type MutationDef } from '@/lib/mutations/registry';
+import { getActivePair, getWeekName, type MutationDef } from '@/lib/mutations/registry';
 
 const BASE_DATE = new Date('2026-04-07T00:00:00Z');
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -176,15 +176,19 @@ function ChallengeGenerator({ seed, weekNumber }: { seed: number; weekNumber: nu
 export function WeekCard() {
   const { weekNumber, currentSeed, currentStart, currentEnd } = getWeekData();
   const [mutA, mutB] = getActivePair(weekNumber);
+  const weekName = getWeekName(weekNumber);
 
   return (
     <div className="border border-[#3a1510] bg-[#0c0304] panel-shadow p-8 mb-8">
       <p className="font-cinzel text-[11px] tracking-[0.4em] text-[#7a5818] uppercase mb-3">
         Week {weekNumber} &nbsp;·&nbsp; {formatDate(currentStart)} – {formatDate(currentEnd)}
       </p>
-      <div className="font-cinzel font-black text-5xl md:text-6xl text-[#c8942a] glow-gold tracking-widest mb-6">
-        {currentSeed.toLocaleString()}
+      <div className="font-cinzel font-black text-5xl md:text-6xl text-[#c8942a] glow-gold tracking-widest mb-2">
+        {weekName}
       </div>
+      <p className="font-mono text-[#7a5818] text-xs tracking-widest mb-6">
+        seed {currentSeed.toLocaleString()}
+      </p>
 
       {/* Active mutations */}
       <div className="flex justify-center gap-4 mb-6">
@@ -211,8 +215,8 @@ export function WeekArchive() {
         <thead>
           <tr className="border-b border-[#3a1510]">
             <th className="text-left font-cinzel text-[10px] tracking-[0.3em] uppercase text-[#7a5818] pb-2 pr-4">Week</th>
+            <th className="text-left font-cinzel text-[10px] tracking-[0.3em] uppercase text-[#7a5818] pb-2 pr-4">Name</th>
             <th className="text-left font-cinzel text-[10px] tracking-[0.3em] uppercase text-[#7a5818] pb-2 pr-4">Dates</th>
-            <th className="text-left font-cinzel text-[10px] tracking-[0.3em] uppercase text-[#7a5818] pb-2 pr-4">Seed</th>
             <th className="pb-2" />
           </tr>
         </thead>
@@ -220,8 +224,8 @@ export function WeekArchive() {
           {archive.map(({ weekNumber: wn, seed, start, end }) => (
             <tr key={wn} className="border-b border-[#1a0a06]">
               <td className="py-2 pr-4 text-[#7a5818] font-cinzel text-xs">{wn}</td>
+              <td className="py-2 pr-4 text-[#c8942a] font-cinzel text-xs">{getWeekName(wn)}</td>
               <td className="py-2 pr-4 text-[#a89060]/70 text-xs">{formatDate(start)} – {formatDate(end)}</td>
-              <td className="py-2 pr-4 text-[#c8942a] font-mono text-sm">{seed.toLocaleString()}</td>
               <td className="py-2">
                 <Link
                   href={`/generate?seed=${seed}`}
