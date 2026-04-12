@@ -1,23 +1,20 @@
 import type { MutationContext } from './index';
+import { EXP_COLS } from '../players-scaler';
 
-const XP_MULT = 2;       // double thresholds = half XP rate
+const XP_MULT = 1 / 2;  // half XP per kill
 const PICKS_ADD = 1;
 const MAX_PICKS = 6;
 
-// Columns to skip in experience.txt (non-numeric)
-const SKIP_COLS = new Set(['Level', 'ExpRatio']);
-
 export function applyDeadReckoning(ctx: MutationContext): void {
-  // Double XP thresholds in experience.txt
-  const { headers: eh, rows: er } = ctx.experience;
-  const levelIdx = eh.indexOf('Level');
-  for (const row of er) {
-    // Skip non-threshold rows (e.g. MaxLvl) — modifying them corrupts the level cap
-    if (levelIdx !== -1 && isNaN(parseInt(row[levelIdx], 10))) continue;
-    for (let i = 0; i < eh.length; i++) {
-      if (SKIP_COLS.has(eh[i])) continue;
-      const val = parseInt(row[i], 10);
-      if (!isNaN(val) && val > 0) row[i] = String(val * XP_MULT);
+  // Halve XP given by all monsters in monstats
+  const { headers: mh, rows: mr } = ctx.monstats;
+  const expIdxs = EXP_COLS.map(c => mh.indexOf(c)).filter(i => i !== -1);
+  for (const row of mr) {
+    if (!row[0]) continue;
+    for (const idx of expIdxs) {
+      const val = parseInt(row[idx], 10);
+      if (!isNaN(val) && val > 0)
+        row[idx] = String(Math.max(1, Math.round(val * XP_MULT)));
     }
   }
 
