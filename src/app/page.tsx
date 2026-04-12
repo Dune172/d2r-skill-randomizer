@@ -133,7 +133,7 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 function getCurrentChallenge() {
   const now = new Date();
   const weekNumber = Math.max(1, Math.floor((now.getTime() - BASE_DATE.getTime()) / WEEK_MS) + 1);
-  const seed = weekNumber * 31337;
+  const seed = weekNumber * 1337;
   const start = new Date(BASE_DATE.getTime() + (weekNumber - 1) * WEEK_MS);
   const end = new Date(start.getTime() + WEEK_MS - 1);
   const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });

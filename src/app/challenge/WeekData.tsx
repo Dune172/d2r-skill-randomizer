@@ -27,7 +27,7 @@ const SEASON1_OPTIONS = {
 };
 
 function getWeekSeed(weekNumber: number): number {
-  return weekNumber * 31337;
+  return weekNumber * 1337;
 }
 
 function getWeekStart(weekNumber: number): Date {
