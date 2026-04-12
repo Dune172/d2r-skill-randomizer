@@ -12,7 +12,6 @@ import { applyGlassCannon } from './glass-cannon';
 import { applyPestilence } from './pestilence';
 import { applyArcaneSurge } from './arcane-surge';
 import { applyTitansGrip } from './titans-grip';
-import { applyScavengersWorld } from './scavengers-world';
 import { applyDeadReckoning } from './dead-reckoning';
 import { applyIronclad } from './ironclad';
 import { applyEntropy } from './entropy';
@@ -48,7 +47,6 @@ const APPLY_FNS: Record<number, ApplyFn> = {
   8:  applyArcaneSurge,
   10: applyIronclad,
   11: applyTitansGrip,
-  12: applyScavengersWorld,
   13: applyDeadReckoning,
   14: applyEntropy,
 };

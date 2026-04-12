@@ -85,13 +85,6 @@ export const MUTATIONS: Record<number, MutationDef> = {
     description:
       'All weapon strength and dexterity requirements are increased by 50%. All weapon damage is increased by 30%.',
   },
-  12: {
-    id: 'scavengers-world',
-    name: "Scavenger's World",
-    emoji: '🏚️',
-    description:
-      'Item quality is universally downgraded — fewer rares and uniques, more magic and normal items drop.',
-  },
   13: {
     id: 'dead-reckoning',
     name: 'Dead Reckoning',
@@ -117,7 +110,7 @@ export const WEEKLY_PAIRS: [number, number][] = [
   [2, 5],   // 1
   [3, 6],   // 2
   [7, 4],   // 3
-  [8, 12],  // 4
+  [8, 13],  // 4
   [11, 13], // 5
   [1, 6],   // 6
   [2, 10],  // 7
@@ -128,17 +121,17 @@ export const WEEKLY_PAIRS: [number, number][] = [
   [1, 5],   // 12
   [2, 13],  // 13
   [3, 13],  // 14
-  [4, 12],  // 15
+  [4, 14],  // 15
   [6, 7],   // 16
   [8, 13],  // 17
   [1, 13],  // 18
   [2, 7],   // 19
-  [3, 12],  // 20
+  [3, 6],   // 20
   [4, 13],  // 21
   [5, 11],  // 22
   [6, 13],  // 23
   [1, 3],   // 24
-  [2, 12],  // 25
+  [2, 10],  // 25
   [10, 5],  // 26
   [14, 7],  // 27
   [10, 8],  // 28
@@ -155,7 +148,7 @@ export const WEEK_NAMES: string[] = [
   'March of the Fallen', // 1  Heavy Burden + The Horde
   'Fragile Fury',        // 2  Hollow Shell + Glass Cannon
   'Sanguine Plague',     // 3  Pestilence + Bloodthirst
-  'Scraps of Power',     // 4  Arcane Surge + Scavenger's World
+  'Borrowed Power',      // 4  Arcane Surge + Dead Reckoning
   'The Long March',      // 5  Titan's Grip + Dead Reckoning
   'Glass Rush',          // 6  Hyperdrive + Glass Cannon
   'Immovable Object',    // 7  Heavy Burden + Ironclad
@@ -166,17 +159,17 @@ export const WEEK_NAMES: string[] = [
   'The Stampede',        // 12 Hyperdrive + The Horde
   'Toil and Trouble',    // 13 Heavy Burden + Dead Reckoning
   'Running on Fumes',    // 14 Hollow Shell + Dead Reckoning
-  'Slim Pickings',       // 15 Bloodthirst + Scavenger's World
+  'Gnawing Rust',        // 15 Bloodthirst + Entropy
   'Shattered Venom',     // 16 Glass Cannon + Pestilence
   'Magical Debt',        // 17 Arcane Surge + Dead Reckoning
   'Race to the Bottom',  // 18 Hyperdrive + Dead Reckoning
   'Poisoned Chains',     // 19 Heavy Burden + Pestilence
-  'Bare Bones',          // 20 Hollow Shell + Scavenger's World
+  'Paper Tigers',        // 20 Hollow Shell + Glass Cannon
   'Pyrrhic Victory',     // 21 Bloodthirst + Dead Reckoning
   'Iron Tide',           // 22 The Horde + Titan's Grip
   'Brittle Fortune',     // 23 Glass Cannon + Dead Reckoning
   'Fragile Flash',       // 24 Hyperdrive + Hollow Shell
-  'Grim Harvest',        // 25 Heavy Burden + Scavenger's World
+  'Iron Will',           // 25 Heavy Burden + Ironclad
   'Fortress Siege',      // 26 Ironclad + The Horde
   'Rust and Rot',        // 27 Entropy + Pestilence
   'Spell and Steel',     // 28 Ironclad + Arcane Surge
