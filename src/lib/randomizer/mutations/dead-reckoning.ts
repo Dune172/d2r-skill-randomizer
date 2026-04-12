@@ -10,7 +10,10 @@ const SKIP_COLS = new Set(['Level', 'ExpRatio']);
 export function applyDeadReckoning(ctx: MutationContext): void {
   // Double XP thresholds in experience.txt
   const { headers: eh, rows: er } = ctx.experience;
+  const levelIdx = eh.indexOf('Level');
   for (const row of er) {
+    // Skip non-threshold rows (e.g. MaxLvl) — modifying them corrupts the level cap
+    if (levelIdx !== -1 && isNaN(parseInt(row[levelIdx], 10))) continue;
     for (let i = 0; i < eh.length; i++) {
       if (SKIP_COLS.has(eh[i])) continue;
       const val = parseInt(row[i], 10);
