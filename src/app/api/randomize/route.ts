@@ -380,11 +380,13 @@ export async function POST(request: NextRequest) {
     let armorTxt: string | undefined;
     let weaponsTxt: string | undefined;
     let experienceTxt: string | undefined;
+    let miscTxt: string | undefined;
 
     if (weeklyEnabled) {
       const expSrc = loadTxtFile('experience.txt');
       const armorSrc = loadTxtFile('armor.txt');
       const weaponsSrc = loadTxtFile('weapons.txt');
+      const miscSrc = loadTxtFile('misc.txt');
 
       // Determine week number using the same BASE_DATE logic as the challenge page
       const BASE_DATE = new Date('2026-04-07T00:00:00Z');
@@ -401,6 +403,7 @@ export async function POST(request: NextRequest) {
         experience:    expSrc,
         armor:         armorSrc,
         weapons:       weaponsSrc,
+        misc:          miscSrc,
       });
 
       // Re-serialize charstats (may have been modified by Hyperdrive/Hollow Shell)
@@ -408,9 +411,10 @@ export async function POST(request: NextRequest) {
       // Re-serialize tc (may have been modified by Pestilence/Scavenger's World/Dead Reckoning)
       tcTxt = serializeTxtFile(tcSrc.headers, tcSrc.rows);
 
-      armorTxt     = serializeTxtFile(armorSrc.headers, armorSrc.rows);
-      weaponsTxt   = serializeTxtFile(weaponsSrc.headers, weaponsSrc.rows);
+      armorTxt      = serializeTxtFile(armorSrc.headers, armorSrc.rows);
+      weaponsTxt    = serializeTxtFile(weaponsSrc.headers, weaponsSrc.rows);
       experienceTxt = serializeTxtFile(expSrc.headers, expSrc.rows);
+      miscTxt       = serializeTxtFile(miscSrc.headers, miscSrc.rows);
     }
 
     monstatsTxt     = serializeTxtFile(monstatsSrc.headers, monstatsSrc.rows);
@@ -450,6 +454,7 @@ export async function POST(request: NextRequest) {
       armorTxt,
       weaponsTxt,
       experienceTxt,
+      miscTxt,
     });
 
     // Limit cache size before inserting (evict oldest entry if at capacity)

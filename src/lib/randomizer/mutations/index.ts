@@ -32,6 +32,7 @@ export interface MutationContext {
   experience:    { headers: string[]; rows: string[][] };
   armor:         { headers: string[]; rows: string[][] };
   weapons:       { headers: string[]; rows: string[][] };
+  misc:          { headers: string[]; rows: string[][] };
 }
 
 type ApplyFn = (ctx: MutationContext) => void;

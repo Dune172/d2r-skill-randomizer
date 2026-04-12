@@ -139,6 +139,20 @@ export function applyPestilence(ctx: MutationContext): void {
     }
   }
 
+  // Increase antidote potion purchase price 10× in misc.txt
+  const { headers: misch, rows: miscr } = ctx.misc;
+  const miscCodeIdx = misch.indexOf('code');
+  const miscCostIdx = misch.indexOf('cost');
+  if (miscCodeIdx !== -1 && miscCostIdx !== -1) {
+    for (const row of miscr) {
+      if (row[miscCodeIdx] === 'yps') {
+        const cost = parseInt(row[miscCostIdx], 10);
+        if (!isNaN(cost) && cost > 0) row[miscCostIdx] = String(cost * 10);
+        break;
+      }
+    }
+  }
+
   // Remove antidote potions from treasure classes
   const { headers: th, rows: tr } = ctx.treasureclass;
   const tcNameIdx = th.indexOf('Treasure Class');

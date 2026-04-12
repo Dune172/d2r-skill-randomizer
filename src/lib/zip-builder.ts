@@ -27,6 +27,7 @@ export interface ZipContents {
   armorTxt?: string;                // armor.txt modified by weekly mutations
   weaponsTxt?: string;              // weapons.txt modified by weekly mutations
   experienceTxt?: string;           // experience.txt modified by weekly mutations
+  miscTxt?: string;                 // misc.txt modified by weekly mutations (e.g. antidote potion cost)
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -139,6 +140,9 @@ export function buildZip(contents: ZipContents): Buffer {
   }
   if (contents.experienceTxt) {
     zip.addFile(`${d}/data/global/excel/experience.txt`, str(contents.experienceTxt));
+  }
+  if (contents.miscTxt) {
+    zip.addFile(`${d}/data/global/excel/misc.txt`, str(contents.miscTxt));
   }
 
   // Disable chat input to prevent /players x commands (optional)
