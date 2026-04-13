@@ -292,50 +292,45 @@ export function reorderSkillsRows(
   const classBuckets = new Map<ClassCode, { index: number; row: string[] }[]>(
     CLASS_ORDER.map(c => [c, []] as [ClassCode, { index: number; row: string[] }[]])
   );
-  const nonClassRows: { index: number; row: string[] }[] = [];
+  const nonClassIndices = new Set<number>();
 
   for (let i = 0; i < rows.length; i++) {
     const target = nameToTarget.get(rows[i][0]);
     if (target) {
       classBuckets.get(target)!.push({ index: i, row: rows[i] });
     } else {
-      nonClassRows.push({ index: i, row: rows[i] });
+      nonClassIndices.add(i);
     }
   }
 
-  const reorderedRows: string[][] = [];
+  // Keep non-class skills at their original positions so *Id matches row position.
+  // D2R uses *Id for animation sequence lookups (monseq); moving non-class skills
+  // (e.g. ShamanFire) to different positions breaks monster cast animations.
+  const reorderedRows: string[][] = new Array(rows.length);
   const idMapping = new Map<number, number>();
 
-  // Split non-class rows: those originally before the first class skill stay at the
-  // front (e.g. Attack/Kick/Throw at rows 0-5 — hardcoded by the D2R engine).
-  // Everything else goes after the class blocks.
-  nonClassRows.sort((a, b) => a.index - b.index);
-  const allClassIndices = Array.from(classBuckets.values()).flat().map(x => x.index);
-  const firstClassIndex = allClassIndices.length > 0 ? Math.min(...allClassIndices) : Infinity;
-  const prefixNonClass = nonClassRows.filter(r => r.index < firstClassIndex);
-  const suffixNonClass = nonClassRows.filter(r => r.index >= firstClassIndex);
-
-  for (const { index, row } of prefixNonClass) {
-    idMapping.set(index, reorderedRows.length);
-    reorderedRows.push(row);
+  // 1. Pin non-class rows at their original indices
+  for (const idx of nonClassIndices) {
+    reorderedRows[idx] = rows[idx];
+    idMapping.set(idx, idx);
   }
+
+  // 2. Collect available (class-skill) positions in order
+  const availablePositions: number[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    if (!nonClassIndices.has(i)) availablePositions.push(i);
+  }
+
+  // 3. Fill available positions with class skills in canonical class order,
+  //    30 per class — ensures contiguous blocks for StaffMod lookup.
+  let posIdx = 0;
   for (const code of CLASS_ORDER) {
     const bucket = classBuckets.get(code)!.sort((a, b) => a.index - b.index);
     for (const { index, row } of bucket) {
-      idMapping.set(index, reorderedRows.length);
-      reorderedRows.push(row);
+      const newPos = availablePositions[posIdx++];
+      reorderedRows[newPos] = row;
+      idMapping.set(index, newPos);
     }
-  }
-  for (const { index, row } of suffixNonClass) {
-    idMapping.set(index, reorderedRows.length);
-    reorderedRows.push(row);
-  }
-
-  // Update *Id column (index 1) to match new row positions.
-  // D2R derives skill IDs from row position; stale *Id values after reordering
-  // cause animation sequence mismatches (e.g. monseq references to ShamanFire).
-  for (let i = 0; i < reorderedRows.length; i++) {
-    reorderedRows[i][1] = String(i);
   }
 
   return { reorderedRows, idMapping };
