@@ -1,12 +1,14 @@
 import type { MutationContext } from './index';
 
 const LIFE_MANA_MULT = 1 / 3; // reduce to 1/3
+const POTION_COST_MULT = 5;
 
 const LIFE_COLS  = ['hpadd', 'LifePerLevel', 'LifePerVitality'];
 const MANA_COLS  = ['ManaPerLevel', 'ManaPerMagic'];
+const POTION_TYPES = new Set(['hpot', 'mpot']);
 
 // Unique ring given to all classes at the start of Hollow Shell week.
-// regen = replenish life (~1/sec), regen-mana = regenerate mana (+200%).
+// regen = replenish life (~1.5/sec), regen-mana = regenerate mana (+250%).
 // lvl=1 makes it the only eligible unique ring at character creation (all
 // vanilla unique rings require lvl 15+), so quality=4 will always pick it.
 const RING_INDEX = 'Hollow Locket';
@@ -26,7 +28,20 @@ export function applyHollowShell(ctx: MutationContext): void {
     }
   }
 
-  // ── 2. Add "Hollow Locket" unique ring to uniqueitems.txt ────────────────
+  // ── 2. Increase health/mana potion prices ────────────────────────────────
+  const { headers: mh, rows: mr } = ctx.misc;
+  const typeIdx = mh.indexOf('type');
+  const costIdx = mh.indexOf('cost');
+  if (typeIdx !== -1 && costIdx !== -1) {
+    for (const row of mr) {
+      if (POTION_TYPES.has(row[typeIdx])) {
+        const cost = parseInt(row[costIdx], 10);
+        if (!isNaN(cost) && cost > 0) row[costIdx] = String(cost * POTION_COST_MULT);
+      }
+    }
+  }
+
+  // ── 3. Add "Hollow Locket" unique ring to uniqueitems.txt ────────────────
   const { headers: uh, rows: ur } = ctx.uniqueitems;
   if (uh.length > 0) {
     const set = (row: string[], col: string, val: string) => {
@@ -46,13 +61,13 @@ export function applyHollowShell(ctx: MutationContext): void {
     set(newRing, 'prop1',    'regen');       // replenish life (~1 life/sec)
     set(newRing, 'min1',     '15');
     set(newRing, 'max1',     '15');
-    set(newRing, 'prop2',    'regen-mana');  // regenerate mana (+200%)
-    set(newRing, 'min2',     '200');
-    set(newRing, 'max2',     '200');
+    set(newRing, 'prop2',    'regen-mana');  // regenerate mana (+250%)
+    set(newRing, 'min2',     '250');
+    set(newRing, 'max2',     '250');
     ur.push(newRing);
   }
 
-  // ── 3. Give "Hollow Locket" as a starting ring to every class ───────────
+  // ── 4. Give "Hollow Locket" as a starting ring to every class ───────────
   // quality=4 forces unique quality; lvl=1 makes Hollow Locket the only
   // eligible unique ring at character creation.
   for (const row of cr) {
