@@ -3,8 +3,8 @@ import type { MutationContext } from './index';
 const LIFE_MANA_MULT = 0.5; // reduce by 50%
 const REGEN_MULT = 3;
 
-const LIFE_COLS  = ['hpadd', 'LifePerLevel'];
-const MANA_COLS  = ['ManaPerLevel'];
+const LIFE_COLS  = ['hpadd', 'LifePerLevel', 'LifePerVitality'];
+const MANA_COLS  = ['ManaPerLevel', 'ManaPerMagic'];
 const REGEN_COLS = ['ManaRegen'];
 
 // Unique ring given to all classes at the start of Hollow Shell week.
