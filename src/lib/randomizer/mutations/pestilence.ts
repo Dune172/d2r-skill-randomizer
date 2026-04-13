@@ -130,7 +130,6 @@ export function applyPestilence(ctx: MutationContext): void {
     if (uncoveredModes.length === 0) continue;
 
     // Determine act for damage scaling
-    const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
     const m = tc.match(ACT_RE);
     const act = m ? parseInt(m[1]) : (BOSS_ACTS[row[0]] ?? 0);
     const dmg = POISON_BY_ACT[act] ?? POISON_FALLBACK;
