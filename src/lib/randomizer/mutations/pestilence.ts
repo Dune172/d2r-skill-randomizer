@@ -6,13 +6,13 @@ const POISON_PCT  = '100';
 const POISON_DUR  = '200'; // 8 seconds at 25fps
 
 const POISON_BY_ACT: Record<number, { min: number; max: number }> = {
-  1: { min: 30,  max: 60  },
-  2: { min: 50,  max: 100 },
-  3: { min: 70,  max: 140 },
-  4: { min: 90,  max: 180 },
-  5: { min: 110, max: 220 },
+  1: { min: 45,  max: 90  },
+  2: { min: 75,  max: 150 },
+  3: { min: 105, max: 210 },
+  4: { min: 135, max: 270 },
+  5: { min: 165, max: 330 },
 };
-const POISON_FALLBACK = { min: 50, max: 100 }; // unknown/non-act monsters
+const POISON_FALLBACK = { min: 75, max: 150 }; // unknown/non-act monsters
 
 const EL_SLOTS = [
   {
