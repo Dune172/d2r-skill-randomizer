@@ -1,6 +1,6 @@
 import type { MutationContext } from './index';
 
-const LIFE_MANA_MULT = 0.5; // reduce by 50%
+const LIFE_MANA_MULT = 1 / 3; // reduce to 1/3
 
 const LIFE_COLS  = ['hpadd', 'LifePerLevel', 'LifePerVitality'];
 const MANA_COLS  = ['ManaPerLevel', 'ManaPerMagic'];
@@ -44,8 +44,8 @@ export function applyHollowShell(ctx: MutationContext): void {
     set(newRing, 'lvl req',  '1');
     set(newRing, 'rarity',   '1');
     set(newRing, 'prop1',    'regen');       // replenish life (~1 life/sec)
-    set(newRing, 'min1',     '10');
-    set(newRing, 'max1',     '10');
+    set(newRing, 'min1',     '15');
+    set(newRing, 'max1',     '15');
     set(newRing, 'prop2',    'regen-mana');  // regenerate mana (+200%)
     set(newRing, 'min2',     '200');
     set(newRing, 'max2',     '200');
