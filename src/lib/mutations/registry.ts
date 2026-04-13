@@ -34,7 +34,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Hollow Shell',
     emoji: '💧',
     description:
-      'Maximum life and mana are reduced by 50%. Life and mana regeneration are significantly increased.',
+      'Maximum life and mana are reduced by 50%. Mana regenerates significantly faster. You start with the Hollow Locket — a ring that rapidly replenishes both life and mana.',
   },
   4: {
     id: 'bloodthirst',

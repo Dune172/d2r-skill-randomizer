@@ -273,9 +273,10 @@ export async function POST(request: NextRequest) {
     let uniqueitemsTxt: string | undefined;
     let tcTxt: string | undefined;
     let superuniquesTxt: string | undefined;
-    // Hoist charstats so the weekly mutations block can reference it
+    // Hoist charstats and ui so the weekly mutations block can reference them
     const charstats = loadTxtFile('charstats.txt');
     const charstatsPath = path.join(DATA_DIR, 'txt', 'charstats.txt');
+    let ui: ReturnType<typeof loadTxtFile> | null = null;
     if (fs.existsSync(charstatsPath)) {
       const classCol = charstats.headers.indexOf('class');
       const startSkillCol = charstats.headers.indexOf('StartSkill');
@@ -292,16 +293,14 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      {
-        const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
-        if (fs.existsSync(uiPath)) {
-          const ui = loadTxtFile('uniqueitems.txt');
-          let uiRows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping);
-          if (startingTeleportStaff) {
-            uiRows = applyTeleportStaffUnique(ui.headers, uiRows, teleportStaffLevel, idMapping);
-          }
-          uniqueitemsTxt = serializeTxtFile(ui.headers, uiRows);
+      const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
+      ui = fs.existsSync(uiPath) ? loadTxtFile('uniqueitems.txt') : null;
+      if (ui) {
+        ui.rows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping);
+        if (startingTeleportStaff) {
+          ui.rows = applyTeleportStaffUnique(ui.headers, ui.rows, teleportStaffLevel, idMapping);
         }
+        uniqueitemsTxt = serializeTxtFile(ui.headers, ui.rows);
       }
 
       if (startingHoradricCube) {
@@ -404,10 +403,13 @@ export async function POST(request: NextRequest) {
         armor:         armorSrc,
         weapons:       weaponsSrc,
         misc:          miscSrc,
+        uniqueitems:   ui ?? { headers: [], rows: [] },
       });
 
       // Re-serialize charstats (may have been modified by Hyperdrive/Hollow Shell)
       charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
+      // Re-serialize uniqueitems (may have been modified by Hollow Shell)
+      if (ui) uniqueitemsTxt = serializeTxtFile(ui.headers, ui.rows);
       // Re-serialize tc (may have been modified by Pestilence/Scavenger's World/Dead Reckoning)
       tcTxt = serializeTxtFile(tcSrc.headers, tcSrc.rows);
 

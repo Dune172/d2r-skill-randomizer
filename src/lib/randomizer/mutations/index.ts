@@ -32,6 +32,7 @@ export interface MutationContext {
   armor:         { headers: string[]; rows: string[][] };
   weapons:       { headers: string[]; rows: string[][] };
   misc:          { headers: string[]; rows: string[][] };
+  uniqueitems:   { headers: string[]; rows: string[][] };
 }
 
 type ApplyFn = (ctx: MutationContext) => void;
