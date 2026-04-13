@@ -1,7 +1,7 @@
 import type { MutationContext } from './index';
 
 const REQ_MULT = 1.5;
-const DMG_MULT = 1.3;
+const DMG_MULT = 1.5;
 
 const REQ_COLS = ['reqstr', 'reqdex'];
 const DMG_COLS = ['mindam', 'maxdam', '2handmindam', '2handmaxdam'];

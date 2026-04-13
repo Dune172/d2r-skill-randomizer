@@ -83,7 +83,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: "Titan's Grip",
     emoji: '🌀',
     description:
-      'All weapon strength and dexterity requirements are increased by 50%. All weapon damage is increased by 30%.',
+      'All weapon strength and dexterity requirements are increased by 50%. All weapon damage is increased by 50%.',
   },
   13: {
     id: 'dead-reckoning',
@@ -106,7 +106,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
  * Each pair is [mutationId, mutationId].
  */
 export const WEEKLY_PAIRS: [number, number][] = [
-  [5, 7],   // 0
+  [6, 11],  // 0
   [2, 5],   // 1
   [3, 6],   // 2
   [7, 4],   // 3
@@ -144,7 +144,7 @@ export const WEEKLY_PAIRS: [number, number][] = [
  * Index matches WEEKLY_PAIRS index (0-based).
  */
 export const WEEK_NAMES: string[] = [
-  'Rotting Tide',        // 0  The Horde + Pestilence
+  'Fragile Colossus',    // 0  Glass Cannon + Titan's Grip
   'March of the Fallen', // 1  Heavy Burden + The Horde
   'Fragile Fury',        // 2  Hollow Shell + Glass Cannon
   'Sanguine Plague',     // 3  Pestilence + Bloodthirst
