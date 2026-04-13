@@ -1,4 +1,5 @@
 import type { MutationContext } from './index';
+import { BOSS_ACTS, ACT_RE, TC_COL } from '../players-scaler';
 
 const HP_MULT = 0.5;
 const DMG_MULT = 2.0;
@@ -17,11 +18,19 @@ const DMG_COLS = [
 export function applyGlassCannon(ctx: MutationContext): void {
   const { headers: mh, rows: mr } = ctx.monstats;
 
+  const tcIdx = mh.indexOf(TC_COL);
   const hpIdxs = HP_COLS.map(c => mh.indexOf(c)).filter(i => i !== -1);
   const dmgIdxs = DMG_COLS.map(c => mh.indexOf(c)).filter(i => i !== -1);
 
   for (const row of mr) {
-    if (!row[0]) continue;
+    const id = row[0];
+    if (!id) continue;
+
+    // Skip player summons, traps, and map objects — same guard used by players-scaler
+    const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
+    const isEnemy = ACT_RE.test(tc) || id in BOSS_ACTS;
+    if (!isEnemy) continue;
+
     for (const idx of hpIdxs) {
       const val = parseInt(row[idx], 10);
       if (!isNaN(val) && val > 0) row[idx] = String(Math.round(val * HP_MULT));
