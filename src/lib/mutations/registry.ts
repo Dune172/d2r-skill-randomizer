@@ -34,7 +34,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Hollow Shell',
     emoji: '💧',
     description:
-      'Maximum life and mana are reduced by 40%. Life and mana regeneration are significantly increased.',
+      'Maximum life and mana are reduced by 50%. Life and mana regeneration are significantly increased.',
   },
   4: {
     id: 'bloodthirst',
@@ -69,7 +69,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Arcane Surge',
     emoji: '🌊',
     description:
-      'All skill mana costs are doubled. In return, all skills deal 30% increased elemental damage.',
+      'All skill mana costs are doubled. In return, all skills deal 50% increased elemental damage.',
   },
   10: {
     id: 'ironclad',

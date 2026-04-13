@@ -1,6 +1,6 @@
 import type { MutationContext } from './index';
 
-const LIFE_MANA_MULT = 0.6; // reduce by 40%
+const LIFE_MANA_MULT = 0.5; // reduce by 50%
 const REGEN_MULT = 3;
 
 const LIFE_COLS = ['hpadd', 'LifePerLevel'];

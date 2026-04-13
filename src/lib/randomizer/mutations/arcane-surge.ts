@@ -1,7 +1,7 @@
 import type { MutationContext } from './index';
 
 const MANA_MULT = 2;
-const ELEM_DMG_MULT = 1.3;
+const ELEM_DMG_MULT = 1.5;
 
 const MANA_COLS = ['mana', 'lvlmana'];
 const ELEM_COLS = ['EMin', 'EMax', 'EMinLev1', 'EMinLev2', 'EMinLev3', 'EMinLev4', 'EMinLev5',
