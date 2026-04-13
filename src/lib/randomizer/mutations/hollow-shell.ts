@@ -1,35 +1,28 @@
 import type { MutationContext } from './index';
 
 const LIFE_MANA_MULT = 0.5; // reduce by 50%
-const REGEN_MULT = 3;
 
 const LIFE_COLS  = ['hpadd', 'LifePerLevel', 'LifePerVitality'];
 const MANA_COLS  = ['ManaPerLevel', 'ManaPerMagic'];
-const REGEN_COLS = ['ManaRegen'];
 
 // Unique ring given to all classes at the start of Hollow Shell week.
-// regen = replenish life (50/sec), regen-mana = regenerate mana (+50%).
+// regen = replenish life (~1/sec), regen-mana = regenerate mana (+200%).
 // lvl=1 makes it the only eligible unique ring at character creation (all
 // vanilla unique rings require lvl 15+), so quality=4 will always pick it.
 const RING_INDEX = 'Hollow Locket';
 const RING_CODE  = 'rin';
 
 export function applyHollowShell(ctx: MutationContext): void {
-  // ── 1. Reduce max life and mana, triple mana regen ──────────────────────
+  // ── 1. Reduce max life and mana ─────────────────────────────────────────
   const { headers: ch, rows: cr } = ctx.charstats;
 
   const lifeIdxs  = LIFE_COLS.map(c => ch.indexOf(c)).filter(i => i !== -1);
   const manaIdxs  = MANA_COLS.map(c => ch.indexOf(c)).filter(i => i !== -1);
-  const regenIdxs = REGEN_COLS.map(c => ch.indexOf(c)).filter(i => i !== -1);
 
   for (const row of cr) {
     for (const idx of [...lifeIdxs, ...manaIdxs]) {
       const val = parseInt(row[idx], 10);
       if (!isNaN(val) && val > 0) row[idx] = String(Math.round(val * LIFE_MANA_MULT));
-    }
-    for (const idx of regenIdxs) {
-      const val = parseInt(row[idx], 10);
-      if (!isNaN(val) && val > 0) row[idx] = String(Math.round(val * REGEN_MULT));
     }
   }
 
@@ -50,12 +43,12 @@ export function applyHollowShell(ctx: MutationContext): void {
     set(newRing, 'lvl',      '1');
     set(newRing, 'lvl req',  '1');
     set(newRing, 'rarity',   '1');
-    set(newRing, 'prop1',    'regen');       // replenish life
-    set(newRing, 'min1',     '50');
-    set(newRing, 'max1',     '50');
-    set(newRing, 'prop2',    'regen-mana');  // regenerate mana
-    set(newRing, 'min2',     '50');
-    set(newRing, 'max2',     '50');
+    set(newRing, 'prop1',    'regen');       // replenish life (~1 life/sec)
+    set(newRing, 'min1',     '10');
+    set(newRing, 'max1',     '10');
+    set(newRing, 'prop2',    'regen-mana');  // regenerate mana (+200%)
+    set(newRing, 'min2',     '200');
+    set(newRing, 'max2',     '200');
     ur.push(newRing);
   }
 

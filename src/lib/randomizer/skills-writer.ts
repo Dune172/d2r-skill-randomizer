@@ -331,5 +331,12 @@ export function reorderSkillsRows(
     reorderedRows.push(row);
   }
 
+  // Update *Id column (index 1) to match new row positions.
+  // D2R derives skill IDs from row position; stale *Id values after reordering
+  // cause animation sequence mismatches (e.g. monseq references to ShamanFire).
+  for (let i = 0; i < reorderedRows.length; i++) {
+    reorderedRows[i][1] = String(i);
+  }
+
   return { reorderedRows, idMapping };
 }
