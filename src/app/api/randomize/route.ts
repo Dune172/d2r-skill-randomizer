@@ -408,6 +408,8 @@ export async function POST(request: NextRequest) {
 
       // Re-serialize charstats (may have been modified by Hyperdrive/Hollow Shell)
       charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
+      // Re-serialize skills (may have been modified by Arcane Surge)
+      skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
       // Re-serialize uniqueitems (may have been modified by Hollow Shell)
       if (ui) uniqueitemsTxt = serializeTxtFile(ui.headers, ui.rows);
       // Re-serialize tc (may have been modified by Pestilence/Scavenger's World/Dead Reckoning)
