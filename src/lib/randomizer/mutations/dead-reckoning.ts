@@ -1,5 +1,5 @@
 import type { MutationContext } from './index';
-import { EXP_COLS } from '../players-scaler';
+import { EXP_COLS, TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
 
 const XP_MULT = 1 / 2;  // half XP per kill
 const PICKS_ADD = 1;
@@ -8,9 +8,13 @@ const MAX_PICKS = 6;
 export function applyDeadReckoning(ctx: MutationContext): void {
   // Halve XP given by all monsters in monstats
   const { headers: mh, rows: mr } = ctx.monstats;
+  const tcIdx = mh.indexOf(TC_COL);
   const expIdxs = EXP_COLS.map(c => mh.indexOf(c)).filter(i => i !== -1);
   for (const row of mr) {
-    if (!row[0]) continue;
+    const id = row[0];
+    if (!id) continue;
+    const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
+    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS)) continue;
     for (const idx of expIdxs) {
       const val = parseInt(row[idx], 10);
       if (!isNaN(val) && val > 0)

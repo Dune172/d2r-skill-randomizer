@@ -98,7 +98,12 @@ export function applyPestilence(ctx: MutationContext): void {
   const tcIdx = mh.indexOf(TC_COL);
 
   for (const row of mr) {
-    if (!row[0]) continue;
+    const id = row[0];
+    if (!id) continue;
+
+    // Skip player summons, traps, and map objects
+    const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
+    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS)) continue;
 
     // Collect free El slots (where Type is unset)
     const freeSlots = slots.filter(s => !row[s.type]);

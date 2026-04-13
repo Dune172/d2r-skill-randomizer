@@ -1,5 +1,5 @@
 import type { MutationContext } from './index';
-import { EXP_COLS } from '../players-scaler';
+import { EXP_COLS, TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
 
 const MULT = 3;
 const MAX_GRP = 15;
@@ -13,10 +13,14 @@ export function applyTheHorde(ctx: MutationContext): void {
   const maxGrpIdx = mh.indexOf('MaxGrp');
   if (minGrpIdx === -1 || maxGrpIdx === -1) return;
 
+  const tcIdx = mh.indexOf(TC_COL);
   const expIdxs = EXP_COLS.map(c => mh.indexOf(c)).filter(i => i !== -1);
 
   for (const row of mr) {
-    if (!row[0]) continue;
+    const id = row[0];
+    if (!id) continue;
+    const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
+    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS)) continue;
     const minVal = parseInt(row[minGrpIdx], 10);
     const maxVal = parseInt(row[maxGrpIdx], 10);
     if (!isNaN(minVal) && minVal > 0)
