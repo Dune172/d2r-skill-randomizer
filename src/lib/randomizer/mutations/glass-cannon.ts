@@ -1,7 +1,7 @@
 import type { MutationContext } from './index';
 
-const HP_MULT = 0.6;
-const DMG_MULT = 1.5;
+const HP_MULT = 0.5;
+const DMG_MULT = 2.0;
 
 // These match the column names verified in players-scaler.ts
 const HP_COLS = ['minHP', 'maxHP', 'MinHP(N)', 'MaxHP(N)', 'MinHP(H)', 'MaxHP(H)'];

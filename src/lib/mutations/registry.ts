@@ -55,7 +55,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Glass Cannon',
     emoji: '🔴',
     description:
-      'Monsters deal 50% more damage but have 40% less life.',
+      'Monsters deal twice as much damage but have half as much life.',
   },
   7: {
     id: 'pestilence',
@@ -83,7 +83,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: "Titan's Grip",
     emoji: '🌀',
     description:
-      'All weapon strength and dexterity requirements are increased by 50%. All weapon damage is increased by 50%.',
+      'All weapon strength and dexterity requirements are increased by 50%. Weapons with stat requirements deal twice as much damage.',
   },
   13: {
     id: 'dead-reckoning',
