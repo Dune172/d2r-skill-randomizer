@@ -20,8 +20,8 @@ export function applyArcaneSurge(ctx: MutationContext): void {
 
     // Double mana cost
     for (const idx of manaIdxs) {
-      const val = parseInt(row[idx], 10);
-      if (!isNaN(val) && val > 0) row[idx] = String(Math.round(val * MANA_MULT));
+      const val = parseFloat(row[idx]);
+      if (!isNaN(val) && val !== 0) row[idx] = String(Math.round(val * MANA_MULT * 100) / 100);
     }
 
     // Boost elemental damage

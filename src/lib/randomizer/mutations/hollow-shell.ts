@@ -72,9 +72,9 @@ export function applyHollowShell(ctx: MutationContext): void {
         const locCol = ch.indexOf(`item${n}loc`);
         const cntCol = ch.indexOf(`item${n}count`);
         const qCol   = ch.indexOf(`item${n}quality`);
-        if (locCol !== -1) row[locCol] = 'rarm'; // right ring slot
+        if (locCol !== -1) row[locCol] = 'rrin'; // right ring slot
         if (cntCol !== -1) row[cntCol] = '1';
-        if (qCol   !== -1) row[qCol]   = '4';    // unique quality
+        if (qCol   !== -1) row[qCol]   = '7';    // unique quality
         break;
       }
     }
