@@ -200,7 +200,7 @@ export default function RandomizerApp() {
       </p>
 
       <p className="text-center font-cinzel text-[11px] tracking-[0.3em] uppercase text-[#7a5818] pt-2">
-        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.13: updated April 2026
+        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.14: updated April 2026
       </p>
     </div>
   );
