@@ -27,7 +27,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Heavy Burden',
     emoji: '🏋️',
     description:
-      'Strength requirements on all armor are increased by 25%. Dexterity requirements on all weapons are increased by 25%.',
+      'All armor strength requirements are increased by 50%. Armor with strength requirements provides 50% more defense.',
   },
   3: {
     id: 'hollow-shell',
@@ -90,7 +90,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Dead Reckoning',
     emoji: '🌑',
     description:
-      'Experience gain is reduced by 50%. Monsters drop significantly more gold and have increased treasure class picks.',
+      'You gain fewer stat points per level. Monsters drop items more often and at higher quality.',
   },
   14: {
     id: 'entropy',
