@@ -127,7 +127,7 @@ const communityCards = [
 ];
 
 // Challenge seed calculation (mirrors challenge/page.tsx)
-const BASE_DATE = new Date('2026-04-07T00:00:00Z');
+const BASE_DATE = new Date('2026-04-13T00:00:00Z');
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getCurrentChallenge() {

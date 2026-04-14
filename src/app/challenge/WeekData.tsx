@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getActivePair, getWeekName, type MutationDef } from '@/lib/mutations/registry';
 
-const BASE_DATE = new Date('2026-04-07T00:00:00Z');
+const BASE_DATE = new Date('2026-04-13T00:00:00Z');
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Season Beta Race preset — same settings as the randomizer's season1race preset

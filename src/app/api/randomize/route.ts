@@ -388,7 +388,7 @@ export async function POST(request: NextRequest) {
       const miscSrc = loadTxtFile('misc.txt');
 
       // Determine week number using the same BASE_DATE logic as the challenge page
-      const BASE_DATE = new Date('2026-04-07T00:00:00Z');
+      const BASE_DATE = new Date('2026-04-13T00:00:00Z');
       const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
       const computedWeek = Math.max(1, Math.floor((Date.now() - BASE_DATE.getTime()) / WEEK_MS) + 1);
       const weekNumber = weeklyOverride ?? computedWeek;

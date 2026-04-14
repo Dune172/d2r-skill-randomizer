@@ -5,7 +5,7 @@ export const alt = 'D2R Randomizer — Weekly Challenge Seed';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-const BASE_DATE = new Date('2026-04-07T00:00:00Z');
+const BASE_DATE = new Date('2026-04-13T00:00:00Z');
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getCurrentChallenge() {
