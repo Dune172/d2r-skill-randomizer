@@ -24,6 +24,17 @@ export const metadata: Metadata = {
 
 const changelog = [
   {
+    version: 'v0.14',
+    date: 'April 2026',
+    notes: [
+      'Live countdown to the next weekly challenge seed',
+      'Install instructions now appear on the challenge page after generating',
+      'Challenge settings (players, XP, teleport staff) shown alongside the weekly seed',
+      'Weekly challenge now resets at midnight Pacific time (was midnight UTC)',
+      'Improved typography, contrast, and mobile support on the challenge page',
+    ],
+  },
+  {
     version: 'v0.13',
     date: 'April 2026',
     notes: [
