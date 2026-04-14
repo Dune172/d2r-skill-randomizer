@@ -106,7 +106,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
  * Each pair is [mutationId, mutationId].
  */
 export const WEEKLY_PAIRS: [number, number][] = [
-  [2, 13],  // 0
+  [5, 7],   // 0
   [2, 5],   // 1
   [3, 6],   // 2
   [7, 4],   // 3
@@ -144,7 +144,7 @@ export const WEEKLY_PAIRS: [number, number][] = [
  * Index matches WEEKLY_PAIRS index (0-based).
  */
 export const WEEK_NAMES: string[] = [
-  'Toil and Trouble',    // 0  Heavy Burden + Dead Reckoning
+  'Swarming Plague',     // 0  The Horde + Pestilence
   'March of the Fallen', // 1  Heavy Burden + The Horde
   'Fragile Fury',        // 2  Hollow Shell + Glass Cannon
   'Sanguine Plague',     // 3  Pestilence + Bloodthirst
