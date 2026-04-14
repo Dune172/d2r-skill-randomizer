@@ -58,8 +58,8 @@ function getWeekData() {
 function SettingItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <span className="font-cinzel text-[10px] tracking-[0.2em] uppercase text-[#7a5818]">{label}</span>
-      <p className="text-[#a89060] text-xs">{value}</p>
+      <span className="font-cinzel text-xs tracking-[0.2em] uppercase text-[#9a7a2a]">{label}</span>
+      <p className="text-[#a89060] text-sm">{value}</p>
     </div>
   );
 }
@@ -95,16 +95,16 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
       <p className="font-cinzel font-bold text-[#c8942a] text-sm tracking-[0.1em] text-center leading-tight">
         {mutation.name}
       </p>
-      <p className="text-[10px] text-[#7a5818]/60 mt-1 tracking-wider hidden md:block">
+      <p className="text-xs text-[#9a7a2a] mt-1 tracking-wider hidden md:block">
         Hover for details
       </p>
-      <p className="text-[11px] text-[#a89060]/70 leading-relaxed mt-2 md:hidden">
+      <p className="text-xs text-[#a89060] leading-relaxed mt-2 md:hidden">
         {mutation.description}
       </p>
       <div
         className={`${expanded ? 'md:visible md:opacity-100' : 'invisible opacity-0'} md:group-hover:visible md:group-hover:opacity-100 transition-opacity duration-150
           hidden md:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10
-          w-56 border border-[#c8942a]/40 bg-[#0c0304]/95 p-3 text-xs text-[#a89060]/90
+          w-56 border border-[#c8942a]/40 bg-[#0c0304]/95 p-3 text-xs text-[#a89060]
           leading-relaxed font-sans pointer-events-none`}
       >
         {mutation.description}
@@ -203,14 +203,14 @@ export function WeekCard() {
 
   return (
     <div className="card-ornate border border-t-2 border-[#3a1510] border-t-[#c8942a]/30 bg-[#0c0304] panel-shadow shadow-[inset_0_1px_0_rgba(200,148,42,0.15)] p-8 mb-8">
-      <p className="font-cinzel text-[11px] tracking-[0.4em] text-[#7a5818] uppercase mb-3">
+      <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase mb-3">
         Week {weekNumber} &nbsp;·&nbsp; {formatDate(currentStart)} – {formatDate(currentEnd)}
       </p>
       <div className="font-cinzel font-black text-5xl md:text-6xl text-[#c8942a] glow-pulse tracking-widest mb-2">
         {weekName}
       </div>
-      <p className="font-mono text-[#7a5818] text-xs tracking-widest mb-6">
-        <span className="text-[#3a2808] mr-1">SEED</span>{currentSeed.toLocaleString()}
+      <p className="font-mono text-[#9a7a2a] text-sm tracking-widest mb-6">
+        <span className="text-[#7a5818] mr-1">SEED</span>{currentSeed.toLocaleString()}
       </p>
 
       {/* Active mutations */}
@@ -221,7 +221,7 @@ export function WeekCard() {
 
       {/* Challenge settings */}
       <div className="w-full border-t border-[#3a1510]/50 mt-2 pt-5 mb-6">
-        <p className="font-cinzel text-[10px] tracking-[0.4em] text-[#7a5818] uppercase text-center mb-3">
+        <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase text-center mb-3">
           Challenge Settings
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-left max-w-md mx-auto">
@@ -252,22 +252,22 @@ export function WeekArchive() {
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="border-b border-[#3a1510]">
-            <th className="text-left font-cinzel text-[10px] tracking-[0.3em] uppercase text-[#7a5818] pb-2 pr-4">Week</th>
-            <th className="text-left font-cinzel text-[10px] tracking-[0.3em] uppercase text-[#7a5818] pb-2 pr-4">Name</th>
-            <th className="text-left font-cinzel text-[10px] tracking-[0.3em] uppercase text-[#7a5818] pb-2 pr-4">Dates</th>
+            <th className="text-left font-cinzel text-xs tracking-[0.3em] uppercase text-[#9a7a2a] pb-2 pr-4">Week</th>
+            <th className="text-left font-cinzel text-xs tracking-[0.3em] uppercase text-[#9a7a2a] pb-2 pr-4">Name</th>
+            <th className="text-left font-cinzel text-xs tracking-[0.3em] uppercase text-[#9a7a2a] pb-2 pr-4">Dates</th>
             <th className="pb-2" />
           </tr>
         </thead>
         <tbody>
           {archive.map(({ weekNumber: wn, seed, start, end }) => (
             <tr key={wn} className="border-b border-[#1a0a06] hover:bg-[#c8942a]/[0.03] transition-colors duration-150">
-              <td className="py-2 pr-4 text-[#7a5818] font-cinzel text-xs">{wn}</td>
-              <td className="py-2 pr-4 text-[#c8942a] font-cinzel text-xs">{getWeekName(wn)}</td>
-              <td className="py-2 pr-4 text-[#a89060]/70 text-xs">{formatDate(start)} – {formatDate(end)}</td>
+              <td className="py-2 pr-4 text-[#9a7a2a] font-cinzel text-sm">{wn}</td>
+              <td className="py-2 pr-4 text-[#c8942a] font-cinzel text-sm">{getWeekName(wn)}</td>
+              <td className="py-2 pr-4 text-[#a89060] text-sm">{formatDate(start)} – {formatDate(end)}</td>
               <td className="py-2">
                 <Link
                   href={`/generate?seed=${seed}`}
-                  className="font-cinzel text-[9px] tracking-[0.3em] uppercase text-[#7a5818] hover:text-[#a87830] transition-colors"
+                  className="font-cinzel text-xs tracking-[0.3em] uppercase text-[#9a7a2a] hover:text-[#c8942a] transition-colors"
                 >
                   Play
                 </Link>

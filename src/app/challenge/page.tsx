@@ -8,7 +8,7 @@ function Step({ number, text }: { number: number; text: ReactNode }) {
       <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">
         {number}
       </span>
-      <p className="text-sm text-[#a89060]/80 leading-relaxed">{text}</p>
+      <p className="text-sm text-[#a89060] leading-relaxed">{text}</p>
     </div>
   );
 }
@@ -59,7 +59,7 @@ export default function ChallengePage() {
         </h1>
         <div className="anim-fade-up-d1 flex items-center gap-3 justify-center mb-8">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[#7a5818]/60 max-w-[80px]" />
-          <h2 className="font-cinzel text-sm text-[#a87830] tracking-[0.12em] uppercase">
+          <h2 className="font-cinzel text-sm text-[#c8942a] tracking-[0.12em] uppercase">
             This Week&apos;s Randomizer Seed
           </h2>
           <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[#7a5818]/60 max-w-[80px]" />
@@ -69,7 +69,7 @@ export default function ChallengePage() {
           <WeekCard />
         </div>
 
-        <p className="anim-fade-up-d3 text-[#a89060]/70 text-sm leading-relaxed max-w-lg mx-auto mb-10">
+        <p className="anim-fade-up-d3 text-[#a89060] text-sm leading-relaxed max-w-lg mx-auto mb-10">
           A new challenge seed drops every Monday. Everyone plays the same randomized Diablo 2 Resurrected
           experience — same seed, same settings, same starting point.
         </p>
@@ -77,7 +77,7 @@ export default function ChallengePage() {
 
       {/* How It Works */}
       <section className="max-w-2xl mx-auto px-4 mb-10">
-        <h3 className="font-cinzel text-[10px] tracking-[0.4em] text-[#7a5818] uppercase text-center mb-5">
+        <h3 className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase text-center mb-5">
           How It Works
         </h3>
         <div className="space-y-4 max-w-lg mx-auto">
@@ -101,7 +101,7 @@ export default function ChallengePage() {
             }
           />
         </div>
-        <p className="text-[#a89060]/50 text-xs leading-relaxed mt-5 text-center max-w-md mx-auto">
+        <p className="text-[#a89060] text-xs leading-relaxed mt-5 text-center max-w-md mx-auto">
           Played in offline single-player using the D2R Randomizer mod. Standard prerequisites and normal weapon logic apply.
         </p>
       </section>
