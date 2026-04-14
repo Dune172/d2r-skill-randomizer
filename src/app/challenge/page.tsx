@@ -1,5 +1,17 @@
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { WeekCard, WeekArchive } from './WeekData';
+
+function Step({ number, text }: { number: number; text: ReactNode }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">
+        {number}
+      </span>
+      <p className="text-sm text-[#a89060]/80 leading-relaxed">{text}</p>
+    </div>
+  );
+}
 
 export const dynamic = 'force-static';
 
@@ -58,34 +70,39 @@ export default function ChallengePage() {
         </div>
 
         <p className="anim-fade-up-d3 text-[#a89060]/70 text-sm leading-relaxed max-w-lg mx-auto mb-10">
-          A new challenge seed drops every Monday. Everyone plays the same Diablo 2 Resurrected
-          randomizer — same seed, same settings. Share your run and compare results in{' '}
-          <a
-            href="https://discord.gg/y5r2sTxwS5"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#a87830] hover:text-[#c8942a] transition-colors"
-          >
-            the Discord
-          </a>
-          .
+          A new challenge seed drops every Monday. Everyone plays the same randomized Diablo 2 Resurrected
+          experience — same seed, same settings, same starting point.
         </p>
       </section>
 
-      {/* About the challenge */}
-      <section className="max-w-2xl mx-auto px-4 mb-10 text-left space-y-4 text-sm text-[#a89060]/80 leading-relaxed">
-        <p>
-          The D2R Randomizer Weekly Challenge is a community event that runs every week. Each Monday
-          a new seed is selected and posted here. Every player who generates that seed gets the exact
-          same randomized skill tree layout — the same classes, the same synergies, the same
-          prerequisites — so results are directly comparable across the community.
-        </p>
-        <p>
-          Challenge runs are played in offline single-player mode using the D2R Randomizer mod. The
-          default challenge settings use standard prerequisites and normal weapon logic, so every
-          participant starts on equal footing. Whether you race to Hell, push for the highest
-          completion, or just try a class you&apos;ve never played before, the weekly seed is a
-          shared experience that gives the whole community something to talk about.
+      {/* How It Works */}
+      <section className="max-w-2xl mx-auto px-4 mb-10">
+        <h3 className="font-cinzel text-[10px] tracking-[0.4em] text-[#7a5818] uppercase text-center mb-5">
+          How It Works
+        </h3>
+        <div className="space-y-4 max-w-lg mx-auto">
+          <Step number={1} text="A new seed is posted every Monday. Generate the mod and install it." />
+          <Step number={2} text="Everyone plays the same randomized skill trees — same seed, same settings, same starting point." />
+          <Step
+            number={3}
+            text={
+              <>
+                Share your run in{' '}
+                <a
+                  href="https://discord.gg/y5r2sTxwS5"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#a87830] hover:text-[#c8942a] transition-colors"
+                >
+                  the Discord
+                </a>
+                . Compare results, race to Hell, or just explore.
+              </>
+            }
+          />
+        </div>
+        <p className="text-[#a89060]/50 text-xs leading-relaxed mt-5 text-center max-w-md mx-auto">
+          Played in offline single-player using the D2R Randomizer mod. Standard prerequisites and normal weapon logic apply.
         </p>
       </section>
 

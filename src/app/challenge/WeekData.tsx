@@ -55,12 +55,27 @@ function getWeekData() {
   return { weekNumber, currentSeed, currentStart, currentEnd, archive };
 }
 
+function SettingItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <span className="font-cinzel text-[10px] tracking-[0.2em] uppercase text-[#7a5818]">{label}</span>
+      <p className="text-[#a89060] text-xs">{value}</p>
+    </div>
+  );
+}
+
 function MutationCard({ mutation }: { mutation: MutationDef }) {
+  const [expanded, setExpanded] = useState(false);
   const imgSrc = `/mutations/${mutation.id}.png`;
   return (
-    <div className="card-ornate group relative flex flex-col items-center border border-[#3a1510] bg-[#0c0304] panel-shadow p-4 w-48
-      hover:-translate-y-1 hover:border-[#c8942a]/50 hover:shadow-[0_0_24px_rgba(200,148,42,0.12)]
-      transition-all duration-200">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => setExpanded((e) => !e)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded((v) => !v); } }}
+      className="card-ornate group relative flex flex-col items-center border border-[#3a1510] bg-[#0c0304] panel-shadow p-4 w-48 cursor-pointer
+        hover:-translate-y-1 hover:border-[#c8942a]/50 hover:shadow-[0_0_24px_rgba(200,148,42,0.12)]
+        transition-all duration-200 select-none">
       <div className="w-40 h-40 flex items-center justify-center mb-3 overflow-hidden">
         <Image
           src={imgSrc}
@@ -80,11 +95,17 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
       <p className="font-cinzel font-bold text-[#c8942a] text-sm tracking-[0.1em] text-center leading-tight">
         {mutation.name}
       </p>
+      <p className="text-[10px] text-[#7a5818]/60 mt-1 tracking-wider hidden md:block">
+        Hover for details
+      </p>
+      <p className="text-[11px] text-[#a89060]/70 leading-relaxed mt-2 md:hidden">
+        {mutation.description}
+      </p>
       <div
-        className="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-150
-          absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10
+        className={`${expanded ? 'md:visible md:opacity-100' : 'invisible opacity-0'} md:group-hover:visible md:group-hover:opacity-100 transition-opacity duration-150
+          hidden md:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10
           w-56 border border-[#c8942a]/40 bg-[#0c0304]/95 p-3 text-xs text-[#a89060]/90
-          leading-relaxed font-sans pointer-events-none"
+          leading-relaxed font-sans pointer-events-none`}
       >
         {mutation.description}
         <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#c8942a]/40" />
@@ -193,9 +214,24 @@ export function WeekCard() {
       </p>
 
       {/* Active mutations */}
-      <div className="flex justify-center gap-4 mb-6">
+      <div className="flex flex-wrap justify-center gap-4 mb-6">
         <MutationCard mutation={mutA} />
         <MutationCard mutation={mutB} />
+      </div>
+
+      {/* Challenge settings */}
+      <div className="w-full border-t border-[#3a1510]/50 mt-2 pt-5 mb-6">
+        <p className="font-cinzel text-[10px] tracking-[0.4em] text-[#7a5818] uppercase text-center mb-3">
+          Challenge Settings
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-left max-w-md mx-auto">
+          <SettingItem label="Players" value="/players 2 (Acts IV-V)" />
+          <SettingItem label="XP Boost" value="3x (Acts I-III)" />
+          <SettingItem label="Teleport Staff" value="Lvl 6, from Corpsefire" />
+          <SettingItem label="Horadric Cube" value="Starts in inventory" />
+          <SettingItem label="Merc Auras" value="Enabled" />
+          <SettingItem label="Prerequisites" value="Standard" />
+        </div>
       </div>
 
       <ChallengeGenerator seed={currentSeed} weekNumber={weekNumber} />
