@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getActivePair, getWeekName, type MutationDef } from '@/lib/mutations/registry';
@@ -53,6 +53,37 @@ function getWeekData() {
   }
 
   return { weekNumber, currentSeed, currentStart, currentEnd, archive };
+}
+
+function CountdownTimer({ nextWeekStart }: { nextWeekStart: Date }) {
+  const [remaining, setRemaining] = useState(() => nextWeekStart.getTime() - Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setRemaining(nextWeekStart.getTime() - Date.now());
+    }, 1000);
+    return () => clearInterval(id);
+  }, [nextWeekStart]);
+
+  if (remaining <= 0) {
+    return (
+      <p className="font-mono text-[#c8942a] text-sm tracking-widest">
+        New challenge available — refresh the page!
+      </p>
+    );
+  }
+
+  const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((remaining / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((remaining / (1000 * 60)) % 60);
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+
+  return (
+    <p className="font-mono text-[#9a7a2a] text-sm tracking-widest">
+      {days > 0 && <>{days}d </>}{pad(hours)}h {pad(minutes)}m
+    </p>
+  );
 }
 
 function SettingItem({ label, value }: { label: string; value: string }) {
@@ -209,9 +240,9 @@ export function WeekCard() {
       <div className="font-cinzel font-black text-5xl md:text-6xl text-[#c8942a] glow-pulse tracking-widest mb-2">
         {weekName}
       </div>
-      <p className="font-mono text-[#9a7a2a] text-sm tracking-widest mb-6">
-        <span className="text-[#7a5818] mr-1">SEED</span>{currentSeed.toLocaleString()}
-      </p>
+      <div className="mb-6">
+        <CountdownTimer nextWeekStart={new Date(currentEnd.getTime() + 1)} />
+      </div>
 
       {/* Active mutations */}
       <div className="flex flex-wrap justify-center gap-4 mb-6">
