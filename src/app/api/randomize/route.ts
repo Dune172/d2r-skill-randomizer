@@ -104,8 +104,20 @@ export async function POST(request: NextRequest) {
 
     // Step 5-6: Randomize trees and place skills
     const treeAssignments = randomizeTrees(rng, treePages);
-    const placements = placeSkills(rng, skills, treeAssignments);
+    const { placements, droppedSkillNames } = placeSkills(rng, skills, treeAssignments);
     const placementsByClass = groupByClass(placements);
+
+    // Strip charclass from rows for skills that were dropped this seed (HARDCODED_CLASS_SKILLS
+    // probabilistic pins that rolled tails). Otherwise skills.txt still advertises them as
+    // belonging to their native class even though they don't appear in the class's tree UI.
+    if (droppedSkillNames.size > 0) {
+      const ccIdx = skillsTxt.headers.indexOf('charclass');
+      if (ccIdx !== -1) {
+        for (const row of skillsTxt.rows) {
+          if (droppedSkillNames.has(row[0])) row[ccIdx] = '';
+        }
+      }
+    }
 
     // Step 7: Update synergies
     const skillsSynergyUpdates = updateSkillsSynergies(placements, placementsByClass, rng);

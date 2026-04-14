@@ -32,8 +32,27 @@ const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
 // via COPACEMENT_REQUIRES, so they'll always land on a class that can shift.
 const RESTRICT2_COPACED = new Set(['Rabies', 'Hunger']);
 
+// Skills whose mechanics are encoded in hardcoded engine-level animation
+// sequence numbers + movement timing that cannot be rebound via skills.txt.
+// They only play correctly on their native character class (assertion errors,
+// stuck animations, or hard crashes otherwise). Each of these is pinned to
+// its native class, but with a seeded 50% coin flip in placeSkills so that
+// the native class doesn't always carry the skill — when the flip fails, the
+// skill is dropped from the seed entirely and a duplicate of another pool
+// skill takes its slot instead.
+const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
+  'Leap': 'bar',
+  'Leap Attack': 'bar',
+  'Whirlwind': 'bar',
+  'Dragon Flight': 'ass',
+  'Fend': 'ama',
+  'Inferno': 'sor',
+  'Arctic Blast': 'dru',
+};
+
 /**
  * Returns true if this skill must stay on its original class:
+ * - HARDCODED_CLASS_SKILLS: engine-hardcoded animation/movement sequences
  * - weapsel=3: requires dual weapons (only Barbarian and Assassin can dual-wield)
  * - itypeb1=h2h/h2h2: requires claw in off-hand (only Assassin can equip claws)
  * - restrict=2: requires shapeshifted form (only Druid can shapeshift),
@@ -43,6 +62,7 @@ const RESTRICT2_COPACED = new Set(['Rabies', 'Hunger']);
  */
 function isPinnedToOriginalClass(skill: SkillEntry): boolean {
   return (
+    skill.skill in HARDCODED_CLASS_SKILLS ||
     skill.weapsel === 3 ||
     skill.itypeb1 === 'h2h' ||
     skill.itypeb1 === 'h2h2' ||
@@ -67,17 +87,50 @@ export function placeSkills(
   rng: SeededRNG,
   skills: SkillEntry[],
   treeAssignments: Map<ClassCode, TreePage[]>,
-): SkillPlacement[] {
+): { placements: SkillPlacement[]; droppedSkillNames: Set<string> } {
+  // Probabilistic drop: each HARDCODED_CLASS_SKILLS entry has a seeded 50%
+  // chance of being dropped from this seed entirely. Iterate in the natural
+  // order of the `skills` array so the RNG consumption is deterministic.
+  // For each drop, we'll inject a duplicate of a random pool skill into the
+  // native class's pinned list below — keeping the tree fully populated.
+  const droppedByClass = new Map<ClassCode, number>();
+  const droppedSkillNames = new Set<string>();
+  const keptSkills: SkillEntry[] = [];
+  for (const skill of skills) {
+    const nativeClass = HARDCODED_CLASS_SKILLS[skill.skill];
+    if (nativeClass !== undefined && rng.next() >= 0.5) {
+      droppedByClass.set(nativeClass, (droppedByClass.get(nativeClass) ?? 0) + 1);
+      droppedSkillNames.add(skill.skill);
+      continue;
+    }
+    keptSkills.push(skill);
+  }
+
   // Separate pinned skills (must stay on original class) from the shuffle pool
   const pinnedByClass = new Map<ClassCode, SkillEntry[]>();
   const shufflePool: SkillEntry[] = [];
-  for (const skill of skills) {
+  for (const skill of keptSkills) {
     if (isPinnedToOriginalClass(skill)) {
       const cls = skill.charclass as ClassCode;
       if (!pinnedByClass.has(cls)) pinnedByClass.set(cls, []);
       pinnedByClass.get(cls)!.push(skill);
     } else {
       shufflePool.push(skill);
+    }
+  }
+
+  // For every probabilistic-pin drop, inject a duplicate of a random shuffle-pool
+  // skill into the native class's pinned list. The duplicate is a second reference
+  // to the same SkillEntry — downstream placement will produce two SkillPlacements
+  // sharing the same skill data (one from this pinned slot, one from the natural
+  // shuffle). This keeps the total skill count stable and fills the vacated slot.
+  for (const [targetClass, dropCount] of droppedByClass) {
+    if (!pinnedByClass.has(targetClass)) pinnedByClass.set(targetClass, []);
+    const pinnedForClass = pinnedByClass.get(targetClass)!;
+    for (let i = 0; i < dropCount; i++) {
+      if (shufflePool.length === 0) break;
+      const srcIdx = Math.floor(rng.next() * shufflePool.length);
+      pinnedForClass.push(shufflePool[srcIdx]);
     }
   }
 
@@ -165,7 +218,7 @@ export function placeSkills(
   resolveExclusions(placements);
   resolveCoplacements(placements);
 
-  return placements;
+  return { placements, droppedSkillNames };
 }
 
 /**

@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Randomize
     const treeAssignments = randomizeTrees(rng, treePages);
-    const placements = placeSkills(rng, skills, treeAssignments);
+    const { placements } = placeSkills(rng, skills, treeAssignments);
     const placementsByClass = groupByClass(placements);
 
     // Build preview data
