@@ -2,10 +2,8 @@ import type { MutationContext } from './index';
 import { EXP_COLS, TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
 
 const XP_MULT = 1 / 2;  // half XP per kill
-const PICKS_ADD = 1;
-const MAX_PICKS = 6;
 const NODROP_MULT = 0.5;      // halve NoDrop → items drop more often
-const QUALITY_MULT = 2;        // double Unique/Set/Rare weights
+const QUALITY_VAL = 1200;      // override Unique/Set/Rare weights (vanilla: 800)
 const QUALITY_COLS = ['Unique', 'Set', 'Rare'];
 
 export function applyDeadReckoning(ctx: MutationContext): void {
@@ -27,18 +25,10 @@ export function applyDeadReckoning(ctx: MutationContext): void {
 
   // Treasure class modifications
   const { headers: th, rows: tr } = ctx.treasureclass;
-  const picksIdx = th.indexOf('Picks');
   const noDropIdx = th.indexOf('NoDrop');
   const qualityIdxs = QUALITY_COLS.map(c => th.indexOf(c)).filter(i => i !== -1);
 
   for (const row of tr) {
-    // Increase Picks by 1 (capped at MAX_PICKS)
-    if (picksIdx !== -1) {
-      const picks = parseInt(row[picksIdx], 10);
-      if (!isNaN(picks) && picks > 0)
-        row[picksIdx] = String(Math.min(MAX_PICKS, picks + PICKS_ADD));
-    }
-
     // Halve NoDrop so items drop more frequently
     if (noDropIdx !== -1) {
       const noDrop = parseInt(row[noDropIdx], 10);
@@ -46,11 +36,11 @@ export function applyDeadReckoning(ctx: MutationContext): void {
         row[noDropIdx] = String(Math.max(1, Math.round(noDrop * NODROP_MULT)));
     }
 
-    // Double Unique/Set/Rare weights for better quality drops
+    // Set Unique/Set/Rare weights to 1200 (vanilla: 800)
     for (const idx of qualityIdxs) {
       const val = parseInt(row[idx], 10);
       if (!isNaN(val) && val > 0)
-        row[idx] = String(Math.round(val * QUALITY_MULT));
+        row[idx] = String(QUALITY_VAL);
     }
   }
 }
