@@ -48,6 +48,7 @@ const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   'Fend': 'ama',
   'Inferno': 'sor',
   'Arctic Blast': 'dru',
+  'Zeal': 'pal',
 };
 
 /**
@@ -247,6 +248,10 @@ function resolveExclusions(placements: SkillPlacement[]): void {
       // partner.skill must be allowed on p.targetClass
       if (excluded.has(partner.skill.skill)) continue;
 
+      // Can't pull a pinned skill off its native class (hardcoded animations,
+      // dual-wield, claws, shapeshift, etc. — see isPinnedToOriginalClass).
+      if (isPinnedToOriginalClass(partner.skill)) continue;
+
       [placements[i].skill, placements[j].skill] = [placements[j].skill, placements[i].skill];
       swapped = true;
       break;
@@ -309,6 +314,8 @@ function resolveCoplacements(placements: SkillPlacement[]): void {
       const partner = placements[j];
       if (partner.targetClass !== destClass) continue;
       if (peerSet.has(partner.skill.skill)) continue; // don't displace the peer itself
+      // Can't pull a pinned skill off its native class.
+      if (isPinnedToOriginalClass(partner.skill)) continue;
 
       // Respect static exclusions in both directions
       if (SKILL_CLASS_EXCLUSIONS[destClass]?.has(skillName)) continue;

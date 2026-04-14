@@ -26,6 +26,7 @@ const HARDCODED = {
   'Fend': 'ama',
   'Inferno': 'sor',
   'Arctic Blast': 'dru',
+  'Zeal': 'pal',
 };
 
 async function generateAndFetch(seed) {
