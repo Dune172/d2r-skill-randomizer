@@ -53,7 +53,7 @@ export default function ChallengePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventSchema) }}
       />
 
-      <section className="max-w-2xl mx-auto px-4 pt-12 pb-6 text-center">
+      <section className="max-w-4xl mx-auto px-4 pt-12 pb-6 text-center">
         <h1 className="anim-fade-up font-cinzel font-black tracking-[0.14em] text-3xl md:text-4xl text-[#c8942a] glow-gold uppercase mb-3">
           D2R Weekly Challenge
         </h1>

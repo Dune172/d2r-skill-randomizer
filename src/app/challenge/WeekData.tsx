@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getActivePair, getWeekName, type MutationDef } from '@/lib/mutations/registry';
+import { InstallInstructions } from '@/app/components/InstallInstructions';
 
 const BASE_DATE = new Date('2026-04-13T00:00:00Z');
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -126,9 +127,6 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
       <p className="font-cinzel font-bold text-[#c8942a] text-sm tracking-[0.1em] text-center leading-tight">
         {mutation.name}
       </p>
-      <p className="text-xs text-[#9a7a2a] mt-1 tracking-wider hidden md:block">
-        Hover for details
-      </p>
       <p className="text-xs text-[#a89060] leading-relaxed mt-2 md:hidden">
         {mutation.description}
       </p>
@@ -147,7 +145,7 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
 
 type GenStatus = 'idle' | 'generating' | 'ready' | 'error';
 
-function ChallengeGenerator({ seed, weekNumber }: { seed: number; weekNumber: number }) {
+function ChallengeGenerator({ seed, weekNumber, onReady }: { seed: number; weekNumber: number; onReady?: () => void }) {
   const [status, setStatus] = useState<GenStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -181,6 +179,7 @@ function ChallengeGenerator({ seed, weekNumber }: { seed: number; weekNumber: nu
         throw new Error(err.error || 'Generation failed');
       }
       setStatus('ready');
+      onReady?.();
     } catch (err) {
       setStatus('error');
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
@@ -231,9 +230,11 @@ export function WeekCard() {
   const { weekNumber, currentSeed, currentStart, currentEnd } = getWeekData();
   const [mutA, mutB] = getActivePair(weekNumber);
   const weekName = getWeekName(weekNumber);
+  const [generated, setGenerated] = useState(false);
 
   return (
-    <div className="card-ornate border border-t-2 border-[#3a1510] border-t-[#c8942a]/30 bg-[#0c0304] panel-shadow shadow-[inset_0_1px_0_rgba(200,148,42,0.15)] p-8 mb-8">
+    <>
+    <div className="card-ornate border border-t-2 border-[#3a1510] border-t-[#c8942a]/30 bg-[#0c0304] panel-shadow shadow-[inset_0_1px_0_rgba(200,148,42,0.15)] p-8 mb-8 max-w-2xl mx-auto">
       <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase mb-3">
         Week {weekNumber} &nbsp;·&nbsp; {formatDate(currentStart)} – {formatDate(currentEnd)}
       </p>
@@ -245,9 +246,17 @@ export function WeekCard() {
       </div>
 
       {/* Active mutations */}
-      <div className="flex flex-wrap justify-center gap-4 mb-6">
-        <MutationCard mutation={mutA} />
-        <MutationCard mutation={mutB} />
+      <div className="w-full border-t border-[#3a1510]/50 mt-2 pt-5 mb-6">
+        <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase text-center mb-4">
+          Mutations
+        </p>
+        <div className="flex flex-wrap justify-center gap-4 mb-3">
+          <MutationCard mutation={mutA} />
+          <MutationCard mutation={mutB} />
+        </div>
+        <p className="text-xs text-[#9a7a2a] tracking-wider text-center hidden md:block">
+          Hover for details
+        </p>
       </div>
 
       {/* Challenge settings */}
@@ -265,8 +274,20 @@ export function WeekCard() {
         </div>
       </div>
 
-      <ChallengeGenerator seed={currentSeed} weekNumber={weekNumber} />
+      <ChallengeGenerator seed={currentSeed} weekNumber={weekNumber} onReady={() => setGenerated(true)} />
     </div>
+
+    {generated && (
+      <div className="anim-fade-up max-w-4xl mx-auto mb-8 text-left">
+        <div className="border-t border-[#3a1510]/50 pt-5 mb-4">
+          <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase text-center mb-4">
+            Install Instructions
+          </p>
+        </div>
+        <InstallInstructions seed={currentSeed} />
+      </div>
+    )}
+    </>
   );
 }
 
