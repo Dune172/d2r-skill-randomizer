@@ -1,22 +1,17 @@
 import { ImageResponse } from 'next/og';
+import { getCurrentWeekNumber, getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
 
 export const runtime = 'edge';
 export const alt = 'D2R Randomizer — Weekly Challenge Seed';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-const BASE_DATE = new Date('2026-04-13T00:00:00Z');
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
 function getCurrentChallenge() {
-  const now = new Date();
-  const weekNumber = Math.max(1, Math.floor((now.getTime() - BASE_DATE.getTime()) / WEEK_MS) + 1);
-  const seed = weekNumber * 1337;
-  const start = new Date(BASE_DATE.getTime() + (weekNumber - 1) * WEEK_MS);
-  const end = new Date(start.getTime() + WEEK_MS - 1);
-  const fmt = (d: Date) =>
-    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-  return { weekNumber, seed, dateRange: `${fmt(start)} – ${fmt(end)}` };
+  const weekNumber = getCurrentWeekNumber();
+  const seed = getWeekSeed(weekNumber);
+  const start = getWeekStart(weekNumber);
+  const end = getWeekEnd(weekNumber);
+  return { weekNumber, seed, dateRange: `${formatWeekDate(start)} – ${formatWeekDate(end)}` };
 }
 
 export default function Image() {

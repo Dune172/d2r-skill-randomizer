@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { getCurrentWeekNumber, getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -126,17 +127,13 @@ const communityCards = [
   },
 ];
 
-// Challenge seed calculation (mirrors challenge/page.tsx)
-const BASE_DATE = new Date('2026-04-13T00:00:00Z');
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
+// Challenge seed calculation
 function getCurrentChallenge() {
-  const now = new Date();
-  const weekNumber = Math.max(1, Math.floor((now.getTime() - BASE_DATE.getTime()) / WEEK_MS) + 1);
-  const seed = weekNumber * 1337;
-  const start = new Date(BASE_DATE.getTime() + (weekNumber - 1) * WEEK_MS);
-  const end = new Date(start.getTime() + WEEK_MS - 1);
-  const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const weekNumber = getCurrentWeekNumber();
+  const seed = getWeekSeed(weekNumber);
+  const start = getWeekStart(weekNumber);
+  const end = getWeekEnd(weekNumber);
+  const fmt = (d: Date) => formatWeekDate(d, { month: 'short', day: 'numeric' });
   return { weekNumber, seed, dateRange: `${fmt(start)} – ${fmt(end)}` };
 }
 

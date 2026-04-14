@@ -5,9 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getActivePair, getWeekName, type MutationDef } from '@/lib/mutations/registry';
 import { InstallInstructions } from '@/app/components/InstallInstructions';
-
-const BASE_DATE = new Date('2026-04-13T00:00:00Z');
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+import { getCurrentWeekNumber, getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
 
 // Season Beta Race preset — same settings as the randomizer's season1race preset
 const SEASON1_OPTIONS = {
@@ -27,30 +25,15 @@ const SEASON1_OPTIONS = {
   xpActs: [1, 2, 3],
 };
 
-function getWeekSeed(weekNumber: number): number {
-  return weekNumber * 1337;
-}
-
-function getWeekStart(weekNumber: number): Date {
-  return new Date(BASE_DATE.getTime() + (weekNumber - 1) * WEEK_MS);
-}
-
-function formatDate(d: Date): string {
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-}
-
 function getWeekData() {
-  const now = new Date();
-  const weekNumber = Math.max(1, Math.floor((now.getTime() - BASE_DATE.getTime()) / WEEK_MS) + 1);
+  const weekNumber = getCurrentWeekNumber();
   const currentSeed = getWeekSeed(weekNumber);
   const currentStart = getWeekStart(weekNumber);
-  const currentEnd = new Date(currentStart.getTime() + WEEK_MS - 1);
+  const currentEnd = getWeekEnd(weekNumber);
 
   const archive = [];
   for (let i = weekNumber - 1; i >= Math.max(1, weekNumber - 4); i--) {
-    const start = getWeekStart(i);
-    const end = new Date(start.getTime() + WEEK_MS - 1);
-    archive.push({ weekNumber: i, seed: getWeekSeed(i), start, end });
+    archive.push({ weekNumber: i, seed: getWeekSeed(i), start: getWeekStart(i), end: getWeekEnd(i) });
   }
 
   return { weekNumber, currentSeed, currentStart, currentEnd, archive };
@@ -236,13 +219,13 @@ export function WeekCard() {
     <>
     <div className="card-ornate border border-t-2 border-[#3a1510] border-t-[#c8942a]/30 bg-[#0c0304] panel-shadow shadow-[inset_0_1px_0_rgba(200,148,42,0.15)] p-8 mb-8 max-w-2xl mx-auto">
       <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase mb-3">
-        Week {weekNumber} &nbsp;·&nbsp; {formatDate(currentStart)} – {formatDate(currentEnd)}
+        Week {weekNumber} &nbsp;·&nbsp; {formatWeekDate(currentStart)} – {formatWeekDate(currentEnd)}
       </p>
       <div className="font-cinzel font-black text-5xl md:text-6xl text-[#c8942a] glow-pulse tracking-widest mb-2">
         {weekName}
       </div>
       <div className="mb-6">
-        <CountdownTimer nextWeekStart={new Date(currentEnd.getTime() + 1)} />
+        <CountdownTimer nextWeekStart={getWeekStart(weekNumber + 1)} />
       </div>
 
       {/* Active mutations */}
@@ -315,7 +298,7 @@ export function WeekArchive() {
             <tr key={wn} className="border-b border-[#1a0a06] hover:bg-[#c8942a]/[0.03] transition-colors duration-150">
               <td className="py-2 pr-4 text-[#9a7a2a] font-cinzel text-sm">{wn}</td>
               <td className="py-2 pr-4 text-[#c8942a] font-cinzel text-sm">{getWeekName(wn)}</td>
-              <td className="py-2 pr-4 text-[#a89060] text-sm">{formatDate(start)} – {formatDate(end)}</td>
+              <td className="py-2 pr-4 text-[#a89060] text-sm">{formatWeekDate(start)} – {formatWeekDate(end)}</td>
               <td className="py-2">
                 <Link
                   href={`/generate?seed=${seed}`}

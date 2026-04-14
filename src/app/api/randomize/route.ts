@@ -13,6 +13,7 @@ import { writeSkillDescRows } from '@/lib/randomizer/skilldesc-writer';
 import { assignPrerequisites } from '@/lib/randomizer/prereq-assigner';
 import { buildAllTreeSprites, clearSpriteCache } from '@/lib/sprites/tree-stitcher';
 import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-assembler';
+import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { incrementCount } from '@/lib/counter';
@@ -387,10 +388,8 @@ export async function POST(request: NextRequest) {
       const weaponsSrc = loadTxtFile('weapons.txt');
       const miscSrc = loadTxtFile('misc.txt');
 
-      // Determine week number using the same BASE_DATE logic as the challenge page
-      const BASE_DATE = new Date('2026-04-13T00:00:00Z');
-      const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-      const computedWeek = Math.max(1, Math.floor((Date.now() - BASE_DATE.getTime()) / WEEK_MS) + 1);
+      // Determine week number using the shared LA-timezone calendar
+      const computedWeek = getCurrentWeekNumber();
       const weekNumber = weeklyOverride ?? computedWeek;
 
       applyWeeklyMutations(weekNumber, {
