@@ -106,13 +106,6 @@ export default function ChallengePage() {
         </p>
       </section>
 
-      {/* Divider */}
-      <div className="flex items-center gap-3 max-w-2xl mx-auto px-4 mb-8">
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#7a5818] to-[#c8942a]" />
-        <span className="text-[#c8942a] text-xs">◆</span>
-        <div className="flex-1 h-px bg-gradient-to-l from-transparent via-[#7a5818] to-[#c8942a]" />
-      </div>
-
       <WeekArchive />
     </main>
   );
