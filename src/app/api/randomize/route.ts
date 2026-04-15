@@ -18,6 +18,7 @@ import { buildZip } from '@/lib/zip-builder';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { incrementCount } from '@/lib/counter';
 import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { remapMonstatsSkillIds } from '@/lib/randomizer/monstats-skill-remapper';
 import { applyTeleportStaffUnique, applyTeleportSkillCost, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
@@ -74,9 +75,21 @@ export async function POST(request: NextRequest) {
     const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0);
     const zipCache = getZipCache();
 
-    // Check cache (fast path — bypasses queue)
+    // Check cache (fast path — bypasses queue AND rate limit so users can
+    // re-download a seed they already generated without being throttled)
     if (zipCache.has(cacheKey)) {
       return NextResponse.json({ seed, status: 'ready' });
+    }
+
+    // Per-IP rate limit: 3 fresh generations per 60s. Users retrying different
+    // seeds stay under; scripted abuse hits the ceiling quickly.
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(`randomize:${ip}`, 3, 60_000);
+    if (!rl.ok) {
+      return rateLimitResponse(
+        rl.retryAfter,
+        `You're generating mods too quickly. Try again in ${rl.retryAfter}s.`,
+      );
     }
 
     // Reject early if queue is already backed up to prevent cascade timeouts
@@ -486,9 +499,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ seed, status: 'ready' });
   } catch (error) {
+    // Log the full error server-side for debugging; return a generic message
+    // to the client so stack traces and internal paths don't leak.
     console.error('Randomize error:', error);
     return NextResponse.json(
-      { error: 'Failed to generate mod', details: String(error) },
+      { error: 'Something went wrong generating your mod. Please try again.' },
       { status: 500 },
     );
   }

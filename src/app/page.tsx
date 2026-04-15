@@ -16,7 +16,7 @@ const softwareSchema = {
   operatingSystem: 'Windows',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   downloadUrl: 'https://d2rrandomizer.com/generate',
-  screenshot: 'https://d2rrandomizer.com/screenshot.png',
+  screenshot: 'https://d2rrandomizer.com/og-image.png',
 };
 
 const faqSchema = {

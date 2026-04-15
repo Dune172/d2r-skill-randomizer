@@ -3,11 +3,20 @@ import AdmZip from 'adm-zip';
 import { seedFromString } from '@/lib/randomizer/seed';
 import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
 import { createD2RShortcut } from '@/lib/lnk-builder';
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
   try {
+    // Lighter rate limit than /randomize — downloads are cheap, but we still
+    // don't want someone hammering the endpoint in a loop.
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(`download:${ip}`, 30, 60_000);
+    if (!rl.ok) {
+      return rateLimitResponse(rl.retryAfter);
+    }
+
     const { searchParams } = new URL(request.url);
     const seedParam = searchParams.get('seed');
     const playersParam = searchParams.get('players');
