@@ -229,7 +229,7 @@ export default async function Home({ searchParams }: Props) {
       <section className="max-w-5xl mx-auto px-4 mb-14 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* This Week's Challenge */}
-        <div className="border border-[#c8942a]/25 bg-[#0c0304] panel-shadow p-7">
+        <div className="border border-[#c8942a]/25 bg-[#0c0304] panel-shadow p-7 text-center">
           <p className="font-cinzel text-[10px] tracking-[0.4em] text-[#7a5818] uppercase mb-3">
             Weekly Challenge
           </p>
@@ -240,25 +240,17 @@ export default async function Home({ searchParams }: Props) {
           </div>
 
           {/* Mutation pair */}
-          <div className="flex flex-wrap gap-3 mb-6">
+          <div className="flex flex-wrap justify-center gap-3 mb-6">
             <HomeMutationCard mutation={challenge.mutA} />
             <HomeMutationCard mutation={challenge.mutB} />
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href={`/generate?seed=${challenge.seed}`}
-              className="font-cinzel tracking-[0.2em] uppercase text-xs px-6 py-2.5 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow"
-            >
-              Generate This Seed
-            </Link>
-            <Link
-              href="/challenge"
-              className="font-cinzel text-[10px] tracking-[0.25em] uppercase text-[#7a5818] hover:text-[#a87830] transition-colors"
-            >
-              Archive →
-            </Link>
-          </div>
+          <Link
+            href="/challenge"
+            className="font-cinzel tracking-[0.2em] uppercase text-xs px-6 py-2.5 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow inline-block"
+          >
+            Play The Challenge
+          </Link>
         </div>
 
         {/* Community Cards */}

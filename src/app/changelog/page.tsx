@@ -24,6 +24,18 @@ export const metadata: Metadata = {
 
 const changelog = [
   {
+    version: 'v0.15',
+    date: 'April 2026',
+    notes: [
+      'Home page now previews the active mutation pair and themed week name instead of the raw seed number',
+      '"Play The Challenge" CTA on the home page links straight through to the full weekly challenge',
+      'The Horde: pack size and XP gain softened for a less punishing density curve',
+      'Pestilence: smoother poison ramp across acts and broader monster coverage (no more blank poison slots)',
+      'Hardcoded-class skills (Zeal, bow skills, etc.) now stay with their original class during shuffling',
+      'Beta launch polish: legal footer, per-IP rate limit, proper OG image and favicon',
+    ],
+  },
+  {
     version: 'v0.14',
     date: 'April 2026',
     notes: [
