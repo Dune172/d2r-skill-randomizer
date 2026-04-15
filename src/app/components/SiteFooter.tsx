@@ -49,18 +49,6 @@ export default function SiteFooter() {
             Use at your own risk. This mod is provided as-is for offline, single-player use only.{' '}
             <span className="text-[#a87830]">Never use with Battle.net online characters.</span>
           </p>
-          <p className="text-[#5a3f10]/80 text-[10px] leading-relaxed pt-2">
-            Questions or takedown requests:{' '}
-            <a
-              href="https://discord.gg/y5r2sTxwS5"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#a87830] hover:text-[#c8942a] transition-colors underline decoration-dotted underline-offset-2"
-            >
-              reach us on Discord
-            </a>
-            .
-          </p>
         </div>
       </div>
     </footer>
