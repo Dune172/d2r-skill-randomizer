@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentWeekNumber, getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
+import { getActivePair, getWeekName } from '@/lib/mutations/registry';
+import { HomeMutationCard } from '@/app/components/HomeMutationCard';
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -134,7 +136,9 @@ function getCurrentChallenge() {
   const start = getWeekStart(weekNumber);
   const end = getWeekEnd(weekNumber);
   const fmt = (d: Date) => formatWeekDate(d, { month: 'short', day: 'numeric' });
-  return { weekNumber, seed, dateRange: `${fmt(start)} – ${fmt(end)}` };
+  const [mutA, mutB] = getActivePair(weekNumber);
+  const weekName = getWeekName(weekNumber);
+  return { weekNumber, seed, dateRange: `${fmt(start)} – ${fmt(end)}`, mutA, mutB, weekName };
 }
 
 export default async function Home({ searchParams }: Props) {
@@ -226,18 +230,21 @@ export default async function Home({ searchParams }: Props) {
 
         {/* This Week's Challenge */}
         <div className="border border-[#c8942a]/25 bg-[#0c0304] panel-shadow p-7">
-          <p className="font-cinzel text-[10px] tracking-[0.4em] text-[#7a5818] uppercase mb-1">
+          <p className="font-cinzel text-[10px] tracking-[0.4em] text-[#7a5818] uppercase mb-3">
             Weekly Challenge
           </p>
-          <h2 className="font-cinzel font-bold text-[#c8942a] tracking-[0.1em] uppercase text-base mb-4">
-            This Week&apos;s Seed
-          </h2>
-          <p className="font-cinzel text-[10px] tracking-[0.3em] text-[#7a5818] uppercase mb-2">
-            Week {challenge.weekNumber} &nbsp;·&nbsp; {challenge.dateRange}
-          </p>
-          <div className="font-cinzel font-black text-4xl md:text-5xl text-[#c8942a] glow-gold tracking-widest mb-5">
-            {challenge.seed.toLocaleString()}
+
+          {/* Week name — replaces the old big seed readout */}
+          <div className="font-cinzel font-black text-3xl md:text-4xl text-[#c8942a] glow-gold tracking-[0.12em] uppercase mb-5 leading-tight">
+            {challenge.weekName}
           </div>
+
+          {/* Mutation pair */}
+          <div className="flex flex-wrap gap-3 mb-6">
+            <HomeMutationCard mutation={challenge.mutA} />
+            <HomeMutationCard mutation={challenge.mutB} />
+          </div>
+
           <div className="flex items-center gap-3">
             <Link
               href={`/generate?seed=${challenge.seed}`}
@@ -252,9 +259,6 @@ export default async function Home({ searchParams }: Props) {
               Archive →
             </Link>
           </div>
-          <p className="text-[#7a5818]/70 text-[11px] leading-relaxed mt-4">
-            A new seed drops every Monday. Same settings for everyone — share your run in Discord.
-          </p>
         </div>
 
         {/* Community Cards */}
@@ -263,22 +267,24 @@ export default async function Home({ searchParams }: Props) {
             Community
           </p>
           {communityCards.map((c) => {
-            const inner = (
-              <div className="border border-[#3a1510] bg-[#0c0304] p-4 panel-shadow feature-card transition-colors flex items-start gap-4">
-                <div className="text-[#c8942a] shrink-0 mt-0.5">{c.icon}</div>
+            const cardClasses =
+              'flex-1 border border-[#3a1510] bg-[#0c0304] p-4 panel-shadow feature-card transition-colors flex items-center gap-4';
+            const children = (
+              <>
+                <div className="text-[#c8942a] shrink-0">{c.icon}</div>
                 <div>
                   <p className="font-cinzel font-bold text-[#e8c87a] text-sm tracking-[0.06em] mb-1">{c.label}</p>
                   <p className="text-[#a89060]/70 text-xs leading-relaxed">{c.desc}</p>
                 </div>
-              </div>
+              </>
             );
             return c.external ? (
-              <a key={c.href} href={c.href} target="_blank" rel="noopener noreferrer">
-                {inner}
+              <a key={c.href} href={c.href} target="_blank" rel="noopener noreferrer" className={cardClasses}>
+                {children}
               </a>
             ) : (
-              <Link key={c.href} href={c.href}>
-                {inner}
+              <Link key={c.href} href={c.href} className={cardClasses}>
+                {children}
               </Link>
             );
           })}
