@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function SiteFooter() {
   return (
-    <footer className="mt-auto border-t border-[#3a1510] bg-[#060203]">
+    <footer className="mt-auto bg-[#060203]">
       {/* Top accent line */}
       <div className="flex items-center">
         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#7a5818] to-[#c8942a]" />

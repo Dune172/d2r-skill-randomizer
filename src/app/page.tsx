@@ -273,15 +273,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Divider ── */}
-      <div className="flex items-center gap-3 max-w-5xl mx-auto px-4 mb-10">
-        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#7a5818] to-[#c8942a]" />
-        <span className="text-[#c8942a] text-xs">◆</span>
-        <div className="flex-1 h-px bg-gradient-to-l from-transparent via-[#7a5818] to-[#c8942a]" />
-      </div>
-
       {/* ── FAQ ── */}
-      <section className="max-w-3xl mx-auto px-4 pb-20">
+      <section className="relative max-w-3xl mx-auto px-4 pb-20">
         <h2 className="font-cinzel font-bold text-[#c8942a] tracking-[0.1em] uppercase text-lg mb-6">
           Frequently Asked Questions
         </h2>
@@ -294,6 +287,9 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* Fade to black before footer */}
+      <div className="h-24 bg-gradient-to-b from-transparent to-[#060203] pointer-events-none" />
     </main>
   );
 }
