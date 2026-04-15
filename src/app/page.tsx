@@ -1,12 +1,13 @@
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentWeekNumber, getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
 import { getActivePair, getWeekName } from '@/lib/mutations/registry';
 import { HomeMutationCard } from '@/app/components/HomeMutationCard';
 
-type Props = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-};
+// Revalidate the rendered homepage every 60s so the weekly challenge card stays
+// fresh without forcing SSR on every visit. Legacy `?seed=` shared links are
+// handled by middleware (see src/middleware.ts) before this page renders —
+// consuming `searchParams` here would re-introduce dynamic rendering.
+export const revalidate = 60;
 
 const softwareSchema = {
   '@context': 'https://schema.org',
@@ -141,18 +142,7 @@ function getCurrentChallenge() {
   return { weekNumber, seed, dateRange: `${fmt(start)} – ${fmt(end)}`, mutA, mutB, weekName };
 }
 
-export default async function Home({ searchParams }: Props) {
-  const params = await searchParams;
-
-  // Redirect old shared links (/?seed=...) to /generate
-  if (params.seed) {
-    const entries = Object.entries(params)
-      .filter(([, v]) => typeof v === 'string')
-      .map(([k, v]) => [k, v as string]);
-    const qs = new URLSearchParams(Object.fromEntries(entries)).toString();
-    redirect(`/generate?${qs}`);
-  }
-
+export default function Home() {
   const challenge = getCurrentChallenge();
 
   return (

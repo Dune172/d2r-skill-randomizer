@@ -81,7 +81,7 @@ function SettingItem({ label, value }: { label: string; value: string }) {
 
 function MutationCard({ mutation }: { mutation: MutationDef }) {
   const [expanded, setExpanded] = useState(false);
-  const imgSrc = `/mutations/${mutation.id}.png`;
+  const imgSrc = `/mutations/${mutation.id}.webp`;
   return (
     <div
       role="button"

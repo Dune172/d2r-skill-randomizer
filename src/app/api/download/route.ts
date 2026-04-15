@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import AdmZip from 'adm-zip';
 import { seedFromString } from '@/lib/randomizer/seed';
-import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
+import { getCached, makeCacheKey } from '@/lib/zip-cache';
 import { createD2RShortcut } from '@/lib/lnk-builder';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 
@@ -46,8 +46,7 @@ export async function GET(request: NextRequest) {
 
     const weeklyKey  = searchParams.get('weekly') === '1' ? -1 : 0;
     const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, weeklyKey);
-    const zipCache = getZipCache();
-    const zipBuffer = zipCache.get(cacheKey);
+    const zipBuffer = getCached(cacheKey);
 
     if (!zipBuffer) {
       return NextResponse.json(

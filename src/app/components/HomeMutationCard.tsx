@@ -15,7 +15,7 @@ export function HomeMutationCard({ mutation }: { mutation: MutationDef }) {
     >
       <div className="w-24 h-24 flex items-center justify-center mb-2 overflow-hidden">
         <Image
-          src={`/mutations/${mutation.id}.png`}
+          src={`/mutations/${mutation.id}.webp`}
           alt=""
           width={96}
           height={96}

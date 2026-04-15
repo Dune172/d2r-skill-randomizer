@@ -13,11 +13,20 @@ interface FrameData {
 }
 
 /**
- * Cache loaded sprite files to avoid re-reading 13MB files
+ * Cache loaded sprite files to avoid re-reading 13MB files.
+ * Stored on globalThis so it survives Next.js module reloads in dev, and (more
+ * importantly) so we never drop ~126MB of static game-data reads between
+ * requests. The source .sprite files are immutable D2R assets.
  */
-const spriteCache = new Map<string, Buffer>();
+const SPRITE_CACHE_KEY = '__d2r_sprite_cache__';
+function getSpriteCache(): Map<string, Buffer> {
+  const g = globalThis as Record<string, unknown>;
+  if (!g[SPRITE_CACHE_KEY]) g[SPRITE_CACHE_KEY] = new Map<string, Buffer>();
+  return g[SPRITE_CACHE_KEY] as Map<string, Buffer>;
+}
 
-function loadSprite(filename: string): Buffer {
+export function loadSprite(filename: string): Buffer {
+  const spriteCache = getSpriteCache();
   if (!spriteCache.has(filename)) {
     const filePath = path.join(SPRITES_DIR, filename);
     spriteCache.set(filename, fs.readFileSync(filePath));
@@ -119,8 +128,10 @@ export function buildAllTreeSprites(
 }
 
 /**
- * Clear the sprite cache to free memory
+ * No-op kept for backward compatibility. The sprite cache is now global and
+ * its contents are static D2R asset buffers — clearing it on every request
+ * caused ~126MB of disk re-reads per generation. See getSpriteCache().
  */
 export function clearSpriteCache(): void {
-  spriteCache.clear();
+  // intentionally empty
 }

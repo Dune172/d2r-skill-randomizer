@@ -1,8 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-sharp.concurrency(1); // Limit libvips threads to prevent process limit exhaustion on shared hosting
-sharp.cache(false);   // Disable libvips operation cache so threads are released between requests
+// Generation is serialized upstream by enqueueGeneration (single-flight), so we
+// don't need to cap libvips threads to 1 for safety. 2 threads cut sprite
+// compositing roughly in half on a 2-vCPU box. Override via VIPS_CONCURRENCY
+// env var if hosting gets tighter.
+sharp.concurrency(2);
+// Keep the op cache in memory only (no filesystem temp files). Icon RGBA
+// buffers are already globally cached; this helps repeat composite ops.
+sharp.cache({ memory: 50, items: 200, files: 0 });
 import { ClassCode, SkillPlacement } from '../randomizer/types';
 import { CLASS_BY_CODE, ICON_WIDTH, ICON_HEIGHT, ICONS_PER_CLASS } from '../randomizer/config';
 import { buildSprite } from './sprite-parser';

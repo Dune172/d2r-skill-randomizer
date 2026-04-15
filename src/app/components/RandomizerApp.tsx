@@ -123,14 +123,28 @@ export default function RandomizerApp() {
       window.history.replaceState(null, '', `${new URL(window.location.href).pathname}?${params}`);
 
       setStatus('building');
-      const buildRes = await fetch('/api/randomize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs }),
-      });
+      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs });
 
-      if (!buildRes.ok) {
-        const err = await buildRes.json();
+      // Retry up to 2 times on 503 (queue full). Exponential-ish backoff:
+      // 3s → 6s. Matches the server-side queue window (~3-5s per gen × 8 deep
+      // worst-case). Users see a single "still working" state rather than a
+      // toast failure for transient queue pressure.
+      let buildRes: Response | null = null;
+      let attempt = 0;
+      const maxAttempts = 3;
+      while (attempt < maxAttempts) {
+        buildRes = await fetch('/api/randomize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: buildBody,
+        });
+        if (buildRes.status !== 503 || attempt === maxAttempts - 1) break;
+        attempt++;
+        await new Promise(r => setTimeout(r, 3000 * attempt));
+      }
+
+      if (!buildRes || !buildRes.ok) {
+        const err = buildRes ? await buildRes.json() : { error: 'Build failed' };
         throw new Error(err.error || 'Build failed');
       }
 

@@ -4,7 +4,7 @@
  */
 
 export interface MutationDef {
-  /** Slug used as the image filename: public/mutations/{id}.png */
+  /** Slug used as the image filename: public/mutations/{id}.webp */
   id: string;
   /** Human-readable title shown on the card */
   name: string;

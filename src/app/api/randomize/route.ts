@@ -11,11 +11,11 @@ import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomize
 import { writeSkillsRows, reorderSkillsRows } from '@/lib/randomizer/skills-writer';
 import { writeSkillDescRows } from '@/lib/randomizer/skilldesc-writer';
 import { assignPrerequisites } from '@/lib/randomizer/prereq-assigner';
-import { buildAllTreeSprites, clearSpriteCache } from '@/lib/sprites/tree-stitcher';
+import { buildAllTreeSprites } from '@/lib/sprites/tree-stitcher';
 import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-assembler';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { buildZip } from '@/lib/zip-builder';
-import { getZipCache, makeCacheKey } from '@/lib/zip-cache';
+import { getZipCache, getZipCacheStats, hasCached, setCached, makeCacheKey } from '@/lib/zip-cache';
 import { incrementCount } from '@/lib/counter';
 import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
@@ -31,6 +31,25 @@ import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
 import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
+
+// Rate-limited 503 telemetry: log at most once per 10s so a sustained overload
+// doesn't spam stdout. Shows enough context (depth, RSS, cache) to post-mortem
+// a spike without attaching a profiler.
+let lastBusyLog = 0;
+function logBusy(ip: string): void {
+  const now = Date.now();
+  if (now - lastBusyLog < 10_000) return;
+  lastBusyLog = now;
+  const mem = process.memoryUsage();
+  const cache = getZipCacheStats();
+  console.warn(
+    `[randomize:busy] ts=${new Date(now).toISOString()} ip=${ip} ` +
+    `queueDepth=${getQueueDepth()} rssMB=${(mem.rss / 1024 / 1024).toFixed(0)} ` +
+    `heapUsedMB=${(mem.heapUsed / 1024 / 1024).toFixed(0)} ` +
+    `zipCache=${cache.entries}/${cache.maxEntries} ` +
+    `zipBytesMB=${(cache.bytes / 1024 / 1024).toFixed(0)}`,
+  );
+}
 
 
 export async function POST(request: NextRequest) {
@@ -73,11 +92,10 @@ export async function POST(request: NextRequest) {
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
     const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0);
-    const zipCache = getZipCache();
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
-    if (zipCache.has(cacheKey)) {
+    if (hasCached(cacheKey)) {
       return NextResponse.json({ seed, status: 'ready' });
     }
 
@@ -92,8 +110,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reject early if queue is already backed up to prevent cascade timeouts
-    if (getQueueDepth() >= 2) {
+    // Reject early if queue is already backed up to prevent cascade timeouts.
+    // 8 deep: with ~3-5s per gen, worst-case wait is ~30-40s — better UX than
+    // hard-rejecting a legitimate burst. The rate limiter (3/60s/IP) upstream
+    // still blocks scripted abuse from piling on.
+    if (getQueueDepth() >= 8) {
+      logBusy(ip);
       return NextResponse.json(
         { error: 'Server is busy — too many mods generating at once. Try again in a moment!' },
         { status: 503 },
@@ -104,7 +126,7 @@ export async function POST(request: NextRequest) {
     await enqueueGeneration(async () => {
 
     // Re-check cache inside the queue in case another request built it while we waited
-    if (zipCache.has(cacheKey)) return;
+    if (hasCached(cacheKey)) return;
 
     const rng = createRNG(seed);
 
@@ -337,8 +359,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 10: Build tree sprites
+    // (Source .sprite buffers are kept in a process-global cache — they're
+    // static D2R assets, so re-reading them on every generation was wasted I/O.)
     const treeSprites = buildAllTreeSprites(treeAssignments);
-    clearSpriteCache();
 
     // Step 11: Build icon sprites
     // Build original IconCel lookup from skilldesc data
@@ -485,14 +508,8 @@ export async function POST(request: NextRequest) {
       miscTxt,
     });
 
-    // Limit cache size before inserting (evict oldest entry if at capacity)
-    if (zipCache.size >= 10) {
-      const firstKey = zipCache.keys().next().value;
-      if (firstKey !== undefined) zipCache.delete(firstKey);
-    }
-
-    // Cache the result
-    zipCache.set(cacheKey, zipBuffer);
+    // Cache the result (byte-bounded LRU handles eviction internally)
+    setCached(cacheKey, zipBuffer);
     incrementCount();
 
     }); // end enqueueGeneration
