@@ -5,14 +5,15 @@ const POISON_TYPE = 'pois';
 const POISON_PCT  = '100';
 const POISON_DUR  = '200'; // 8 seconds at 25fps
 
+// +15 min / +30 max per act, starting from 45/90 in Act 1.
 const POISON_BY_ACT: Record<number, { min: number; max: number }> = {
   1: { min: 45,  max: 90  },
-  2: { min: 75,  max: 150 },
-  3: { min: 105, max: 210 },
-  4: { min: 135, max: 270 },
-  5: { min: 165, max: 330 },
+  2: { min: 60,  max: 120 },
+  3: { min: 75,  max: 150 },
+  4: { min: 90,  max: 180 },
+  5: { min: 105, max: 210 },
 };
-const POISON_FALLBACK = { min: 75, max: 150 }; // unknown/non-act monsters
+const POISON_FALLBACK = { min: 60, max: 120 }; // unknown/non-act monsters (Act 2 equiv.)
 
 // Bosses and miniboss-like combat monsters that Pestilence should also poison
 // but that are intentionally NOT in BOSS_ACTS (which is scoped to /players
