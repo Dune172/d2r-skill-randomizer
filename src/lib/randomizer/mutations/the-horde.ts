@@ -1,11 +1,13 @@
 import type { MutationContext } from './index';
 import { EXP_COLS, TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
 
-const MULT = 3;
+// Pack size multiplier. Previously 3× — dialed back 20% to 2.4× so large
+// packs don't feel overwhelming while still noticeably swarmier than vanilla.
+const MULT = 2.4;
 const MAX_GRP = 15;
 
-// Reduce XP per kill to 3/4 of normal (more monsters, but less XP each)
-const XP_MULT = 3 / 4;
+// Reduce XP per kill to 2/3 of normal (more monsters, but less XP each)
+const XP_MULT = 2 / 3;
 
 export function applyTheHorde(ctx: MutationContext): void {
   const { headers: mh, rows: mr } = ctx.monstats;
@@ -24,9 +26,9 @@ export function applyTheHorde(ctx: MutationContext): void {
     const minVal = parseInt(row[minGrpIdx], 10);
     const maxVal = parseInt(row[maxGrpIdx], 10);
     if (!isNaN(minVal) && minVal > 0)
-      row[minGrpIdx] = String(Math.min(MAX_GRP, minVal * MULT));
+      row[minGrpIdx] = String(Math.min(MAX_GRP, Math.round(minVal * MULT)));
     if (!isNaN(maxVal) && maxVal > 0)
-      row[maxGrpIdx] = String(Math.min(MAX_GRP, maxVal * MULT));
+      row[maxGrpIdx] = String(Math.min(MAX_GRP, Math.round(maxVal * MULT)));
     for (const idx of expIdxs) {
       const val = parseInt(row[idx], 10);
       if (!isNaN(val) && val > 0)

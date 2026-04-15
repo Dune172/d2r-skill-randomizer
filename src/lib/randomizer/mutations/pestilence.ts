@@ -14,6 +14,30 @@ const POISON_BY_ACT: Record<number, { min: number; max: number }> = {
 };
 const POISON_FALLBACK = { min: 75, max: 150 }; // unknown/non-act monsters
 
+// Bosses and miniboss-like combat monsters that Pestilence should also poison
+// but that are intentionally NOT in BOSS_ACTS (which is scoped to /players
+// HP/damage scaling where Uber bosses, Cow Level, and Diabloclone are excluded).
+// Value is the act number used for poison damage scaling.
+const PESTILENCE_EXTRA_ACTS: Record<string, number> = {
+  // Diablo Walks
+  diabloclone: 4,
+  // Maggot Lair larvae (Act 2)
+  maggotbaby1: 2, maggotbaby2: 2, maggotbaby3: 2,
+  maggotbaby4: 2, maggotbaby5: 2, maggotbaby6: 2,
+  // Cow Level
+  hellbovine: 5, cowking: 5,
+  // Uber Tristram bosses
+  ubermephisto: 5, uberdiablo: 5, uberizual: 5,
+  uberandariel: 5, uberduriel: 5, uberbaal: 5,
+  // Ancient Barbarian statues and their transformed forms (Arreat Summit)
+  colossal1: 5, colossal2: 5, colossal3: 5,
+  colbarbwhirl: 5, colbarbthrow: 5, colbarbfrenzy: 5,
+  // Higher-tier skeleton mage / vampire / wraith / willowisp variants used in
+  // late-game areas that carry no TreasureClass entry
+  skmage_fire7: 5, skmage_ltng7: 5, skmage_cold6: 5, skmage_pois7: 5,
+  vampire9: 5, wraith9: 5, willowisp8: 5,
+};
+
 const EL_SLOTS = [
   {
     type: 'El1Type', mode: 'El1Mode',
@@ -38,14 +62,21 @@ const EL_SLOTS = [
   },
 ] as const;
 
-// Attack modes to check, in priority order. For each mode with non-zero base
-// damage that is NOT already covered by an existing El slot, we write one
-// poison El slot so the elemental effect fires on that attack.
-const ATTACK_MODES = [
+// Attack modes to check, in priority order. For each mode the monster
+// actively uses (via a non-zero MinD column OR a filled Skill*/Sk*mode slot)
+// that is NOT already covered by an existing El slot, we write one poison
+// El slot so the elemental effect fires on that attack.
+// A1/A2/S1 have dedicated MinD damage columns in monstats.txt. S2/S3/S4/SC
+// do not — monsters using those modes do so via their Skill*/Sk*mode slots.
+const ATTACK_MODES: readonly { mode: string; minCol: string | null }[] = [
   { mode: 'A1', minCol: 'A1MinD' },
   { mode: 'A2', minCol: 'A2MinD' },
   { mode: 'S1', minCol: 'S1MinD' },
-] as const;
+  { mode: 'S2', minCol: null },
+  { mode: 'S3', minCol: null },
+  { mode: 'S4', minCol: null },
+  { mode: 'SC', minCol: null },
+];
 
 type ResolvedSlot = {
   type: number; mode: number;
@@ -89,11 +120,19 @@ export function applyPestilence(ctx: MutationContext): void {
   })).filter(s => s.type !== -1);
 
   // Pre-resolve attack mode activity columns (min damage only — used to detect
-  // whether a mode is actually used by this monster)
+  // whether A1/A2/S1 are actually used by this monster). S2/S3/S4/SC have no
+  // MinD column and are detected via Sk*mode instead.
   const attackModes = ATTACK_MODES.map(a => ({
     mode:   a.mode,
-    minIdx: mh.indexOf(a.minCol),
+    minIdx: a.minCol ? mh.indexOf(a.minCol) : -1,
   }));
+
+  // Pre-resolve Skill*/Sk*mode columns — used to detect modes like S2/S3/S4/SC
+  // that monsters invoke via their skill slots (imps, vampires, willowisps, etc.)
+  const skModeIdxs = ['Sk1mode','Sk2mode','Sk3mode','Sk4mode','Sk5mode','Sk6mode','Sk7mode','Sk8mode']
+    .map(c => mh.indexOf(c));
+  const skillIdxs = ['Skill1','Skill2','Skill3','Skill4','Skill5','Skill6','Skill7','Skill8']
+    .map(c => mh.indexOf(c));
 
   const tcIdx = mh.indexOf(TC_COL);
 
@@ -103,16 +142,30 @@ export function applyPestilence(ctx: MutationContext): void {
 
     // Skip player summons, traps, and map objects
     const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
-    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS)) continue;
+    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS) && !(id in PESTILENCE_EXTRA_ACTS)) continue;
 
     // Collect free El slots (where Type is unset)
     const freeSlots = slots.filter(s => !row[s.type]);
     if (freeSlots.length === 0) continue;
 
-    // Collect attack modes that have non-zero base damage
-    const activeModes = attackModes.filter(a =>
-      a.minIdx !== -1 && parseInt(row[a.minIdx] || '0', 10) > 0
-    );
+    // Build set of spell modes the monster invokes through its skill slots
+    // (e.g. ImpBolt in Sk2mode=S2, Chain Lightning in Sk1mode=SC)
+    const skillUsedModes = new Set<string>();
+    for (let i = 0; i < skModeIdxs.length; i++) {
+      const modeIdx = skModeIdxs[i];
+      const skillIdx = skillIdxs[i];
+      if (modeIdx === -1 || skillIdx === -1) continue;
+      const mode = row[modeIdx];
+      const skillName = row[skillIdx];
+      if (mode && skillName) skillUsedModes.add(mode);
+    }
+
+    // A mode is "active" if either its MinD column is > 0 (A1/A2/S1) OR it
+    // appears in one of the monster's Skill*/Sk*mode pairs (S2/S3/S4/SC).
+    const activeModes = attackModes.filter(a => {
+      if (a.minIdx !== -1 && parseInt(row[a.minIdx] || '0', 10) > 0) return true;
+      return skillUsedModes.has(a.mode);
+    });
     if (activeModes.length === 0) continue; // non-combat monster, skip
 
     // Build set of attack modes already covered by existing (occupied) El slots.
@@ -131,7 +184,9 @@ export function applyPestilence(ctx: MutationContext): void {
 
     // Determine act for damage scaling
     const m = tc.match(ACT_RE);
-    const act = m ? parseInt(m[1]) : (BOSS_ACTS[row[0]] ?? 0);
+    const act = m
+      ? parseInt(m[1])
+      : (BOSS_ACTS[row[0]] ?? PESTILENCE_EXTRA_ACTS[row[0]] ?? 0);
     const dmg = POISON_BY_ACT[act] ?? POISON_FALLBACK;
 
     // One poison El slot per uncovered active attack mode
