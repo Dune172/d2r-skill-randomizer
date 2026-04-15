@@ -6,8 +6,8 @@ import { EXP_COLS, TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
 const MULT = 2.4;
 const MAX_GRP = 15;
 
-// Reduce XP per kill to 2/3 of normal (more monsters, but less XP each)
-const XP_MULT = 2 / 3;
+// Reduce XP per kill to 1/2 of normal (more monsters, but less XP each)
+const XP_MULT = 1 / 2;
 
 export function applyTheHorde(ctx: MutationContext): void {
   const { headers: mh, rows: mr } = ctx.monstats;
