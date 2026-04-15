@@ -14,7 +14,7 @@
 import type { ReactElement } from 'react';
 import { OG_PALETTE } from './palette';
 
-const { BG, GOLD, GOLD_DIM, GOLD_DARK, ACCENT_RED_DEEP } = OG_PALETTE;
+const { BG, GOLD, GOLD_DIM, GOLD_DARK } = OG_PALETTE;
 
 const INSET = 28;
 const INSET_INNER = 38;
@@ -55,32 +55,6 @@ export function OgFrame({ children }: { children: ReactElement }): ReactElement 
         color: GOLD,
       }}
     >
-      {/* Subtle burgundy top/bottom vignettes (satori doesn't support gradients) */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 200,
-          background: ACCENT_RED_DEEP,
-          opacity: 0.25,
-          display: 'flex',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 160,
-          background: ACCENT_RED_DEEP,
-          opacity: 0.25,
-          display: 'flex',
-        }}
-      />
-
       {/* Outer border */}
       <div
         style={{
