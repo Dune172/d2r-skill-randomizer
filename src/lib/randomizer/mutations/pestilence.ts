@@ -144,6 +144,28 @@ export function applyPestilence(ctx: MutationContext): void {
     const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
     if (!ACT_RE.test(tc) && !(id in BOSS_ACTS) && !(id in PESTILENCE_EXTRA_ACTS)) continue;
 
+    // Determine act for damage scaling (needed for the broken-poison fix below)
+    const actMatch = tc.match(ACT_RE);
+    const rowAct = actMatch
+      ? parseInt(actMatch[1])
+      : (BOSS_ACTS[id] ?? PESTILENCE_EXTRA_ACTS[id] ?? 0);
+    const rowDmg = POISON_BY_ACT[rowAct] ?? POISON_FALLBACK;
+
+    // Base-game data quirk: ~30 monsters (fetishblow, foulcrow, sandleaper,
+    // maggotbaby, vilemother, etc.) have El slots with Type=pois and a valid
+    // Mode, but Pct/MinD/MaxD/Dur are all blank — so they do zero poison
+    // damage in vanilla despite being tagged for poison. Fill the damage
+    // values in so they actually deal poison.
+    for (const s of slots) {
+      if (
+        row[s.type] === POISON_TYPE &&
+        s.mode !== -1 && row[s.mode] &&  // has a real attack mode
+        s.min !== -1 && !row[s.min]      // but no damage values
+      ) {
+        writePoison(row, s, row[s.mode], rowDmg);
+      }
+    }
+
     // Collect free El slots (where Type is unset)
     const freeSlots = slots.filter(s => !row[s.type]);
     if (freeSlots.length === 0) continue;
@@ -182,18 +204,11 @@ export function applyPestilence(ctx: MutationContext): void {
     const uncoveredModes = activeModes.filter(a => !coveredModes.has(a.mode));
     if (uncoveredModes.length === 0) continue;
 
-    // Determine act for damage scaling
-    const m = tc.match(ACT_RE);
-    const act = m
-      ? parseInt(m[1])
-      : (BOSS_ACTS[row[0]] ?? PESTILENCE_EXTRA_ACTS[row[0]] ?? 0);
-    const dmg = POISON_BY_ACT[act] ?? POISON_FALLBACK;
-
     // One poison El slot per uncovered active attack mode
     let slotIdx = 0;
     for (const atk of uncoveredModes) {
       if (slotIdx >= freeSlots.length) break;
-      writePoison(row, freeSlots[slotIdx], atk.mode, dmg);
+      writePoison(row, freeSlots[slotIdx], atk.mode, rowDmg);
       slotIdx++;
     }
   }
