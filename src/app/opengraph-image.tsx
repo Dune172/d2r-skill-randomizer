@@ -1,35 +1,27 @@
 /* eslint-disable @next/next/no-img-element, jsx-a11y/alt-text */
 import { ImageResponse } from 'next/og';
-import {
-  getCurrentWeekNumber,
-  getWeekStart,
-  getWeekEnd,
-  getWeekSeed,
-  formatWeekDate,
-} from '@/lib/challenge/week';
-import { getActivePair, getWeekName, type MutationDef } from '@/lib/mutations/registry';
+import { getCurrentWeekNumber } from '@/lib/challenge/week';
+import { getActivePair, getWeekName } from '@/lib/mutations/registry';
 import { OG_FONTS } from '@/lib/og/fonts';
 import { OG_PALETTE } from '@/lib/og/palette';
 import { OgFrame, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og/frame';
 import { mutationIconDataUrl } from '@/lib/og/mutationIcon';
 
 export const revalidate = 3600;
-export const alt = 'D2R Randomizer — Weekly Challenge Seed';
+export const alt = 'D2R Randomizer — Diablo 2 Resurrected Skill Randomizer Mod';
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 
 const { GOLD, GOLD_DIM, GOLD_DARK, GOLD_SOFT, CREAM, BORDER, BG_PANEL } = OG_PALETTE;
 
-function MutationCard({ mutation }: { mutation: MutationDef }) {
-  const iconUrl = mutationIconDataUrl(mutation.id);
+function MiniMutation({ id, name }: { id: string; name: string }) {
+  const iconUrl = mutationIconDataUrl(id);
   return (
     <div
       style={{
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
-        width: 220,
-        padding: '18px 14px 16px',
+        padding: '10px 18px 10px 12px',
         border: `1px solid ${BORDER}`,
         borderTop: `2px solid ${GOLD_DARK}`,
         background: BG_PANEL,
@@ -37,32 +29,27 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
     >
       <div
         style={{
-          width: 120,
-          height: 120,
+          width: 44,
+          height: 44,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: 12,
+          marginRight: 12,
         }}
       >
-        {iconUrl ? (
-          <img src={iconUrl} width={120} height={120} style={{ objectFit: 'contain' }} />
-        ) : (
-          <div style={{ fontSize: 64, display: 'flex' }}>{mutation.emoji}</div>
-        )}
+        {iconUrl ? <img src={iconUrl} width={44} height={44} style={{ objectFit: 'contain' }} /> : null}
       </div>
       <div
         style={{
           color: GOLD,
-          fontSize: 20,
+          fontSize: 16,
           fontWeight: 700,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          textAlign: 'center',
           display: 'flex',
         }}
       >
-        {mutation.name}
+        {name}
       </div>
     </div>
   );
@@ -70,10 +57,6 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
 
 export default function Image() {
   const weekNumber = getCurrentWeekNumber();
-  const seed = getWeekSeed(weekNumber);
-  const start = getWeekStart(weekNumber);
-  const end = getWeekEnd(weekNumber);
-  const dateRange = `${formatWeekDate(start)} – ${formatWeekDate(end)}`;
   const weekName = getWeekName(weekNumber);
   const [mutA, mutB] = getActivePair(weekNumber);
 
@@ -93,45 +76,46 @@ export default function Image() {
           <div
             style={{
               color: GOLD_SOFT,
-              fontSize: 18,
-              letterSpacing: '0.4em',
+              fontSize: 17,
+              letterSpacing: '0.45em',
               textTransform: 'uppercase',
               fontWeight: 700,
-              marginBottom: 14,
+              marginBottom: 22,
               display: 'flex',
             }}
           >
-            Week {weekNumber} · {dateRange}
+            Diablo 2 Resurrected · Skill Randomizer Mod
           </div>
 
-          {/* Hero: week name */}
+          {/* Hero title */}
           <div
             style={{
               color: GOLD,
-              fontSize: 72,
+              fontSize: 90,
               fontWeight: 900,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              textShadow: `0 0 32px ${GOLD}66`,
-              marginBottom: 10,
+              lineHeight: 1,
+              marginBottom: 22,
+              whiteSpace: 'nowrap',
               display: 'flex',
             }}
           >
-            {weekName}
+            D2R Randomizer
           </div>
 
-          {/* Subtitle */}
+          {/* Tagline */}
           <div
             style={{
               color: GOLD_DIM,
-              fontSize: 16,
-              letterSpacing: '0.3em',
+              fontSize: 22,
+              letterSpacing: '0.18em',
               textTransform: 'uppercase',
               marginBottom: 28,
               display: 'flex',
             }}
           >
-            This Week's Challenge Seed
+            Shuffle all 8 class skill trees · Free · Offline
           </div>
 
           {/* Divider */}
@@ -141,48 +125,44 @@ export default function Image() {
               height: 1,
               background: GOLD_DARK,
               opacity: 0.5,
-              marginBottom: 26,
+              marginBottom: 22,
               display: 'flex',
             }}
           />
 
-          {/* Mutation cards */}
-          <div style={{ display: 'flex', gap: 28, marginBottom: 24 }}>
-            <MutationCard mutation={mutA} />
-            <MutationCard mutation={mutB} />
-          </div>
-
-          {/* Seed */}
+          {/* Week teaser */}
           <div
             style={{
+              color: GOLD_SOFT,
+              fontSize: 13,
+              letterSpacing: '0.4em',
+              textTransform: 'uppercase',
+              marginBottom: 14,
               display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              marginTop: 4,
             }}
           >
-            <div
-              style={{
-                color: GOLD_SOFT,
-                fontSize: 14,
-                letterSpacing: '0.35em',
-                textTransform: 'uppercase',
-                display: 'flex',
-              }}
-            >
-              Seed
+            This Week · {weekName}
+          </div>
+
+          <div style={{ display: 'flex' }}>
+            <div style={{ marginRight: 16, display: 'flex' }}>
+              <MiniMutation id={mutA.id} name={mutA.name} />
             </div>
-            <div
-              style={{
-                color: CREAM,
-                fontSize: 22,
-                fontWeight: 700,
-                letterSpacing: '0.15em',
-                display: 'flex',
-              }}
-            >
-              {seed.toLocaleString()}
-            </div>
+            <MiniMutation id={mutB.id} name={mutB.name} />
+          </div>
+
+          {/* Trust row */}
+          <div
+            style={{
+              color: CREAM,
+              fontSize: 13,
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              marginTop: 24,
+              display: 'flex',
+            }}
+          >
+            Safe for Battle.net · Offline only · Free
           </div>
         </div>
       </OgFrame>

@@ -31,20 +31,12 @@ export const metadata: Metadata = {
     url: 'https://d2rrandomizer.com',
     siteName: 'D2R Randomizer',
     type: 'website',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'D2R Randomizer — Diablo 2 Resurrected Skill Randomizer Mod',
-      },
-    ],
+    // og:image / twitter:image are populated by each page's opengraph-image.tsx
   },
   twitter: {
     card: 'summary_large_image',
     title: 'D2R Randomizer — Diablo 2 Resurrected Skill Randomizer Mod',
     description: 'Generate a free, unique skill randomizer mod for Diablo 2 Resurrected. Each seed shuffles all 8 class skill trees for a fresh playthrough.',
-    images: ['/og-image.png'],
   },
 };
 
