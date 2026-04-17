@@ -19,6 +19,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Astral Wayfarer: +15% Faster Run/Walk is now an opt-in toggle (off by default on the Season Beta Race preset)',
       'Season Beta Race: Astral Wayfarer required level raised from 6 to 18',
       'Teleport skill and Astral Wayfarer repair/recharge costs reset to vanilla values',
+      'Pestilence: gentler per-act poison ramp (+10 min / +15 max per act instead of +15 / +30); Act 5 now 85-150 over 8s (was 105-210)',
     ],
   },
   {
