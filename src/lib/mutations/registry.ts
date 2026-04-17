@@ -62,7 +62,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Pestilence',
     emoji: '☠️',
     description:
-      'All monsters deal poison damage in addition to their normal damage. Antidote potions no longer spawn.',
+      'All monsters deal poison damage in addition to their normal damage. Antidote potions cost 10× more.',
   },
   8: {
     id: 'arcane-surge',
