@@ -20,6 +20,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Season Beta Race: Astral Wayfarer required level raised from 6 to 18',
       'Teleport skill and Astral Wayfarer repair/recharge costs reset to vanilla values',
       'Pestilence: gentler per-act poison ramp (+10 min / +15 max per act instead of +15 / +30); Act 5 now 85-150 over 8s (was 105-210)',
+      'Pestilence: poison damage now scales with difficulty (×1.5 in Nightmare, ×2 in Hell) so it stays relevant as monster physical damage ramps up',
     ],
   },
   {

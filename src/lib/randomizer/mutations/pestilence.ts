@@ -15,6 +15,11 @@ const POISON_BY_ACT: Record<number, { min: number; max: number }> = {
 };
 const POISON_FALLBACK = { min: 55, max: 105 }; // unknown/non-act monsters (Act 2 equiv.)
 
+// Per-difficulty multipliers on top of the act values above, to keep poison
+// relevant as monster physical damage ramps up in NM/Hell.
+const NM_MULT   = 1.5;
+const HELL_MULT = 2.0;
+
 // Bosses and miniboss-like combat monsters that Pestilence should also poison
 // but that are intentionally NOT in BOSS_ACTS (which is scoped to /players
 // HP/damage scaling where Uber bosses, Cow Level, and Diabloclone are excluded).
@@ -91,19 +96,24 @@ function writePoison(row: string[], slot: ResolvedSlot, modeStr: string, dmg: { 
   row[slot.type] = POISON_TYPE;
   if (slot.mode !== -1) row[slot.mode] = modeStr;
 
+  const nMin = Math.round(dmg.min * NM_MULT);
+  const nMax = Math.round(dmg.max * NM_MULT);
+  const hMin = Math.round(dmg.min * HELL_MULT);
+  const hMax = Math.round(dmg.max * HELL_MULT);
+
   if (slot.pct  !== -1) row[slot.pct]  = POISON_PCT;
   if (slot.min  !== -1) row[slot.min]  = String(dmg.min);
   if (slot.max  !== -1) row[slot.max]  = String(dmg.max);
   if (slot.dur  !== -1) row[slot.dur]  = POISON_DUR;
 
   if (slot.pctN !== -1) row[slot.pctN] = POISON_PCT;
-  if (slot.minN !== -1) row[slot.minN] = String(dmg.min);
-  if (slot.maxN !== -1) row[slot.maxN] = String(dmg.max);
+  if (slot.minN !== -1) row[slot.minN] = String(nMin);
+  if (slot.maxN !== -1) row[slot.maxN] = String(nMax);
   if (slot.durN !== -1) row[slot.durN] = POISON_DUR;
 
   if (slot.pctH !== -1) row[slot.pctH] = POISON_PCT;
-  if (slot.minH !== -1) row[slot.minH] = String(dmg.min);
-  if (slot.maxH !== -1) row[slot.maxH] = String(dmg.max);
+  if (slot.minH !== -1) row[slot.minH] = String(hMin);
+  if (slot.maxH !== -1) row[slot.maxH] = String(hMax);
   if (slot.durH !== -1) row[slot.durH] = POISON_DUR;
 }
 
