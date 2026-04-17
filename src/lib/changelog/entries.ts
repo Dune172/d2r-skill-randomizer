@@ -12,6 +12,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.2',
+    date: 'April 2026',
+    tagline: 'Post-beta polish and stability pass',
+    notes: [
+      'No game mechanic changes — all 14 mutations behave identically to v0.15',
+      'Pestilence: corrected card description to match actual antidote drop behavior (no gameplay change)',
+      'Full traffic-spike optimization sweep under stress-test harness (faster mod generation under load)',
+      'Open Graph preview images unified across all four pages; fixed broken challenge preview',
+      'Footer refined: removed border, dropped redundant divider, added fade-to-black gradient',
+      'Challenge page: removed redundant divider below How It Works',
+    ],
+  },
+  {
     version: 'v0.15',
     date: 'April 2026',
     tagline: 'Home preview refresh and beta-launch polish',
