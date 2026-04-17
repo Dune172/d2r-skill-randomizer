@@ -246,17 +246,20 @@ export function WeekCard() {
       </div>
 
       {/* Challenge settings */}
-      <div className="w-full border-t border-[#3a1510]/50 mt-2 pt-5 mb-6">
-        <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase text-center mb-3">
+      <div className="w-full border-t border-[#3a1510]/50 mt-2 pt-5 mb-10">
+        <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase text-center mb-6">
           Challenge Settings
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-left max-w-md mx-auto">
-          <SettingItem label="Players" value="/players 1 (standard)" />
-          <SettingItem label="XP Boost" value="1.5x (Acts I-II)" />
-          <SettingItem label="Teleport Staff" value="Lvl 18, from Corpsefire" />
-          <SettingItem label="Teleport Skill" value="Removed from pool" />
-          <SettingItem label="Merc Auras" value="Enabled" />
-          <SettingItem label="Prerequisites" value="Standard" />
+        <div className="max-w-md mx-auto space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 text-left">
+            <SettingItem label="XP Boost" value="1.5x (Acts I-II)" />
+            <SettingItem label="Teleport Staff" value="Lvl 18, from Corpsefire" />
+            <SettingItem label="Teleport Skill" value="Removed from pool" />
+          </div>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-left">
+            <SettingItem label="Merc Auras" value="Enabled" />
+            <SettingItem label="Prerequisites" value="Standard" />
+          </div>
         </div>
       </div>
 
