@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.21',
+    date: 'April 2026',
+    tagline: 'Astral Wayfarer tuning for beta race',
+    notes: [
+      'Astral Wayfarer: +15% Faster Run/Walk is now an opt-in toggle (off by default on the Season Beta Race preset)',
+      'Season Beta Race: Astral Wayfarer required level raised from 6 to 18',
+      'Teleport skill and Astral Wayfarer repair/recharge costs reset to vanilla values',
+    ],
+  },
+  {
     version: 'v0.2',
     date: 'April 2026',
     tagline: 'Post-beta polish and stability pass',

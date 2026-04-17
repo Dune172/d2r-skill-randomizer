@@ -1,31 +1,12 @@
 /**
- * Set Teleport's cost add in skills.txt to control the recharge cost per charge.
- * Mutates rows in-place.
- */
-export function applyTeleportSkillCost(headers: string[], rows: string[][]): void {
-  const skillCol   = headers.indexOf('skill');
-  const costAddCol = headers.indexOf('cost add');
-  if (skillCol === -1 || costAddCol === -1) return;
-  const costMultCol = headers.indexOf('cost mult');
-  for (const row of rows) {
-    if (row[skillCol] === 'Teleport') {
-      row[costAddCol] = '900';
-      if (costMultCol !== -1) row[costMultCol] = '107';
-      break;
-    }
-  }
-}
-
-/**
  * Modify uniqueitems.txt rows:
  *  - Disable "Bane Ash" (the only vanilla sst unique) so it doesn't conflict
  *  - Append a new "Teleport Staff" unique entry with 20× Teleport charges (level 1)
  * Returns a new rows array (does not mutate the original).
  */
-export function applyTeleportStaffUnique(headers: string[], rows: string[][], reqLevel = 1, idMapping?: Map<number, number>): string[][] {
+export function applyTeleportStaffUnique(headers: string[], rows: string[][], reqLevel = 1, idMapping?: Map<number, number>, speed = true): string[][] {
   const indexCol    = headers.indexOf('index');
   const disabledCol = headers.indexOf('disabled');
-  const codeCol     = headers.indexOf('code');
 
   // Disable Bane Ash (the sst unique) to avoid random selection
   const updated = rows.map(row => {
@@ -54,13 +35,13 @@ export function applyTeleportStaffUnique(headers: string[], rows: string[][], re
   set('rarity',   '1');
   set('prop1',    'charged');
   set('par1',     String(idMapping?.get(54) ?? 54));   // Teleport *Id=54, remapped to new row
-  set('min1',     '20');   // 20 charges
+  set('min1',     '33');   // 33 charges
   set('max1',     '1');    // charge level 1
-  set('prop2',    'move1');
-  set('min2',     '15');   // 15% Faster Run/Walk
-  set('max2',     '15');
-  set('cost mult', '1');        // must be non-zero for cost_add to be applied
-  set('cost add',  '50');  // recharge cost calibration (halved from 100)
+  if (speed) {
+    set('prop2',    'move1');
+    set('min2',     '15');   // 15% Faster Run/Walk
+    set('max2',     '15');
+  }
 
   return [...updated, newRow];
 }

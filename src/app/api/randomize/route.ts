@@ -21,7 +21,7 @@ import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
 import { remapMonstatsSkillIds } from '@/lib/randomizer/monstats-skill-remapper';
-import { applyTeleportStaffUnique, applyTeleportSkillCost, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
+import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
       ? (Number(body.startingItems?.teleportStaffLevel) || 1)
       : 0;
     const teleportStaffDropSource: string = body.startingItems?.teleportStaffDropSource || 'Corpsefire';
+    const teleportStaffSpeed = body.startingItems?.teleportStaffSpeed !== false;
     const hirelingAura       = body.hirelingAura       !== false;  // default true
     const disableChat        = body.disableChat        === true;   // default false
     const startingHoradricCube = body.startingItems?.horadricCube === true;
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed);
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
@@ -184,9 +185,6 @@ export async function POST(request: NextRequest) {
     const { reorderedRows, idMapping } = reorderSkillsRows(skillsTxt.rows, placements);
     skillsTxt.rows = reorderedRows;
 
-    if (startingTeleportStaff) {
-      applyTeleportSkillCost(skillsTxt.headers, skillsTxt.rows);
-    }
     writeSkillDescRows(skillDescTxt.headers, skillDescTxt.rows, placements, descSynergyUpdates);
 
     // Hireling randomization (aura and/or attack skills, per user options)
@@ -346,7 +344,7 @@ export async function POST(request: NextRequest) {
       if (ui) {
         ui.rows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping);
         if (startingTeleportStaff) {
-          ui.rows = applyTeleportStaffUnique(ui.headers, ui.rows, teleportStaffLevel, idMapping);
+          ui.rows = applyTeleportStaffUnique(ui.headers, ui.rows, teleportStaffLevel, idMapping, teleportStaffSpeed);
         }
         uniqueitemsTxt = serializeTxtFile(ui.headers, ui.rows);
       }

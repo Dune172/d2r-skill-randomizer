@@ -15,7 +15,7 @@ interface Options {
   playersEnabled: boolean;
   playersCount: number;
   playersActs: number[];
-  startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean };
+  startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean };
   hirelingAura: boolean;
   disableChat: boolean;
   xpMultiplier: number;
@@ -27,7 +27,7 @@ const defaultOptions: Options = {
   playersEnabled: false,
   playersCount: 1,
   playersActs: [1, 2, 3, 4, 5],
-  startingItems: { teleportStaff: false, teleportStaffLevel: 1, teleportStaffDropSource: 'Corpsefire', horadricCube: false },
+  startingItems: { teleportStaff: false, teleportStaffLevel: 1, teleportStaffDropSource: 'Corpsefire', teleportStaffSpeed: true, horadricCube: false },
   hirelingAura: true,
   disableChat: false,
   xpMultiplier: 1,
@@ -49,6 +49,7 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
       teleportStaff: staffLevel > 0,
       teleportStaffLevel: staffLevel || 1,
       teleportStaffDropSource: p.get('dropSource') || 'Corpsefire',
+      teleportStaffSpeed: p.get('staffSpeed') !== '0',
       horadricCube: p.get('cube') === '1',
     },
     hirelingAura: p.get('hirelingAura') !== '0',
@@ -82,7 +83,7 @@ export default function RandomizerApp() {
       ? `&players=${opts.playersCount}`
       : '';
     const staffParam = opts.startingItems.teleportStaff
-      ? `&teleportStaff=${opts.startingItems.teleportStaffLevel}&dropSource=${opts.startingItems.teleportStaffDropSource}`
+      ? `&teleportStaff=${opts.startingItems.teleportStaffLevel}&dropSource=${opts.startingItems.teleportStaffDropSource}${opts.startingItems.teleportStaffSpeed ? '' : '&staffSpeed=0'}`
       : '';
     const cubeParam = opts.startingItems.horadricCube ? '&cube=1' : '';
     const actsParam = opts.playersEnabled && opts.playersCount > 1
@@ -214,7 +215,7 @@ export default function RandomizerApp() {
       </p>
 
       <p className="text-center font-cinzel text-[11px] tracking-[0.3em] uppercase text-[#7a5818] pt-2">
-        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.2: updated April 2026
+        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.21: updated April 2026
       </p>
     </div>
   );

@@ -15,8 +15,9 @@ const SEASON1_OPTIONS = {
   playersActs: [4, 5],
   startingItems: {
     teleportStaff: true,
-    teleportStaffLevel: 6,
+    teleportStaffLevel: 18,
     teleportStaffDropSource: 'Corpsefire',
+    teleportStaffSpeed: false,
     horadricCube: true,
   },
   hirelingAura: true,
@@ -138,6 +139,7 @@ function ChallengeGenerator({ seed, weekNumber, onReady }: { seed: number; weekN
     `&acts=${SEASON1_OPTIONS.playersActs.join(',')}` +
     `&teleportStaff=${SEASON1_OPTIONS.startingItems.teleportStaffLevel}` +
     `&dropSource=${SEASON1_OPTIONS.startingItems.teleportStaffDropSource}` +
+    (SEASON1_OPTIONS.startingItems.teleportStaffSpeed ? '' : '&staffSpeed=0') +
     `&cube=1` +
     `&disableChat=1` +
     `&xpMultiplier=${SEASON1_OPTIONS.xpMultiplier}` +

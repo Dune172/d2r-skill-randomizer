@@ -11,6 +11,7 @@ interface FormState {
   teleportStaff: boolean;
   teleportStaffLevel: number;
   teleportStaffDropSource: string;
+  teleportStaffSpeed: boolean;
   horadricCube: boolean;
   hirelingAura: boolean;
   disableChat: boolean;
@@ -23,8 +24,9 @@ const SEASON1_PRESET: FormState = {
   playersCount: 2,
   playersActs: [4, 5],
   teleportStaff: true,
-  teleportStaffLevel: 6,
+  teleportStaffLevel: 18,
   teleportStaffDropSource: 'Corpsefire',
+  teleportStaffSpeed: false,
   horadricCube: true,
   hirelingAura: true,
   disableChat: true,
@@ -39,6 +41,7 @@ const DEFAULT_STATE: FormState = {
   teleportStaff: false,
   teleportStaffLevel: 1,
   teleportStaffDropSource: 'Corpsefire',
+  teleportStaffSpeed: true,
   horadricCube: false,
   hirelingAura: true,
   disableChat: false,
@@ -47,8 +50,8 @@ const DEFAULT_STATE: FormState = {
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[] };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[] }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[] };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[] }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -141,6 +144,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [teleportStaff, setTeleportStaff] = useState(initialOptions?.startingItems.teleportStaff ?? SEASON1_PRESET.teleportStaff);
   const [teleportStaffLevel, setTeleportStaffLevel] = useState(initialOptions?.startingItems.teleportStaffLevel ?? SEASON1_PRESET.teleportStaffLevel);
   const [teleportStaffDropSource, setTeleportStaffDropSource] = useState(initialOptions?.startingItems.teleportStaffDropSource ?? SEASON1_PRESET.teleportStaffDropSource);
+  const [teleportStaffSpeed, setTeleportStaffSpeed] = useState(initialOptions?.startingItems.teleportStaffSpeed ?? SEASON1_PRESET.teleportStaffSpeed);
   const [horadricCube, setHoradricCube] = useState(initialOptions?.startingItems.horadricCube ?? SEASON1_PRESET.horadricCube);
   const [hirelingAura, setHirelingAura] = useState(initialOptions?.hirelingAura ?? SEASON1_PRESET.hirelingAura);
   const [disableChat, setDisableChat] = useState(initialOptions?.disableChat ?? SEASON1_PRESET.disableChat);
@@ -155,6 +159,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setTeleportStaff(SEASON1_PRESET.teleportStaff);
       setTeleportStaffLevel(SEASON1_PRESET.teleportStaffLevel);
       setTeleportStaffDropSource(SEASON1_PRESET.teleportStaffDropSource);
+      setTeleportStaffSpeed(SEASON1_PRESET.teleportStaffSpeed);
       setHoradricCube(SEASON1_PRESET.horadricCube);
       setHirelingAura(SEASON1_PRESET.hirelingAura);
       setDisableChat(SEASON1_PRESET.disableChat);
@@ -187,7 +192,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       playersEnabled: playersCount > 1,
       playersCount,
       playersActs,
-      startingItems: { teleportStaff, teleportStaffLevel, teleportStaffDropSource, horadricCube },
+      startingItems: { teleportStaff, teleportStaffLevel, teleportStaffDropSource, teleportStaffSpeed, horadricCube },
       hirelingAura,
       disableChat,
       xpMultiplier,
@@ -364,6 +369,15 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
                     </select>
                     <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
                   </div>
+                </div>
+                <div className="w-full">
+                  <Checkbox
+                    id="teleportStaffSpeed"
+                    checked={teleportStaffSpeed}
+                    onChange={field(setTeleportStaffSpeed)}
+                    label="+15% Faster Run/Walk"
+                    tooltip="Adds a +15% Faster Run/Walk bonus to the staff. Disabled in race presets to keep movement speed competitive."
+                  />
                 </div>
               </div>
             )}

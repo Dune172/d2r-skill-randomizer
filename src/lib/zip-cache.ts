@@ -100,8 +100,9 @@ export function makeCacheKey(
   xpMultiplier: number = 1,
   xpActs: number[] = [1, 2, 3, 4, 5],
   weeklyKey: number = 0,
+  teleportStaffSpeed: boolean = true,
 ): string {
   const actsKey = [...playersActs].sort((a, b) => a - b).join('');
   const xpActsKey = [...xpActs].sort((a, b) => a - b).join('');
-  return `${STARTUP_TOKEN}:${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${hirelingAura?1:0}:${dropSource}:${disableChat?1:0}:${horadricCube?1:0}:${enablePrereqs?1:0}:${xpMultiplier}:${xpActsKey}:${weeklyKey}`;
+  return `${STARTUP_TOKEN}:${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${hirelingAura?1:0}:${dropSource}:${disableChat?1:0}:${horadricCube?1:0}:${enablePrereqs?1:0}:${xpMultiplier}:${xpActsKey}:${weeklyKey}:${teleportStaffSpeed?1:0}`;
 }
