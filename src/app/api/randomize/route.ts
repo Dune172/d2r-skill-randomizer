@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
     const xpActs: number[] = Array.isArray(body.xpActs)
       ? (body.xpActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
+    const excludeTeleport   = body.excludeTeleport     === true;   // default false
     const weeklyEnabled = body.weeklyChallenge?.enabled === true;
     const weeklyOverride: number | undefined =
       typeof body.weeklyChallenge?.weekOverride === 'number'
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed, excludeTeleport);
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
@@ -140,7 +141,9 @@ export async function POST(request: NextRequest) {
 
     // Step 5-6: Randomize trees and place skills
     const treeAssignments = randomizeTrees(rng, treePages);
-    const { placements, droppedSkillNames } = placeSkills(rng, skills, treeAssignments);
+    const { placements, droppedSkillNames } = placeSkills(rng, skills, treeAssignments, {
+      excludeSkills: excludeTeleport ? new Set(['Teleport']) : undefined,
+    });
     const placementsByClass = groupByClass(placements);
 
     // Strip charclass from rows for skills that were dropped this seed (HARDCODED_CLASS_SKILLS

@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.211',
+    date: 'April 2026',
+    tagline: 'Season Beta Race retune',
+    notes: [
+      'Season Beta Race preset retuned based on race feedback: chat stays on, /players set to 1, XP boost lowered to 1.5× over Acts I–II, starting Horadric Cube removed',
+      'New option: "Remove Teleport from skill pool" — drops Teleport from the shuffle entirely (Sorceress slot filled by a duplicate pool skill). On by default in the Season Beta Race preset',
+      '/players input removed from the generator form (can still be driven via URL params for programmatic use)',
+    ],
+  },
+  {
     version: 'v0.21',
     date: 'April 2026',
     tagline: 'Astral Wayfarer tuning for beta race',

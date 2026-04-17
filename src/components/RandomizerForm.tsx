@@ -17,21 +17,23 @@ interface FormState {
   disableChat: boolean;
   xpMultiplier: number;
   xpActs: number[];
+  excludeTeleport: boolean;
 }
 
 const SEASON1_PRESET: FormState = {
   enablePrereqs: true,
-  playersCount: 2,
-  playersActs: [4, 5],
+  playersCount: 1,
+  playersActs: [1, 2, 3, 4, 5],
   teleportStaff: true,
   teleportStaffLevel: 18,
   teleportStaffDropSource: 'Corpsefire',
   teleportStaffSpeed: false,
-  horadricCube: true,
+  horadricCube: false,
   hirelingAura: true,
-  disableChat: true,
-  xpMultiplier: 3,
-  xpActs: [1, 2, 3],
+  disableChat: false,
+  xpMultiplier: 1.5,
+  xpActs: [1, 2],
+  excludeTeleport: true,
 };
 
 const DEFAULT_STATE: FormState = {
@@ -47,11 +49,12 @@ const DEFAULT_STATE: FormState = {
   disableChat: false,
   xpMultiplier: 1,
   xpActs: [1, 2, 3, 4, 5],
+  excludeTeleport: false,
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[] };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[] }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; excludeTeleport: boolean };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; excludeTeleport: boolean }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -150,6 +153,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [disableChat, setDisableChat] = useState(initialOptions?.disableChat ?? SEASON1_PRESET.disableChat);
   const [xpMultiplier, setXpMultiplier] = useState(initialOptions?.xpMultiplier ?? SEASON1_PRESET.xpMultiplier);
   const [xpActs, setXpActs] = useState<number[]>(initialOptions?.xpActs ?? SEASON1_PRESET.xpActs);
+  const [excludeTeleport, setExcludeTeleport] = useState(initialOptions?.excludeTeleport ?? SEASON1_PRESET.excludeTeleport);
   const applyPreset = (p: Preset) => {
     setPreset(p);
     if (p === 'season1race') {
@@ -165,6 +169,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setDisableChat(SEASON1_PRESET.disableChat);
       setXpMultiplier(SEASON1_PRESET.xpMultiplier);
       setXpActs(SEASON1_PRESET.xpActs);
+      setExcludeTeleport(SEASON1_PRESET.excludeTeleport);
     }
   };
 
@@ -197,6 +202,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       disableChat,
       xpMultiplier,
       xpActs,
+      excludeTeleport,
     });
   };
 
@@ -235,8 +241,8 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
         <SectionDivider label="Gameplay" />
 
         <div className="grid grid-cols-2 gap-4 items-start">
-          {/* Left: Players */}
-          <div>
+          {/* Left: Disable chat + Remove Teleport */}
+          <div className="flex flex-col justify-start gap-3">
             <Checkbox
               id="disableChat"
               checked={disableChat}
@@ -244,30 +250,16 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               label="Disable chat"
               tooltip="Removes the in-game chat box. Keeps the screen clean during races and prevents /players from being used."
             />
-            <div className="flex items-center gap-3 mt-2.5">
-              <label htmlFor="playersCount" className="text-sm text-[#c8a870] whitespace-nowrap flex items-center">
-                /Players
-                <Tip text="Simulates more players on the server, increasing monster HP and XP. Set to 1 for standard difficulty." />
-              </label>
-              <input
-                id="playersCount"
-                type="number"
-                min={1}
-                max={8}
-                value={playersCount}
-                onChange={e => { setPreset('custom'); setPlayersCount(Math.min(8, Math.max(1, Number(e.target.value) || 1))); }}
-                className="w-16 rounded border border-[#3a1510] bg-[#090203] px-3 py-2
-                  text-sm text-[#e8d5a0] text-center
-                  focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-                  transition-colors"
-              />
-            </div>
-            {playersCount > 1 && (
-              <ActPillRow acts={[1, 2, 3, 4, 5]} selected={playersActs} onToggle={toggleAct} />
-            )}
+            <Checkbox
+              id="excludeTeleport"
+              checked={excludeTeleport}
+              onChange={field(setExcludeTeleport)}
+              label="Remove Teleport from skill pool"
+              tooltip="Drops Teleport from the shuffle entirely. A random duplicate skill fills Sorceress's vacated slot so trees stay full. Recommended for races."
+            />
           </div>
 
-          {/* Right: Checkboxes */}
+          {/* Right: Prereqs + XP Boost */}
           <div className="flex flex-col justify-start gap-3">
             <Checkbox
               id="enablePrereqs"

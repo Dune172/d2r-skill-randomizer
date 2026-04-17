@@ -88,16 +88,24 @@ export function placeSkills(
   rng: SeededRNG,
   skills: SkillEntry[],
   treeAssignments: Map<ClassCode, TreePage[]>,
+  opts?: { excludeSkills?: Set<string> },
 ): { placements: SkillPlacement[]; droppedSkillNames: Set<string> } {
   // Probabilistic drop: each HARDCODED_CLASS_SKILLS entry has a seeded 50%
   // chance of being dropped from this seed entirely. Iterate in the natural
   // order of the `skills` array so the RNG consumption is deterministic.
   // For each drop, we'll inject a duplicate of a random pool skill into the
   // native class's pinned list below — keeping the tree fully populated.
+  const excludeSkills = opts?.excludeSkills;
   const droppedByClass = new Map<ClassCode, number>();
   const droppedSkillNames = new Set<string>();
   const keptSkills: SkillEntry[] = [];
   for (const skill of skills) {
+    if (excludeSkills?.has(skill.skill)) {
+      const nativeClass = (HARDCODED_CLASS_SKILLS[skill.skill] ?? skill.charclass) as ClassCode;
+      droppedByClass.set(nativeClass, (droppedByClass.get(nativeClass) ?? 0) + 1);
+      droppedSkillNames.add(skill.skill);
+      continue;
+    }
     const nativeClass = HARDCODED_CLASS_SKILLS[skill.skill];
     if (nativeClass !== undefined && rng.next() >= 0.5) {
       droppedByClass.set(nativeClass, (droppedByClass.get(nativeClass) ?? 0) + 1);

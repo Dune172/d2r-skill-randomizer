@@ -7,6 +7,7 @@
 
 const CACHE_KEY = '__d2r_zip_cache__';
 const CACHE_META_KEY = '__d2r_zip_cache_meta__';
+const STARTUP_TOKEN_KEY = '__d2r_zip_cache_startup_token__';
 
 // Tuning — adjusted post-traffic-spike prep. Average ZIP is ~3-5MB, so
 // ~200 entries / 500MB fits a hot set of popular seeds + weekly challenge
@@ -14,8 +15,14 @@ const CACHE_META_KEY = '__d2r_zip_cache_meta__';
 const MAX_ENTRIES = 200;
 const MAX_BYTES = 500 * 1024 * 1024;
 
-// Unique token per process start — busts stale cache entries after server restarts
-const STARTUP_TOKEN = Date.now().toString(36);
+// Unique token per process start — busts stale cache entries after server restarts.
+// Stored on globalThis so dev-mode hot reloads don't assign a fresh token per route,
+// which would cause /api/randomize and /api/download to compute different cache keys.
+function getStartupToken(): string {
+  const g = globalThis as Record<string, unknown>;
+  if (!g[STARTUP_TOKEN_KEY]) g[STARTUP_TOKEN_KEY] = Date.now().toString(36);
+  return g[STARTUP_TOKEN_KEY] as string;
+}
 
 type ZipCacheMeta = { bytes: number };
 
@@ -101,8 +108,9 @@ export function makeCacheKey(
   xpActs: number[] = [1, 2, 3, 4, 5],
   weeklyKey: number = 0,
   teleportStaffSpeed: boolean = true,
+  excludeTeleport: boolean = false,
 ): string {
   const actsKey = [...playersActs].sort((a, b) => a - b).join('');
   const xpActsKey = [...xpActs].sort((a, b) => a - b).join('');
-  return `${STARTUP_TOKEN}:${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${hirelingAura?1:0}:${dropSource}:${disableChat?1:0}:${horadricCube?1:0}:${enablePrereqs?1:0}:${xpMultiplier}:${xpActsKey}:${weeklyKey}:${teleportStaffSpeed?1:0}`;
+  return `${getStartupToken()}:${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${hirelingAura?1:0}:${dropSource}:${disableChat?1:0}:${horadricCube?1:0}:${enablePrereqs?1:0}:${xpMultiplier}:${xpActsKey}:${weeklyKey}:${teleportStaffSpeed?1:0}:${excludeTeleport?1:0}`;
 }

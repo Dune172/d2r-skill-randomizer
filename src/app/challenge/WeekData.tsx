@@ -10,20 +10,21 @@ import { getCurrentWeekNumber, getWeekStart, getWeekEnd, getWeekSeed, formatWeek
 // Season Beta Race preset — same settings as the randomizer's season1race preset
 const SEASON1_OPTIONS = {
   enablePrereqs: true,
-  playersEnabled: true,
-  playersCount: 2,
-  playersActs: [4, 5],
+  playersEnabled: false,
+  playersCount: 1,
+  playersActs: [1, 2, 3, 4, 5],
   startingItems: {
     teleportStaff: true,
     teleportStaffLevel: 18,
     teleportStaffDropSource: 'Corpsefire',
     teleportStaffSpeed: false,
-    horadricCube: true,
+    horadricCube: false,
   },
   hirelingAura: true,
-  disableChat: true,
-  xpMultiplier: 3,
-  xpActs: [1, 2, 3],
+  disableChat: false,
+  xpMultiplier: 1.5,
+  xpActs: [1, 2],
+  excludeTeleport: true,
 };
 
 function getWeekData() {
@@ -135,15 +136,15 @@ function ChallengeGenerator({ seed, weekNumber, onReady }: { seed: number; weekN
 
   const downloadUrl =
     `/api/download?seed=${seed}` +
-    `&players=${SEASON1_OPTIONS.playersCount}` +
-    `&acts=${SEASON1_OPTIONS.playersActs.join(',')}` +
+    (SEASON1_OPTIONS.playersCount > 1 ? `&players=${SEASON1_OPTIONS.playersCount}&acts=${SEASON1_OPTIONS.playersActs.join(',')}` : '') +
     `&teleportStaff=${SEASON1_OPTIONS.startingItems.teleportStaffLevel}` +
     `&dropSource=${SEASON1_OPTIONS.startingItems.teleportStaffDropSource}` +
     (SEASON1_OPTIONS.startingItems.teleportStaffSpeed ? '' : '&staffSpeed=0') +
-    `&cube=1` +
-    `&disableChat=1` +
+    (SEASON1_OPTIONS.startingItems.horadricCube ? '&cube=1' : '') +
+    (SEASON1_OPTIONS.disableChat ? '&disableChat=1' : '') +
     `&xpMultiplier=${SEASON1_OPTIONS.xpMultiplier}` +
     `&xpActs=${SEASON1_OPTIONS.xpActs.join(',')}` +
+    (SEASON1_OPTIONS.excludeTeleport ? '&excludeTeleport=1' : '') +
     `&weekly=1`;
 
   const handleGenerate = async () => {
@@ -250,10 +251,10 @@ export function WeekCard() {
           Challenge Settings
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-left max-w-md mx-auto">
-          <SettingItem label="Players" value="/players 2 (Acts IV-V)" />
-          <SettingItem label="XP Boost" value="3x (Acts I-III)" />
-          <SettingItem label="Teleport Staff" value="Lvl 6, from Corpsefire" />
-          <SettingItem label="Horadric Cube" value="Starts in inventory" />
+          <SettingItem label="Players" value="/players 1 (standard)" />
+          <SettingItem label="XP Boost" value="1.5x (Acts I-II)" />
+          <SettingItem label="Teleport Staff" value="Lvl 18, from Corpsefire" />
+          <SettingItem label="Teleport Skill" value="Removed from pool" />
           <SettingItem label="Merc Auras" value="Enabled" />
           <SettingItem label="Prerequisites" value="Standard" />
         </div>
