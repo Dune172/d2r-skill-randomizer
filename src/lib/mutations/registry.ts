@@ -107,35 +107,35 @@ export const MUTATIONS: Record<number, MutationDef> = {
  */
 export const WEEKLY_PAIRS: [number, number][] = [
   [5, 7],   // 0
-  [2, 5],   // 1
-  [3, 6],   // 2
-  [7, 4],   // 3
-  [8, 13],  // 4
-  [11, 13], // 5
-  [1, 6],   // 6
-  [2, 10],  // 7
-  [3, 5],   // 8
-  [4, 5],   // 9
-  [7, 13],  // 10
-  [8, 11],  // 11
-  [1, 5],   // 12
-  [2, 13],  // 13
-  [3, 13],  // 14
-  [4, 14],  // 15
-  [6, 7],   // 16
-  [8, 13],  // 17
-  [1, 13],  // 18
-  [2, 7],   // 19
-  [3, 6],   // 20
-  [4, 13],  // 21
-  [5, 11],  // 22
-  [6, 13],  // 23
-  [1, 3],   // 24
+  [8, 13],  // 1
+  [2, 5],   // 2
+  [11, 13], // 3
+  [4, 5],   // 4
+  [7, 13],  // 5
+  [3, 5],   // 6
+  [1, 6],   // 7
+  [2, 13],  // 8
+  [7, 4],   // 9
+  [3, 13],  // 10
+  [2, 10],  // 11
+  [8, 13],  // 12
+  [1, 5],   // 13
+  [4, 13],  // 14
+  [3, 6],   // 15
+  [1, 13],  // 16
+  [8, 11],  // 17
+  [6, 13],  // 18
+  [4, 14],  // 19
+  [6, 7],   // 20
+  [1, 3],   // 21
+  [2, 7],   // 22
+  [3, 6],   // 23
+  [5, 11],  // 24
   [2, 10],  // 25
-  [10, 5],  // 26
-  [14, 7],  // 27
-  [10, 8],  // 28
-  [14, 4],  // 29
+  [14, 7],  // 26
+  [10, 5],  // 27
+  [14, 4],  // 28
+  [10, 8],  // 29
   [1, 4],   // 30
 ];
 
@@ -145,35 +145,35 @@ export const WEEKLY_PAIRS: [number, number][] = [
  */
 export const WEEK_NAMES: string[] = [
   'Swarming Plague',     // 0  The Horde + Pestilence
-  'March of the Fallen', // 1  Heavy Burden + The Horde
-  'Fragile Fury',        // 2  Hollow Shell + Glass Cannon
-  'Sanguine Plague',     // 3  Pestilence + Bloodthirst
-  'Borrowed Power',      // 4  Arcane Surge + Dead Reckoning
-  'The Long March',      // 5  Titan's Grip + Dead Reckoning
-  'Glass Rush',          // 6  Hyperdrive + Glass Cannon
-  'Immovable Object',    // 7  Heavy Burden + Ironclad
-  'Thin Ice',            // 8  Hollow Shell + The Horde
-  'Blood Ocean',         // 9  Bloodthirst + The Horde
-  'Slow Death',          // 10 Pestilence + Dead Reckoning
-  'Iron Mage',           // 11 Arcane Surge + Titan's Grip
-  'The Stampede',        // 12 Hyperdrive + The Horde
-  'Toil and Trouble',    // 13 Heavy Burden + Dead Reckoning
-  'Running on Fumes',    // 14 Hollow Shell + Dead Reckoning
-  'Gnawing Rust',        // 15 Bloodthirst + Entropy
-  'Shattered Venom',     // 16 Glass Cannon + Pestilence
-  'Magical Debt',        // 17 Arcane Surge + Dead Reckoning
-  'Race to the Bottom',  // 18 Hyperdrive + Dead Reckoning
-  'Poisoned Chains',     // 19 Heavy Burden + Pestilence
-  'Paper Tigers',        // 20 Hollow Shell + Glass Cannon
-  'Pyrrhic Victory',     // 21 Bloodthirst + Dead Reckoning
-  'Iron Tide',           // 22 The Horde + Titan's Grip
-  'Brittle Fortune',     // 23 Glass Cannon + Dead Reckoning
-  'Fragile Flash',       // 24 Hyperdrive + Hollow Shell
+  'Borrowed Power',      // 1  Arcane Surge + Dead Reckoning
+  'March of the Fallen', // 2  Heavy Burden + The Horde
+  'The Long March',      // 3  Titan's Grip + Dead Reckoning
+  'Blood Ocean',         // 4  Bloodthirst + The Horde
+  'Slow Death',          // 5  Pestilence + Dead Reckoning
+  'Thin Ice',            // 6  Hollow Shell + The Horde
+  'Glass Rush',          // 7  Hyperdrive + Glass Cannon
+  'Toil and Trouble',    // 8  Heavy Burden + Dead Reckoning
+  'Sanguine Plague',     // 9  Pestilence + Bloodthirst
+  'Running on Fumes',    // 10 Hollow Shell + Dead Reckoning
+  'Immovable Object',    // 11 Heavy Burden + Ironclad
+  'Magical Debt',        // 12 Arcane Surge + Dead Reckoning
+  'The Stampede',        // 13 Hyperdrive + The Horde
+  'Pyrrhic Victory',     // 14 Bloodthirst + Dead Reckoning
+  'Fragile Fury',        // 15 Hollow Shell + Glass Cannon
+  'Race to the Bottom',  // 16 Hyperdrive + Dead Reckoning
+  'Iron Mage',           // 17 Arcane Surge + Titan's Grip
+  'Brittle Fortune',     // 18 Glass Cannon + Dead Reckoning
+  'Gnawing Rust',        // 19 Bloodthirst + Entropy
+  'Shattered Venom',     // 20 Glass Cannon + Pestilence
+  'Fragile Flash',       // 21 Hyperdrive + Hollow Shell
+  'Poisoned Chains',     // 22 Heavy Burden + Pestilence
+  'Paper Tigers',        // 23 Hollow Shell + Glass Cannon
+  'Iron Tide',           // 24 The Horde + Titan's Grip
   'Iron Will',           // 25 Heavy Burden + Ironclad
-  'Fortress Siege',      // 26 Ironclad + The Horde
-  'Rust and Rot',        // 27 Entropy + Pestilence
-  'Spell and Steel',     // 28 Ironclad + Arcane Surge
-  'The Corrosion',       // 29 Entropy + Bloodthirst
+  'Rust and Rot',        // 26 Entropy + Pestilence
+  'Fortress Siege',      // 27 Ironclad + The Horde
+  'The Corrosion',       // 28 Entropy + Bloodthirst
+  'Spell and Steel',     // 29 Ironclad + Arcane Surge
   'Blood Rush',          // 30 Hyperdrive + Bloodthirst
 ];
 

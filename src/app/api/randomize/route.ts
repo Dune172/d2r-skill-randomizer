@@ -141,19 +141,72 @@ export async function POST(request: NextRequest) {
 
     // Step 5-6: Randomize trees and place skills
     const treeAssignments = randomizeTrees(rng, treePages);
-    const { placements, droppedSkillNames } = placeSkills(rng, skills, treeAssignments, {
+    const { placements, droppedSkillNames, substitutes } = placeSkills(rng, skills, treeAssignments, {
       excludeSkills: excludeTeleport ? new Set(['Teleport']) : undefined,
     });
     const placementsByClass = groupByClass(placements);
 
-    // Strip charclass from rows for skills that were dropped this seed (HARDCODED_CLASS_SKILLS
-    // probabilistic pins that rolled tails). Otherwise skills.txt still advertises them as
-    // belonging to their native class even though they don't appear in the class's tree UI.
+    // Substitute in-place row overwrite: for each dropped skill that got a substitute,
+    // copy the source skill's row (mechanics, display, etc.) over the dropped skill's
+    // row, preserving identity columns (skill name, *Id, skilldesc) so writers still
+    // find the row by name. charclass and grid position are (re)set by writers below.
+    {
+      const skillColIdx = 0; // skill name column always first
+      const skillsIdColIdx = skillsTxt.headers.indexOf('*Id');
+      const skillsDescColIdx = skillsTxt.headers.indexOf('skilldesc');
+      for (const sub of substitutes) {
+        const dIdx = skillsTxt.rows.findIndex(r => r[skillColIdx] === sub.droppedSkill.skill);
+        const sIdx = skillsTxt.rows.findIndex(r => r[skillColIdx] === sub.sourceSkill.skill);
+        if (dIdx >= 0 && sIdx >= 0) {
+          const d = skillsTxt.rows[dIdx];
+          const s = skillsTxt.rows[sIdx];
+          const keepSkill = d[skillColIdx];
+          const keepId = skillsIdColIdx !== -1 ? d[skillsIdColIdx] : undefined;
+          const keepDesc = skillsDescColIdx !== -1 ? d[skillsDescColIdx] : undefined;
+          for (let i = 0; i < s.length; i++) d[i] = s[i];
+          d[skillColIdx] = keepSkill;
+          if (skillsIdColIdx !== -1 && keepId !== undefined) d[skillsIdColIdx] = keepId;
+          if (skillsDescColIdx !== -1 && keepDesc !== undefined) d[skillsDescColIdx] = keepDesc;
+        }
+
+        // skilldesc.txt overwrite — col 0 is skilldesc name (identity), copy the rest
+        const dDescIdx = skillDescTxt.rows.findIndex(r => r[0] === sub.droppedSkill.skilldesc);
+        const sDescIdx = skillDescTxt.rows.findIndex(r => r[0] === sub.sourceSkill.skilldesc);
+        if (dDescIdx >= 0 && sDescIdx >= 0) {
+          const d = skillDescTxt.rows[dDescIdx];
+          const s = skillDescTxt.rows[sDescIdx];
+          for (let i = 1; i < s.length; i++) d[i] = s[i];
+        }
+      }
+    }
+
+    // Derived skilldesc map: for substitute placements, look up display/synergy/icon
+    // data under the source's skilldesc rather than the dropped skill's original entry.
+    // Prevents updateSkillDescSynergies / icon-assembler from reading stale Zeal data
+    // when the row has been repurposed for Charged Bolt.
+    const effectiveSkillDescs = new Map(skillDescs);
+    for (const sub of substitutes) {
+      const source = skillDescs.get(sub.sourceSkill.skilldesc);
+      if (source) {
+        effectiveSkillDescs.set(sub.droppedSkill.skilldesc, {
+          ...source,
+          skilldesc: sub.droppedSkill.skilldesc,
+          lineNumber: (skillDescs.get(sub.droppedSkill.skilldesc)?.lineNumber) ?? source.lineNumber,
+        });
+      }
+    }
+
+    // Strip charclass from rows for skills that were dropped WITHOUT a substitute.
+    // Dropped skills that got substituted will have their row's charclass reset by
+    // writeSkillsRows below (based on placement.targetClass).
     if (droppedSkillNames.size > 0) {
+      const substitutedNames = new Set(substitutes.map(s => s.droppedSkill.skill));
       const ccIdx = skillsTxt.headers.indexOf('charclass');
       if (ccIdx !== -1) {
         for (const row of skillsTxt.rows) {
-          if (droppedSkillNames.has(row[0])) row[ccIdx] = '';
+          if (droppedSkillNames.has(row[0]) && !substitutedNames.has(row[0])) {
+            row[ccIdx] = '';
+          }
         }
       }
     }
@@ -161,9 +214,9 @@ export async function POST(request: NextRequest) {
     // Step 7: Update synergies
     const skillsSynergyUpdates = updateSkillsSynergies(placements, placementsByClass, rng);
 
-    // Build str name lookup from skilldesc data
+    // Build str name lookup from effective skilldesc data (substitute-aware)
     const skillDescStrNames = new Map<string, string>();
-    for (const [name, desc] of skillDescs.entries()) {
+    for (const [name, desc] of effectiveSkillDescs.entries()) {
       skillDescStrNames.set(name, desc.strName);
     }
 
@@ -171,7 +224,7 @@ export async function POST(request: NextRequest) {
       placements,
       placementsByClass,
       skillDescStrNames,
-      skillDescs,
+      effectiveSkillDescs,
       rng,
     );
 
@@ -365,9 +418,11 @@ export async function POST(request: NextRequest) {
     const treeSprites = buildAllTreeSprites(treeAssignments);
 
     // Step 11: Build icon sprites
-    // Build original IconCel lookup from skilldesc data
+    // Build original IconCel lookup from substitute-aware skilldesc data so clones
+    // pull their icon from the source skill's IconCel (and source's class folder
+    // via placement.skill.charclass, which the substitute SkillEntry inherits).
     const skillDescIconCels = new Map<string, number>();
-    for (const [name, desc] of skillDescs.entries()) {
+    for (const [name, desc] of effectiveSkillDescs.entries()) {
       skillDescIconCels.set(name, desc.IconCel);
     }
 

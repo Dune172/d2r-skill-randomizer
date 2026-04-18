@@ -40,7 +40,7 @@ const RESTRICT2_COPACED = new Set(['Rabies', 'Hunger']);
 // the native class doesn't always carry the skill — when the flip fails, the
 // skill is dropped from the seed entirely and a duplicate of another pool
 // skill takes its slot instead.
-const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
+export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   'Leap': 'bar',
   'Leap Attack': 'bar',
   'Whirlwind': 'bar',
@@ -84,31 +84,40 @@ function isPinnedToOriginalClass(skill: SkillEntry): boolean {
  * Skills are sorted by reqlevel within each class so that lower-level
  * skills land in earlier rows (row 1 = level 1, row 2 = level 6, etc.)
  */
+export interface SkillSubstitute {
+  droppedSkill: SkillEntry; // the skill that was dropped (identity kept)
+  sourceSkill: SkillEntry;  // the skill whose mechanics/display we're borrowing
+  targetClass: ClassCode;   // native class of the dropped skill
+}
+
 export function placeSkills(
   rng: SeededRNG,
   skills: SkillEntry[],
   treeAssignments: Map<ClassCode, TreePage[]>,
   opts?: { excludeSkills?: Set<string> },
-): { placements: SkillPlacement[]; droppedSkillNames: Set<string> } {
-  // Probabilistic drop: each HARDCODED_CLASS_SKILLS entry has a seeded 50%
-  // chance of being dropped from this seed entirely. Iterate in the natural
-  // order of the `skills` array so the RNG consumption is deterministic.
-  // For each drop, we'll inject a duplicate of a random pool skill into the
-  // native class's pinned list below — keeping the tree fully populated.
+): { placements: SkillPlacement[]; droppedSkillNames: Set<string>; substitutes: SkillSubstitute[] } {
+  // Drop categorization: a skill is dropped if (a) the user explicitly excluded it
+  // via excludeSkills (e.g. "Remove Teleport") or (b) it's a HARDCODED_CLASS_SKILLS
+  // entry that lost its seeded 50% coin flip. Dropped skills do not appear in the
+  // player tree; their tree slot (on their native class) gets filled by a substitute
+  // below. The substitute uses the dropped skill's row identity (skill name, *Id,
+  // skilldesc) but borrows mechanics + display name from another placed skill.
   const excludeSkills = opts?.excludeSkills;
-  const droppedByClass = new Map<ClassCode, number>();
   const droppedSkillNames = new Set<string>();
+  const droppedSkillsByClass = new Map<ClassCode, SkillEntry[]>();
   const keptSkills: SkillEntry[] = [];
   for (const skill of skills) {
     if (excludeSkills?.has(skill.skill)) {
-      const nativeClass = (HARDCODED_CLASS_SKILLS[skill.skill] ?? skill.charclass) as ClassCode;
-      droppedByClass.set(nativeClass, (droppedByClass.get(nativeClass) ?? 0) + 1);
+      const cls = (HARDCODED_CLASS_SKILLS[skill.skill] ?? skill.charclass) as ClassCode;
+      if (!droppedSkillsByClass.has(cls)) droppedSkillsByClass.set(cls, []);
+      droppedSkillsByClass.get(cls)!.push(skill);
       droppedSkillNames.add(skill.skill);
       continue;
     }
-    const nativeClass = HARDCODED_CLASS_SKILLS[skill.skill];
-    if (nativeClass !== undefined && rng.next() >= 0.5) {
-      droppedByClass.set(nativeClass, (droppedByClass.get(nativeClass) ?? 0) + 1);
+    const hardcodedClass = HARDCODED_CLASS_SKILLS[skill.skill];
+    if (hardcodedClass !== undefined && rng.next() >= 0.5) {
+      if (!droppedSkillsByClass.has(hardcodedClass)) droppedSkillsByClass.set(hardcodedClass, []);
+      droppedSkillsByClass.get(hardcodedClass)!.push(skill);
       droppedSkillNames.add(skill.skill);
       continue;
     }
@@ -128,21 +137,6 @@ export function placeSkills(
     }
   }
 
-  // For every probabilistic-pin drop, inject a duplicate of a random shuffle-pool
-  // skill into the native class's pinned list. The duplicate is a second reference
-  // to the same SkillEntry — downstream placement will produce two SkillPlacements
-  // sharing the same skill data (one from this pinned slot, one from the natural
-  // shuffle). This keeps the total skill count stable and fills the vacated slot.
-  for (const [targetClass, dropCount] of droppedByClass) {
-    if (!pinnedByClass.has(targetClass)) pinnedByClass.set(targetClass, []);
-    const pinnedForClass = pinnedByClass.get(targetClass)!;
-    for (let i = 0; i < dropCount; i++) {
-      if (shufflePool.length === 0) break;
-      const srcIdx = Math.floor(rng.next() * shufflePool.length);
-      pinnedForClass.push(shufflePool[srcIdx]);
-    }
-  }
-
   // Shuffle the remaining skills
   const shuffled = rng.shuffle(shufflePool);
   const placements: SkillPlacement[] = [];
@@ -158,7 +152,14 @@ export function placeSkills(
     classSlotsCount.push(count);
   }
 
-  // Distribute shuffled skills to each class, then sort by reqlevel within each class
+  // Track vacated slots per class — slots left over after normal distribution
+  // (one per dropped skill on that class). Substitutes fill these below.
+  const vacatedByClass = new Map<ClassCode, Array<{ tabIndex: number; tree: TreePage; row: number; col: number; iconCel: number; skillIndex: number }>>();
+
+  // Distribute shuffled skills to each class, then sort by reqlevel within each class.
+  // Each class reserves `dropCount` slots for substitutes (via reduced shuffledCount),
+  // so the dropped skills' native-class slots end up vacated rather than a random
+  // tail class being shortchanged.
   let skillIdx = 0;
   for (let ci = 0; ci < CLASS_DEFS.length; ci++) {
     const classDef = CLASS_DEFS[ci];
@@ -168,10 +169,11 @@ export function placeSkills(
 
     // Pinned skills for this class stay here; fill remaining slots from the shuffle pool
     const pinned = pinnedByClass.get(classCode) || [];
-    if (pinned.length > slotCount) {
-      console.error(`Class ${classCode}: ${pinned.length} pinned skills but only ${slotCount} slots — some pinned skills will be dropped`);
+    const dropCount = (droppedSkillsByClass.get(classCode) || []).length;
+    if (pinned.length + dropCount > slotCount) {
+      console.error(`Class ${classCode}: ${pinned.length} pinned + ${dropCount} drops exceeds ${slotCount} slots`);
     }
-    const shuffledCount = Math.max(0, slotCount - pinned.length);
+    const shuffledCount = Math.max(0, slotCount - pinned.length - dropCount);
     const classShuffled = shuffled.slice(skillIdx, skillIdx + shuffledCount);
     skillIdx += shuffledCount;
 
@@ -215,8 +217,15 @@ export function placeSkills(
       });
     }
 
-    if (classSkills.length < 30) {
-      console.warn(`Class ${classCode} only got ${classSkills.length} skills (expected ~30)`);
+    // Record vacated slots (one per drop) for substitute assignment
+    const vacated: Array<{ tabIndex: number; tree: TreePage; row: number; col: number; iconCel: number; skillIndex: number }> = [];
+    for (let i = classSkills.length; i < allSlots.length; i++) {
+      vacated.push({ ...allSlots[i], iconCel: i * 2, skillIndex: i });
+    }
+    vacatedByClass.set(classCode, vacated);
+
+    if (classSkills.length + dropCount < 30) {
+      console.warn(`Class ${classCode} only got ${classSkills.length + dropCount} skills (expected ~30)`);
     }
   }
 
@@ -224,10 +233,61 @@ export function placeSkills(
     console.warn(`${shuffled.length - skillIdx} skills were not placed`);
   }
 
+  // Now inject substitutes. For each dropped skill, pick a source placement on a
+  // different class whose display-name isn't already on the dropped skill's native
+  // class (no same-class duplicate), then build a substitute SkillEntry that spreads
+  // source's mechanics/synergy fields but keeps dropped's identity (skill/skilldesc/id).
+  const substitutes: SkillSubstitute[] = [];
+  for (const [targetClass, drops] of droppedSkillsByClass) {
+    const vacated = vacatedByClass.get(targetClass) || [];
+    // Track descs already on target class (from normal placements + any earlier subs on this class)
+    const descsOnClass = new Set(
+      placements.filter(p => p.targetClass === targetClass).map(p => p.skill.skilldesc)
+    );
+    for (let i = 0; i < drops.length && i < vacated.length; i++) {
+      const droppedSkill = drops[i];
+      const slot = vacated[i];
+      // Candidates: placements on a different class whose skilldesc isn't already on targetClass
+      const candidates = placements.filter(p =>
+        p.targetClass !== targetClass && !descsOnClass.has(p.skill.skilldesc)
+      );
+      if (candidates.length === 0) {
+        console.warn(`No substitute source available for dropped ${droppedSkill.skill} on ${targetClass}`);
+        continue;
+      }
+      const source = candidates[rng.randInt(0, candidates.length - 1)];
+
+      // Build substitute: source's mechanics/synergies/etype/charclass (for icon folder)
+      // and source.skill as displayName, but dropped's row identity so writers find
+      // the original row by name / *Id / skilldesc.
+      const subSkill: SkillEntry = {
+        ...source.skill,
+        skill: droppedSkill.skill,
+        skilldesc: droppedSkill.skilldesc,
+        id: droppedSkill.id,
+        lineNumber: droppedSkill.lineNumber,
+        displayName: source.skill.displayName ?? source.skill.skill,
+      };
+
+      placements.push({
+        skill: subSkill,
+        targetClass,
+        treePage: slot.tree,
+        tabIndex: slot.tabIndex,
+        row: slot.row,
+        col: slot.col,
+        iconCel: slot.iconCel,
+        skillIndex: slot.skillIndex,
+      });
+      descsOnClass.add(subSkill.skilldesc);
+      substitutes.push({ droppedSkill, sourceSkill: source.skill, targetClass });
+    }
+  }
+
   resolveExclusions(placements);
   resolveCoplacements(placements);
 
-  return { placements, droppedSkillNames };
+  return { placements, droppedSkillNames, substitutes };
 }
 
 /**

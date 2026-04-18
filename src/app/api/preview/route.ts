@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
             sourceClass: tree.className,
             sourceTree: tree.treeIndex,
             skills: classPlacs.map(p => ({
-              name: p.skill.skill,
+              name: p.skill.displayName ?? p.skill.skill,
               originalClass: p.skill.charclass,
               row: p.row,
               col: p.col,

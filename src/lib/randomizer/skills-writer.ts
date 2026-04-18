@@ -3,6 +3,7 @@ import { CLASS_BY_CODE, CLASS_DEFS } from './config';
 
 const CLASS_ORDER = CLASS_DEFS.map(d => d.code);
 import { PrereqAssignment } from './prereq-assigner';
+import { HARDCODED_CLASS_SKILLS } from './skill-placer';
 
 // Animation codes each class's character model supports.
 // Using an animation code not in this set causes game freezes.
@@ -288,16 +289,27 @@ export function reorderSkillsRows(
   const nameToTarget = new Map<string, ClassCode>();
   for (const p of placements) nameToTarget.set(p.skill.skill, p.targetClass);
 
-  // Bucket rows by target class; unrecognized names go to nonClassRows
+  // Bucket rows by target class; unrecognized names go to nonClassRows.
+  // Rows for HARDCODED_CLASS_SKILLS placed on their native class are pinned at
+  // their original row index: D2R's engine resolves some hardcoded-animation
+  // skills (Zeal's multi-hit cltdofunc=21, Leap's landing, etc.) by row position,
+  // so drift breaks the animation even though skills.txt anim columns are correct.
   const classBuckets = new Map<ClassCode, { index: number; row: string[] }[]>(
     CLASS_ORDER.map(c => [c, []] as [ClassCode, { index: number; row: string[] }[]])
   );
   const nonClassIndices = new Set<number>();
+  const hardcodedPinnedIndices = new Set<number>();
 
   for (let i = 0; i < rows.length; i++) {
-    const target = nameToTarget.get(rows[i][0]);
+    const skillName = rows[i][0];
+    const target = nameToTarget.get(skillName);
     if (target) {
-      classBuckets.get(target)!.push({ index: i, row: rows[i] });
+      const pinnedClass = HARDCODED_CLASS_SKILLS[skillName];
+      if (pinnedClass && target === pinnedClass) {
+        hardcodedPinnedIndices.add(i);
+      } else {
+        classBuckets.get(target)!.push({ index: i, row: rows[i] });
+      }
     } else {
       nonClassIndices.add(i);
     }
@@ -315,14 +327,23 @@ export function reorderSkillsRows(
     idMapping.set(idx, idx);
   }
 
-  // 2. Collect available (class-skill) positions in order
-  const availablePositions: number[] = [];
-  for (let i = 0; i < rows.length; i++) {
-    if (!nonClassIndices.has(i)) availablePositions.push(i);
+  // 2. Pin hardcoded-animation class skills at their original indices
+  for (const idx of hardcodedPinnedIndices) {
+    reorderedRows[idx] = rows[idx];
+    idMapping.set(idx, idx);
   }
 
-  // 3. Fill available positions with class skills in canonical class order,
-  //    30 per class — ensures contiguous blocks for StaffMod lookup.
+  // 3. Collect available (unpinned) class-skill positions in order
+  const availablePositions: number[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    if (!nonClassIndices.has(i) && !hardcodedPinnedIndices.has(i)) {
+      availablePositions.push(i);
+    }
+  }
+
+  // 4. Fill available positions with remaining class skills in canonical class
+  //    order. Each class's 30 rows (pinned + filled) stay within the vanilla
+  //    block range, so StaffMod's contiguous-block lookup still works.
   let posIdx = 0;
   for (const code of CLASS_ORDER) {
     const bucket = classBuckets.get(code)!.sort((a, b) => a.index - b.index);
