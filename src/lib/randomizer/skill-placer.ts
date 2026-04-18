@@ -21,10 +21,14 @@ const CLASS_SPECIFIC_ANIMS = new Set(['KK']);
 // Zeal (srvdofunc=13/cltdofunc=21) fires multiple hits on A1 frame events.
 // On classes without A1 (sor, nec, war), pickBestAnim falls back to SQ, which
 // means mana drains once but the multi-swing never triggers.
+//
+// Sacrifice (cltdofunc=34) is a Paladin-hardcoded client handler timed to A1
+// frame events. On classes without A1 (sor, war), pickBestAnim falls back to
+// SQ and the A1 event never fires, so no attack animation plays.
 const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
   nec: new Set(['Charge', 'Zeal']),
-  sor: new Set(['Zeal']),
-  war: new Set(['Zeal']),
+  sor: new Set(['Zeal', 'Sacrifice']),
+  war: new Set(['Zeal', 'Sacrifice']),
 };
 
 // restrict=2 skills that are exempt from the class pin: they use shapeshift-only
