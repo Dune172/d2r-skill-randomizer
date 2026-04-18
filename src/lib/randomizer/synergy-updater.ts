@@ -4,27 +4,33 @@ import { SeededRNG } from './seed';
 /**
  * For each skill, find which other skills are now in the same class,
  * and remap synergy references to point to co-located skills.
+ *
+ * `skill('X'.blvl)` references can appear in many skills.txt columns
+ * (calc1-10, auralencalc, aurastatcalc1-6, passivecalc1-14, sumskNcalc,
+ * prgcalc1, ToHitCalc, DmgSymPerCalc, EDmgSymPerCalc, ELenSymPerCalc,
+ * etc.), so the remap scans every cell of each row rather than a
+ * whitelist of column names.
  */
 
 const SYNERGY_REGEX = /skill\('([^']+)'\.blvl\)/g;
 
 /**
- * Update skills.txt synergy formulas.
- * Columns: EDmgSymPerCalc, ELenSymPerCalc, DmgSymPerCalc
- * Format: skill('Fire Bolt'.blvl) → replace skill names with co-located skills
+ * Scan every cell in each placed skill's row for `skill('X'.blvl)`
+ * references and replace them with co-located classmates. Rows are
+ * mutated in place.
+ *
+ * Returns a map of skill name → ordered list of unique substituted
+ * classmate names (first-occurrence order across the row). The caller
+ * feeds this into the skilldesc display updater so UI synergy lines
+ * name the same skills that drive the formula.
  */
 export function updateSkillsSynergies(
+  rows: string[][],
   placements: SkillPlacement[],
   placementsByClass: Map<ClassCode, SkillPlacement[]>,
   rng: SeededRNG,
-): Map<string, { EDmgSymPerCalc?: string; ELenSymPerCalc?: string; DmgSymPerCalc?: string }> {
-  const updates = new Map<string, { EDmgSymPerCalc?: string; ELenSymPerCalc?: string; DmgSymPerCalc?: string }>();
-
-  // Build lookup: skill name → placement
-  const skillToPlacement = new Map<string, SkillPlacement>();
-  for (const p of placements) {
-    skillToPlacement.set(p.skill.skill, p);
-  }
+): Map<string, string[]> {
+  const substitutions = new Map<string, string[]>();
 
   // Pre-compute per-skill "other classmates" list once
   const otherClassmatesBySkill = new Map<string, SkillPlacement[]>();
@@ -34,76 +40,95 @@ export function updateSkillsSynergies(
     }
   }
 
+  // skill name → row lookup
+  const rowBySkill = new Map<string, string[]>();
+  for (const row of rows) {
+    if (row[0]) rowBySkill.set(row[0], row);
+  }
+
   for (const placement of placements) {
-    const skill = placement.skill;
-    const otherClassmates = otherClassmatesBySkill.get(skill.skill) ?? [];
+    const skillName = placement.skill.skill;
+    const row = rowBySkill.get(skillName);
+    if (!row) continue;
+    const otherClassmates = otherClassmatesBySkill.get(skillName) ?? [];
 
-    const result: { EDmgSymPerCalc?: string; ELenSymPerCalc?: string; DmgSymPerCalc?: string } = {};
-    let hasUpdate = false;
+    // Allocation state shared across all cells in this row so a given
+    // classmate isn't used twice anywhere in the skill, and the
+    // 1-cross-tab cap applies to the whole skill.
+    const usedClassmates = new Set<string>();
+    const chosenOrder: string[] = [];
+    let crossTabUsed = 0;
+    // Cache refSkillName → replacement so repeated references within/across
+    // cells in the same row map consistently (needed for correctness when a
+    // synergy formula and its display string both reference the same skill).
+    const refToReplacement = new Map<string, string>();
 
-    for (const col of ['EDmgSymPerCalc', 'ELenSymPerCalc', 'DmgSymPerCalc'] as const) {
-      const formulaRaw = skill[col];
-      if (!formulaRaw) continue;
-      const formula = String(formulaRaw);
-      if (!formula.includes("skill('")) continue;
+    for (let col = 0; col < row.length; col++) {
+      const cell = row[col];
+      if (!cell || !cell.includes("skill('")) continue;
 
-      // Find all skill references in this formula
-      const matches = [...formula.matchAll(SYNERGY_REGEX)];
+      const matches = [...cell.matchAll(SYNERGY_REGEX)];
       if (matches.length === 0) continue;
 
-      let newFormula = formula;
-      // For each referenced skill, replace with a random classmate
-      let crossTabUsed = 0;
-      const usedClassmates = new Set<string>();
-
+      let newCell = cell;
       for (const match of matches) {
         const refSkillName = match[1];
-        // Prefer same-tab classmates; allow at most 1 cross-tab per skill
-        const sameTabAvailable = otherClassmates.filter(
-          p => !usedClassmates.has(p.skill.skill) && p.tabIndex === placement.tabIndex
-        );
-        const otherTabAvailable = otherClassmates.filter(
-          p => !usedClassmates.has(p.skill.skill) && p.tabIndex !== placement.tabIndex
-        );
-        const available = sameTabAvailable.length > 0
-          ? sameTabAvailable
-          : crossTabUsed < 1 ? otherTabAvailable : [];
-        if (available.length === 0) continue;
 
-        const replacement = available[rng.randInt(0, available.length - 1)];
-        if (replacement.tabIndex !== placement.tabIndex) crossTabUsed++;
-        usedClassmates.add(replacement.skill.skill);
-        newFormula = newFormula.replace(
+        let replacementName = refToReplacement.get(refSkillName);
+        if (!replacementName) {
+          const sameTabAvailable = otherClassmates.filter(
+            p => !usedClassmates.has(p.skill.skill) && p.tabIndex === placement.tabIndex,
+          );
+          const otherTabAvailable = otherClassmates.filter(
+            p => !usedClassmates.has(p.skill.skill) && p.tabIndex !== placement.tabIndex,
+          );
+          const available = sameTabAvailable.length > 0
+            ? sameTabAvailable
+            : crossTabUsed < 1 ? otherTabAvailable : [];
+          if (available.length === 0) continue;
+
+          const pick = available[rng.randInt(0, available.length - 1)];
+          if (pick.tabIndex !== placement.tabIndex) crossTabUsed++;
+          replacementName = pick.skill.skill;
+          usedClassmates.add(replacementName);
+          chosenOrder.push(replacementName);
+          refToReplacement.set(refSkillName, replacementName);
+        }
+
+        newCell = newCell.replace(
           `skill('${refSkillName}'.blvl)`,
-          `skill('${replacement.skill.skill}'.blvl)`,
+          `skill('${replacementName}'.blvl)`,
         );
       }
 
-      result[col] = newFormula;
-      hasUpdate = true;
+      row[col] = newCell;
     }
 
-    if (hasUpdate) {
-      updates.set(skill.skill, result);
+    if (chosenOrder.length > 0) {
+      substitutions.set(skillName, chosenOrder);
     }
   }
 
-  return updates;
+  return substitutions;
 }
 
 /**
  * Update skilldesc.txt dsc3textb columns.
  * These reference str name values from other skills' skilldesc entries.
- * Replace with str name values of skills now in the same class.
+ *
+ * Prefer using the skills actually substituted into the formula (so
+ * UI synergy lines match what truly boosts damage). Falls back to a
+ * random classmate pick for skills with no formula refs.
  */
 export function updateSkillDescSynergies(
   placements: SkillPlacement[],
   placementsByClass: Map<ClassCode, SkillPlacement[]>,
   skillDescStrNames: Map<string, string>, // skilldesc name → str name
   skillDescEntries: Map<string, { dsc3textb: string[] }>, // skilldesc name → original dsc3textb
+  formulaSubstitutions: Map<string, string[]>, // skill name → classmates used in formula (in order)
+  skillByName: Map<string, { skilldesc: string }>,
   rng: SeededRNG,
 ): Map<string, string[]> {
-  // Returns: skill name → new dsc3textb values (same count as original)
   const updates = new Map<string, string[]>();
 
   for (const placement of placements) {
@@ -111,31 +136,44 @@ export function updateSkillDescSynergies(
     const skilldescName = skill.skilldesc;
     if (!skilldescName) continue;
 
-    // Get original synergy count from dsc3textb.
-    // Subtract 1 because dsc3textb[0] is a self-reference (header), not a synergy entry.
     const descEntry = skillDescEntries.get(skilldescName);
     if (!descEntry || descEntry.dsc3textb.length <= 1) continue;
 
+    // dsc3textb[0] is a header/self-reference — actual synergies are the rest.
     const originalCount = descEntry.dsc3textb.length - 1;
 
-    const classmates = placementsByClass.get(placement.targetClass) || [];
-    const otherClassmates = classmates.filter(p => p.skill.skill !== skill.skill);
+    const formulaPicks = formulaSubstitutions.get(skill.skill);
+    let chosenNames: string[] = [];
 
-    if (otherClassmates.length === 0) continue;
+    if (formulaPicks && formulaPicks.length > 0) {
+      // Use the skills actually substituted into the formula. De-dupe already
+      // happened upstream (chosenOrder only appends new picks).
+      chosenNames = formulaPicks.slice(0, Math.max(originalCount, formulaPicks.length));
+    } else {
+      // No formula refs on this row → fall back to random classmates so
+      // passive/aura skills with display-only synergy lines still look
+      // plausible.
+      const classmates = placementsByClass.get(placement.targetClass) || [];
+      const otherClassmates = classmates.filter(p => p.skill.skill !== skill.skill);
+      if (otherClassmates.length === 0) continue;
 
-    // Pick the same number of classmates as the original synergy count,
-    // preferring same-tab skills with a hard cap of 1 cross-tab per skill.
-    const synergyCount = Math.min(otherClassmates.length, originalCount);
-    const sameTab = rng.shuffle(otherClassmates.filter(c => c.tabIndex === placement.tabIndex));
-    const otherTab = rng.shuffle(otherClassmates.filter(c => c.tabIndex !== placement.tabIndex));
-    const selected = sameTab.slice(0, synergyCount);
-    if (selected.length < synergyCount && otherTab.length > 0) {
-      selected.push(otherTab[0]);
+      const synergyCount = Math.min(otherClassmates.length, originalCount);
+      const sameTab = rng.shuffle(otherClassmates.filter(c => c.tabIndex === placement.tabIndex));
+      const otherTab = rng.shuffle(otherClassmates.filter(c => c.tabIndex !== placement.tabIndex));
+      const selected = sameTab.slice(0, synergyCount);
+      if (selected.length < synergyCount && otherTab.length > 0) {
+        selected.push(otherTab[0]);
+      }
+      chosenNames = selected.map(p => p.skill.skill);
     }
-    const newTextBs = selected.map(p => {
-      const sd = p.skill.skilldesc;
-      return skillDescStrNames.get(sd) || '';
-    }).filter(s => s !== '');
+
+    const newTextBs = chosenNames
+      .map(name => {
+        const info = skillByName.get(name);
+        if (!info) return '';
+        return skillDescStrNames.get(info.skilldesc) || '';
+      })
+      .filter(s => s !== '');
 
     if (newTextBs.length > 0) {
       updates.set(skill.skill, newTextBs);

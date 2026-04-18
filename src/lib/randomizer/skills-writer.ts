@@ -94,9 +94,6 @@ const COL = {
   reqskill2: 185,
   reqskill3: 186,
   restrict: 187,
-  DmgSymPerCalc: 297,
-  EDmgSymPerCalc: 311,
-  ELenSymPerCalc: 316,
   passiveitype: 49,
   itypea1: 136,
   itypea2: 137,
@@ -112,13 +109,14 @@ const COL = {
  * Modify skills.txt rows based on placements:
  * - Update charclass to new class
  * - Clear reqskill1/2/3 (tree structure is randomized)
- * - Update synergy formula columns
+ *
+ * Synergy formulas are remapped separately by updateSkillsSynergies (which
+ * mutates rows in place across all calc columns). Call it before this.
  */
 export function writeSkillsRows(
   headers: string[],
   rows: string[][],
   placements: SkillPlacement[],
-  synergyUpdates: Map<string, { EDmgSymPerCalc?: string; ELenSymPerCalc?: string; DmgSymPerCalc?: string }>,
   prereqAssignments: Map<string, PrereqAssignment>,
 ): void {
   // Build lookup: skill name → placement
@@ -136,9 +134,6 @@ export function writeSkillsRows(
   const reqskill1Idx = safeGetCol(headers, 'reqskill1', COL.reqskill1);
   const reqskill2Idx = safeGetCol(headers, 'reqskill2', COL.reqskill2);
   const reqskill3Idx = safeGetCol(headers, 'reqskill3', COL.reqskill3);
-  const dmgSymIdx = safeGetCol(headers, 'DmgSymPerCalc', COL.DmgSymPerCalc);
-  const edmgSymIdx = safeGetCol(headers, 'EDmgSymPerCalc', COL.EDmgSymPerCalc);
-  const elenSymIdx = safeGetCol(headers, 'ELenSymPerCalc', COL.ELenSymPerCalc);
   const passiveitypeIdx = safeGetCol(headers, 'passiveitype', COL.passiveitype);
   const itypea1Idx = safeGetCol(headers, 'itypea1', COL.itypea1);
   const itypea2Idx = safeGetCol(headers, 'itypea2', COL.itypea2);
@@ -225,14 +220,6 @@ export function writeSkillsRows(
     row[reqskill1Idx] = prereq?.reqskill1 || '';
     row[reqskill2Idx] = prereq?.reqskill2 || '';
     row[reqskill3Idx] = '';
-
-    // Update synergy formulas
-    const syn = synergyUpdates.get(skillName);
-    if (syn) {
-      if (syn.DmgSymPerCalc !== undefined) row[dmgSymIdx] = syn.DmgSymPerCalc;
-      if (syn.EDmgSymPerCalc !== undefined) row[edmgSymIdx] = syn.EDmgSymPerCalc;
-      if (syn.ELenSymPerCalc !== undefined) row[elenSymIdx] = syn.ELenSymPerCalc;
-    }
 
     // Ensure cross-class skills are assignable to the left mouse button.
     // Some skills have leftskill=0 by vanilla design (e.g. Raven, Valkyrie) but

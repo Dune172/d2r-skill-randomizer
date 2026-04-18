@@ -12,13 +12,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.213',
+    date: 'April 2026',
+    tagline: 'Synergies now work across all skill types',
+    notes: [
+      'Fixed synergies silently doing nothing on many skills — skills like Cleave, Bash, most auras, many passives, and summon bonuses had their named synergies point at skills that had been shuffled to other classes, so pouring points into the listed synergy skill did nothing. Synergies are now wired correctly across every skill',
+    ],
+  },
+  {
     version: 'v0.212',
     date: 'April 2026',
     tagline: 'Real substitutes for dropped skills',
     notes: [
       'Fixed phantom tree slots — when a hardcoded skill (Zeal, Leap, Whirlwind, Dragon Flight, Fend, Inferno, Arctic Blast) lost its 50% coin flip, or when Teleport was excluded, the vacated slot previously had no icon or tooltip in-game. Dropped skills now get a real, functional substitute: another pool skill is cloned into the vacated row so the slot has a working icon, tooltip, and cast behavior',
       'Substitutes can cause the same skill to appear on two classes at once (e.g., Charged Bolt on both Amazon and Barbarian). A skill will never appear twice on the same class',
-      'Zeal animation fix — hardcoded-animation skills (Zeal, Leap, Whirlwind, etc.) now stay at their vanilla skills.txt row positions when kept on their native class, preventing the engine from binding their animation callback to the wrong row',
+      'Zeal animation fix — hardcoded-animation skills (Zeal, Leap, Whirlwind, etc.) now animate correctly when kept on their native class',
     ],
   },
   {

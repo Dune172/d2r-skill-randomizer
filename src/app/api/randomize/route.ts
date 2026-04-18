@@ -211,8 +211,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Step 7: Update synergies
-    const skillsSynergyUpdates = updateSkillsSynergies(placements, placementsByClass, rng);
+    // Step 7: Update synergies. Scans every cell of each placed skill's row
+    // and rewrites `skill('X'.blvl)` refs to point at co-located classmates.
+    // Mutates skillsTxt.rows in place; returns the substitutions chosen so
+    // the skilldesc display can be kept consistent with the formula.
+    const formulaSubstitutions = updateSkillsSynergies(
+      skillsTxt.rows,
+      placements,
+      placementsByClass,
+      rng,
+    );
 
     // Build str name lookup from effective skilldesc data (substitute-aware)
     const skillDescStrNames = new Map<string, string>();
@@ -220,11 +228,20 @@ export async function POST(request: NextRequest) {
       skillDescStrNames.set(name, desc.strName);
     }
 
+    // skill name → skilldesc, needed to translate formula-substituted skill
+    // names into the strName entries that populate dsc3textb.
+    const skillByName = new Map<string, { skilldesc: string }>();
+    for (const p of placements) {
+      skillByName.set(p.skill.skill, { skilldesc: p.skill.skilldesc });
+    }
+
     const descSynergyUpdates = updateSkillDescSynergies(
       placements,
       placementsByClass,
       skillDescStrNames,
       effectiveSkillDescs,
+      formulaSubstitutions,
+      skillByName,
       rng,
     );
 
@@ -234,7 +251,7 @@ export async function POST(request: NextRequest) {
       : new Map();
 
     // Step 8: Write modified txt files
-    writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, skillsSynergyUpdates, prereqAssignments);
+    writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, prereqAssignments);
 
     // Reorder skills.txt rows into contiguous class blocks (fixes StaffMod pool lookup).
     // Must run after writeSkillsRows has updated all column values (charclass, reqlevel, etc.).
