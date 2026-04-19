@@ -1,18 +1,6 @@
 import { ClassCode, SkillEntry, SkillPlacement, TreePage } from './types';
 import { SeededRNG } from './seed';
-import { CLASS_DEFS, CLASS_RESTRICTED_TYPES } from './config';
-
-// Anim codes that only exist on one character class — skill breaks on any other class.
-// KK = Assassin only (Dragon Talon, Dragon Tail)
-// TH (throw) is NOT listed here: all classes have TH animation frames, so javelin
-// skills keep their TH animation on any class they land on.
-// S3 (Druid shapeshifted form) is NOT listed here: all S3 skills (Rabies, Hunger)
-// have restrict=2, so they're already pinned via the restrict check above.
-// S2 (Assassin trap/blade casting) is NOT listed here: on non-Assassin classes it
-// falls back to SC, which is the standard summon animation used by all other classes.
-// S1 (Amazon/Paladin dodge stance) is NOT listed here: on non-S1 classes it falls
-// back to SC/A1, which is acceptable — the skill still functions correctly.
-const CLASS_SPECIFIC_ANIMS = new Set(['KK']);
+import { CLASS_DEFS } from './config';
 
 // Skills that cannot be placed on specific classes.
 // Charge requires SQ animation + seqinput=8 for smooth client-side movement;
@@ -31,60 +19,60 @@ const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
   war: new Set(['Zeal', 'Sacrifice']),
 };
 
-// restrict=2 skills that are exempt from the class pin: they use shapeshift-only
-// mechanics but are co-placed with the transformation skills (Wearwolf/Wearbear)
-// via COPACEMENT_REQUIRES, so they'll always land on a class that can shift.
-const RESTRICT2_COPACED = new Set(['Rabies', 'Hunger']);
-
-// Skills whose mechanics are encoded in hardcoded engine-level animation
-// sequence numbers + movement timing that cannot be rebound via skills.txt.
-// They only play correctly on their native character class (assertion errors,
-// stuck animations, or hard crashes otherwise). Each of these is pinned to
-// its native class, but with a seeded 50% coin flip in placeSkills so that
-// the native class doesn't always carry the skill — when the flip fails, the
-// skill is dropped from the seed entirely and a duplicate of another pool
-// skill takes its slot instead.
+// Skills pinned to their native class. Each entry is (a) pinned to its native
+// class (never shuffled to another class), (b) row-pinned at its vanilla
+// skills.txt row index (so engine-hardcoded row-position animation lookups
+// still resolve), and (c) subject to a seeded 50% coin-flip drop in
+// placeSkills — when the flip fails, the skill is dropped from the seed and
+// a substitute (another pool skill's mechanics cloned into this row, keeping
+// the dropped skill's name/*Id/skilldesc identity) fills its tree slot.
+//
+// Membership rationale: either the skill's mechanics are only executable on
+// its native class (weapsel=3 dual-wield, h2h claws, restrict=2 shapeshift,
+// Assassin-only KK anim) OR the engine resolves its animation handler by
+// vanilla row position. Both cases boil down to "must stay home".
+//
+// Rabies/Hunger (restrict=2) are intentionally NOT listed here — they go in
+// the shuffle pool so COPACEMENT_REQUIRES can co-locate them with
+// Wearwolf/Wearbear (whichever class those land on).
 export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
+  // Amazon
+  'Fend': 'ama',
+  // Barbarian
   'Leap': 'bar',
   'Leap Attack': 'bar',
   'Whirlwind': 'bar',
-  'Dragon Flight': 'ass',
-  'Fend': 'ama',
+  'Double Swing': 'bar',
+  'Double Throw': 'bar',
+  'Frenzy': 'bar',
+  // Sorceress
   'Inferno': 'sor',
-  'Arctic Blast': 'dru',
+  // Paladin
   'Zeal': 'pal',
+  // Druid
+  'Arctic Blast': 'dru',
+  'Feral Rage': 'dru',
+  'Fire Claws': 'dru',
+  'Fury': 'dru',
+  'Maul': 'dru',
+  'Shock Wave': 'dru',
+  // Assassin
+  'Dragon Flight': 'ass',
+  'Dragon Talon': 'ass',
+  'Dragon Tail': 'ass',
+  'Fists of Fire': 'ass',
+  'Claws of Thunder': 'ass',
+  'Blades of Ice': 'ass',
+  'Dragon Claw': 'ass',
+  'Claw Mastery': 'ass',
+  'Weapon Block': 'ass',
 };
-
-/**
- * Returns true if this skill must stay on its original class:
- * - HARDCODED_CLASS_SKILLS: engine-hardcoded animation/movement sequences
- * - weapsel=3: requires dual weapons (only Barbarian and Assassin can dual-wield)
- * - itypeb1=h2h/h2h2: requires claw in off-hand (only Assassin can equip claws)
- * - restrict=2: requires shapeshifted form (only Druid can shapeshift),
- *   except skills in RESTRICT2_COPACED which are kept with their transformation skill instead
- * - CLASS_RESTRICTED_TYPES on passiveitype/itypea: class-exclusive weapon types
- * - CLASS_SPECIFIC_ANIMS: animation only exists on the original class
- */
-function isPinnedToOriginalClass(skill: SkillEntry): boolean {
-  return (
-    skill.skill in HARDCODED_CLASS_SKILLS ||
-    skill.weapsel === 3 ||
-    skill.itypeb1 === 'h2h' ||
-    skill.itypeb1 === 'h2h2' ||
-    (skill.restrict === 2 && !RESTRICT2_COPACED.has(skill.skill)) ||
-    CLASS_RESTRICTED_TYPES.has(skill.passiveitype ?? '') ||
-    CLASS_RESTRICTED_TYPES.has(skill.itypea1 ?? '') ||
-    CLASS_RESTRICTED_TYPES.has(skill.itypea2 ?? '') ||
-    CLASS_RESTRICTED_TYPES.has(skill.itypea3 ?? '') ||
-    CLASS_SPECIFIC_ANIMS.has(skill.anim ?? '')
-  );
-}
 
 /**
  * Shuffle all 240 class skills and assign them to FILLED grid slots
  * across all 8 classes' assigned tree pages.
- * Skills that require class-specific abilities (dual-wield, shapeshifting,
- * off-hand claws) are pinned to their original class. All others are shuffled.
+ * Skills listed in HARDCODED_CLASS_SKILLS are pinned to their native class
+ * (and subject to a seeded 50% coin-flip drop); all others are shuffled.
  * Skills are sorted by reqlevel within each class so that lower-level
  * skills land in earlier rows (row 1 = level 1, row 2 = level 6, etc.)
  */
@@ -132,7 +120,7 @@ export function placeSkills(
   const pinnedByClass = new Map<ClassCode, SkillEntry[]>();
   const shufflePool: SkillEntry[] = [];
   for (const skill of keptSkills) {
-    if (isPinnedToOriginalClass(skill)) {
+    if (skill.skill in HARDCODED_CLASS_SKILLS) {
       const cls = skill.charclass as ClassCode;
       if (!pinnedByClass.has(cls)) pinnedByClass.set(cls, []);
       pinnedByClass.get(cls)!.push(skill);
@@ -320,9 +308,8 @@ function resolveExclusions(placements: SkillPlacement[]): void {
       // partner.skill must be allowed on p.targetClass
       if (excluded.has(partner.skill.skill)) continue;
 
-      // Can't pull a pinned skill off its native class (hardcoded animations,
-      // dual-wield, claws, shapeshift, etc. — see isPinnedToOriginalClass).
-      if (isPinnedToOriginalClass(partner.skill)) continue;
+      // Can't pull a pinned skill off its native class.
+      if (partner.skill.skill in HARDCODED_CLASS_SKILLS) continue;
 
       [placements[i].skill, placements[j].skill] = [placements[j].skill, placements[i].skill];
       swapped = true;
@@ -358,6 +345,11 @@ function resolveCoplacements(placements: SkillPlacement[]): void {
     bySkill.set(placements[i].skill.skill, i);
   }
 
+  // Other coplacement-key skills can't serve as swap partners: otherwise
+  // processing Hunger after Rabies could pick Rabies as its partner and
+  // undo Rabies's swap (and vice versa).
+  const COPACEMENT_KEYS = new Set(Object.keys(COPACEMENT_REQUIRES));
+
   for (const [skillName, peers] of Object.entries(COPACEMENT_REQUIRES)) {
     const skillIdx = bySkill.get(skillName);
     if (skillIdx === undefined) continue;
@@ -387,7 +379,9 @@ function resolveCoplacements(placements: SkillPlacement[]): void {
       if (partner.targetClass !== destClass) continue;
       if (peerSet.has(partner.skill.skill)) continue; // don't displace the peer itself
       // Can't pull a pinned skill off its native class.
-      if (isPinnedToOriginalClass(partner.skill)) continue;
+      if (partner.skill.skill in HARDCODED_CLASS_SKILLS) continue;
+      // Can't use another coplacement-key skill as a partner (would undo its swap).
+      if (COPACEMENT_KEYS.has(partner.skill.skill)) continue;
 
       // Respect static exclusions in both directions
       if (SKILL_CLASS_EXCLUSIONS[destClass]?.has(skillName)) continue;

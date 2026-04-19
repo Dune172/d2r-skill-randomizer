@@ -33,9 +33,6 @@ export const CHARCLASS_TO_CODE: Record<string, ClassCode> = {
 // Classes that have sprite data
 export const SPRITE_CLASSES: ClassCode[] = ['ama', 'sor', 'nec', 'pal', 'bar', 'dru', 'ass', 'war'];
 
-// Weapon types that are class-restricted (only Assassin can equip h2h/h2h2 claws)
-export const CLASS_RESTRICTED_TYPES = new Set(['h2h', 'h2h2']);
-
 // The weapon item type each class naturally uses — for Normal Logic remapping
 export const CLASS_NATURAL_WEAPON: Record<string, string> = {
   ama: 'miss',  // Amazon → missiles
