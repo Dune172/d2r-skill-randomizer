@@ -124,6 +124,7 @@ export default function RandomizerApp() {
       window.history.replaceState(null, '', `${new URL(window.location.href).pathname}?${params}`);
 
       setStatus('building');
+      const buildingStart = Date.now();
       const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs });
 
       // Retry up to 2 times on 503 (queue full). Exponential-ish backoff:
@@ -148,6 +149,9 @@ export default function RandomizerApp() {
         const err = buildRes ? await buildRes.json() : { error: 'Build failed' };
         throw new Error(err.error || 'Build failed');
       }
+
+      const elapsed = Date.now() - buildingStart;
+      if (elapsed < 6000) await new Promise(r => setTimeout(r, 6000 - elapsed));
 
       setStatus('ready');
       fetch('/api/counter').then(r => r.json()).then(d => setModCount(d.count)).catch(() => {});
@@ -194,9 +198,13 @@ export default function RandomizerApp() {
             </div>
           </div>
         )}
-      </div>
 
-      <ProgressIndicator status={status} message={errorMessage} />
+        {status !== 'idle' && (
+          <div className="flex justify-center pt-3">
+            <ProgressIndicator status={status} message={errorMessage} />
+          </div>
+        )}
+      </div>
 
       {preview && (
         <SkillTreePreview data={preview} />

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { getActivePair, getWeekName, type MutationDef } from '@/lib/mutations/registry';
 import { InstallInstructions } from '@/app/components/InstallInstructions';
 import { getCurrentWeekNumber, getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
+import ProgressIndicator from '@/components/ProgressIndicator';
 
 // Season Beta Race preset — same settings as the randomizer's season1race preset
 const SEASON1_OPTIONS = {
@@ -129,7 +130,7 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
   );
 }
 
-type GenStatus = 'idle' | 'generating' | 'ready' | 'error';
+type GenStatus = 'idle' | 'building' | 'ready' | 'error';
 
 function ChallengeGenerator({ seed, weekNumber, onReady }: { seed: number; weekNumber: number; onReady?: () => void }) {
   const [status, setStatus] = useState<GenStatus>('idle');
@@ -148,8 +149,9 @@ function ChallengeGenerator({ seed, weekNumber, onReady }: { seed: number; weekN
     `&weekly=1`;
 
   const handleGenerate = async () => {
-    setStatus('generating');
+    setStatus('building');
     setErrorMsg('');
+    const buildingStart = Date.now();
     try {
       const res = await fetch('/api/randomize', {
         method: 'POST',
@@ -164,6 +166,8 @@ function ChallengeGenerator({ seed, weekNumber, onReady }: { seed: number; weekN
         const err = await res.json();
         throw new Error(err.error || 'Generation failed');
       }
+      const elapsed = Date.now() - buildingStart;
+      if (elapsed < 6000) await new Promise(r => setTimeout(r, 6000 - elapsed));
       setStatus('ready');
       onReady?.();
     } catch (err) {
@@ -172,43 +176,30 @@ function ChallengeGenerator({ seed, weekNumber, onReady }: { seed: number; weekN
     }
   };
 
-  if (status === 'ready') {
-    return (
-      <a
-        href={downloadUrl}
-        className="btn-shimmer inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3
-          bg-gradient-to-b from-[#121838] to-[#0a1028]
-          border border-[#283878] text-[#c8d8f8]
-          hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
-          transition-colors panel-shadow"
-      >
-        Download Zip
-      </a>
-    );
-  }
-
-  if (status === 'error') {
-    return (
-      <div className="space-y-3">
-        <p className="text-sm text-red-400">{errorMsg || 'Something went wrong.'}</p>
+  return (
+    <div className="flex flex-col items-center gap-4">
+      {status === 'ready' ? (
+        <a
+          href={downloadUrl}
+          className="btn-shimmer inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3
+            bg-gradient-to-b from-[#121838] to-[#0a1028]
+            border border-[#283878] text-[#c8d8f8]
+            hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
+            transition-colors panel-shadow"
+        >
+          Download Zip
+        </a>
+      ) : (
         <button
           onClick={handleGenerate}
-          className="btn-shimmer inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow"
+          disabled={status === 'building'}
+          className="btn-shimmer inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Try Again
+          {status === 'building' ? 'Generating…' : status === 'error' ? 'Try Again' : 'Generate This Seed'}
         </button>
-      </div>
-    );
-  }
-
-  return (
-    <button
-      onClick={handleGenerate}
-      disabled={status === 'generating'}
-      className="btn-shimmer inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {status === 'generating' ? 'Generating…' : 'Generate This Seed'}
-    </button>
+      )}
+      <ProgressIndicator status={status} message={errorMsg} />
+    </div>
   );
 }
 
