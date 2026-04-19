@@ -146,7 +146,8 @@ function ChallengeGenerator({ seed, weekNumber, onReady }: { seed: number; weekN
     (SEASON1_OPTIONS.disableChat ? '&disableChat=1' : '') +
     `&xpMultiplier=${SEASON1_OPTIONS.xpMultiplier}` +
     `&xpActs=${SEASON1_OPTIONS.xpActs.join(',')}` +
-    `&weekly=1`;
+    `&weekly=1` +
+    `&week=${weekNumber}`;
 
   const handleGenerate = async () => {
     setStatus('building');

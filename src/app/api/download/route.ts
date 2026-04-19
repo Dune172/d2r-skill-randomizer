@@ -4,6 +4,21 @@ import { seedFromString } from '@/lib/randomizer/seed';
 import { getCached, makeCacheKey } from '@/lib/zip-cache';
 import { createD2RShortcut } from '@/lib/lnk-builder';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { getWeekName } from '@/lib/mutations/registry';
+import { getWeekStart } from '@/lib/challenge/week';
+
+function slugifyChallenge(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+}
+
+function formatLaIsoDate(date: Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
 
 export const maxDuration = 60;
 
@@ -61,10 +76,17 @@ export async function GET(request: NextRequest) {
     const zip = new AdmZip(Buffer.from(zipBuffer));
     zip.addFile(`D2R Randomizer ${seed}.lnk`, createD2RShortcut(modName, mapSeed));
 
+    const weekParam = searchParams.get('week');
+    const weekNumber = weekParam ? Number(weekParam) : NaN;
+    const isWeekly = weeklyKey === -1 && Number.isInteger(weekNumber) && weekNumber >= 1;
+    const filename = isWeekly
+      ? `d2rr_${slugifyChallenge(getWeekName(weekNumber))}_${formatLaIsoDate(getWeekStart(weekNumber))}.zip`
+      : `d2rr_seed${seed}.zip`;
+
     return new NextResponse(new Uint8Array(zip.toBuffer()), {
       headers: {
         'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="d2r_randomizer_seed${seed}.zip"`,
+        'Content-Disposition': `attachment; filename="${filename}"`,
       },
     });
   } catch (error) {
