@@ -12,6 +12,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.214',
+    date: 'April 2026',
+    tagline: 'Controller skill tree fix + Remove Teleport option retired',
+    notes: [
+      'Controller skill tree menus now show the shuffled trees correctly — D2R loads a separate set of skill tree backgrounds in controller mode (with prerequisite arrows baked in), and those weren\'t being regenerated. Gamepad players were seeing vanilla arrows pointing at the wrong skills',
+      'Removed the "Remove Teleport from skill pool" option',
+    ],
+  },
+  {
     version: 'v0.213',
     date: 'April 2026',
     tagline: 'Synergies now work across all skill types',

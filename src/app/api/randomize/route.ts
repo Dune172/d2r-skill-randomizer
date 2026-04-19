@@ -75,7 +75,6 @@ export async function POST(request: NextRequest) {
     const xpActs: number[] = Array.isArray(body.xpActs)
       ? (body.xpActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
-    const excludeTeleport   = body.excludeTeleport     === true;   // default false
     const weeklyEnabled = body.weeklyChallenge?.enabled === true;
     const weeklyOverride: number | undefined =
       typeof body.weeklyChallenge?.weekOverride === 'number'
@@ -93,7 +92,7 @@ export async function POST(request: NextRequest) {
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed, excludeTeleport);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed);
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
@@ -141,9 +140,7 @@ export async function POST(request: NextRequest) {
 
     // Step 5-6: Randomize trees and place skills
     const treeAssignments = randomizeTrees(rng, treePages);
-    const { placements, droppedSkillNames, substitutes } = placeSkills(rng, skills, treeAssignments, {
-      excludeSkills: excludeTeleport ? new Set(['Teleport']) : undefined,
-    });
+    const { placements, droppedSkillNames, substitutes } = placeSkills(rng, skills, treeAssignments);
     const placementsByClass = groupByClass(placements);
 
     // Substitute in-place row overwrite: for each dropped skill that got a substitute,
@@ -432,7 +429,8 @@ export async function POST(request: NextRequest) {
     // Step 10: Build tree sprites
     // (Source .sprite buffers are kept in a process-global cache — they're
     // static D2R assets, so re-reading them on every generation was wasted I/O.)
-    const treeSprites = buildAllTreeSprites(treeAssignments);
+    const treeSprites = buildAllTreeSprites(treeAssignments, 'mkb');
+    const controllerTreeSprites = buildAllTreeSprites(treeAssignments, 'controller');
 
     // Step 11: Build icon sprites
     // Build original IconCel lookup from substitute-aware skilldesc data so clones
@@ -558,6 +556,7 @@ export async function POST(request: NextRequest) {
       skillsTxt: skillsTxtContent,
       skillDescTxt: skillDescTxtContent,
       treeSprites,
+      controllerTreeSprites,
       iconSprites,
       skillStringsJson,
       charstatsTxt,

@@ -81,17 +81,21 @@ export function warmStatic(): void {
       const { loadSprite } = await import('./sprites/tree-stitcher');
       const CLASS_PREFIXES = ['am', 'so', 'ne', 'pa', 'ba', 'dr', 'as', 'wa'];
       const SPRITES_DIR = path.join(process.cwd(), 'data', 'sprites', 'skill_trees');
+      const CONTROLLER_DIR = path.join(process.cwd(), 'data', 'sprites', 'skill_trees_controller');
       for (const prefix of CLASS_PREFIXES) {
-        for (const variant of ['.sprite', '.lowend.sprite']) {
-          const name = `${prefix}skilltree${variant}`;
+        for (const suffix of ['.sprite', '.lowend.sprite']) {
+          const name = `${prefix}skilltree${suffix}`;
           if (fs.existsSync(path.join(SPRITES_DIR, name))) {
-            try { loadSprite(name); } catch { /* ignore */ }
+            try { loadSprite(name, 'mkb'); } catch { /* ignore */ }
+          }
+          if (fs.existsSync(path.join(CONTROLLER_DIR, name))) {
+            try { loadSprite(name, 'controller'); } catch { /* ignore */ }
           }
         }
       }
       for (const bg of ['panel_skilltreebg.sprite', 'panel_skilltreebg.lowend.sprite']) {
         if (fs.existsSync(path.join(SPRITES_DIR, bg))) {
-          try { loadSprite(bg); } catch { /* ignore */ }
+          try { loadSprite(bg, 'mkb'); } catch { /* ignore */ }
         }
       }
 

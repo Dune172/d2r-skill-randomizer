@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const seedInput = body.seed;
-    const excludeTeleport = body.excludeTeleport === true;
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -29,9 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Randomize
     const treeAssignments = randomizeTrees(rng, treePages);
-    const { placements } = placeSkills(rng, skills, treeAssignments, {
-      excludeSkills: excludeTeleport ? new Set(['Teleport']) : undefined,
-    });
+    const { placements } = placeSkills(rng, skills, treeAssignments);
     const placementsByClass = groupByClass(placements);
 
     // Build preview data

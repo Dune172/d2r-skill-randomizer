@@ -7,6 +7,7 @@ export interface ZipContents {
   skillsTxt: string;
   skillDescTxt: string;
   treeSprites: Map<string, Buffer>; // filename → sprite buffer
+  controllerTreeSprites?: Map<string, Buffer>; // controller-mode tree sprites (different dimensions, different output path)
   iconSprites: Map<string, Buffer>; // filename → sprite buffer
   skillStringsJson?: string;        // skills string table (always included)
   charstatsTxt?: string;            // charstats with randomised StartSkill per class
@@ -51,6 +52,7 @@ const PREFIX_TO_FOLDER: Record<string, string> = {
  *   {modName}/{modName}.mpq/data/global/excel/skilldesc.txt
  *   {modName}/{modName}.mpq/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.sprite
  *   {modName}/{modName}.mpq/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.lowend.sprite
+ *   {modName}/{modName}.mpq/data/hd/global/ui/controller/panel/spells/v2/{prefix}skilltree.sprite
  *   {modName}/{modName}.mpq/data/global/ui/spells/{classname}/{prefix}skillicon.sprite
  */
 export function buildZip(contents: ZipContents): Buffer {
@@ -156,6 +158,14 @@ export function buildZip(contents: ZipContents): Buffer {
   // Add tree sprites (hd path)
   for (const [filename, buf] of contents.treeSprites.entries()) {
     zip.addFile(`${d}/data/hd/global/ui/spells/skill_trees/${filename}`, buf);
+  }
+
+  // Add controller-mode tree sprites — same per-class layout but different dimensions,
+  // baked into a separate path D2R reads when a gamepad is active.
+  if (contents.controllerTreeSprites) {
+    for (const [filename, buf] of contents.controllerTreeSprites.entries()) {
+      zip.addFile(`${d}/data/hd/global/ui/controller/panel/spells/v2/${filename}`, buf);
+    }
   }
 
   // Add hireable sprite to both non-hd and hd paths

@@ -24,7 +24,6 @@ const SEASON1_OPTIONS = {
   disableChat: false,
   xpMultiplier: 1.5,
   xpActs: [1, 2],
-  excludeTeleport: true,
 };
 
 function getWeekData() {
@@ -74,9 +73,11 @@ function CountdownTimer({ nextWeekStart }: { nextWeekStart: Date }) {
 
 function SettingItem({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <span className="font-cinzel text-xs tracking-[0.2em] uppercase text-[#9a7a2a]">{label}</span>
-      <p className="text-[#a89060] text-sm">{value}</p>
+    <div className="text-center py-2.5 border-t border-[#3a1510]/45">
+      <p className="font-cinzel text-[10px] tracking-[0.32em] uppercase text-[#9a7a2a] mb-1">
+        {label}
+      </p>
+      <p className="text-[#c8a870] text-sm leading-snug">{value}</p>
     </div>
   );
 }
@@ -144,7 +145,6 @@ function ChallengeGenerator({ seed, weekNumber, onReady }: { seed: number; weekN
     (SEASON1_OPTIONS.disableChat ? '&disableChat=1' : '') +
     `&xpMultiplier=${SEASON1_OPTIONS.xpMultiplier}` +
     `&xpActs=${SEASON1_OPTIONS.xpActs.join(',')}` +
-    (SEASON1_OPTIONS.excludeTeleport ? '&excludeTeleport=1' : '') +
     `&weekly=1`;
 
   const handleGenerate = async () => {
@@ -247,19 +247,14 @@ export function WeekCard() {
 
       {/* Challenge settings */}
       <div className="w-full border-t border-[#3a1510]/50 mt-2 pt-5 mb-10">
-        <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase text-center mb-6">
+        <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase text-center mb-5">
           Challenge Settings
         </p>
-        <div className="max-w-md mx-auto space-y-2">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-2 text-left">
-            <SettingItem label="XP Boost" value="1.5x (Acts I-II)" />
-            <SettingItem label="Teleport Staff" value="Lvl 18, from Corpsefire" />
-            <SettingItem label="Teleport Skill" value="Removed from pool" />
-          </div>
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-left">
-            <SettingItem label="Merc Auras" value="Enabled" />
-            <SettingItem label="Prerequisites" value="Standard" />
-          </div>
+        <div className="max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-x-10">
+          <SettingItem label="XP Boost" value="1.5× · Acts I–II" />
+          <SettingItem label="Teleport Staff" value="Lvl 18 · Corpsefire" />
+          <SettingItem label="Merc Auras" value="Enabled" />
+          <SettingItem label="Prerequisites" value="Standard" />
         </div>
       </div>
 
