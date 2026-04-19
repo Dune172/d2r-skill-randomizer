@@ -2,6 +2,11 @@ import { ClassCode, TreePage } from './types';
 import { SeededRNG } from './seed';
 import { CLASS_DEFS, SPRITE_CLASSES } from './config';
 
+// Determinism notice: tree pool construction and shuffle order both feed the
+// RNG. Changing SPRITE_CLASSES membership/order or the pool-build logic below
+// shifts seeds. Bump PIPELINE_VERSION in ./pipeline-version.ts if you edit
+// this file's RNG-consuming logic.
+
 /**
  * Assign 3 tree pages per class from the pool of available tree pages.
  * Tree index is preserved: tab 1 gets a tree-1 page, tab 2 gets a tree-2 page, etc.

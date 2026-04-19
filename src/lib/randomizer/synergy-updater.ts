@@ -1,6 +1,11 @@
 import { ClassCode, SkillPlacement } from './types';
 import { SeededRNG } from './seed';
 
+// Determinism notice: this module consumes RNG for synergy substitutions.
+// Any change to which skills are candidate targets, the iteration order, or
+// the formula-rewrite logic will shift seeds. Bump PIPELINE_VERSION in
+// ./pipeline-version.ts if you edit the RNG-consuming paths below.
+
 /**
  * For each skill, find which other skills are now in the same class,
  * and remap synergy references to point to co-located skills.

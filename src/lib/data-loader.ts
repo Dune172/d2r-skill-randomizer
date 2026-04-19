@@ -71,6 +71,12 @@ export function loadTreeGrid(): Map<string, TreePage> {
 
 /**
  * Parse skills.json → SkillEntry[] (only class skills with charclass)
+ *
+ * Determinism notice: the ORDER of entries returned here is load-bearing for
+ * seed reproducibility. It's driven by Object.entries(data) on skills.json,
+ * which preserves insertion order. Any editor / formatter that rewrites
+ * skills.json with sorted keys will silently shift every seed. If you
+ * knowingly alter skills.json content or order, bump PIPELINE_VERSION.
  */
 export function loadSkills(): SkillEntry[] {
   if (_skills) return _skills;

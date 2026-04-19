@@ -1,5 +1,8 @@
 import { ClassCode, ClassDef } from './types';
 
+// Determinism notice: the ORDER of CLASS_DEFS is load-bearing — it's the
+// iteration order for skill placement in skill-placer.ts (`for ci of CLASS_DEFS`).
+// Reordering rows below will shift seeds. Bump PIPELINE_VERSION if you change it.
 export const CLASS_DEFS: ClassDef[] = [
   { name: 'Amazon', code: 'ama', charclass: 'ama', spritePrefix: 'am', iconFolder: 'Amazon' },
   { name: 'Sorceress', code: 'sor', charclass: 'sor', spritePrefix: 'so', iconFolder: 'Sorceress' },
