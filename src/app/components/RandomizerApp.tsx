@@ -176,6 +176,7 @@ export default function RandomizerApp() {
           isLoading={status === 'generating' || status === 'building'}
           seed={seed}
           onSeedChange={setSeed}
+          hideSubmit={status === 'ready'}
         />
 
         {status === 'ready' && (
