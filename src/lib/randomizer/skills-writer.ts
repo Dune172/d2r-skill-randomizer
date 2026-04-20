@@ -125,6 +125,18 @@ export function writeSkillsRows(
     skillToPlacement.set(p.skill.skill, p);
   }
 
+  // Identify which class(es) host a shapeshift form skill. The restrict=1
+  // promotion below (making melee skills usable in form) and weapon-gate
+  // clearing should apply on any class that received Wearwolf or Wearbear,
+  // not just Druid — since the form skills are now shuffled across classes
+  // (see COPACEMENT_REQUIRES in skill-placer.ts).
+  const formHostClasses = new Set<string>();
+  for (const p of placements) {
+    if (p.skill.skill === 'Wearwolf' || p.skill.skill === 'Wearbear') {
+      formHostClasses.add(p.targetClass);
+    }
+  }
+
   // Row number → required level mapping
   const ROW_TO_LEVEL: Record<number, number> = { 1: 1, 2: 6, 3: 12, 4: 18, 5: 24, 6: 30 };
 
@@ -141,6 +153,9 @@ export function writeSkillsRows(
   const itypeb1Idx = safeGetCol(headers, 'itypeb1', COL.itypeb1);
   const restrictIdx   = safeGetCol(headers, 'restrict',  COL.restrict);
   const leftskillIdx = safeGetCol(headers, 'leftskill', -1);
+  const etypea1Idx = safeGetCol(headers, 'etypea1', -1);
+  const etypea2Idx = safeGetCol(headers, 'etypea2', -1);
+  const weapselIdx = safeGetCol(headers, 'weapsel', -1);
   const animIdx = safeGetCol(headers, 'anim', COL.anim);
   const seqtransIdx = safeGetCol(headers, 'seqtrans', COL.seqtrans);
   const seqnumIdx   = safeGetCol(headers, 'seqnum',   COL.seqnum);
@@ -228,22 +243,42 @@ export function writeSkillsRows(
       row[leftskillIdx] = '1';
     }
 
-    // Melee attacks, auras, and weapon masteries on the Druid's tree should be
-    // usable in shapeshifted form (restrict=1 = usable in any state).
+    // Melee attacks, auras, and weapon masteries on the form-host class's tree
+    // should be usable in shapeshifted form (restrict=1 = usable in any state).
     // Spells, ranged, summons, and curses keep restrict=null (blocked while shifted).
     // Form-exclusive skills (restrict=2, bear/wolf only) are never changed.
     // Skills with SQ animation are excluded: bear/wolf models lack an SQ sequence,
     // so using an SQ-animated skill while shifted would freeze the character.
     // Whirlwind and Charge are also excluded: their movement mechanics don't work
     // correctly in shapeshifted form regardless of animation.
-    const SHIFTED_FORM_BLOCKED = new Set(['Whirlwind', 'Charge']);
-    if (restrictIdx >= 0 && placement.targetClass === 'dru') {
+    //
+    // Tiger Strike, Cobra Strike, and Royal Strike (Phoenix Strike) are
+    // charge-up Martial Arts: they accumulate charges that release on the
+    // next normal attack. The wolf/bear form's normal-attack uses a different
+    // srvdofunc that doesn't trigger charge release, so the charges would
+    // accumulate forever with no way to discharge them while shifted.
+    //
+    // Weapon-type gates (itypea1/2/3, etypea1/2, weapsel) are also cleared so
+    // the skill fires regardless of which weapon happens to be equipped while
+    // shifted — bear/wolf forms hide the visual weapon and many cross-class
+    // melee skills would otherwise silently fail their item-type check.
+    const SHIFTED_FORM_BLOCKED = new Set([
+      'Whirlwind', 'Charge',
+      'Tiger Strike', 'Cobra Strike', 'Royal Strike',
+    ]);
+    if (restrictIdx >= 0 && formHostClasses.has(placement.targetClass)) {
       const cat = getSkillCategory(placement.skill);
       const isPassive = !!placement.skill.passiveitype;
       const finalAnim = animIdx >= 0 ? row[animIdx] : '';
       const animSafeInForm = !finalAnim || finalAnim === 'A1' || finalAnim === 'SC';
       if (row[restrictIdx] !== '2' && animSafeInForm && !SHIFTED_FORM_BLOCKED.has(placement.skill.skill) && (cat === 'melee' || cat === 'aura' || isPassive)) {
         row[restrictIdx] = '1';
+        if (itypea1Idx >= 0) row[itypea1Idx] = '';
+        if (itypea2Idx >= 0) row[itypea2Idx] = '';
+        if (itypea3Idx >= 0) row[itypea3Idx] = '';
+        if (etypea1Idx >= 0) row[etypea1Idx] = '';
+        if (etypea2Idx >= 0) row[etypea2Idx] = '';
+        if (weapselIdx >= 0) row[weapselIdx] = '';
       }
     }
 

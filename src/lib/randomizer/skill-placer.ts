@@ -28,13 +28,14 @@ const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
 // the dropped skill's name/*Id/skilldesc identity) fills its tree slot.
 //
 // Membership rationale: either the skill's mechanics are only executable on
-// its native class (weapsel=3 dual-wield, h2h claws, restrict=2 shapeshift,
-// Assassin-only KK anim) OR the engine resolves its animation handler by
-// vanilla row position. Both cases boil down to "must stay home".
+// its native class (weapsel=3 dual-wield, h2h claws, Assassin-only KK anim)
+// OR the engine resolves its animation handler by vanilla row position.
+// Both cases boil down to "must stay home".
 //
-// Rabies/Hunger (restrict=2) are intentionally NOT listed here — they go in
-// the shuffle pool so COPACEMENT_REQUIRES can co-locate them with
-// Wearwolf/Wearbear (whichever class those land on).
+// Shapeshift-only skills (restrict=2: Maul, Fury, Feral Rage, Fire Claws,
+// Shock Wave, Hunger, Rabies) and the Shape Shifting passive are intentionally
+// NOT listed here — they go in the shuffle pool so COPACEMENT_REQUIRES can
+// co-locate them with whichever class hosts Wearwolf/Wearbear.
 export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   // Amazon
   'Fend': 'ama',
@@ -51,11 +52,6 @@ export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   'Zeal': 'pal',
   // Druid
   'Arctic Blast': 'dru',
-  'Feral Rage': 'dru',
-  'Fire Claws': 'dru',
-  'Fury': 'dru',
-  'Maul': 'dru',
-  'Shock Wave': 'dru',
   // Assassin
   'Dragon Flight': 'ass',
   'Dragon Talon': 'ass',
@@ -67,6 +63,22 @@ export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   'Claw Mastery': 'ass',
   'Weapon Block': 'ass',
 };
+
+// Skills outside HARDCODED_CLASS_SKILLS that still get the seeded 50% drop
+// coin flip. Used for shapeshift-form attack skills: when kept, they go in
+// the shuffle pool and are funneled to the form-host class via
+// COPACEMENT_REQUIRES; when dropped, a substitute fills their slot on Druid
+// (their native class) — same display-identity-with-borrowed-mechanics
+// pattern as HARDCODED drops. The Shape Shifting passive is intentionally
+// not droppable: it's a strategic linchpin for the shapeshift kit.
+export const COIN_FLIP_DROP_SKILLS: ReadonlySet<string> = new Set([
+  // Werewolf-only attacks
+  'Feral Rage', 'Fury', 'Rabies',
+  // Werebear-only attacks
+  'Maul', 'Shock Wave',
+  // Either-form attacks
+  'Fire Claws', 'Hunger',
+]);
 
 /**
  * Shuffle all 240 class skills and assign them to FILLED grid slots
@@ -110,6 +122,15 @@ export function placeSkills(
     if (hardcodedClass !== undefined && rng.next() >= 0.5) {
       if (!droppedSkillsByClass.has(hardcodedClass)) droppedSkillsByClass.set(hardcodedClass, []);
       droppedSkillsByClass.get(hardcodedClass)!.push(skill);
+      droppedSkillNames.add(skill.skill);
+      continue;
+    }
+    // Coin-flip drops outside HARDCODED_CLASS_SKILLS (shapeshift-form attacks).
+    // Substitute lands on the skill's native class (dru).
+    if (COIN_FLIP_DROP_SKILLS.has(skill.skill) && rng.next() >= 0.5) {
+      const cls = skill.charclass as ClassCode;
+      if (!droppedSkillsByClass.has(cls)) droppedSkillsByClass.set(cls, []);
+      droppedSkillsByClass.get(cls)!.push(skill);
       droppedSkillNames.add(skill.skill);
       continue;
     }
@@ -277,7 +298,7 @@ export function placeSkills(
   }
 
   resolveExclusions(placements);
-  resolveCoplacements(placements);
+  resolveCoplacements(placements, droppedSkillNames);
 
   return { placements, droppedSkillNames, substitutes };
 }
@@ -324,12 +345,29 @@ function resolveExclusions(placements: SkillPlacement[]): void {
 
 // Co-placement constraints: a skill must share its class with at least one peer.
 // Skeleton Mastery is only useful if the player can also raise skeletons.
-// Rabies/Hunger (restrict=2, shapeshift-only) must land on the same class as a
-// transformation skill so they're actually usable.
+// Shapeshift-only (restrict=2) skills are split by which form they actually
+// work in (per their skilldesc / D2 engine):
+//   wolf-only : Feral Rage, Fury, Rabies
+//   bear-only : Maul, Shock Wave
+//   either    : Fire Claws, Hunger, Shape Shifting (passive)
+// Peer order matters: the FIRST peer found in the placement list wins as the
+// destination class, so when both forms land on different classes, "either"
+// skills follow Wearwolf by default (unless they already happen to share a
+// class with Wearbear, in which case the existing-satisfaction check skips
+// the swap).
 const COPACEMENT_REQUIRES: Record<string, string[]> = {
   'Skeleton Mastery': ['Raise Skeleton', 'Raise Skeletal Mage'],
-  'Rabies': ['Wearwolf', 'Wearbear'],
+  // Werewolf-only
+  'Feral Rage': ['Wearwolf'],
+  'Fury': ['Wearwolf'],
+  'Rabies': ['Wearwolf'],
+  // Werebear-only
+  'Maul': ['Wearbear'],
+  'Shock Wave': ['Wearbear'],
+  // Either form
+  'Fire Claws': ['Wearwolf', 'Wearbear'],
   'Hunger': ['Wearwolf', 'Wearbear'],
+  'Shape Shifting': ['Wearwolf', 'Wearbear'],
 };
 
 /**
@@ -338,7 +376,7 @@ const COPACEMENT_REQUIRES: Record<string, string[]> = {
  * class, move it to a class that does have a peer by swapping it with a skill
  * from that class (excluding the peer itself).
  */
-function resolveCoplacements(placements: SkillPlacement[]): void {
+function resolveCoplacements(placements: SkillPlacement[], droppedSkillNames: Set<string>): void {
   // Build skill name → placement index for quick lookup
   const bySkill = new Map<string, number>();
   for (let i = 0; i < placements.length; i++) {
@@ -349,8 +387,19 @@ function resolveCoplacements(placements: SkillPlacement[]): void {
   // processing Hunger after Rabies could pick Rabies as its partner and
   // undo Rabies's swap (and vice versa).
   const COPACEMENT_KEYS = new Set(Object.keys(COPACEMENT_REQUIRES));
+  // Peer anchors (Wearwolf, Wearbear, Raise Skeleton, etc.) can't serve as
+  // swap partners either: moving Wearwolf to satisfy Maul's ['Wearbear']
+  // constraint would orphan all the wolf-only skills that anchored on it.
+  const COPACEMENT_PEERS = new Set(Object.values(COPACEMENT_REQUIRES).flat());
 
   for (const [skillName, peers] of Object.entries(COPACEMENT_REQUIRES)) {
+    // Substitutes inherit the dropped skill's name but have borrowed mechanics
+    // from a random source. They're cosmetic placeholders — relocating them
+    // would put a fake-mechanics tile on the form-host class while the
+    // identity slot on the drop-target class gets backfilled with an
+    // unrelated partner skill.
+    if (droppedSkillNames.has(skillName)) continue;
+
     const skillIdx = bySkill.get(skillName);
     if (skillIdx === undefined) continue;
 
@@ -382,6 +431,8 @@ function resolveCoplacements(placements: SkillPlacement[]): void {
       if (partner.skill.skill in HARDCODED_CLASS_SKILLS) continue;
       // Can't use another coplacement-key skill as a partner (would undo its swap).
       if (COPACEMENT_KEYS.has(partner.skill.skill)) continue;
+      // Can't move a peer anchor (would orphan other constraints that depend on it).
+      if (COPACEMENT_PEERS.has(partner.skill.skill)) continue;
 
       // Respect static exclusions in both directions
       if (SKILL_CLASS_EXCLUSIONS[destClass]?.has(skillName)) continue;

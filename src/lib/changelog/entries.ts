@@ -12,6 +12,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.22',
+    date: 'April 2026',
+    tagline: 'Shapeshift overhaul — forms, attacks, and Lycanthropy travel together',
+    notes: [
+      'Shapeshift skills now follow whichever class gets Werewolf or Werebear, instead of being stranded on Druid. If your Sorceress gets Werewolf, she also gets Fury, Feral Rage, and Rabies',
+      'Wolf-only attacks (Feral Rage, Fury, Rabies) follow Werewolf; bear-only attacks (Maul, Shock Wave) follow Werebear; Fire Claws, Hunger, and Lycanthropy can land with either form',
+      'Cross-class melee skills on the form-host class are now usable while shifted — your shapeshifter Sorceress can swing Bash as a bear',
+      'Each shapeshift attack skill now has a 50% drop chance per seed, matching how Zeal/Leap/Whirlwind already worked. Adds variety to which form attacks any given seed actually gives you',
+      'Tiger Strike, Cobra Strike, and Phoenix Strike are now blocked while shifted — their charge-up mechanic can\'t release in wolf/bear form, so they\'d just stack uncastable charges',
+    ],
+  },
+  {
     version: 'v0.214',
     date: 'April 2026',
     tagline: 'Controller skill tree fix + Remove Teleport option retired',
