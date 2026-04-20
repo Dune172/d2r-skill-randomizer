@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { WeekCard, WeekArchive } from './WeekData';
+import { WeekCard } from './WeekData';
 
 function Step({ number, text }: { number: number; text: ReactNode }) {
   return (
@@ -105,8 +105,6 @@ export default function ChallengePage() {
           Played in offline single-player using the D2R Randomizer mod. Standard prerequisites and normal weapon logic apply.
         </p>
       </section>
-
-      <WeekArchive />
     </main>
   );
 }

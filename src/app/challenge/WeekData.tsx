@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { getActivePair, getWeekName, type MutationDef } from '@/lib/mutations/registry';
 import { InstallInstructions } from '@/app/components/InstallInstructions';
@@ -33,12 +32,7 @@ function getWeekData() {
   const currentStart = getWeekStart(weekNumber);
   const currentEnd = getWeekEnd(weekNumber);
 
-  const archive = [];
-  for (let i = weekNumber - 1; i >= Math.max(1, weekNumber - 4); i--) {
-    archive.push({ weekNumber: i, seed: getWeekSeed(i), start: getWeekStart(i), end: getWeekEnd(i) });
-  }
-
-  return { weekNumber, currentSeed, currentStart, currentEnd, archive };
+  return { weekNumber, currentSeed, currentStart, currentEnd };
 }
 
 function CountdownTimer({ nextWeekStart }: { nextWeekStart: Date }) {
@@ -267,43 +261,3 @@ export function WeekCard() {
   );
 }
 
-export function WeekArchive() {
-  const { archive } = getWeekData();
-
-  if (archive.length === 0) return null;
-
-  return (
-    <section className="max-w-2xl mx-auto px-4 pb-16">
-      <h2 className="font-cinzel font-bold text-[#c8942a] tracking-[0.1em] uppercase text-base mb-5">
-        Past Challenges
-      </h2>
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="border-b border-[#3a1510]">
-            <th className="text-left font-cinzel text-xs tracking-[0.3em] uppercase text-[#9a7a2a] pb-2 pr-4">Week</th>
-            <th className="text-left font-cinzel text-xs tracking-[0.3em] uppercase text-[#9a7a2a] pb-2 pr-4">Name</th>
-            <th className="text-left font-cinzel text-xs tracking-[0.3em] uppercase text-[#9a7a2a] pb-2 pr-4">Dates</th>
-            <th className="pb-2" />
-          </tr>
-        </thead>
-        <tbody>
-          {archive.map(({ weekNumber: wn, seed, start, end }) => (
-            <tr key={wn} className="border-b border-[#1a0a06] hover:bg-[#c8942a]/[0.03] transition-colors duration-150">
-              <td className="py-2 pr-4 text-[#9a7a2a] font-cinzel text-sm">{wn}</td>
-              <td className="py-2 pr-4 text-[#c8942a] font-cinzel text-sm">{getWeekName(wn)}</td>
-              <td className="py-2 pr-4 text-[#a89060] text-sm">{formatWeekDate(start)} – {formatWeekDate(end)}</td>
-              <td className="py-2">
-                <Link
-                  href={`/generate?seed=${seed}`}
-                  className="font-cinzel text-xs tracking-[0.3em] uppercase text-[#9a7a2a] hover:text-[#c8942a] transition-colors"
-                >
-                  Play
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
-  );
-}
