@@ -178,8 +178,10 @@ export function writeSkillsRows(
     // Skip animation updates entirely for skills on their native class — the
     // original animation is already correct and shouldn't be touched.
     const isNativeClass = classDef.charclass === placement.skill.charclass;
+    // Shapeshift form attacks (restrict=2) run on the wolf/bear form model, which owns its own animation set independent of the host class's base model.
+    const isFormOnly = restrictIdx >= 0 && row[restrictIdx] === '2';
     const supportedAnims = CLASS_SUPPORTED_ANIMS[placement.targetClass];
-    if (!isNativeClass && supportedAnims && animIdx >= 0) {
+    if (!isNativeClass && !isFormOnly && supportedAnims && animIdx >= 0) {
       const originalAnim = row[animIdx];
       if (originalAnim) {
         const bestAnim = pickBestAnim(placement.skill, originalAnim, supportedAnims);

@@ -12,6 +12,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.221',
+    date: 'April 2026',
+    tagline: 'Shapeshift attack animations restored to vanilla',
+    notes: [
+      'Fixed shapeshift-form attacks playing the wrong animation when Werewolf/Werebear landed on a non-Druid class. Rabies, Hunger, and other form attacks now keep their vanilla wolf/bear animations regardless of host class — the form model owns the animation, not the base class model',
+    ],
+  },
+  {
     version: 'v0.22',
     date: 'April 2026',
     tagline: 'Shapeshift overhaul — forms, attacks, and Lycanthropy travel together',
