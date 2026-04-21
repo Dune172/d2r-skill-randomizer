@@ -193,6 +193,11 @@ function ChallengeGenerator({ seed, weekNumber, onReady }: { seed: number; weekN
           {status === 'building' ? 'Generating…' : status === 'error' ? 'Try Again' : 'Generate This Seed'}
         </button>
       )}
+      {status !== 'ready' && (
+        <p className="-mt-2 text-center text-[11px] text-[#8a7040] italic">
+          Requires the Reign of the Warlock expansion.
+        </p>
+      )}
       <ProgressIndicator status={status} message={errorMsg} />
     </div>
   );

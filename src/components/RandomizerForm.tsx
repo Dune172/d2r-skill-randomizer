@@ -430,6 +430,9 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           >
             {isLoading ? 'Generating…' : 'Generate Mod'}
           </button>
+          <p className="mt-2 text-center text-[11px] text-[#8a7040] italic">
+            Requires the Reign of the Warlock expansion.
+          </p>
         </div>
       )}
     </form>
