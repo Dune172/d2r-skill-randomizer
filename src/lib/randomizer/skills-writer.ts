@@ -152,7 +152,6 @@ export function writeSkillsRows(
   const itypea3Idx = safeGetCol(headers, 'itypea3', COL.itypea3);
   const itypeb1Idx = safeGetCol(headers, 'itypeb1', COL.itypeb1);
   const restrictIdx   = safeGetCol(headers, 'restrict',  COL.restrict);
-  const leftskillIdx = safeGetCol(headers, 'leftskill', -1);
   const etypea1Idx = safeGetCol(headers, 'etypea1', -1);
   const etypea2Idx = safeGetCol(headers, 'etypea2', -1);
   const weapselIdx = safeGetCol(headers, 'weapsel', -1);
@@ -238,12 +237,14 @@ export function writeSkillsRows(
     row[reqskill2Idx] = prereq?.reqskill2 || '';
     row[reqskill3Idx] = '';
 
-    // Ensure cross-class skills are assignable to the left mouse button.
-    // Some skills have leftskill=0 by vanilla design (e.g. Raven, Valkyrie) but
-    // randomized skills should be usable on either mouse button.
-    if (leftskillIdx >= 0 && row[leftskillIdx] === '0') {
-      row[leftskillIdx] = '1';
-    }
+    // leftskill / rightskill are preserved from vanilla. These columns are read
+    // by both the K&M and controller UIs to decide which mouse-button slots a
+    // skill can bind to, and they interact with other flags (e.g. aura, state
+    // toggles) in ways we don't fully enumerate. Previously we force-set
+    // leftskill=1 on every cross-class skill with vanilla leftskill=0 for QoL,
+    // but that caused auras on non-Paladin classes to bind incorrectly to
+    // left-click on controller, breaking the hotkey toggle. Rather than patch
+    // per-category exceptions, trust the vanilla columns.
 
     // Melee attacks, auras, and weapon masteries on the form-host class's tree
     // should be usable in shapeshifted form (restrict=1 = usable in any state).
