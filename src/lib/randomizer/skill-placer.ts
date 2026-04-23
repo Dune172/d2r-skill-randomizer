@@ -39,6 +39,7 @@ const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
 export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   // Amazon
   'Fend': 'ama',
+  'Strafe': 'ama',
   // Barbarian
   'Leap': 'bar',
   'Leap Attack': 'bar',
