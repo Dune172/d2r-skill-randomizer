@@ -32,10 +32,21 @@ const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
 // OR the engine resolves its animation handler by vanilla row position.
 // Both cases boil down to "must stay home".
 //
-// Shapeshift-only skills (restrict=2: Maul, Fury, Feral Rage, Fire Claws,
-// Shock Wave, Hunger, Rabies) and the Shape Shifting passive are intentionally
-// NOT listed here — they go in the shuffle pool so COPACEMENT_REQUIRES can
+// Most shapeshift-only skills (restrict=2: Maul, Feral Rage, Fire Claws,
+// Hunger, Rabies) and the Shape Shifting passive are intentionally NOT
+// listed here — they go in the shuffle pool so COPACEMENT_REQUIRES can
 // co-locate them with whichever class hosts Wearwolf/Wearbear.
+//
+// Exception: Fury (cltdofunc=21) and Shock Wave (cltdofunc=17) ARE pinned
+// despite restrict=2. The wolf/bear form model owns its own anim sheet, but
+// the engine's client handler dispatch is keyed on the host character class,
+// not the active form. Fury's cltdofunc=21 is the same Druid-class-gated
+// handler family as Zeal (Paladin/cltdofunc=21) and Strafe (Amazon/cltdofunc=20):
+// on a non-Druid host, no handler fires, so no animation start signal and
+// no attack — even though anim=A1 is preserved correctly. Shock Wave is
+// pinned for the same reason on the Wearbear side. See FORM_GATED_PINS
+// in placeSkills for the conditional-drop logic that vacates them when
+// the form anchor (Wearwolf / Wearbear) didn't land on Druid.
 export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   // Amazon
   'Fend': 'ama',
@@ -53,6 +64,8 @@ export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   'Zeal': 'pal',
   // Druid
   'Arctic Blast': 'dru',
+  'Fury': 'dru',
+  'Shock Wave': 'dru',
   // Assassin
   'Dragon Flight': 'ass',
   'Dragon Talon': 'ass',
@@ -72,11 +85,14 @@ export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
 // (their native class) — same display-identity-with-borrowed-mechanics
 // pattern as HARDCODED drops. The Shape Shifting passive is intentionally
 // not droppable: it's a strategic linchpin for the shapeshift kit.
+//
+// Fury and Shock Wave are NOT here — they're pinned via HARDCODED_CLASS_SKILLS
+// because their cltdofunc handlers are class-gated by the engine.
 export const COIN_FLIP_DROP_SKILLS: ReadonlySet<string> = new Set([
   // Werewolf-only attacks
-  'Feral Rage', 'Fury', 'Rabies',
+  'Feral Rage', 'Rabies',
   // Werebear-only attacks
-  'Maul', 'Shock Wave',
+  'Maul',
   // Either-form attacks
   'Fire Claws', 'Hunger',
 ]);
@@ -247,6 +263,41 @@ export function placeSkills(
     console.warn(`${shuffled.length - skillIdx} skills were not placed`);
   }
 
+  // Conditional drop for class-gated form attacks: Fury (cltdofunc=21) and
+  // Shock Wave (cltdofunc=17) are pinned to Druid because their engine handlers
+  // are class-keyed. But they're restrict=2, so they need their form anchor
+  // (Wearwolf for Fury, Wearbear for Shock Wave) on the same class to be
+  // usable. If the form anchor traveled to a different class via the shuffle,
+  // the pinned attack would be a dead skill on Druid — drop it so the slot
+  // gets a substitute instead. (This runs before substitute injection so the
+  // existing substitute logic picks up the new vacated slots uniformly.)
+  const FORM_GATED_PINS: ReadonlyArray<{ skill: string; anchor: string }> = [
+    { skill: 'Fury', anchor: 'Wearwolf' },
+    { skill: 'Shock Wave', anchor: 'Wearbear' },
+  ];
+  for (const { skill: gatedSkill, anchor } of FORM_GATED_PINS) {
+    const gatedIdx = placements.findIndex(p => p.skill.skill === gatedSkill);
+    if (gatedIdx === -1) continue; // already dropped (HARDCODED coin-flip or excluded)
+    const anchorPlacement = placements.find(p => p.skill.skill === anchor);
+    if (!anchorPlacement) continue; // anchor missing entirely — nothing to align against
+    if (anchorPlacement.targetClass === 'dru') continue; // anchor on Druid — keep gated skill
+    // Anchor traveled — drop the gated skill, vacate its slot for substitute injection.
+    const dropped = placements[gatedIdx];
+    placements.splice(gatedIdx, 1);
+    droppedSkillNames.add(gatedSkill);
+    if (!droppedSkillsByClass.has('dru')) droppedSkillsByClass.set('dru', []);
+    droppedSkillsByClass.get('dru')!.push(dropped.skill);
+    if (!vacatedByClass.has('dru')) vacatedByClass.set('dru', []);
+    vacatedByClass.get('dru')!.push({
+      tabIndex: dropped.tabIndex,
+      tree: dropped.treePage,
+      row: dropped.row,
+      col: dropped.col,
+      iconCel: dropped.iconCel,
+      skillIndex: dropped.skillIndex,
+    });
+  }
+
   // Now inject substitutes. For each dropped skill, pick a source placement on a
   // different class whose display-name isn't already on the dropped skill's native
   // class (no same-class duplicate), then build a substitute SkillEntry that spreads
@@ -358,13 +409,11 @@ function resolveExclusions(placements: SkillPlacement[]): void {
 // the swap).
 const COPACEMENT_REQUIRES: Record<string, string[]> = {
   'Skeleton Mastery': ['Raise Skeleton', 'Raise Skeletal Mage'],
-  // Werewolf-only
+  // Werewolf-only (Fury is pinned via HARDCODED_CLASS_SKILLS, not here)
   'Feral Rage': ['Wearwolf'],
-  'Fury': ['Wearwolf'],
   'Rabies': ['Wearwolf'],
-  // Werebear-only
+  // Werebear-only (Shock Wave is pinned via HARDCODED_CLASS_SKILLS, not here)
   'Maul': ['Wearbear'],
-  'Shock Wave': ['Wearbear'],
   // Either form
   'Fire Claws': ['Wearwolf', 'Wearbear'],
   'Hunger': ['Wearwolf', 'Wearbear'],

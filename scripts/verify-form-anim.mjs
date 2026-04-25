@@ -21,8 +21,16 @@ if (SEEDS.length === 0) {
   for (let i = 1; i <= 20; i++) SEEDS.push(i);
 }
 
-const FORM_ATTACKS = ['Feral Rage', 'Fury', 'Rabies', 'Maul', 'Shock Wave', 'Fire Claws', 'Hunger'];
+// Fury and Shock Wave are pinned to Druid via HARDCODED_CLASS_SKILLS (v0.222),
+// and conditionally dropped if their form anchor (Wearwolf/Wearbear) didn't
+// land on Druid. Their kept-on-non-Druid case can no longer occur, so this
+// regression check focuses on the still-traveling form attacks.
+const FORM_ATTACKS = ['Feral Rage', 'Rabies', 'Maul', 'Fire Claws', 'Hunger'];
 const COLS_TO_CHECK = ['anim', 'seqtrans', 'seqnum', 'seqinput'];
+// Mechanics columns that uniquely identify a kept skill from a substitute that
+// happens to inherit restrict=2 from another form-attack source (e.g., a
+// dropped Maul substituted with Hunger's mechanics).
+const IDENTITY_COLS = ['srvdofunc', 'cltdofunc'];
 
 const DATA_DIR = path.join(process.cwd(), 'data', 'txt');
 
@@ -78,10 +86,24 @@ function snapshot(parsed, row) {
     const i = colIdx(parsed, c);
     out[c] = i >= 0 ? (row[i] ?? '') : '';
   }
+  for (const c of IDENTITY_COLS) {
+    const i = colIdx(parsed, c);
+    out[c] = i >= 0 ? (row[i] ?? '') : '';
+  }
   const ri = colIdx(parsed, 'restrict');
   out.restrict = ri >= 0 ? (row[ri] ?? '') : '';
   out.charclass = row[colIdx(parsed, 'charclass')] ?? '';
   return out;
+}
+
+// Detect substitutes that inherited restrict=2 from a form-attack source
+// (e.g., dropped Maul substituted with Hunger's mechanics). Compare the
+// row's identity (srvdofunc/cltdofunc) against the vanilla skill's identity.
+function isSubstitute(snap, vanillaSnap) {
+  for (const c of IDENTITY_COLS) {
+    if (snap[c] !== vanillaSnap[c]) return true;
+  }
+  return false;
 }
 
 (async function main() {
@@ -117,12 +139,12 @@ function snapshot(parsed, row) {
       const row = getRow(skills, name);
       if (!row) { console.log(`  ${name}: MISSING`); continue; }
       const snap = snapshot(skills, row);
-      if (snap.restrict !== '2') {
+      const v = vanillaSnaps.get(name);
+      if (snap.restrict !== '2' || isSubstitute(snap, v)) {
         // dropped — substitute took its slot, unrelated to this fix
         continue;
       }
       totalKept++;
-      const v = vanillaSnaps.get(name);
       const isNonDruid = snap.charclass !== 'dru';
       if (isNonDruid) totalNonDruidKept++;
 

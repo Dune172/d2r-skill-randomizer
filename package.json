@@ -1,6 +1,6 @@
 {
   "name": "d2r-skill-randomizer",
-  "version": "0.221.0",
+  "version": "0.222.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

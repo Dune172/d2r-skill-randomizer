@@ -12,6 +12,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.222',
+    date: 'April 2026',
+    tagline: 'Fury and Shock Wave pinned to Druid — engine-hardcoded handlers',
+    notes: [
+      'Fixed Fury playing no animation when Werewolf landed on a non-Druid class (e.g. Warlock). Fury\'s multi-hit handler is hardcoded to Druid in the D2R engine — same family as Zeal (Paladin) and Strafe (Amazon) — so even though the wolf form\'s animation was preserved, no swing or hit ever fired',
+      'Pinned Fury and Shock Wave to Druid alongside the existing Strafe/Zeal/Sacrifice pins. Whenever Werewolf travels to another class, Fury is dropped and replaced by a substitute on the Druid tree (no orphaned form-only skill stranded with no wolf form to use it in). Same treatment for Shock Wave + Werebear',
+    ],
+  },
+  {
     version: 'v0.221',
     date: 'April 2026',
     tagline: 'Shapeshift attack animations restored to vanilla',
