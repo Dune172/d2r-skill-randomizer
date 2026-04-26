@@ -108,22 +108,22 @@ export const MUTATIONS: Record<number, MutationDef> = {
 export const WEEKLY_PAIRS: [number, number][] = [
   [5, 7],   // 0
   [8, 13],  // 1
-  [2, 5],   // 2
-  [11, 13], // 3
+  [1, 6],   // 2
+  [2, 10],  // 3
   [4, 5],   // 4
   [7, 13],  // 5
   [3, 5],   // 6
-  [1, 6],   // 7
+  [8, 11],  // 7
   [2, 13],  // 8
   [7, 4],   // 9
   [3, 13],  // 10
-  [2, 10],  // 11
+  [14, 7],  // 11
   [8, 13],  // 12
   [1, 5],   // 13
   [4, 13],  // 14
   [3, 6],   // 15
   [1, 13],  // 16
-  [8, 11],  // 17
+  [2, 5],   // 17
   [6, 13],  // 18
   [4, 14],  // 19
   [6, 7],   // 20
@@ -132,7 +132,7 @@ export const WEEKLY_PAIRS: [number, number][] = [
   [3, 6],   // 23
   [5, 11],  // 24
   [2, 10],  // 25
-  [14, 7],  // 26
+  [11, 13], // 26
   [10, 5],  // 27
   [14, 4],  // 28
   [10, 8],  // 29
@@ -146,22 +146,22 @@ export const WEEKLY_PAIRS: [number, number][] = [
 export const WEEK_NAMES: string[] = [
   'Swarming Plague',     // 0  The Horde + Pestilence
   'Borrowed Power',      // 1  Arcane Surge + Dead Reckoning
-  'March of the Fallen', // 2  Heavy Burden + The Horde
-  'The Long March',      // 3  Titan's Grip + Dead Reckoning
+  'Glass Rush',          // 2  Hyperdrive + Glass Cannon
+  'Immovable Object',    // 3  Heavy Burden + Ironclad
   'Blood Ocean',         // 4  Bloodthirst + The Horde
   'Slow Death',          // 5  Pestilence + Dead Reckoning
   'Thin Ice',            // 6  Hollow Shell + The Horde
-  'Glass Rush',          // 7  Hyperdrive + Glass Cannon
+  'Iron Mage',           // 7  Arcane Surge + Titan's Grip
   'Toil and Trouble',    // 8  Heavy Burden + Dead Reckoning
   'Sanguine Plague',     // 9  Pestilence + Bloodthirst
   'Running on Fumes',    // 10 Hollow Shell + Dead Reckoning
-  'Immovable Object',    // 11 Heavy Burden + Ironclad
+  'Rust and Rot',        // 11 Entropy + Pestilence
   'Magical Debt',        // 12 Arcane Surge + Dead Reckoning
   'The Stampede',        // 13 Hyperdrive + The Horde
   'Pyrrhic Victory',     // 14 Bloodthirst + Dead Reckoning
   'Fragile Fury',        // 15 Hollow Shell + Glass Cannon
   'Race to the Bottom',  // 16 Hyperdrive + Dead Reckoning
-  'Iron Mage',           // 17 Arcane Surge + Titan's Grip
+  'March of the Fallen', // 17 Heavy Burden + The Horde
   'Brittle Fortune',     // 18 Glass Cannon + Dead Reckoning
   'Gnawing Rust',        // 19 Bloodthirst + Entropy
   'Shattered Venom',     // 20 Glass Cannon + Pestilence
@@ -170,7 +170,7 @@ export const WEEK_NAMES: string[] = [
   'Paper Tigers',        // 23 Hollow Shell + Glass Cannon
   'Iron Tide',           // 24 The Horde + Titan's Grip
   'Iron Will',           // 25 Heavy Burden + Ironclad
-  'Rust and Rot',        // 26 Entropy + Pestilence
+  'The Long March',      // 26 Titan's Grip + Dead Reckoning
   'Fortress Siege',      // 27 Ironclad + The Horde
   'The Corrosion',       // 28 Entropy + Bloodthirst
   'Spell and Steel',     // 29 Ironclad + Arcane Surge
