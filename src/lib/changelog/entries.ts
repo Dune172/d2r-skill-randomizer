@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.23',
+    date: 'April 2026',
+    tagline: 'Item procs fixed and randomized per seed',
+    notes: [
+      'Fixed item proc effects (chance-to-cast and charges) that were silently broken — many were trying to cast passives like Cold Mastery, which the engine can\'t cast',
+      'Procs now roll a fresh active skill per seed. Class-restricted items stay in their class so themes hold up',
+      'Only vanilla level 1–18 skills are eligible — no random Hydra or Whirlwind procs from cheap items',
+    ],
+  },
+  {
     version: 'v0.222',
     date: 'April 2026',
     tagline: 'Fury and Shock Wave pinned to Druid — engine-hardcoded handlers',

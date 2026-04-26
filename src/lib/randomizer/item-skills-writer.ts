@@ -1,4 +1,130 @@
 import { ClassCode, SkillPlacement } from './types';
+import { SeededRNG } from './seed';
+import { isCastableTarget } from './skill-filters';
+import { loadSkills } from '../data-loader';
+
+// Vanilla reqlevel by skill name. Substitute SkillEntries inherit reqlevel
+// from their source skill, not the dropped skill — so p.skill.reqlevel can
+// say "6" for a substitute "Frenzy" even though vanilla Frenzy is reqlevel
+// 24. The user wants exclusion based on the *displayed* skill name (vanilla
+// reqlevel), so look up by name from skills.json.
+let _vanillaReqlevelByName: Map<string, number> | null = null;
+function vanillaReqlevelByName(): Map<string, number> {
+  if (_vanillaReqlevelByName) return _vanillaReqlevelByName;
+  const m = new Map<string, number>();
+  for (const s of loadSkills()) m.set(s.skill, s.reqlevel ?? 1);
+  _vanillaReqlevelByName = m;
+  return m;
+}
+
+// Walk the placement fallback chain (exact tab/row/col → same row+col, any tab →
+// same row, any col/tab → any placement in class) and return the first castable
+// target. Passive and aura skills are skipped because they have no ItemEffect /
+// srvdofunc execution path and silently fail as CTC / charged proc targets.
+function findCastableDestination(
+  classRestriction: ClassCode | string,
+  src: SkillPlacement,
+  byPos: Map<string, SkillPlacement[]>,
+  byClassRowCol: Map<string, SkillPlacement[]>,
+  byClassRow: Map<string, SkillPlacement[]>,
+  byClass: Map<string, SkillPlacement[]>,
+): SkillPlacement | undefined {
+  const tiers: (SkillPlacement[] | undefined)[] = [
+    byPos.get(`${classRestriction}_${src.tabIndex}_${src.row}_${src.col}`),
+    byClassRowCol.get(`${classRestriction}_${src.row}_${src.col}`),
+    byClassRow.get(`${classRestriction}_${src.row}`),
+    byClass.get(String(classRestriction)),
+  ];
+  for (const tier of tiers) {
+    if (!tier) continue;
+    const hit = tier.find(p => isCastableTarget(p.skill));
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
+// Proc codes — destination must be castable AND each slot is randomized
+// from the seeded pool. On class-restricted items the pool is the restricted
+// class's castable skills; on unrestricted items, all castables.
+// `charged` is included because charges-based effects are also procs.
+const PROC_CODES: ReadonlySet<string> = new Set([
+  'hit-skill',     'hit-skill-noc',
+  'att-skill',     'att-skill-noc',
+  'gethit-skill',  'gethit-skill-noc',
+  'kill-skill',    'kill-skill-noc',
+  'death-skill',   'death-skill-noc',
+  'levelup-skill', 'levelup-skill-noc',
+  'charged',
+]);
+
+// `oskill` is a cross-class GRANTER ("+N to <skill>"), not a proc. Vanilla
+// legitimately points it at passives (e.g. Stealskull's "+N to Critical
+// Strike"). Identity-preserve via idMapping — same row remap as monstats.
+const GRANTER_ROWINDEX_CODES: ReadonlySet<string> = new Set(['oskill']);
+
+// Translate a numeric skill row-index reference through idMapping. Returns
+// the input string unchanged if it isn't numeric, isn't in idMapping, or
+// idMapping is unset.
+function remapRowIndexParam(par: string, idMapping?: Map<number, number>): string {
+  if (!idMapping) return par;
+  const id = parseInt(par.trim(), 10);
+  if (isNaN(id)) return par;
+  const mapped = idMapping.get(id);
+  return mapped !== undefined ? String(mapped) : par;
+}
+
+// Vanilla reqlevels are 1 / 6 / 12 / 18 / 24 / 30. Procs that fire random
+// top-tier skills (Meteor, Hydra, Frozen Orb, etc.) are too strong for
+// item affixes — exclude them from the pool. SkillEntry.reqlevel is loaded
+// from skills.json so it reflects the VANILLA reqlevel, not any post-
+// shuffle reassignment.
+const PROC_POOL_MAX_REQLEVEL = 18;
+
+// Per-class castable placement pools, plus a global pool of all castable
+// placements. Used by proc-slot randomization. Built once per remap call.
+function buildCastablePools(placements: SkillPlacement[]) {
+  const reqByName = vanillaReqlevelByName();
+  const byClass = new Map<string, SkillPlacement[]>();
+  const all: SkillPlacement[] = [];
+  for (const p of placements) {
+    if (!isCastableTarget(p.skill)) continue;
+    // Filter by VANILLA reqlevel of the displayed skill name. Substitutes
+    // keep the dropped skill's name but inherit source's reqlevel; we want
+    // to exclude based on what the player sees in the proc tooltip.
+    const vanillaReq = reqByName.get(p.skill.skill) ?? p.skill.reqlevel ?? 1;
+    if (vanillaReq > PROC_POOL_MAX_REQLEVEL) continue;
+    const k = String(p.targetClass);
+    (byClass.get(k) ?? byClass.set(k, []).get(k)!).push(p);
+    all.push(p);
+  }
+  return { byClassCastable: byClass, allCastable: all };
+}
+
+function pickRandomFromPool(
+  pool: SkillPlacement[],
+  rng: SeededRNG,
+): SkillPlacement | undefined {
+  if (pool.length === 0) return undefined;
+  return pool[rng.randInt(0, pool.length - 1)];
+}
+
+function buildPlacementIndices(placements: SkillPlacement[]) {
+  const byPos = new Map<string, SkillPlacement[]>();
+  const byClassRowCol = new Map<string, SkillPlacement[]>();
+  const byClassRow = new Map<string, SkillPlacement[]>();
+  const byClass = new Map<string, SkillPlacement[]>();
+  for (const p of placements) {
+    const posKey = `${p.targetClass}_${p.tabIndex}_${p.row}_${p.col}`;
+    const rcKey = `${p.targetClass}_${p.row}_${p.col}`;
+    const rKey = `${p.targetClass}_${p.row}`;
+    const cKey = String(p.targetClass);
+    (byPos.get(posKey) ?? byPos.set(posKey, []).get(posKey)!).push(p);
+    (byClassRowCol.get(rcKey) ?? byClassRowCol.set(rcKey, []).get(rcKey)!).push(p);
+    (byClassRow.get(rKey) ?? byClassRow.set(rKey, []).get(rKey)!).push(p);
+    (byClass.get(cKey) ?? byClass.set(cKey, []).get(cKey)!).push(p);
+  }
+  return { byPos, byClassRowCol, byClassRow, byClass };
+}
 
 /**
  * Static map of D2R base item codes → class restriction.
@@ -60,25 +186,13 @@ export function remapUniqueItemSkills(
   headers: string[],
   rows: string[][],
   placements: SkillPlacement[],
-  idMapping?: Map<number, number>,
+  idMapping: Map<number, number> | undefined,
+  procRng: SeededRNG,
 ): string[][] {
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
   const byId = new Map<number, SkillPlacement>(placements.map(p => [p.skill.id, p]));
-  const byPos = new Map<string, SkillPlacement>(
-    placements.map(p => [`${p.targetClass}_${p.tabIndex}_${p.row}_${p.col}`, p]),
-  );
-  // Fallback 1: same class + same (row, col), any tab — first match wins
-  const byClassRowCol = new Map<string, SkillPlacement>();
-  for (const p of placements) {
-    const k = `${p.targetClass}_${p.row}_${p.col}`;
-    if (!byClassRowCol.has(k)) byClassRowCol.set(k, p);
-  }
-  // Fallback 2: same class + same row, any col/tab — first match wins
-  const byClassRow = new Map<string, SkillPlacement>();
-  for (const p of placements) {
-    const k = `${p.targetClass}_${p.row}`;
-    if (!byClassRow.has(k)) byClassRow.set(k, p);
-  }
+  const { byPos, byClassRowCol, byClassRow, byClass } = buildPlacementIndices(placements);
+  const { byClassCastable, allCastable } = buildCastablePools(placements);
 
   const codeCol = headers.indexOf('code');
   if (codeCol === -1) return rows;
@@ -88,9 +202,8 @@ export function remapUniqueItemSkills(
     if (!itemCode) return row;
 
     const classRestriction = ITEM_CLASS_MAP.get(itemCode);
-    if (!classRestriction) return row;
-
     const updated = [...row];
+
     for (let slot = 1; slot <= 12; slot++) {
       const propCol = headers.indexOf(`prop${slot}`);
       const parCol = headers.indexOf(`par${slot}`);
@@ -100,32 +213,56 @@ export function remapUniqueItemSkills(
       const par = updated[parCol];
       if (!par?.trim()) continue;
 
-      let srcPlacement: SkillPlacement | undefined;
-      let useNumeric: boolean;
-
-      if (prop === 'skill') {
-        const numId = parseInt(par.trim(), 10);
-        if (!isNaN(numId)) {
-          srcPlacement = byId.get(numId);
-          useNumeric = true;
-        } else {
-          srcPlacement = byName.get(par.trim());
-          useNumeric = false;
+      // Procs (CTC family + charged): random castable pick from class pool
+      // (or global pool if not class-restricted). Output is the new row
+      // index of the picked skill.
+      if (PROC_CODES.has(prop)) {
+        const pool = classRestriction
+          ? (byClassCastable.get(classRestriction) ?? allCastable)
+          : allCastable;
+        const pick = pickRandomFromPool(pool, procRng);
+        if (pick) {
+          updated[parCol] = String(idMapping?.get(pick.skill.id) ?? pick.skill.id);
         }
-      } else if (prop === 'charged') {
-        const id = parseInt(par.trim(), 10);
-        if (!isNaN(id)) srcPlacement = byId.get(id);
-        useNumeric = true;
-      } else {
         continue;
       }
 
+      // `oskill` granter: identity-preserve via idMapping (vanilla intent).
+      if (GRANTER_ROWINDEX_CODES.has(prop)) {
+        updated[parCol] = remapRowIndexParam(par, idMapping);
+        continue;
+      }
+
+      if (prop !== 'skill') continue;
+
+      // `skill` granter on non-class-restricted items: identity-preserve via
+      // idMapping. Vanilla "+N to <skill>" on a Sorc-themed staff should still
+      // grant the same skill after reorderSkillsRows shifts row positions.
+      // Numeric par only — string skill names are name-resolved by the engine
+      // and unaffected by row shuffling.
+      if (!classRestriction) {
+        const numId = parseInt(par.trim(), 10);
+        if (!isNaN(numId)) updated[parCol] = remapRowIndexParam(par, idMapping);
+        continue;
+      }
+
+      // `skill` granter on class-restricted items: position-remap to a
+      // castable skill at the same grid slot in the restricted class.
+      let srcPlacement: SkillPlacement | undefined;
+      let useNumeric: boolean;
+      const numId = parseInt(par.trim(), 10);
+      if (!isNaN(numId)) {
+        srcPlacement = byId.get(numId);
+        useNumeric = true;
+      } else {
+        srcPlacement = byName.get(par.trim());
+        useNumeric = false;
+      }
       if (!srcPlacement) continue;
 
-      const destPlacement =
-        byPos.get(`${classRestriction}_${srcPlacement.tabIndex}_${srcPlacement.row}_${srcPlacement.col}`) ??
-        byClassRowCol.get(`${classRestriction}_${srcPlacement.row}_${srcPlacement.col}`) ??
-        byClassRow.get(`${classRestriction}_${srcPlacement.row}`);
+      const destPlacement = findCastableDestination(
+        classRestriction, srcPlacement, byPos, byClassRowCol, byClassRow, byClass,
+      );
       if (!destPlacement) continue;
 
       updated[parCol] = useNumeric
@@ -159,37 +296,21 @@ export function remapClassItemSkills(
   headers: string[],
   rows: string[][],
   placements: SkillPlacement[],
-  idMapping?: Map<number, number>,
+  idMapping: Map<number, number> | undefined,
+  procRng: SeededRNG,
 ): string[][] {
-  // Build lookup: skillName → placement
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
-  // Build lookup: skillId → placement
   const byId = new Map<number, SkillPlacement>(placements.map(p => [p.skill.id, p]));
-  // Build position lookup: "targetClass_tabIndex_row_col" → placement
-  const byPos = new Map<string, SkillPlacement>(
-    placements.map(p => [`${p.targetClass}_${p.tabIndex}_${p.row}_${p.col}`, p]),
-  );
-  // Fallback 1: same class + same (row, col), any tab — first match wins
-  const byClassRowCol = new Map<string, SkillPlacement>();
-  for (const p of placements) {
-    const k = `${p.targetClass}_${p.row}_${p.col}`;
-    if (!byClassRowCol.has(k)) byClassRowCol.set(k, p);
-  }
-  // Fallback 2: same class + same row, any col/tab — first match wins
-  const byClassRow = new Map<string, SkillPlacement>();
-  for (const p of placements) {
-    const k = `${p.targetClass}_${p.row}`;
-    if (!byClassRow.has(k)) byClassRow.set(k, p);
-  }
+  const { byPos, byClassRowCol, byClassRow, byClass } = buildPlacementIndices(placements);
+  const { byClassCastable, allCastable } = buildCastablePools(placements);
 
   const classCol = headers.indexOf('class');
   if (classCol === -1) return rows;
 
   return rows.map(row => {
     const classRestriction = row[classCol]?.trim();
-    if (!classRestriction) return row;
-
     const updated = [...row];
+
     for (let slot = 1; slot <= 3; slot++) {
       const codeCol = headers.indexOf(`mod${slot}code`);
       const paramCol = headers.indexOf(`mod${slot}param`);
@@ -199,27 +320,47 @@ export function remapClassItemSkills(
       const param = updated[paramCol];
       if (!param?.trim()) continue;
 
-      let srcPlacement: SkillPlacement | undefined;
-      if (code === 'skill') {
-        srcPlacement = byName.get(param.trim());
-      } else if (code === 'charged') {
-        const id = parseInt(param.trim(), 10);
-        if (!isNaN(id)) srcPlacement = byId.get(id);
-      } else {
+      // Procs (CTC family + charged): random castable pick from class pool
+      // (or global pool if no class restriction). Most magic-suffix CTCs
+      // have no class column, so this branch runs whether or not
+      // classRestriction is set.
+      if (PROC_CODES.has(code)) {
+        const pool = classRestriction
+          ? (byClassCastable.get(classRestriction) ?? allCastable)
+          : allCastable;
+        const pick = pickRandomFromPool(pool, procRng);
+        if (pick) {
+          updated[paramCol] = String(idMapping?.get(pick.skill.id) ?? pick.skill.id);
+        }
         continue;
       }
 
+      // `oskill` granter: identity-preserve via idMapping (vanilla intent).
+      if (GRANTER_ROWINDEX_CODES.has(code)) {
+        updated[paramCol] = remapRowIndexParam(param, idMapping);
+        continue;
+      }
+
+      if (code !== 'skill') continue;
+
+      // `skill` granter on non-class-restricted affixes: identity-preserve.
+      if (!classRestriction) {
+        const numId = parseInt(param.trim(), 10);
+        if (!isNaN(numId)) updated[paramCol] = remapRowIndexParam(param, idMapping);
+        continue;
+      }
+
+      // `skill` granter on class-restricted affixes: position-remap to a
+      // castable skill at the same grid slot in the restricted class.
+      const srcPlacement = byName.get(param.trim());
       if (!srcPlacement) continue;
 
-      const destPlacement =
-        byPos.get(`${classRestriction}_${srcPlacement.tabIndex}_${srcPlacement.row}_${srcPlacement.col}`) ??
-        byClassRowCol.get(`${classRestriction}_${srcPlacement.row}_${srcPlacement.col}`) ??
-        byClassRow.get(`${classRestriction}_${srcPlacement.row}`);
+      const destPlacement = findCastableDestination(
+        classRestriction, srcPlacement, byPos, byClassRowCol, byClassRow, byClass,
+      );
       if (!destPlacement) continue;
 
-      updated[paramCol] = code === 'skill'
-        ? destPlacement.skill.skill
-        : String(idMapping?.get(destPlacement.skill.id) ?? destPlacement.skill.id);
+      updated[paramCol] = destPlacement.skill.skill;
     }
     return updated;
   });

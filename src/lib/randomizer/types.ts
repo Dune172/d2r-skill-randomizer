@@ -41,6 +41,8 @@ export interface SkillEntry {
   reqskill1?: string;
   reqskill2?: string;
   reqskill3?: string;
+  // 1 = skill is a passive (no execution path; ineligible as a CTC/charged target)
+  passive?: number;
   // weapon type restriction columns
   passiveitype?: string;
   itypea1?: string;

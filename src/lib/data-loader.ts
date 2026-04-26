@@ -101,6 +101,7 @@ export function loadSkills(): SkillEntry[] {
       reqskill1: (v.reqskill1 as string) || undefined,
       reqskill2: (v.reqskill2 as string) || undefined,
       reqskill3: (v.reqskill3 as string) || undefined,
+      passive: v.passive != null && v.passive !== '' ? Number(v.passive) : undefined,
       passiveitype: (v.passiveitype as string) || undefined,
       itypea1: (v.itypea1 as string) || undefined,
       itypea2: (v.itypea2 as string) || undefined,

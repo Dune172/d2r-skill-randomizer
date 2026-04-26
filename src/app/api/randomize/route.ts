@@ -282,11 +282,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Remap class-restricted item skill affixes (magicprefix / magicsuffix)
+    // Remap class-restricted item skill affixes (magicprefix / magicsuffix).
+    // Procs (CTC + charged) are randomized from castable pools using a
+    // dedicated sub-RNG so we don't disturb the main pipeline's RNG order.
     const magicPrefixTxt = loadTxtFile('magicprefix.txt');
     const magicSuffixTxt = loadTxtFile('magicsuffix.txt');
-    const remappedPrefixRows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping);
-    const remappedSuffixRows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping);
+    const procRng = createRNG(seedFromString(`${seed}:item-procs`));
+    const remappedPrefixRows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping, procRng);
+    const remappedSuffixRows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping, procRng);
     const magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, remappedPrefixRows);
     const magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, remappedSuffixRows);
 
@@ -412,7 +415,7 @@ export async function POST(request: NextRequest) {
       const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
       ui = fs.existsSync(uiPath) ? loadTxtFile('uniqueitems.txt') : null;
       if (ui) {
-        ui.rows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping);
+        ui.rows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping, procRng);
         if (startingTeleportStaff) {
           ui.rows = applyTeleportStaffUnique(ui.headers, ui.rows, teleportStaffLevel, idMapping, teleportStaffSpeed);
         }
