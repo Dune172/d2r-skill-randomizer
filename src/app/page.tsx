@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import { getCurrentWeekNumber, getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
-import { getActivePair, getWeekName } from '@/lib/mutations/registry';
-import { HomeMutationCard } from '@/app/components/HomeMutationCard';
+import { getCurrentWeekNumber } from '@/lib/challenge/week';
+import { HomeChallengeCard } from '@/app/components/HomeChallengeCard';
 
 // Revalidate the rendered homepage every 60s so the weekly challenge card stays
 // fresh without forcing SSR on every visit. Legacy `?seed=` shared links are
@@ -130,20 +129,8 @@ const communityCards = [
   },
 ];
 
-// Challenge seed calculation
-function getCurrentChallenge() {
-  const weekNumber = getCurrentWeekNumber();
-  const seed = getWeekSeed(weekNumber);
-  const start = getWeekStart(weekNumber);
-  const end = getWeekEnd(weekNumber);
-  const fmt = (d: Date) => formatWeekDate(d, { month: 'short', day: 'numeric' });
-  const [mutA, mutB] = getActivePair(weekNumber);
-  const weekName = getWeekName(weekNumber);
-  return { weekNumber, seed, dateRange: `${fmt(start)} – ${fmt(end)}`, mutA, mutB, weekName };
-}
-
 export default function Home() {
-  const challenge = getCurrentChallenge();
+  const initialWeekNumber = getCurrentWeekNumber();
 
   return (
     <main className="min-h-screen">
@@ -219,29 +206,7 @@ export default function Home() {
       <section className="max-w-5xl mx-auto px-4 mb-14 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* This Week's Challenge */}
-        <div className="border border-[#c8942a]/25 bg-[#0c0304] panel-shadow p-7 text-center">
-          <p className="font-cinzel text-[10px] tracking-[0.4em] text-[#7a5818] uppercase mb-3">
-            Weekly Challenge
-          </p>
-
-          {/* Week name — replaces the old big seed readout */}
-          <div className="font-cinzel font-black text-3xl md:text-4xl text-[#c8942a] glow-gold tracking-[0.12em] uppercase mb-5 leading-tight">
-            {challenge.weekName}
-          </div>
-
-          {/* Mutation pair */}
-          <div className="flex flex-wrap justify-center gap-3 mb-6">
-            <HomeMutationCard mutation={challenge.mutA} />
-            <HomeMutationCard mutation={challenge.mutB} />
-          </div>
-
-          <Link
-            href="/challenge"
-            className="font-cinzel tracking-[0.2em] uppercase text-xs px-6 py-2.5 bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a] transition-colors panel-shadow inline-block"
-          >
-            Play The Challenge
-          </Link>
-        </div>
+        <HomeChallengeCard initialWeekNumber={initialWeekNumber} />
 
         {/* Community Cards */}
         <div className="flex flex-col gap-3">
