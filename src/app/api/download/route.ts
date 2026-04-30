@@ -59,7 +59,12 @@ export async function GET(request: NextRequest) {
       ? xpActsParam.split(',').map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
 
-    const weeklyKey  = searchParams.get('weekly') === '1' ? -1 : 0;
+    const weeklyParam = searchParams.get('weekly') === '1';
+    const weekOverrideParam = searchParams.get('weekOverride');
+    const weekOverride = weekOverrideParam !== null && Number.isInteger(Number(weekOverrideParam))
+      ? Math.max(1, Math.trunc(Number(weekOverrideParam)))
+      : null;
+    const weeklyKey = weeklyParam ? (weekOverride ?? -1) : 0;
     const teleportStaffSpeed = teleportStaffLevel > 0 && searchParams.get('staffSpeed') !== '0';
     const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, weeklyKey, teleportStaffSpeed);
     const zipBuffer = getCached(cacheKey);
@@ -78,7 +83,7 @@ export async function GET(request: NextRequest) {
 
     const weekParam = searchParams.get('week');
     const weekNumber = weekParam ? Number(weekParam) : NaN;
-    const isWeekly = weeklyKey === -1 && Number.isInteger(weekNumber) && weekNumber >= 1;
+    const isWeekly = weeklyParam && Number.isInteger(weekNumber) && weekNumber >= 1;
     const filename = isWeekly
       ? `d2rr_${slugifyChallenge(getWeekName(weekNumber))}_${formatLaIsoDate(getWeekStart(weekNumber))}.zip`
       : `d2rr_seed${seed}.zip`;

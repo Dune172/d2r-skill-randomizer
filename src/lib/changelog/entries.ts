@@ -12,6 +12,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.231',
+    date: 'April 2026',
+    tagline: 'Challenge Archive + weekly challenge cache fix',
+    notes: [
+      'Added the Challenge Archive — every past weekly challenge is now playable from a single page. Each entry generates the original seed with the same mutation pair that was active that week',
+      'Fixed a weekly-challenge cache bug where archived seeds would fail to download with "Zip not found." Generation and download now agree on the cache key for any past week',
+    ],
+  },
+  {
     version: 'v0.23',
     date: 'April 2026',
     tagline: 'Item procs fixed and randomized per seed',

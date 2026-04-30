@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { WeekCard } from './WeekData';
 
 function Step({ number, text }: { number: number; text: ReactNode }) {
@@ -104,6 +105,18 @@ export default function ChallengePage() {
         <p className="text-[#a89060] text-xs leading-relaxed mt-5 text-center max-w-md mx-auto">
           Played in offline single-player using the D2R Randomizer mod. Standard prerequisites and normal weapon logic apply.
         </p>
+        <div className="flex justify-center mt-10">
+          <Link
+            href="/archive"
+            className="font-cinzel tracking-[0.2em] uppercase text-xs px-6 py-2.5
+              bg-gradient-to-b from-[#121838] to-[#0a1028]
+              border border-[#283878] text-[#c8d8f8]
+              hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
+              transition-colors panel-shadow inline-block"
+          >
+            View Past Challenges
+          </Link>
+        </div>
       </section>
     </main>
   );

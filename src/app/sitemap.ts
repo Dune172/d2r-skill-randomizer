@@ -21,6 +21,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: 'https://d2rrandomizer.com/archive',
+      lastModified: '2026-04-30',
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    },
+    {
       url: 'https://d2rrandomizer.com/changelog',
       lastModified: '2026-04-07',
       changeFrequency: 'weekly',
