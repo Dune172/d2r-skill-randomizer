@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
+import { getEntries, stripIp } from '@/lib/leaderboard';
 import { ArchiveWeekCard } from './ArchiveWeekCard';
 import { KofiPopup } from './KofiPopup';
 
@@ -68,7 +69,11 @@ export default function ArchivePage() {
         ) : (
           <div className="anim-fade-up-d3 space-y-8">
             {pastWeeks.map((week) => (
-              <ArchiveWeekCard key={week} weekNumber={week} />
+              <ArchiveWeekCard
+                key={week}
+                weekNumber={week}
+                entries={getEntries(week).map(stripIp)}
+              />
             ))}
           </div>
         )}

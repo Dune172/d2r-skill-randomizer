@@ -6,6 +6,8 @@ import { getActivePair, getWeekName, type MutationDef } from '@/lib/mutations/re
 import { InstallInstructions } from '@/app/components/InstallInstructions';
 import { getCurrentWeekNumber, getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
 import { ChallengeGenerator } from './ChallengeGenerator';
+import { Leaderboard } from '@/app/components/Leaderboard';
+import { SubmitRunForm } from '@/app/components/SubmitRunForm';
 
 function getWeekData() {
   const weekNumber = getCurrentWeekNumber();
@@ -110,6 +112,7 @@ export function WeekCard() {
   const [mutA, mutB] = getActivePair(weekNumber);
   const weekName = getWeekName(weekNumber);
   const [generated, setGenerated] = useState(false);
+  const [leaderboardKey, setLeaderboardKey] = useState(0);
 
   return (
     <>
@@ -152,6 +155,27 @@ export function WeekCard() {
       </div>
 
       <ChallengeGenerator seed={currentSeed} weekNumber={weekNumber} onReady={() => setGenerated(true)} />
+
+      {/* Leaderboard — ember-warm crimson card to set apart from the parchment-cold main panel */}
+      <div className="w-full mt-10">
+        <div
+          className="relative border border-[#5a1f1a] border-t-2 border-t-[#a83830]/45
+            bg-gradient-to-b from-[#1a0808] to-[#0c0304]
+            shadow-[inset_0_1px_0_rgba(200,80,60,0.18),0_0_28px_rgba(180,70,50,0.06)]
+            p-6"
+        >
+          <p className="font-cinzel text-xs tracking-[0.4em] text-[#d8784a] uppercase text-center mb-2">
+            Leaderboard
+          </p>
+          <p className="text-xs text-[#9a5a3a] tracking-wider text-center mb-5">
+            Fastest time to beat Baal on Normal · top 3 shown
+          </p>
+          <div className="mb-5">
+            <Leaderboard weekNumber={weekNumber} refreshKey={leaderboardKey} expandable />
+          </div>
+          <SubmitRunForm weekNumber={weekNumber} onSubmitted={() => setLeaderboardKey((k) => k + 1)} />
+        </div>
+      </div>
     </div>
 
     {generated && (

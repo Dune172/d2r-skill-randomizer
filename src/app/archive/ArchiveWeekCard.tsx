@@ -5,14 +5,23 @@ import { getActivePair, getWeekName } from '@/lib/mutations/registry';
 import { getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
 import { HomeMutationCard } from '@/app/components/HomeMutationCard';
 import { ChallengeGenerator } from '@/app/challenge/ChallengeGenerator';
+import { Leaderboard } from '@/app/components/Leaderboard';
+import { formatHMS } from '@/lib/time-format';
+import type { PublicSubmission } from '@/lib/leaderboard';
 
-export function ArchiveWeekCard({ weekNumber }: { weekNumber: number }) {
+type Props = {
+  weekNumber: number;
+  entries?: PublicSubmission[];
+};
+
+export function ArchiveWeekCard({ weekNumber, entries = [] }: Props) {
   const weekName = getWeekName(weekNumber);
   const [mutA, mutB] = getActivePair(weekNumber);
   const seed = getWeekSeed(weekNumber);
   const start = getWeekStart(weekNumber);
   const end = getWeekEnd(weekNumber);
   const [expanded, setExpanded] = useState(false);
+  const champion = entries[0];
 
   return (
     <div className="card-ornate border border-[#3a1510] bg-[#0c0304] panel-shadow shadow-[inset_0_1px_0_rgba(200,148,42,0.08)] max-w-xl mx-auto text-center hover:border-[#c8942a]/40 transition-colors">
@@ -37,6 +46,16 @@ export function ArchiveWeekCard({ weekNumber }: { weekNumber: number }) {
             ▼
           </span>
         </div>
+        {champion && (
+          <p className="font-cinzel text-[11px] tracking-[0.18em] uppercase text-[#c8942a] mt-3">
+            Champion: <span className="text-[#e6c068]">{champion.name}</span>
+            {champion.className && (
+              <span className="text-[#a87830]"> · {champion.className}</span>
+            )}
+            <span className="text-[#7a5818] normal-case tracking-normal"> · </span>
+            <span className="font-mono normal-case tracking-normal">{formatHMS(champion.timeSeconds)}</span>
+          </p>
+        )}
       </button>
 
       {expanded && (
@@ -45,6 +64,15 @@ export function ArchiveWeekCard({ weekNumber }: { weekNumber: number }) {
             <HomeMutationCard mutation={mutA} />
             <HomeMutationCard mutation={mutB} />
           </div>
+
+          {entries.length > 0 && (
+            <div className="mb-6">
+              <p className="font-cinzel text-[10px] tracking-[0.32em] uppercase text-[#9a7a2a] mb-3">
+                Leaderboard
+              </p>
+              <Leaderboard weekNumber={weekNumber} entries={entries} />
+            </div>
+          )}
 
           <ChallengeGenerator seed={seed} weekNumber={weekNumber} weekOverride={weekNumber} />
         </div>
