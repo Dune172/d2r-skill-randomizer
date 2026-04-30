@@ -2,11 +2,14 @@ import Link from 'next/link';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { HomeChallengeCard } from '@/app/components/HomeChallengeCard';
 
-// Revalidate the rendered homepage every 60s so the weekly challenge card stays
-// fresh without forcing SSR on every visit. Legacy `?seed=` shared links are
-// handled by middleware (see src/middleware.ts) before this page renders —
-// consuming `searchParams` here would re-introduce dynamic rendering.
-export const revalidate = 60;
+// Force dynamic rendering so the weekly challenge card always reflects the
+// current week from the server's NTP-synced clock. ISR caching can serve a
+// pre-deploy render after WEEK_NAMES is reordered, and any client-side
+// recompute would depend on the user's machine clock — both cause the wrong
+// week's name to appear. Server SSR per-request avoids both classes of bug.
+// Legacy `?seed=` shared links are handled by middleware (see
+// src/middleware.ts) before this page renders.
+export const dynamic = 'force-dynamic';
 
 const softwareSchema = {
   '@context': 'https://schema.org',
@@ -130,7 +133,7 @@ const communityCards = [
 ];
 
 export default function Home() {
-  const initialWeekNumber = getCurrentWeekNumber();
+  const weekNumber = getCurrentWeekNumber();
 
   return (
     <main className="min-h-screen">
@@ -206,7 +209,7 @@ export default function Home() {
       <section className="max-w-5xl mx-auto px-4 mb-14 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* This Week's Challenge */}
-        <HomeChallengeCard initialWeekNumber={initialWeekNumber} />
+        <HomeChallengeCard weekNumber={weekNumber} />
 
         {/* Community Cards */}
         <div className="flex flex-col gap-3">

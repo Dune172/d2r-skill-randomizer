@@ -1,21 +1,8 @@
-'use client';
-
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { getActivePair, getWeekName } from '@/lib/mutations/registry';
 import { HomeMutationCard } from './HomeMutationCard';
 
-export function HomeChallengeCard({
-  initialWeekNumber,
-}: {
-  initialWeekNumber: number;
-}) {
-  const [weekNumber, setWeekNumber] = useState(initialWeekNumber);
-  useEffect(() => {
-    setWeekNumber(getCurrentWeekNumber());
-  }, []);
-
+export function HomeChallengeCard({ weekNumber }: { weekNumber: number }) {
   const weekName = getWeekName(weekNumber);
   const [mutA, mutB] = getActivePair(weekNumber);
 
