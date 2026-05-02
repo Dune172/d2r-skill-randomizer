@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
 
   const result = await addOrReplace(submission);
   if (result.status === 'added' || result.status === 'updated') {
-    notifyNewRun(submission, { status: result.status, rank: result.rank });
+    await notifyNewRun(submission, { status: result.status, rank: result.rank });
   }
   return NextResponse.json(result);
 }
