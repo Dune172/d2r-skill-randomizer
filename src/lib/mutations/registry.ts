@@ -20,7 +20,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Hyperdrive',
     emoji: '🏃',
     description:
-      'All monsters move and attack faster. Bosses are extra fast. Your run and walk speed is increased by 25%.',
+      'All monsters move 50% faster. Bosses gain the Extra Fast affix, attacking and closing in quicker still. Your walk and run speed is increased by 30%.',
   },
   2: {
     id: 'heavy-burden',
@@ -55,7 +55,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Glass Cannon',
     emoji: '🔴',
     description:
-      'Monsters deal twice as much damage but have half as much life.',
+      'Monsters hit much harder but have half as much life. Minimum damage is doubled, and the original damage range is preserved on top.',
   },
   7: {
     id: 'pestilence',

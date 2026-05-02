@@ -2,7 +2,7 @@ import type { MutationContext } from './index';
 import { TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
 
 const SPEED_MULT = 1.5;
-const PLAYER_SPEED_MULT = 1.25;
+const PLAYER_SPEED_MULT = 1.3;
 const EXTRA_FAST = 'Extra Fast';
 const MON_SPEED_COLS = ['Velocity', 'Run'];
 const PLAYER_SPEED_COLS = ['WalkVelocity', 'RunVelocity'];
