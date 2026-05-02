@@ -39,12 +39,13 @@ export function applyGlassCannon(ctx: MutationContext): void {
       if (!isNaN(val) && val > 0) row[idx] = String(Math.round(val * HP_MULT));
     }
     for (const [minI, maxI] of dmgPairIdxs) {
-      const maxVal = parseInt(row[maxI], 10);
-      if (isNaN(maxVal) || maxVal <= 0) continue;
-      const newMax = maxVal * 2;
-      row[maxI] = String(newMax);
       const minVal = parseInt(row[minI], 10);
-      if (!isNaN(minVal) && minVal > 0) row[minI] = String(minVal + maxVal);
+      const maxVal = parseInt(row[maxI], 10);
+      if (isNaN(minVal) || isNaN(maxVal) || minVal <= 0 || maxVal <= 0) continue;
+      const spread = maxVal - minVal;
+      const newMin = minVal * 2;
+      row[minI] = String(newMin);
+      row[maxI] = String(newMin + spread);
     }
   }
 }
