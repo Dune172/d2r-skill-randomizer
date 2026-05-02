@@ -1,21 +1,24 @@
 /**
- * Reads mutation icon PNGs from public/mutations/ and returns them as base64
- * data URLs. Satori can't fetch local file paths, so the bytes must be inlined.
+ * Reads mutation icon WebPs from public/mutations/ and returns them as base64
+ * PNG data URLs. Satori can't fetch local file paths, so the bytes must be
+ * inlined; PNG is the format Satori renders most reliably.
  *
  * Node runtime only.
  */
-import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import sharp from 'sharp';
 
 const ICON_DIR = join(process.cwd(), 'public', 'mutations');
 
 const cache = new Map<string, string>();
 
-export function mutationIconDataUrl(id: string): string | null {
+export async function mutationIconDataUrl(id: string): Promise<string | null> {
   if (cache.has(id)) return cache.get(id)!;
   try {
-    const bytes = readFileSync(join(ICON_DIR, `${id}.png`));
-    const dataUrl = `data:image/png;base64,${bytes.toString('base64')}`;
+    const webpBytes = await readFile(join(ICON_DIR, `${id}.webp`));
+    const pngBytes = await sharp(webpBytes).png().toBuffer();
+    const dataUrl = `data:image/png;base64,${pngBytes.toString('base64')}`;
     cache.set(id, dataUrl);
     return dataUrl;
   } catch {

@@ -14,8 +14,7 @@ export const contentType = OG_CONTENT_TYPE;
 
 const { GOLD, GOLD_DIM, GOLD_DARK, GOLD_SOFT, CREAM, BORDER, BG_PANEL } = OG_PALETTE;
 
-function MiniMutation({ id, name }: { id: string; name: string }) {
-  const iconUrl = mutationIconDataUrl(id);
+function MiniMutation({ iconUrl, name }: { iconUrl: string | null; name: string }) {
   return (
     <div
       style={{
@@ -55,10 +54,14 @@ function MiniMutation({ id, name }: { id: string; name: string }) {
   );
 }
 
-export default function Image() {
+export default async function Image() {
   const weekNumber = getCurrentWeekNumber();
   const weekName = getWeekName(weekNumber);
   const [mutA, mutB] = getActivePair(weekNumber);
+  const [iconA, iconB] = await Promise.all([
+    mutationIconDataUrl(mutA.id),
+    mutationIconDataUrl(mutB.id),
+  ]);
 
   return new ImageResponse(
     (
@@ -146,9 +149,9 @@ export default function Image() {
 
           <div style={{ display: 'flex' }}>
             <div style={{ marginRight: 16, display: 'flex' }}>
-              <MiniMutation id={mutA.id} name={mutA.name} />
+              <MiniMutation iconUrl={iconA} name={mutA.name} />
             </div>
-            <MiniMutation id={mutB.id} name={mutB.name} />
+            <MiniMutation iconUrl={iconB} name={mutB.name} />
           </div>
 
           {/* Trust row */}

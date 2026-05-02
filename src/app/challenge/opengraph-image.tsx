@@ -20,8 +20,7 @@ export const contentType = OG_CONTENT_TYPE;
 
 const { GOLD, GOLD_DIM, GOLD_DARK, GOLD_SOFT, CREAM, BORDER, BG_PANEL } = OG_PALETTE;
 
-function MutationCard({ mutation }: { mutation: MutationDef }) {
-  const iconUrl = mutationIconDataUrl(mutation.id);
+function MutationCard({ mutation, iconUrl }: { mutation: MutationDef; iconUrl: string | null }) {
   return (
     <div
       style={{
@@ -68,7 +67,7 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
   );
 }
 
-export default function Image() {
+export default async function Image() {
   const weekNumber = getCurrentWeekNumber();
   const seed = getWeekSeed(weekNumber);
   const start = getWeekStart(weekNumber);
@@ -76,6 +75,10 @@ export default function Image() {
   const dateRange = `${formatWeekDate(start)} – ${formatWeekDate(end)}`;
   const weekName = getWeekName(weekNumber);
   const [mutA, mutB] = getActivePair(weekNumber);
+  const [iconA, iconB] = await Promise.all([
+    mutationIconDataUrl(mutA.id),
+    mutationIconDataUrl(mutB.id),
+  ]);
 
   return new ImageResponse(
     (
@@ -148,8 +151,8 @@ export default function Image() {
 
           {/* Mutation cards */}
           <div style={{ display: 'flex', gap: 28, marginBottom: 24 }}>
-            <MutationCard mutation={mutA} />
-            <MutationCard mutation={mutB} />
+            <MutationCard mutation={mutA} iconUrl={iconA} />
+            <MutationCard mutation={mutB} iconUrl={iconB} />
           </div>
 
           {/* Seed */}
