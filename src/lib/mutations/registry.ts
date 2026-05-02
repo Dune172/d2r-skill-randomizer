@@ -55,7 +55,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Glass Cannon',
     emoji: '🔴',
     description:
-      'Monsters hit much harder but have half as much life. Minimum damage is doubled, and the original damage range is preserved on top.',
+      'Monsters deal twice as much damage but have half as much life.',
   },
   7: {
     id: 'pestilence',
