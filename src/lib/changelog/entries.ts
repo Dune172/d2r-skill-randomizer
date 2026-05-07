@@ -28,7 +28,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Added a Leaderboard to the weekly challenge. Submit your fastest time to beat Baal on Normal — pick a class, paste a YouTube/Twitch/Streamable link as proof, and your run lands on the board. Top 3 show on the challenge page with a "Show all" toggle for the full list',
       'The week\'s #1 is immortalized on the Challenge Archive: each past week\'s card now carries a "Champion: name · class · time" line, frozen the moment the week ends',
       'A crown rides the #1 spot — gilded gold when claimed, awaiting a monarch when empty',
-      'New runs ping a Discord channel via webhook (set DISCORD_WEBHOOK_URL on the server) so the community sees submissions as they land',
+      'New runs ping a Discord channel',
       'Anti-spam: one submission per IP per hour (same player can still tighten their own time), 30-minute minimum run, video link required from a known host, plus the standard name validation and profanity filter',
     ],
   },
