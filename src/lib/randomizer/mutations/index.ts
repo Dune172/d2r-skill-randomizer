@@ -13,7 +13,7 @@ import { applyPestilence } from './pestilence';
 import { applyArcaneSurge } from './arcane-surge';
 import { applyTitansGrip } from './titans-grip';
 import { applyDeadReckoning } from './dead-reckoning';
-import { applyIronclad } from './ironclad';
+import { applyTemperedEdge } from './tempered-edge';
 import { applyEntropy } from './entropy';
 
 export { getActivePair };
@@ -46,7 +46,7 @@ const APPLY_FNS: Record<number, ApplyFn> = {
   6:  applyGlassCannon,
   7:  applyPestilence,
   8:  applyArcaneSurge,
-  10: applyIronclad,
+  10: applyTemperedEdge,
   11: applyTitansGrip,
   13: applyDeadReckoning,
   14: applyEntropy,

@@ -72,11 +72,11 @@ export const MUTATIONS: Record<number, MutationDef> = {
       'All skill mana costs are doubled. In return, all skills deal 50% increased elemental damage.',
   },
   10: {
-    id: 'ironclad',
-    name: 'Ironclad',
-    emoji: '🛡️',
+    id: 'tempered-edge',
+    name: 'Tempered Edge',
+    emoji: '⚔️',
     description:
-      'All monsters gain 25% physical resistance. Elemental and skill damage remains unaffected, but raw physical hits deal significantly less damage.',
+      'All monsters gain +30 to Cold, Fire, Lightning, and Poison resistance, but lose 30 physical resistance. Spells fizzle on hardened hide; steel cuts deeper.',
   },
   11: {
     id: 'titans-grip',
@@ -147,7 +147,7 @@ export const WEEK_NAMES: string[] = [
   'Swarming Plague',     // 0  The Horde + Pestilence
   'Borrowed Power',      // 1  Arcane Surge + Dead Reckoning
   'Glass Rush',          // 2  Hyperdrive + Glass Cannon
-  'Immovable Object',    // 3  Heavy Burden + Ironclad
+  'Immovable Object',    // 3  Heavy Burden + Tempered Edge
   'Blood Ocean',         // 4  Bloodthirst + The Horde
   'Slow Death',          // 5  Pestilence + Dead Reckoning
   'Thin Ice',            // 6  Hollow Shell + The Horde
@@ -169,11 +169,11 @@ export const WEEK_NAMES: string[] = [
   'Poisoned Chains',     // 22 Heavy Burden + Pestilence
   'Paper Tigers',        // 23 Hollow Shell + Glass Cannon
   'Iron Tide',           // 24 The Horde + Titan's Grip
-  'Iron Will',           // 25 Heavy Burden + Ironclad
+  'Iron Will',           // 25 Heavy Burden + Tempered Edge
   'The Long March',      // 26 Titan's Grip + Dead Reckoning
-  'Fortress Siege',      // 27 Ironclad + The Horde
+  'Fortress Siege',      // 27 Tempered Edge + The Horde
   'The Corrosion',       // 28 Entropy + Bloodthirst
-  'Spell and Steel',     // 29 Ironclad + Arcane Surge
+  'Spell and Steel',     // 29 Tempered Edge + Arcane Surge
   'Blood Rush',          // 30 Hyperdrive + Bloodthirst
 ];
 

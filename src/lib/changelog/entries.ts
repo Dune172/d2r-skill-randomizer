@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.233',
+    date: 'May 2026',
+    tagline: 'Ironclad reworked into Tempered Edge — armor against spells, openings for steel',
+    notes: [
+      'Ironclad is gone. In its place is Tempered Edge: monsters gain +30 to all four elemental resistances (Cold, Fire, Lightning, Poison) and lose 30 physical resistance. Spell builds get squeezed; physical builds get a real opening',
+      'Why the swap: Ironclad was a flat +25% physical resistance on every monster with no upside for you — pure friction. Tempered Edge flips the script. Casters now feel the wall, but every weapon swing, charge-up, and physical skill cuts ~30% deeper to compensate',
+      'Affects the four weeks Ironclad was scheduled on: Immovable Object (week 3), Iron Will (week 25), Fortress Siege (week 27), and Spell and Steel (week 29)',
+    ],
+  },
+  {
     version: 'v0.232',
     date: 'April 2026',
     tagline: 'Weekly Challenge Leaderboard — submit runs, claim the crown',
