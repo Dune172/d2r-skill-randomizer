@@ -76,7 +76,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Tempered Edge',
     emoji: '⚔️',
     description:
-      'All monsters gain +30 to Cold, Fire, Lightning, and Poison resistance, but lose 30 physical resistance. Spells fizzle on hardened hide; steel cuts deeper.',
+      'All monsters gain +30 to Cold, Fire, Lightning, and Poison resistance, but lose 30 physical resistance.',
   },
   11: {
     id: 'titans-grip',
