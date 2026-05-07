@@ -17,6 +17,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     tagline: 'Ironclad reworked into Tempered Edge — armor against spells, openings for steel',
     notes: [
       'Ironclad is gone. In its place is Tempered Edge: monsters gain +30 to all four elemental resistances (Cold, Fire, Lightning, Poison) and lose 30 physical resistance. Spell builds get squeezed; physical builds get a real opening',
+      'The weekly challenge now reveals a seed spoiler after generating, matching the main generator',
     ],
   },
   {
