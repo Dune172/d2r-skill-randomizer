@@ -45,8 +45,8 @@ export default function SkillTreePreview({ data }: SkillTreePreviewProps) {
           onClick={() => setExpanded(e => !e)}
           className="font-cinzel font-bold text-xs tracking-[0.25em] uppercase text-[#c8942a] hover:text-[#e8b040] transition-colors flex items-center gap-2 group"
         >
-          Preview — Seed {data.seed}
-          <span className={`text-[10px] transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>▾</span>
+          Spoiler - Seed {data.seed}
+          <span className={`text-[20px] transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>▾</span>
         </button>
         <button
           onClick={handleCopySeed}

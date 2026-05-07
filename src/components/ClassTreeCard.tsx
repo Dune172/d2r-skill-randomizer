@@ -77,13 +77,10 @@ export default function ClassTreeCard({ code, name, tabs }: ClassTreeCardProps) 
                     title={`${skill.name} (from ${skill.originalClass}) — Req Lvl ${REQ_LEVEL[skill.row - 1] ?? skill.row}`}
                   >
                     <span className={`text-[8px] px-1 py-px rounded-sm flex-shrink-0 font-mono font-bold leading-none ${skillTheme.badge}`}>
-                      {skill.originalClass}
+                      {skill.originalClass.charAt(0).toUpperCase()}
                     </span>
                     <span className="text-[10px] text-[#d8ccc0] truncate leading-none flex-1">
                       {skill.name}
-                    </span>
-                    <span className="text-[8px] text-[#7a7058] flex-shrink-0 leading-none font-mono">
-                      {REQ_LEVEL[skill.row - 1] ?? skill.row}
                     </span>
                   </div>
                 );

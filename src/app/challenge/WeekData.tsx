@@ -8,6 +8,8 @@ import { getCurrentWeekNumber, getWeekStart, getWeekEnd, getWeekSeed, formatWeek
 import { ChallengeGenerator } from './ChallengeGenerator';
 import { Leaderboard } from '@/app/components/Leaderboard';
 import { SubmitRunForm } from '@/app/components/SubmitRunForm';
+import SkillTreePreview from '@/components/SkillTreePreview';
+import type { PreviewData } from '@/lib/randomizer/types';
 
 function getWeekData() {
   const weekNumber = getCurrentWeekNumber();
@@ -113,6 +115,7 @@ export function WeekCard() {
   const weekName = getWeekName(weekNumber);
   const [generated, setGenerated] = useState(false);
   const [leaderboardKey, setLeaderboardKey] = useState(0);
+  const [preview, setPreview] = useState<PreviewData | null>(null);
 
   return (
     <>
@@ -154,7 +157,7 @@ export function WeekCard() {
         </div>
       </div>
 
-      <ChallengeGenerator seed={currentSeed} weekNumber={weekNumber} onReady={() => setGenerated(true)} />
+      <ChallengeGenerator seed={currentSeed} weekNumber={weekNumber} onReady={() => setGenerated(true)} onPreview={setPreview} />
 
       {/* Leaderboard — ember-warm crimson card to set apart from the parchment-cold main panel */}
       <div className="w-full mt-10">
@@ -177,6 +180,14 @@ export function WeekCard() {
         </div>
       </div>
     </div>
+
+    {preview && (
+      <div className="mx-[calc(50%-50vw)] mb-8">
+        <div className="max-w-7xl mx-auto px-4 text-left">
+          <SkillTreePreview data={preview} />
+        </div>
+      </div>
+    )}
 
     {generated && (
       <div className="anim-fade-up max-w-4xl mx-auto mb-8 text-left">
