@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import ProgressIndicator from '@/components/ProgressIndicator';
-import type { PreviewData } from '@/lib/randomizer/types';
 
 // Season Beta Race preset — same settings as the randomizer's season1race preset
 export const SEASON1_OPTIONS = {
@@ -30,14 +29,12 @@ export function ChallengeGenerator({
   weekNumber,
   weekOverride,
   onReady,
-  onPreview,
 }: {
   seed: number;
   weekNumber: number;
   /** When set, instructs the API to apply the mutations from this past week instead of the current one. */
   weekOverride?: number;
   onReady?: () => void;
-  onPreview?: (data: PreviewData) => void;
 }) {
   const [status, setStatus] = useState<GenStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -60,16 +57,6 @@ export function ChallengeGenerator({
     setStatus('building');
     setErrorMsg('');
     const buildingStart = Date.now();
-
-    if (onPreview) {
-      fetch('/api/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed }),
-      })
-        .then(async r => { if (r.ok) onPreview(await r.json() as PreviewData); })
-        .catch(() => {});
-    }
 
     try {
       const res = await fetch('/api/randomize', {

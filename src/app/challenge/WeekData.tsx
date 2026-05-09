@@ -117,6 +117,20 @@ export function WeekCard() {
   const [leaderboardKey, setLeaderboardKey] = useState(0);
   const [preview, setPreview] = useState<PreviewData | null>(null);
 
+  useEffect(() => {
+    let ignore = false;
+    fetch('/api/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seed: currentSeed }),
+    })
+      .then(async r => {
+        if (!ignore && r.ok) setPreview(await r.json() as PreviewData);
+      })
+      .catch(() => {});
+    return () => { ignore = true; };
+  }, [currentSeed]);
+
   return (
     <>
     <div className="card-ornate border border-t-2 border-[#3a1510] border-t-[#c8942a]/30 bg-[#0c0304] panel-shadow shadow-[inset_0_1px_0_rgba(200,148,42,0.15)] p-8 mb-8 max-w-2xl mx-auto">
@@ -157,7 +171,7 @@ export function WeekCard() {
         </div>
       </div>
 
-      <ChallengeGenerator seed={currentSeed} weekNumber={weekNumber} onReady={() => setGenerated(true)} onPreview={setPreview} />
+      <ChallengeGenerator seed={currentSeed} weekNumber={weekNumber} onReady={() => setGenerated(true)} />
 
       {/* Leaderboard — ember-warm crimson card to set apart from the parchment-cold main panel */}
       <div className="w-full mt-10">
