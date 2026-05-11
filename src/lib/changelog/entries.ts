@@ -17,6 +17,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     tagline: 'Seed spoiler now shows the in-game skill names',
     notes: [
       'The seed spoiler preview now displays the names you actually see in-game. No more head-scratching at "Fire Trauma" — it shows up as "Fire Blast", "Shock Field" as "Shock Web", "Royal Strike" as "Phoenix Strike", "Wearwolf"/"Wearbear" as "Werewolf"/"Werebear", and so on',
+      'Skill tooltips on the in-game skill tree now tag every shapeshift-usable skill with "Usable while Shapeshifted", so you can tell at a glance which randomized skills fire in werewolf/werebear form',
     ],
   },
   {
