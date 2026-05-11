@@ -9,5 +9,7 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { warmStatic } = await import('./lib/warmup');
     warmStatic();
+    const { startWeeklyAnnouncer } = await import('./lib/discord-weekly-announcer');
+    startWeeklyAnnouncer();
   }
 }
