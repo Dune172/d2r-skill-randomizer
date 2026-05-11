@@ -12,6 +12,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.24',
+    date: 'May 2026',
+    tagline: 'Seed spoiler now shows the in-game skill names',
+    notes: [
+      'The seed spoiler preview now displays the names you actually see in-game. No more head-scratching at "Fire Trauma" — it shows up as "Fire Blast", "Shock Field" as "Shock Web", "Royal Strike" as "Phoenix Strike", "Wearwolf"/"Wearbear" as "Werewolf"/"Werebear", and so on',
+    ],
+  },
+  {
     version: 'v0.233',
     date: 'May 2026',
     tagline: 'Ironclad reworked into Tempered Edge — armor against spells, openings for steel',

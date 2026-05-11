@@ -323,16 +323,17 @@ export function placeSkills(
       }
       const source = candidates[rng.randInt(0, candidates.length - 1)];
 
-      // Build substitute: source's mechanics/synergies/etype/charclass (for icon folder)
-      // and source.skill as displayName, but dropped's row identity so writers find
-      // the original row by name / *Id / skilldesc.
+      // Build substitute: source's mechanics/synergies/etype/charclass (for icon folder),
+      // but dropped's row identity so writers find the original row by name / *Id / skilldesc.
+      // The displayed name (in preview and in-game) is resolved from the source's skilldesc
+      // → str name → localized string — the preview API does this lookup directly, and the
+      // mod output overwrites the dropped row's `str name` with source's in route.ts.
       const subSkill: SkillEntry = {
         ...source.skill,
         skill: droppedSkill.skill,
         skilldesc: droppedSkill.skilldesc,
         id: droppedSkill.id,
         lineNumber: droppedSkill.lineNumber,
-        displayName: source.skill.displayName ?? source.skill.skill,
       };
 
       placements.push({

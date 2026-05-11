@@ -29,10 +29,6 @@ export interface SkillEntry {
   charclass: string; // original class
   skilldesc: string;
   lineNumber: number; // row index in skills.json
-  // Substitute-only: the source skill's display name. When set, the engine still
-  // looks up this row by `skill` (identity), but UI / preview shows displayName.
-  // For regular (non-substitute) skills, leave undefined; display = skill.
-  displayName?: string;
   reqlevel: number; // required level (1, 6, 12, 18, 24, 30)
   // synergy formula columns
   EDmgSymPerCalc?: string;
