@@ -51,6 +51,7 @@ export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   // Amazon
   'Fend': 'ama',
   'Strafe': 'ama',
+  'Jab': 'ama',
   // Barbarian
   'Leap': 'bar',
   'Leap Attack': 'bar',
