@@ -147,14 +147,7 @@ export function writeSkillsRows(
   const reqskill2Idx = safeGetCol(headers, 'reqskill2', COL.reqskill2);
   const reqskill3Idx = safeGetCol(headers, 'reqskill3', COL.reqskill3);
   const passiveitypeIdx = safeGetCol(headers, 'passiveitype', COL.passiveitype);
-  const itypea1Idx = safeGetCol(headers, 'itypea1', COL.itypea1);
-  const itypea2Idx = safeGetCol(headers, 'itypea2', COL.itypea2);
-  const itypea3Idx = safeGetCol(headers, 'itypea3', COL.itypea3);
-  const itypeb1Idx = safeGetCol(headers, 'itypeb1', COL.itypeb1);
   const restrictIdx   = safeGetCol(headers, 'restrict',  COL.restrict);
-  const etypea1Idx = safeGetCol(headers, 'etypea1', -1);
-  const etypea2Idx = safeGetCol(headers, 'etypea2', -1);
-  const weapselIdx = safeGetCol(headers, 'weapsel', -1);
   const animIdx = safeGetCol(headers, 'anim', COL.anim);
   const seqtransIdx = safeGetCol(headers, 'seqtrans', COL.seqtrans);
   const seqnumIdx   = safeGetCol(headers, 'seqnum',   COL.seqnum);
@@ -261,10 +254,11 @@ export function writeSkillsRows(
     // srvdofunc that doesn't trigger charge release, so the charges would
     // accumulate forever with no way to discharge them while shifted.
     //
-    // Weapon-type gates (itypea1/2/3, etypea1/2, weapsel) are also cleared so
-    // the skill fires regardless of which weapon happens to be equipped while
-    // shifted — bear/wolf forms hide the visual weapon and many cross-class
-    // melee skills would otherwise silently fail their item-type check.
+    // Vanilla weapon-type gates (itypea1/2/3, etypea1/2, weapsel) are preserved:
+    // a skill like Power Strike must stay locked to spear/javelin even when its
+    // tree is hosted on a shapeshifting class. The shifted-form visual hides the
+    // weapon but the equipped item still drives the gate — equip the right weapon
+    // and the skill works in form, same as vanilla.
     const SHIFTED_FORM_BLOCKED = new Set([
       'Whirlwind', 'Charge',
       'Tiger Strike', 'Cobra Strike', 'Royal Strike',
@@ -276,12 +270,6 @@ export function writeSkillsRows(
       const animSafeInForm = !finalAnim || finalAnim === 'A1' || finalAnim === 'SC';
       if (row[restrictIdx] !== '2' && animSafeInForm && !SHIFTED_FORM_BLOCKED.has(placement.skill.skill) && (cat === 'melee' || cat === 'aura' || isPassive)) {
         row[restrictIdx] = '1';
-        if (itypea1Idx >= 0) row[itypea1Idx] = '';
-        if (itypea2Idx >= 0) row[itypea2Idx] = '';
-        if (itypea3Idx >= 0) row[itypea3Idx] = '';
-        if (etypea1Idx >= 0) row[etypea1Idx] = '';
-        if (etypea2Idx >= 0) row[etypea2Idx] = '';
-        if (weapselIdx >= 0) row[weapselIdx] = '';
       }
     }
 
