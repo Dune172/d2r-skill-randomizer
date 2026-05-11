@@ -359,6 +359,36 @@ export async function POST(request: NextRequest) {
       const entry = skillStringsEntries.find(e => e.Key === override.Key);
       if (entry) entry.enUS = override.enUS;
     }
+
+    // Append a "Usable while Shapeshifted" marker to the long-description string of every
+    // skill whose final restrict is 1 (usable in any form) or 2 (shapeshift-form only).
+    // Source of truth is the final skillsTxt rows after writeSkillsRows + substitution.
+    {
+      const restrictIdx = skillsTxt.headers.indexOf('restrict');
+      const skilldescIdx = skillsTxt.headers.indexOf('skilldesc');
+      const strLongIdx = skillDescTxt.headers.indexOf('str long');
+      if (restrictIdx !== -1 && skilldescIdx !== -1 && strLongIdx !== -1) {
+        const skilldescToStrLong = new Map<string, string>();
+        for (const row of skillDescTxt.rows) {
+          skilldescToStrLong.set(row[0], row[strLongIdx]);
+        }
+        const flaggedKeys = new Set<string>();
+        for (const row of skillsTxt.rows) {
+          const r = row[restrictIdx];
+          if (r !== '1' && r !== '2') continue;
+          const strLong = skilldescToStrLong.get(row[skilldescIdx]);
+          if (strLong) flaggedKeys.add(strLong);
+        }
+        const MARKER = '\n\nUsable while Shapeshifted';
+        for (const entry of skillStringsEntries) {
+          if (!flaggedKeys.has(entry.Key)) continue;
+          if (!entry.enUS) continue;
+          if (entry.enUS.endsWith(MARKER)) continue;
+          entry.enUS = entry.enUS + MARKER;
+        }
+      }
+    }
+
     const skillStringsJson = '\uFEFF' + JSON.stringify(skillStringsEntries, null, 2).replace(/\n/g, '\r\n');
 
     // Load item-modifiers.json; normalize BOM + CRLF like other D2R string files.
