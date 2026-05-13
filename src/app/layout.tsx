@@ -21,8 +21,11 @@ export const metadata: Metadata = {
   keywords: ['Diablo 2 Resurrected', 'D2R', 'randomizer', 'mod', 'skill randomizer', 'Reign of the Warlock'],
   icons: {
     icon: [
+      { url: '/icon', sizes: '192x192', type: 'image/png' },
       { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
+    shortcut: '/favicon.ico',
+    apple: { url: '/apple-icon', sizes: '180x180', type: 'image/png' },
   },
   alternates: {
     canonical: '/',
