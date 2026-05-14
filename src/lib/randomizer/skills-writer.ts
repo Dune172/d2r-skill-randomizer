@@ -152,6 +152,7 @@ export function writeSkillsRows(
   const seqtransIdx = safeGetCol(headers, 'seqtrans', COL.seqtrans);
   const seqnumIdx   = safeGetCol(headers, 'seqnum',   COL.seqnum);
   const seqinputIdx = safeGetCol(headers, 'seqinput', COL.seqinput);
+  const leftskillIdx = safeGetCol(headers, 'leftskill', 194);
 
   for (const row of rows) {
     const skillName = row[0]; // skill column is always first
@@ -230,14 +231,21 @@ export function writeSkillsRows(
     row[reqskill2Idx] = prereq?.reqskill2 || '';
     row[reqskill3Idx] = '';
 
-    // leftskill / rightskill are preserved from vanilla. These columns are read
-    // by both the K&M and controller UIs to decide which mouse-button slots a
-    // skill can bind to, and they interact with other flags (e.g. aura, state
-    // toggles) in ways we don't fully enumerate. Previously we force-set
-    // leftskill=1 on every cross-class skill with vanilla leftskill=0 for QoL,
-    // but that caused auras on non-Paladin classes to bind incorrectly to
-    // left-click on controller, breaking the hotkey toggle. Rather than patch
-    // per-category exceptions, trust the vanilla columns.
+    // Enable left-click binding on shuffled cross-class offensive skills so
+    // controller players can put them on the left trigger. Vanilla leftskill=0
+    // is preserved on the skill's native class (no reason to change what
+    // already works) and on auras/passives (a prior force-set-everywhere patch
+    // made auras on non-Paladin classes bind incorrectly to left-click on
+    // controller, breaking the hotkey toggle — the comment that used to live
+    // here documented that incident). rightskill is left untouched; vanilla
+    // rightskill=1 already covers almost every castable skill.
+    if (leftskillIdx >= 0 && !isNativeClass) {
+      const isAura = !!placement.skill.aurastate || getSkillCategory(placement.skill) === 'aura';
+      const isPassive = placement.skill.passive === 1 || !!placement.skill.passiveitype;
+      if (!isAura && !isPassive) {
+        row[leftskillIdx] = '1';
+      }
+    }
 
     // Melee attacks, auras, and weapon masteries on the form-host class's tree
     // should be usable in shapeshifted form (restrict=1 = usable in any state).

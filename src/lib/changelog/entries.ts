@@ -12,6 +12,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.241',
+    date: 'May 2026',
+    tagline: 'Controller fix — bind any shuffled skill to left trigger',
+    notes: [
+      'Controller players can now bind shuffled skills to the left trigger. Before, the game only let you put certain skills there, so a lot of cross-class skills (e.g. Fireball on a Barbarian) could only go on the right side. Auras are unchanged',
+    ],
+  },
+  {
     version: 'v0.24',
     date: 'May 2026',
     tagline: 'Seed spoiler now shows the in-game skill names',
