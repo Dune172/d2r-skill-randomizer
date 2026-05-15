@@ -20,11 +20,15 @@ export const metadata: Metadata = {
   description: 'Generate a free skill randomizer mod for Diablo 2 Resurrected. Each seed shuffles all 8 class skill trees for a fresh playthrough.',
   keywords: ['Diablo 2 Resurrected', 'D2R', 'randomizer', 'mod', 'skill randomizer', 'Reign of the Warlock'],
   icons: {
+    // Hostinger CDN 403s requests for .ico/.svg paths and serves its own HTML
+    // error page instead of proxying to the Next.js upstream. So we deliberately
+    // advertise only the extension-less dynamic icon routes — those bypass the
+    // CDN interception and actually return PNGs. If Hostinger CDN is ever
+    // reconfigured to pass /favicon.ico through, we can add it back here and
+    // restore src/app/favicon.ico from git history.
     icon: [
       { url: '/icon', sizes: '192x192', type: 'image/png' },
-      { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
-    shortcut: '/favicon.ico',
     apple: { url: '/apple-icon', sizes: '180x180', type: 'image/png' },
   },
   alternates: {
