@@ -27,6 +27,7 @@ export const metadata: Metadata = {
     // reconfigured to pass /favicon.ico through, we can add it back here and
     // restore src/app/favicon.ico from git history.
     icon: [
+      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
       { url: '/icon', sizes: '192x192', type: 'image/png' },
     ],
     apple: { url: '/apple-icon', sizes: '180x180', type: 'image/png' },
