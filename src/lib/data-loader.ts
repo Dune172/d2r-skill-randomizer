@@ -138,7 +138,7 @@ export function loadSkillDescs(): Map<string, SkillDescEntry> {
     for (let i = 1; i <= 7; i++) {
       const tb = v[`dsc3textb${i}`] as string;
       if (tb) dsc3textb.push(tb);
-      else break;
+      else continue;
     }
 
     descs.set(v.skilldesc as string, {

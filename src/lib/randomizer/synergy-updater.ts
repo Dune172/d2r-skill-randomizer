@@ -154,6 +154,22 @@ export function updateSkillDescSynergies(
       // Use the skills actually substituted into the formula. De-dupe already
       // happened upstream (chosenOrder only appends new picks).
       chosenNames = formulaPicks.slice(0, Math.max(originalCount, formulaPicks.length));
+
+      // Supplement with random classmates when there are fewer formula-caught
+      // refs than display synergy slots (e.g. golems whose Golem Mastery refs
+      // use .dm34/.ln56 rather than .blvl, but still occupy a display slot).
+      if (chosenNames.length < originalCount) {
+        const usedNames = new Set(chosenNames);
+        const classmates = placementsByClass.get(placement.targetClass) || [];
+        const remaining = classmates.filter(
+          p => p.skill.skill !== skill.skill && !usedNames.has(p.skill.skill),
+        );
+        const needed = originalCount - chosenNames.length;
+        const sameTab = rng.shuffle(remaining.filter(c => c.tabIndex === placement.tabIndex));
+        const otherTab = rng.shuffle(remaining.filter(c => c.tabIndex !== placement.tabIndex));
+        const supplement = [...sameTab, ...otherTab].slice(0, needed);
+        chosenNames = [...chosenNames, ...supplement.map(p => p.skill.skill)];
+      }
     } else {
       // No formula refs on this row → fall back to random classmates so
       // passive/aura skills with display-only synergy lines still look

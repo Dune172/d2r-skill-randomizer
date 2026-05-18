@@ -90,6 +90,7 @@ const COL = {
   id: 1,
   charclass: 2,
   skilldesc: 3,
+  aurastate: 24,
   reqskill1: 184,
   reqskill2: 185,
   reqskill3: 186,
@@ -153,6 +154,7 @@ export function writeSkillsRows(
   const seqnumIdx   = safeGetCol(headers, 'seqnum',   COL.seqnum);
   const seqinputIdx = safeGetCol(headers, 'seqinput', COL.seqinput);
   const leftskillIdx = safeGetCol(headers, 'leftskill', 194);
+  const aurastateIdx = safeGetCol(headers, 'aurastate', COL.aurastate);
 
   for (const row of rows) {
     const skillName = row[0]; // skill column is always first
@@ -245,6 +247,12 @@ export function writeSkillsRows(
       if (!isAura && !isPassive) {
         row[leftskillIdx] = '1';
       }
+    }
+
+    // "holyshield" state hides the physical shield sprite and replaces it with a
+    // Paladin-specific overlay — on other classes the shield vanishes with no replacement.
+    if (!isNativeClass && aurastateIdx >= 0 && row[aurastateIdx] === 'holyshield') {
+      row[aurastateIdx] = '';
     }
 
     // Melee attacks, auras, and weapon masteries on the form-host class's tree
