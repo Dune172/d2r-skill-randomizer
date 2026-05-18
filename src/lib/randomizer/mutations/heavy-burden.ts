@@ -10,6 +10,10 @@ const ARMOR_ITYPES = new Set([
   'ashd', 'phlm', 'pelt', 'head',
 ]);
 
+// Armor types that carry strength requirements — the only ones that get procs.
+// Excludes gloves, boots, belts, druid pelts, and necro heads (no str req).
+const HEAVY_ARMOR_ITYPES = new Set(['tors', 'helm', 'shld', 'ashd', 'phlm']);
+
 const ANY_PROC_CODES = new Set([
   'hit-skill',     'hit-skill-noc',
   'att-skill',     'att-skill-noc',
@@ -41,7 +45,7 @@ export function injectArmorProcs(headers: string[], rows: string[][]): void {
   })).filter(s => s.code !== -1 && s.min !== -1 && s.max !== -1);
 
   for (const row of rows) {
-    if (!itypeIdxs.some(i => ARMOR_ITYPES.has(row[i] ?? ''))) continue;
+    if (!itypeIdxs.some(i => HEAVY_ARMOR_ITYPES.has(row[i] ?? ''))) continue;
     if (modSlots.some(s => ANY_PROC_CODES.has(row[s.code] ?? ''))) continue;
     const free = modSlots.find(s => !row[s.code]?.trim());
     if (!free) continue;
