@@ -1,7 +1,7 @@
 import type { MutationContext } from './index';
 import { TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
 
-const REGEN_MULT = 7;
+const REGEN_MULT = 4;
 const REGEN_BASE = 1;
 
 export function applyBloodthirst(ctx: MutationContext): void {

@@ -1,7 +1,7 @@
 /**
- * Weekly challenge calendar — anchored to midnight in the America/Los_Angeles
- * timezone. Each weekly seed flips at 00:00 LA local time on Monday, so the
- * boundary moves with DST instead of drifting an hour twice a year.
+ * Mutation challenge calendar — anchored to midnight in the America/Los_Angeles
+ * timezone. Each 14-day challenge seed flips at 00:00 LA local time every other
+ * Monday, so the boundary moves with DST instead of drifting an hour twice a year.
  *
  * Imported by both client and server code (browser, Node, Edge runtime), so
  * it relies only on Intl.DateTimeFormat which is available in all targets.
@@ -14,7 +14,7 @@ const BASE_YEAR = 2026;
 const BASE_MONTH_ZERO = 3; // April (0-based)
 const BASE_DAY = 13;
 
-const APPROX_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const APPROX_WEEK_MS = 14 * 24 * 60 * 60 * 1000;
 
 /**
  * Returns the LA timezone's UTC offset, in milliseconds, for the given moment.
@@ -57,9 +57,9 @@ function laMidnight(year: number, monthZeroBased: number, day: number): Date {
   return new Date(Date.UTC(year, monthZeroBased, day, 0, 0, 0) - offset);
 }
 
-/** Returns the Date at the start of the given week (00:00 LA on its Monday). */
+/** Returns the Date at the start of the given challenge period (00:00 LA on its Monday). */
 export function getWeekStart(weekNumber: number): Date {
-  return laMidnight(BASE_YEAR, BASE_MONTH_ZERO, BASE_DAY + (weekNumber - 1) * 7);
+  return laMidnight(BASE_YEAR, BASE_MONTH_ZERO, BASE_DAY + (weekNumber - 1) * 14);
 }
 
 /** Returns the Date 1ms before the next week starts (i.e., 23:59:59.999 LA on Sunday). */

@@ -27,14 +27,14 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Heavy Burden',
     emoji: '🏋️',
     description:
-      'All armor strength requirements are increased by 50%. Armor with strength requirements provides 50% more defense.',
+      'All armor strength requirements are increased by 50%. Armor with strength requirements provides 50% more defense. All magic armor gains a chance to cast a random skill when hit.',
   },
   3: {
     id: 'hollow-shell',
     name: 'Hollow Shell',
     emoji: '💧',
     description:
-      'Maximum life and mana are reduced by 50%. Mana regenerates significantly faster. You start with the Hollow Locket — a ring that rapidly replenishes both life and mana.',
+      'Maximum life and mana are reduced by 50%. Mana regenerates significantly faster. Health and mana potions cost five times as much. You start with the Hollow Locket — a ring that rapidly replenishes both life and mana.',
   },
   4: {
     id: 'bloodthirst',
@@ -48,7 +48,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'The Horde',
     emoji: '💀',
     description:
-      'Monster pack sizes are dramatically increased. Nothing spawns alone. Experience gain is reduced by half.',
+      'Monster pack sizes are dramatically increased. Nothing spawns alone. Experience gain is reduced by a third.',
   },
   6: {
     id: 'glass-cannon',
@@ -76,14 +76,14 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Tempered Edge',
     emoji: '⚔️',
     description:
-      'All monsters gain +30 to Cold, Fire, Lightning, and Poison resistance, but lose 30 physical resistance.',
+      'All monsters gain +30 to Cold, Fire, Lightning, and Poison resistance, but lose 40 physical resistance.',
   },
   11: {
     id: 'titans-grip',
     name: "Titan's Grip",
     emoji: '🌀',
     description:
-      'All weapon strength and dexterity requirements are increased by 50%. Weapons with stat requirements deal twice as much damage.',
+      'All weapon strength and dexterity requirements are increased by 50%. Weapons with stat requirements deal twice as much damage. Proc chances on qualifying weapons are doubled.',
   },
   13: {
     id: 'dead-reckoning',
@@ -97,7 +97,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Entropy',
     emoji: '🔩',
     description:
-      'All equipment degrades three times as fast and costs ten times as much to repair. Keep your gold and your whetstone ready.',
+      'All equipment degrades four times as fast and costs ten times as much to repair. Keep your gold and your whetstone ready.',
   },
 };
 

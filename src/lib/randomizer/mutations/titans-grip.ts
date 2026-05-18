@@ -2,9 +2,44 @@ import type { MutationContext } from './index';
 
 const REQ_MULT = 1.5;
 const DMG_MULT = 2.0;
+const PROC_CHANCE_CAP = 100;
 
 const REQ_COLS = ['reqstr', 'reqdex'];
 const DMG_COLS = ['mindam', 'maxdam', '2handmindam', '2handmaxdam'];
+
+const WEAPON_ITYPES = new Set([
+  'weap', 'mele', 'miss', 'thro', 'bow', 'xbow',
+  'h2h', 'h2h2', 'rod', 'staf', 'wand', 'scep', 'orb',
+]);
+
+const CHANCE_PROC_CODES = new Set([
+  'hit-skill',     'hit-skill-noc',
+  'att-skill',     'att-skill-noc',
+  'gethit-skill',  'gethit-skill-noc',
+  'kill-skill',    'kill-skill-noc',
+  'death-skill',   'death-skill-noc',
+  'levelup-skill', 'levelup-skill-noc',
+]);
+
+function doubleWeaponProcs(headers: string[], rows: string[][]): void {
+  const itypeIdxs = ['itype1','itype2','itype3','itype4','itype5','itype6','itype7']
+    .map(c => headers.indexOf(c)).filter(i => i !== -1);
+
+  for (const row of rows) {
+    if (!itypeIdxs.some(i => WEAPON_ITYPES.has(row[i] ?? ''))) continue;
+    for (let slot = 1; slot <= 3; slot++) {
+      const codeIdx = headers.indexOf(`mod${slot}code`);
+      const minIdx  = headers.indexOf(`mod${slot}min`);
+      const maxIdx  = headers.indexOf(`mod${slot}max`);
+      if (codeIdx === -1 || minIdx === -1 || maxIdx === -1) continue;
+      if (!CHANCE_PROC_CODES.has(row[codeIdx] ?? '')) continue;
+      const minVal = parseInt(row[minIdx], 10);
+      const maxVal = parseInt(row[maxIdx], 10);
+      if (!isNaN(minVal) && minVal > 0) row[minIdx] = String(Math.min(PROC_CHANCE_CAP, minVal * 2));
+      if (!isNaN(maxVal) && maxVal > 0) row[maxIdx] = String(Math.min(PROC_CHANCE_CAP, maxVal * 2));
+    }
+  }
+}
 
 export function applyTitansGrip(ctx: MutationContext): void {
   const { headers: wh, rows: wr } = ctx.weapons;
@@ -27,4 +62,7 @@ export function applyTitansGrip(ctx: MutationContext): void {
       }
     }
   }
+
+  doubleWeaponProcs(ctx.magicprefix.headers, ctx.magicprefix.rows);
+  doubleWeaponProcs(ctx.magicsuffix.headers, ctx.magicsuffix.rows);
 }

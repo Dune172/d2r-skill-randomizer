@@ -8,20 +8,20 @@ import { KofiPopup } from './KofiPopup';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'D2R Weekly Challenge Archive',
+  title: 'D2R Mutation Challenge Archive',
   description:
-    'Play any past D2R Randomizer weekly challenge. Every weekly seed and mutation set since launch, available on demand.',
+    'Play any past D2R Randomizer mutation challenge. Every challenge seed and mutation set since launch, available on demand.',
   alternates: {
     canonical: '/archive',
   },
   openGraph: {
-    title: 'D2R Weekly Challenge Archive',
-    description: 'Play any past D2R Randomizer weekly challenge. Every weekly seed and mutation set since launch, available on demand.',
+    title: 'D2R Mutation Challenge Archive',
+    description: 'Play any past D2R Randomizer mutation challenge. Every challenge seed and mutation set since launch, available on demand.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'D2R Weekly Challenge Archive',
-    description: 'Play any past D2R Randomizer weekly challenge. Every weekly seed and mutation set since launch, available on demand.',
+    title: 'D2R Mutation Challenge Archive',
+    description: 'Play any past D2R Randomizer mutation challenge. Every challenge seed and mutation set since launch, available on demand.',
   },
 };
 
@@ -34,7 +34,7 @@ export default function ArchivePage() {
       <KofiPopup />
       <section className="max-w-4xl mx-auto px-4 pt-12 pb-6 text-center">
         <h1 className="anim-fade-up font-cinzel font-black tracking-[0.14em] text-3xl md:text-4xl text-[#c8942a] glow-gold uppercase mb-3">
-          Weekly Challenge Archive
+          Mutation Challenge Archive
         </h1>
         <div className="anim-fade-up-d1 flex items-center gap-3 justify-center mb-8">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[#7a5818]/60 max-w-[80px]" />
@@ -45,7 +45,7 @@ export default function ArchivePage() {
         </div>
 
         <p className="anim-fade-up-d2 text-[#a89060] text-sm leading-relaxed max-w-lg mx-auto mb-10">
-          Play any past weekly challenge — same seed, same settings, same mutations as the week it was live.
+          Play any past mutation challenge — same seed, same settings, same mutations as when it was live.
         </p>
       </section>
 
@@ -53,7 +53,7 @@ export default function ArchivePage() {
         {pastWeeks.length === 0 ? (
           <div className="card-ornate border border-[#3a1510] bg-[#0c0304] panel-shadow p-8 max-w-xl mx-auto text-center">
             <p className="text-[#a89060] text-sm leading-relaxed">
-              No past challenges yet — come back next Monday.
+              No past challenges yet — come back in two weeks.
             </p>
             <Link
               href="/challenge"

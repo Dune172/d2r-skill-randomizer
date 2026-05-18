@@ -9,7 +9,7 @@ export function HomeChallengeCard({ weekNumber }: { weekNumber: number }) {
   return (
     <div className="border border-[#c8942a]/25 bg-[#0c0304] panel-shadow p-7 text-center">
       <p className="font-cinzel text-[10px] tracking-[0.4em] text-[#7a5818] uppercase mb-3">
-        Weekly Challenge
+        Mutation Challenge
       </p>
 
       <div className="font-cinzel font-black text-3xl md:text-4xl text-[#c8942a] glow-gold tracking-[0.12em] uppercase mb-5 leading-tight">

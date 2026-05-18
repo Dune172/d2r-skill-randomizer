@@ -2,7 +2,7 @@ import type { MutationContext } from './index';
 import { TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
 
 const ELEM_RES_BONUS = 30;
-const PHYS_RES_PENALTY = 30;
+const PHYS_RES_PENALTY = 40;
 const RES_CAP = 99;
 const RES_FLOOR = -100;
 

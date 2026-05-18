@@ -18,7 +18,7 @@ export function parseHMS(parts: { h?: number | string; m?: number | string; s?: 
   return Math.floor(h) * 3600 + Math.floor(m) * 60 + Math.floor(s);
 }
 
-export const MAX_RUN_SECONDS = 7 * 24 * 60 * 60; // one week
+export const MAX_RUN_SECONDS = 14 * 24 * 60 * 60; // one challenge period
 // 30-minute floor — fastest known Baal Normal runs sit comfortably above this.
 // Anything under is almost certainly a typo or spam.
 export const MIN_RUN_SECONDS = 30 * 60;

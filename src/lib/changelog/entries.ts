@@ -12,6 +12,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.242',
+    date: 'May 2026',
+    tagline: 'Mutation Challenge — 14-day cycle, rebalanced mutations, new item procs',
+    notes: [
+      'The Weekly Challenge is now the Mutation Challenge and runs every 14 days instead of 7. Each challenge is numbered and shown as "Challenge X" throughout the site',
+      'Heavy Burden: magic armor now has a chance to cast a random skill when hit — every magic armor piece with an affix gains a proc',
+      "Titan's Grip: proc chances on qualifying weapons are doubled",
+      'Bloodthirst: monster life regen dialed back (4× instead of 7×)',
+      'The Horde: XP penalty reduced — you keep 66% of XP per kill instead of 50%',
+      'Entropy: equipment now degrades 4× as fast (up from 3×)',
+      'Tempered Edge: physical resistance penalty increased to −40 (from −30)',
+    ],
+  },
+  {
     version: 'v0.241',
     date: 'May 2026',
     tagline: 'Controller fix — bind any shuffled skill to left trigger',

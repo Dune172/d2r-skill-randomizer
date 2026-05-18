@@ -1,6 +1,6 @@
 import type { MutationContext } from './index';
 
-const DUR_MULT = 1 / 3;
+const DUR_MULT = 1 / 4;
 const COST_MULT = 10;
 
 export function applyEntropy(ctx: MutationContext): void {

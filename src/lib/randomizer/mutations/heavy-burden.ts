@@ -2,9 +2,54 @@ import type { MutationContext } from './index';
 
 const REQ_MULT = 1.5;
 const DEF_MULT = 1.5;
-
 const REQ_COLS = ['reqstr'];
 const DEF_COLS = ['minac', 'maxac'];
+
+const ARMOR_ITYPES = new Set([
+  'armo', 'tors', 'helm', 'shld', 'glov', 'boot', 'belt',
+  'ashd', 'phlm', 'pelt', 'head',
+]);
+
+const ANY_PROC_CODES = new Set([
+  'hit-skill',     'hit-skill-noc',
+  'att-skill',     'att-skill-noc',
+  'gethit-skill',  'gethit-skill-noc',
+  'kill-skill',    'kill-skill-noc',
+  'death-skill',   'death-skill-noc',
+  'levelup-skill', 'levelup-skill-noc',
+  'charged',
+]);
+
+const PROC_CHANCE = 10;
+
+/**
+ * Inject a gethit-skill proc into every armor-applicable affix that doesn't
+ * already have one. Called on raw (pre-remap) affix data so remapClassItemSkills
+ * assigns the skill ID from the shuffled castable pool.
+ */
+export function injectArmorProcs(headers: string[], rows: string[][]): void {
+  const itypeIdxs = ['itype1','itype2','itype3','itype4','itype5','itype6','itype7']
+    .map(c => headers.indexOf(c)).filter(i => i !== -1);
+
+  type ModSlot = { code: number; min: number; max: number; param: number };
+  const modSlots: ModSlot[] = [1, 2, 3].map(slot => ({
+    code:  headers.indexOf(`mod${slot}code`),
+    min:   headers.indexOf(`mod${slot}min`),
+    max:   headers.indexOf(`mod${slot}max`),
+    param: headers.indexOf(`mod${slot}param`),
+  })).filter(s => s.code !== -1 && s.min !== -1 && s.max !== -1);
+
+  for (const row of rows) {
+    if (!itypeIdxs.some(i => ARMOR_ITYPES.has(row[i] ?? ''))) continue;
+    if (modSlots.some(s => ANY_PROC_CODES.has(row[s.code] ?? ''))) continue;
+    const free = modSlots.find(s => !row[s.code]?.trim());
+    if (!free) continue;
+    row[free.code] = 'gethit-skill';
+    row[free.min]  = String(PROC_CHANCE);
+    row[free.max]  = String(PROC_CHANCE);
+    if (free.param !== -1) row[free.param] = '0';
+  }
+}
 
 export function applyHeavyBurden(ctx: MutationContext): void {
   const { headers: ah, rows: ar } = ctx.armor;
@@ -27,4 +72,5 @@ export function applyHeavyBurden(ctx: MutationContext): void {
       }
     }
   }
+
 }

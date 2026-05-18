@@ -17,28 +17,28 @@ function Step({ number, text }: { number: number; text: ReactNode }) {
 export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
-  title: 'D2R Weekly Challenge Seed',
+  title: 'D2R Mutation Challenge Seed',
   description:
-    "Play this week's D2R Randomizer challenge seed. A new Diablo 2 Resurrected randomizer seed every Monday — same settings for everyone.",
+    "Play this challenge's D2R Randomizer seed. A new Diablo 2 Resurrected randomizer seed every other Monday — same settings for everyone.",
   alternates: {
     canonical: '/challenge',
   },
   openGraph: {
-    title: 'D2R Weekly Challenge Seed',
-    description: "Play this week's D2R Randomizer challenge seed. A new Diablo 2 Resurrected randomizer seed every Monday — same settings for everyone.",
+    title: 'D2R Mutation Challenge Seed',
+    description: "Play this challenge's D2R Randomizer seed. A new Diablo 2 Resurrected randomizer seed every other Monday — same settings for everyone.",
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'D2R Weekly Challenge Seed',
-    description: "Play this week's D2R Randomizer challenge seed. A new Diablo 2 Resurrected randomizer seed every Monday — same settings for everyone.",
+    title: 'D2R Mutation Challenge Seed',
+    description: "Play this challenge's D2R Randomizer seed. A new Diablo 2 Resurrected randomizer seed every other Monday — same settings for everyone.",
   },
 };
 
 const eventSchema = {
   '@context': 'https://schema.org',
   '@type': 'Event',
-  name: 'D2R Randomizer Weekly Challenge',
-  description: 'A new D2R Randomizer challenge seed every Monday — same seed for everyone.',
+  name: 'D2R Randomizer Mutation Challenge',
+  description: 'A new D2R Randomizer challenge seed every other Monday — same seed for everyone.',
   url: 'https://d2rrandomizer.com/challenge',
   eventStatus: 'https://schema.org/EventScheduled',
   eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
@@ -56,12 +56,12 @@ export default function ChallengePage() {
 
       <section className="max-w-4xl mx-auto px-4 pt-12 pb-6 text-center">
         <h1 className="anim-fade-up font-cinzel font-black tracking-[0.14em] text-3xl md:text-4xl text-[#c8942a] glow-gold uppercase mb-3">
-          D2R Weekly Challenge
+          D2R Mutation Challenge
         </h1>
         <div className="anim-fade-up-d1 flex items-center gap-3 justify-center mb-8">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[#7a5818]/60 max-w-[80px]" />
           <h2 className="font-cinzel text-sm text-[#c8942a] tracking-[0.12em] uppercase">
-            This Week&apos;s Randomizer Seed
+            This Challenge&apos;s Randomizer Seed
           </h2>
           <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[#7a5818]/60 max-w-[80px]" />
         </div>
@@ -71,7 +71,7 @@ export default function ChallengePage() {
         </div>
 
         <p className="anim-fade-up-d3 text-[#a89060] text-sm leading-relaxed max-w-lg mx-auto mb-10">
-          A new challenge seed drops every Monday. Everyone plays the same randomized Diablo 2 Resurrected
+          A new challenge seed drops every other Monday. Everyone plays the same randomized Diablo 2 Resurrected
           experience — same seed, same settings, same starting point.
         </p>
       </section>
@@ -82,7 +82,7 @@ export default function ChallengePage() {
           How It Works
         </h3>
         <div className="space-y-4 max-w-lg mx-auto">
-          <Step number={1} text="A new seed is posted every Monday. Generate the mod and install it." />
+          <Step number={1} text="A new seed is posted every other Monday. Generate the mod and install it." />
           <Step number={2} text="Everyone plays the same randomized skill trees — same seed, same settings, same starting point." />
           <Step
             number={3}

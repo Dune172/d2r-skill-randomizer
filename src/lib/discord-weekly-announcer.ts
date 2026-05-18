@@ -1,10 +1,10 @@
 /**
- * Weekly challenge Discord announcement — fires every Monday at 09:00 LA into
- * the DISCORD_WEEKLY_WEBHOOK_URL channel. Posts the week's theme name, both
+ * Mutation challenge Discord announcement — fires every other Monday at 09:00 LA into
+ * the DISCORD_WEEKLY_WEBHOOK_URL channel. Posts the challenge's theme name, both
  * mutations with one-line descriptions, plus the gold OG card PNG attached.
  *
  * Persists `lastAnnouncedWeek` to a JSON file next to counter.json so we don't
- * double-post on restart and so a server reboot across the Monday boundary
+ * double-post on restart and so a server reboot across the challenge boundary
  * still catches up.
  *
  * Best-effort: HTTP and disk errors are logged but never thrown.
@@ -55,7 +55,7 @@ function firstSentence(description: string): string {
 
 function formatMessage(weekNumber: number, weekName: string, mutA: MutationDef, mutB: MutationDef): string {
   return [
-    `**Week ${weekNumber} — ${weekName}**`,
+    `**Challenge ${weekNumber} — ${weekName}**`,
     '',
     `${mutA.name} — ${firstSentence(mutA.description)}`,
     `${mutB.name} — ${firstSentence(mutB.description)}`,
@@ -94,7 +94,7 @@ export async function postWeeklyAnnouncement(weekNumber: number): Promise<boolea
   form.set(
     'files[0]',
     new Blob([new Uint8Array(png)], { type: 'image/png' }),
-    'weekly-challenge.png',
+    'mutation-challenge.png',
   );
 
   const controller = new AbortController();
@@ -110,7 +110,7 @@ export async function postWeeklyAnnouncement(weekNumber: number): Promise<boolea
       console.warn(`[weekly-announcer] HTTP ${res.status}: ${body.slice(0, 300)}`);
       return false;
     }
-    console.log(`[weekly-announcer] posted Week ${weekNumber} (${weekName})`);
+    console.log(`[weekly-announcer] posted Challenge ${weekNumber} (${weekName})`);
     return true;
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);

@@ -135,7 +135,7 @@ export function WeekCard() {
     <>
     <div className="card-ornate border border-t-2 border-[#3a1510] border-t-[#c8942a]/30 bg-[#0c0304] panel-shadow shadow-[inset_0_1px_0_rgba(200,148,42,0.15)] p-8 mb-8 max-w-2xl mx-auto">
       <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase mb-3">
-        Week {weekNumber} &nbsp;·&nbsp; {formatWeekDate(currentStart)} – {formatWeekDate(currentEnd)}
+        Challenge {weekNumber} &nbsp;·&nbsp; {formatWeekDate(currentStart)} – {formatWeekDate(currentEnd)}
       </p>
       <div className="font-cinzel font-black text-5xl md:text-6xl text-[#c8942a] glow-pulse tracking-widest mb-2">
         {weekName}

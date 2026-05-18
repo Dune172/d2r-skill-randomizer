@@ -4,7 +4,7 @@
  */
 import { MUTATIONS, WEEKLY_PAIRS, getActivePair } from '@/lib/mutations/registry';
 import { applyHyperdrive } from './hyperdrive';
-import { applyHeavyBurden } from './heavy-burden';
+import { applyHeavyBurden, injectArmorProcs } from './heavy-burden';
 import { applyHollowShell } from './hollow-shell';
 import { applyBloodthirst } from './bloodthirst';
 import { applyTheHorde } from './the-horde';
@@ -33,6 +33,8 @@ export interface MutationContext {
   weapons:       { headers: string[]; rows: string[][] };
   misc:          { headers: string[]; rows: string[][] };
   uniqueitems:   { headers: string[]; rows: string[][] };
+  magicprefix:   { headers: string[]; rows: string[][] };
+  magicsuffix:   { headers: string[]; rows: string[][] };
 }
 
 type ApplyFn = (ctx: MutationContext) => void;
@@ -51,6 +53,25 @@ const APPLY_FNS: Record<number, ApplyFn> = {
   13: applyDeadReckoning,
   14: applyEntropy,
 };
+
+/**
+ * Pre-remap hook: inject magic affix modifications that must be in place
+ * before remapClassItemSkills runs so skill IDs are assigned correctly.
+ * Call this on raw affix data, before the skill remapper.
+ */
+export function preApplyMagicAffixMutations(
+  weekNumber: number,
+  prefix: { headers: string[]; rows: string[][] },
+  suffix: { headers: string[]; rows: string[][] },
+): void {
+  const [a, b] = WEEKLY_PAIRS[(weekNumber - 1) % WEEKLY_PAIRS.length];
+  for (const id of [a, b]) {
+    if (MUTATIONS[id]?.id === 'heavy-burden') {
+      injectArmorProcs(prefix.headers, prefix.rows);
+      injectArmorProcs(suffix.headers, suffix.rows);
+    }
+  }
+}
 
 /** Apply both mutations for the given week number to the provided context. */
 export function applyWeeklyMutations(weekNumber: number, ctx: MutationContext): void {

@@ -26,7 +26,7 @@ import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
-import { applyWeeklyMutations } from '@/lib/randomizer/mutations';
+import { applyWeeklyMutations, preApplyMagicAffixMutations } from '@/lib/randomizer/mutations';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
 import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
 
@@ -288,10 +288,14 @@ export async function POST(request: NextRequest) {
     const magicPrefixTxt = loadTxtFile('magicprefix.txt');
     const magicSuffixTxt = loadTxtFile('magicsuffix.txt');
     const procRng = createRNG(seedFromString(`${seed}:item-procs`));
-    const remappedPrefixRows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping, procRng);
-    const remappedSuffixRows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping, procRng);
-    const magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, remappedPrefixRows);
-    const magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, remappedSuffixRows);
+    if (weeklyEnabled) {
+      const preWeekNum = weeklyOverride ?? getCurrentWeekNumber();
+      preApplyMagicAffixMutations(preWeekNum, magicPrefixTxt, magicSuffixTxt);
+    }
+    magicPrefixTxt.rows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping, procRng);
+    magicSuffixTxt.rows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping, procRng);
+    let magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, magicPrefixTxt.rows);
+    let magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, magicSuffixTxt.rows);
 
     // itemtypes.txt — include as-is to ensure StaffMods is correct for all class item types
     // (e.g. grim=war so white warlock grimoires get warlock staff mods, not Sorceress mods)
@@ -555,6 +559,8 @@ export async function POST(request: NextRequest) {
         weapons:       weaponsSrc,
         misc:          miscSrc,
         uniqueitems:   ui ?? { headers: [], rows: [] },
+        magicprefix:   magicPrefixTxt,
+        magicsuffix:   magicSuffixTxt,
       });
 
       // Re-serialize charstats (may have been modified by Hyperdrive/Hollow Shell)
@@ -570,6 +576,8 @@ export async function POST(request: NextRequest) {
       weaponsTxt    = serializeTxtFile(weaponsSrc.headers, weaponsSrc.rows);
       experienceTxt = serializeTxtFile(expSrc.headers, expSrc.rows);
       miscTxt       = serializeTxtFile(miscSrc.headers, miscSrc.rows);
+      magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, magicPrefixTxt.rows);
+      magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, magicSuffixTxt.rows);
     }
 
     monstatsTxt     = serializeTxtFile(monstatsSrc.headers, monstatsSrc.rows);
