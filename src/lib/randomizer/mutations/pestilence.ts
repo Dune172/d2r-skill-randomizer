@@ -5,15 +5,15 @@ const POISON_TYPE = 'pois';
 const POISON_PCT  = '100';
 const POISON_DUR  = '200'; // 8 seconds at 25fps
 
-// +10 min / +15 max per act, starting from 45/90 in Act 1.
+// +10 min / +15 max per act, starting from 45/60 in Act 1.
 const POISON_BY_ACT: Record<number, { min: number; max: number }> = {
-  1: { min: 45, max: 90  },
-  2: { min: 55, max: 105 },
-  3: { min: 65, max: 120 },
-  4: { min: 75, max: 135 },
-  5: { min: 85, max: 150 },
+  1: { min: 45, max: 60  },
+  2: { min: 55, max: 75  },
+  3: { min: 65, max: 90  },
+  4: { min: 75, max: 105 },
+  5: { min: 85, max: 120 },
 };
-const POISON_FALLBACK = { min: 55, max: 105 }; // unknown/non-act monsters (Act 2 equiv.)
+const POISON_FALLBACK = { min: 55, max: 75 }; // unknown/non-act monsters (Act 2 equiv.)
 
 // Per-difficulty multipliers on top of the act values above, to keep poison
 // relevant as monster physical damage ramps up in NM/Hell.
