@@ -12,6 +12,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.242',
+    date: 'May 2026',
+    tagline: 'Fix — Holy Shield no longer makes your shield invisible on non-Paladin classes',
+    notes: [
+      'Holy Shield caused the equipped shield to go invisible when randomized to any non-Paladin class.',
+      'Fixed golem synergy tooltips still showing the vanilla Necromancer skills (Blood Golem, Iron Golem, etc.) after shuffling. All four golems and two Warlock skills (Engorge, Hex Bane) were silently skipped when updating synergy display names.',
+    ],
+  },
+  {
     version: 'v0.241',
     date: 'May 2026',
     tagline: 'Controller fix — bind any shuffled skill to left trigger',
