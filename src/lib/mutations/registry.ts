@@ -27,7 +27,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Heavy Burden',
     emoji: '🏋️',
     description:
-      'All armor strength requirements are increased by 50%. Armor with strength requirements provides 50% more defense. All magic armor gains a chance to cast a random skill when hit.',
+      'All armor strength requirements are increased by 50%. Armor with strength requirements provides 50% more defense. All magic armor gains a chance to cast a random skill when hit — skill power scales with item level.',
   },
   3: {
     id: 'hollow-shell',
@@ -83,7 +83,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: "Titan's Grip",
     emoji: '🌀',
     description:
-      'All weapon strength and dexterity requirements are increased by 50%. Weapons with stat requirements deal twice as much damage. Proc chances on qualifying weapons are doubled.',
+      'All weapon strength and dexterity requirements are increased by 50%. Weapons with stat requirements deal twice as much damage. Proc chances on qualifying weapons are doubled, and proc skill level scales with item level.',
   },
   13: {
     id: 'dead-reckoning',

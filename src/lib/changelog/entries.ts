@@ -12,6 +12,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.243',
+    date: 'May 2026',
+    tagline: 'Proc skill level now scales with item level',
+    notes: [
+      'Heavy Burden and Titan\'s Grip procs now fire at a skill level that scales with the item\'s affix level — low-level magic gear procs at level 1, high-end gear can reach level 12 or higher',
+      'Expanded the skill pool eligible for procs to include higher-tier skills. Powerful items can now proc Blizzard, Meteor, Hydra, and similar top-end skills',
+    ],
+  },
+  {
     version: 'v0.242',
     date: 'May 2026',
     tagline: 'Mutation Challenge — 14-day cycle, rebalanced mutations, new item procs',
