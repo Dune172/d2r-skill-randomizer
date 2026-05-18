@@ -14,17 +14,10 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: 'v0.242',
     date: 'May 2026',
-    tagline: 'Golem synergies now update after shuffling',
-    notes: [
-      'Fixed golem synergy tooltips still showing the vanilla Necromancer skills (Blood Golem, Iron Golem, etc.) after shuffling. All four golems and two Warlock skills (Engorge, Hex Bane) were silently skipped when updating synergy display names — their skill tooltips will now correctly list co-located classmates',
-    ],
-  },
-  {
-    version: 'v0.241',
-    date: 'May 2026',
     tagline: 'Controller fix — bind any shuffled skill to left trigger',
     notes: [
       'Controller players can now bind shuffled skills to the left trigger. Before, the game only let you put certain skills there, so a lot of cross-class skills (e.g. Fireball on a Barbarian) could only go on the right side. Auras are unchanged',
+      'Fixed golem synergy tooltips still showing the vanilla Necromancer skills (Blood Golem, Iron Golem, etc.) after shuffling. All four golems and two Warlock skills (Engorge, Hex Bane) were silently skipped when updating synergy display names — their skill tooltips will now correctly list co-located classmates',
     ],
   },
   {
