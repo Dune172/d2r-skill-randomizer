@@ -23,6 +23,8 @@ export const CHANGELOG: ChangelogEntry[] = [
       'The Horde: XP penalty reduced — you keep 66% of XP per kill instead of 50%',
       'Entropy: equipment now degrades 4× as fast (up from 3×)',
       'Tempered Edge: physical resistance penalty increased to −40 (from −30)',
+      'Holy Shield caused the equipped shield to go invisible when randomized to any non-Paladin class — fixed',
+      'Fixed golem synergy tooltips still showing the vanilla Necromancer skills (Blood Golem, Iron Golem, etc.) after shuffling',
     ],
   },
   {
