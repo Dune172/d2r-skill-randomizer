@@ -12,7 +12,7 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: 'v0.243',
+    version: 'v0.242',
     date: 'May 2026',
     tagline: 'Mutation Challenge — 14-day cycle, rebalanced mutations, new item procs',
     notes: [
@@ -23,15 +23,8 @@ export const CHANGELOG: ChangelogEntry[] = [
       'The Horde: XP penalty reduced — you keep 66% of XP per kill instead of 50%',
       'Entropy: equipment now degrades 4× as fast (up from 3×)',
       'Tempered Edge: physical resistance penalty increased to −40 (from −30)',
-    ],
-  },
-  {
-    version: 'v0.242',
-    date: 'May 2026',
-    tagline: 'Fix — Holy Shield no longer makes your shield invisible on non-Paladin classes',
-    notes: [
-      'Holy Shield caused the equipped shield to go invisible when randomized to any non-Paladin class.',
-      'Fixed golem synergy tooltips still showing the vanilla Necromancer skills (Blood Golem, Iron Golem, etc.) after shuffling. All four golems and two Warlock skills (Engorge, Hex Bane) were silently skipped when updating synergy display names.',
+      'Holy Shield caused the equipped shield to go invisible when randomized to any non-Paladin class — fixed',
+      'Fixed golem synergy tooltips still showing the vanilla Necromancer skills (Blood Golem, Iron Golem, etc.) after shuffling',
     ],
   },
   {
