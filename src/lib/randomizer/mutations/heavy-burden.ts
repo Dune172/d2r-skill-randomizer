@@ -30,6 +30,7 @@ const PROC_CHANCE = 10;
 export function injectArmorProcs(headers: string[], rows: string[][]): void {
   const itypeIdxs = ['itype1','itype2','itype3','itype4','itype5','itype6','itype7']
     .map(c => headers.indexOf(c)).filter(i => i !== -1);
+  const levelIdx = headers.indexOf('level');
 
   type ModSlot = { code: number; min: number; max: number; param: number };
   const modSlots: ModSlot[] = [1, 2, 3].map(slot => ({
@@ -44,9 +45,11 @@ export function injectArmorProcs(headers: string[], rows: string[][]): void {
     if (modSlots.some(s => ANY_PROC_CODES.has(row[s.code] ?? ''))) continue;
     const free = modSlots.find(s => !row[s.code]?.trim());
     if (!free) continue;
+    const affixLevel = levelIdx !== -1 ? (parseInt(row[levelIdx], 10) || 1) : 1;
+    const skillLevel = Math.min(20, Math.max(1, Math.floor(affixLevel / 7)));
     row[free.code] = 'gethit-skill';
     row[free.min]  = String(PROC_CHANCE);
-    row[free.max]  = String(PROC_CHANCE);
+    row[free.max]  = String(skillLevel);
     if (free.param !== -1) row[free.param] = '0';
   }
 }

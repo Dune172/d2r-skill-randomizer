@@ -24,9 +24,12 @@ const CHANCE_PROC_CODES = new Set([
 function doubleWeaponProcs(headers: string[], rows: string[][]): void {
   const itypeIdxs = ['itype1','itype2','itype3','itype4','itype5','itype6','itype7']
     .map(c => headers.indexOf(c)).filter(i => i !== -1);
+  const levelIdx = headers.indexOf('level');
 
   for (const row of rows) {
     if (!itypeIdxs.some(i => WEAPON_ITYPES.has(row[i] ?? ''))) continue;
+    const affixLevel = levelIdx !== -1 ? (parseInt(row[levelIdx], 10) || 1) : 1;
+    const skillLevel = Math.min(20, Math.max(1, Math.floor(affixLevel / 7)));
     for (let slot = 1; slot <= 3; slot++) {
       const codeIdx = headers.indexOf(`mod${slot}code`);
       const minIdx  = headers.indexOf(`mod${slot}min`);
@@ -34,9 +37,8 @@ function doubleWeaponProcs(headers: string[], rows: string[][]): void {
       if (codeIdx === -1 || minIdx === -1 || maxIdx === -1) continue;
       if (!CHANCE_PROC_CODES.has(row[codeIdx] ?? '')) continue;
       const minVal = parseInt(row[minIdx], 10);
-      const maxVal = parseInt(row[maxIdx], 10);
       if (!isNaN(minVal) && minVal > 0) row[minIdx] = String(Math.min(PROC_CHANCE_CAP, minVal * 2));
-      if (!isNaN(maxVal) && maxVal > 0) row[maxIdx] = String(Math.min(PROC_CHANCE_CAP, maxVal * 2));
+      row[maxIdx] = String(skillLevel);
     }
   }
 }

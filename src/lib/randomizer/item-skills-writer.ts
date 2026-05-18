@@ -78,7 +78,7 @@ function remapRowIndexParam(par: string, idMapping?: Map<number, number>): strin
 // item affixes — exclude them from the pool. SkillEntry.reqlevel is loaded
 // from skills.json so it reflects the VANILLA reqlevel, not any post-
 // shuffle reassignment.
-const PROC_POOL_MAX_REQLEVEL = 18;
+const PROC_POOL_MAX_REQLEVEL = 30;
 
 // Per-class castable placement pools, plus a global pool of all castable
 // placements. Used by proc-slot randomization. Built once per remap call.
