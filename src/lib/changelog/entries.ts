@@ -12,6 +12,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.244',
+    date: 'May 2026',
+    tagline: 'Pestilence poison damage tuned down',
+    notes: [
+      'Pestilence: Act 1 max poison damage reduced from 90 to 60. The +15 max per act ramp is unchanged, so the full table is now 45–60 / 55–75 / 65–90 / 75–105 / 85–120 across Acts 1–5 on Normal',
+    ],
+  },
+  {
     version: 'v0.243',
     date: 'May 2026',
     tagline: 'Proc skill level now scales with item level',
