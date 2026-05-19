@@ -10,11 +10,10 @@
 const TZ = 'America/Los_Angeles';
 
 // Week 1 starts at midnight LA on this date.
-// Set to March 2 so that the 14-day challenge numbering continues from
-// where the old 7-day weekly numbering left off (today = Challenge 6).
+// Set to March 9 so that Challenge 6 starts on May 18, 2026.
 const BASE_YEAR = 2026;
 const BASE_MONTH_ZERO = 2; // March (0-based)
-const BASE_DAY = 2;
+const BASE_DAY = 9;
 
 const APPROX_WEEK_MS = 14 * 24 * 60 * 60 * 1000;
 
