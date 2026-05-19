@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from 'react';
 
 const navLinks = [
   { href: '/generate', label: 'Generate Mod' },
-  { href: '/challenge', label: 'Weekly Challenge' },
+  { href: '/challenge', label: 'Mutation Challenge' },
 ];
 
 const communityLinks = [
