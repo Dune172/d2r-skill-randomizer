@@ -12,34 +12,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: 'v0.244',
-    date: 'May 2026',
-    tagline: 'Pestilence poison damage tuned down',
-    notes: [
-      'Pestilence: Act 1 max poison damage reduced from 90 to 60. The +15 max per act ramp is unchanged, so the full table is now 45–60 / 55–75 / 65–90 / 75–105 / 85–120 across Acts 1–5 on Normal',
-    ],
-  },
-  {
-    version: 'v0.243',
-    date: 'May 2026',
-    tagline: 'Proc skill level now scales with item level',
-    notes: [
-      'Heavy Burden and Titan\'s Grip procs now fire at a skill level that scales with the item\'s affix level — low-level magic gear procs at level 1, high-end gear can reach level 12 or higher',
-      'Expanded the skill pool eligible for procs to include higher-tier skills. Powerful items can now proc Blizzard, Meteor, Hydra, and similar top-end skills',
-    ],
-  },
-  {
     version: 'v0.242',
     date: 'May 2026',
     tagline: 'Mutation Challenge — 14-day cycle, rebalanced mutations, new item procs',
     notes: [
       'The Weekly Challenge is now the Mutation Challenge and runs every 14 days instead of 7. Each challenge is numbered and shown as "Challenge X" throughout the site',
-      'Heavy Burden: magic armor now has a chance to cast a random skill when hit — every magic armor piece with an affix gains a proc',
-      "Titan's Grip: proc chances on qualifying weapons are doubled",
+      'Heavy Burden: magic body armor, helmets, and shields with any affix now gain a 10% chance to cast a random skill when hit — skill power scales with item level',
+      "Titan's Grip: proc chances on qualifying weapons are doubled, and proc skill level scales with item level",
+      'Procs can now roll higher-tier skills — powerful items can proc Blizzard, Meteor, Hydra, and similar top-end skills',
       'Bloodthirst: monster life regen dialed back (4× instead of 7×)',
       'The Horde: XP penalty reduced — you keep 66% of XP per kill instead of 50%',
       'Entropy: equipment now degrades 4× as fast (up from 3×)',
       'Tempered Edge: physical resistance penalty increased to −40 (from −30)',
+      'Pestilence: poison damage tuned down — Act 1 max reduced from 90 to 60, full table is now 45–60 / 55–75 / 65–90 / 75–105 / 85–120 across Acts 1–5',
       'Holy Shield caused the equipped shield to go invisible when randomized to any non-Paladin class — fixed',
       'Fixed golem synergy tooltips still showing the vanilla Necromancer skills (Blood Golem, Iron Golem, etc.) after shuffling',
     ],
