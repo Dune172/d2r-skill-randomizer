@@ -61,7 +61,7 @@ export default function ChallengePage() {
         <div className="anim-fade-up-d1 flex items-center gap-3 justify-center mb-8">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[#7a5818]/60 max-w-[80px]" />
           <h2 className="font-cinzel text-sm text-[#c8942a] tracking-[0.12em] uppercase">
-            This Challenge&apos;s Randomizer Seed
+            A new challenge every two weeks
           </h2>
           <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[#7a5818]/60 max-w-[80px]" />
         </div>
