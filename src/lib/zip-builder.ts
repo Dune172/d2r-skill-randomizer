@@ -175,13 +175,18 @@ export function buildZip(contents: ZipContents): Buffer {
     zip.addFile(`${d}/data/hd/global/ui/spells/hireables/${HIREABLE_FILENAME}`, contents.hireableSprite);
   }
 
-  // Add icon sprites to both non-hd and hd paths
+  // Add icon sprites to both non-hd and hd paths, including lowend variants.
+  // D2R loads the .lowend.sprite filename on low graphics settings; without it
+  // the mod falls back to vanilla (unshuffled) icons for lowend users.
   for (const [filename, buf] of contents.iconSprites.entries()) {
     const prefix = filename.replace('skillicon.sprite', '');
     const folderName = PREFIX_TO_FOLDER[prefix];
     if (folderName) {
       zip.addFile(`${d}/data/global/ui/spells/${folderName}/${filename}`, buf);
       zip.addFile(`${d}/data/hd/global/ui/spells/${folderName}/${filename}`, buf);
+      const lowendFilename = filename.replace('.sprite', '.lowend.sprite');
+      zip.addFile(`${d}/data/global/ui/spells/${folderName}/${lowendFilename}`, buf);
+      zip.addFile(`${d}/data/hd/global/ui/spells/${folderName}/${lowendFilename}`, buf);
     }
   }
 

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { ClassCode, TreePage } from '../randomizer/types';
-import { CLASS_BY_CODE, SPRITE_CLASSES } from '../randomizer/config';
+import { CLASS_BY_CODE, CLASS_DEFS, SPRITE_CLASSES } from '../randomizer/config';
 import { parseSpriteHeader, extractFrame, buildSpriteWithPadding } from './sprite-parser';
 
 export type TreeVariant = 'mkb' | 'controller';
@@ -125,6 +125,17 @@ export function buildAllTreeSprites(
     return results;
   }
 
+  // Check if lowend source sprites are present for this variant.
+  // On the production server only the full-res .sprite files are deployed;
+  // if lowend files are absent we skip their generation entirely and let
+  // D2R fall back to its vanilla lowend assets.
+  const hasLowend = fs.existsSync(
+    path.join(dir, `${CLASS_DEFS[0].spritePrefix}skilltree.lowend.sprite`)
+  );
+  if (!hasLowend) {
+    console.warn(`Lowend sprites (${variant}) not available — skipping lowend tree sprite generation`);
+  }
+
   for (const [classCode, trees] of treeAssignments.entries()) {
     const classDef = CLASS_BY_CODE.get(classCode);
     if (!classDef) continue;
@@ -135,9 +146,11 @@ export function buildAllTreeSprites(
     const fullSprite = stitchTreeSprite(trees, false, variant);
     results.set(`${prefix}skilltree.sprite`, fullSprite);
 
-    // Low-end resolution
-    const lowendSprite = stitchTreeSprite(trees, true, variant);
-    results.set(`${prefix}skilltree.lowend.sprite`, lowendSprite);
+    // Low-end resolution (only when source lowend files are deployed)
+    if (hasLowend) {
+      const lowendSprite = stitchTreeSprite(trees, true, variant);
+      results.set(`${prefix}skilltree.lowend.sprite`, lowendSprite);
+    }
   }
 
   return results;

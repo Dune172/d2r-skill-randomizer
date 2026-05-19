@@ -12,6 +12,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.243',
+    date: 'May 2026',
+    tagline: 'Skill icons now shuffle correctly on low graphics settings',
+    notes: [
+      'Skill icons were showing the wrong (vanilla) layout for players using low graphics settings. The mod now includes the correct shuffled icons for all quality levels',
+    ],
+  },
+  {
     version: 'v0.242',
     date: 'May 2026',
     tagline: 'Mutation Challenge — 14-day cycle, rebalanced mutations, new item procs',
