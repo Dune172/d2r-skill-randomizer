@@ -10,7 +10,7 @@ sharp.concurrency(2);
 // buffers are already globally cached; this helps repeat composite ops.
 sharp.cache({ memory: 50, items: 200, files: 0 });
 import { ClassCode, SkillPlacement } from '../randomizer/types';
-import { CLASS_BY_CODE, ICON_WIDTH, ICON_HEIGHT, ICONS_PER_CLASS } from '../randomizer/config';
+import { CLASS_BY_CODE, ICON_WIDTH, ICON_HEIGHT, ICON_WIDTH_LOWEND, ICON_HEIGHT_LOWEND, ICONS_PER_CLASS } from '../randomizer/config';
 import { buildSprite } from './sprite-parser';
 
 const ICONS_DIR = path.join(process.cwd(), 'data', 'sprites', 'icons');
@@ -64,23 +64,27 @@ function getIconRGBACache(): Map<string, Buffer> {
 }
 
 /**
- * Load a PNG file (named .bmp) to raw RGBA buffer, caching the result globally.
+ * Load a PNG file (named .bmp) to raw RGBA buffer at the given dimensions,
+ * caching the result globally. Cache key includes dimensions so full-res and
+ * lowend buffers are stored separately.
  */
-async function loadIconToRGBA(filePath: string): Promise<Buffer> {
+async function loadIconToRGBA(filePath: string, width: number, height: number): Promise<Buffer> {
   const cache = getIconRGBACache();
-  if (cache.has(filePath)) return cache.get(filePath)!;
+  const cacheKey = `${filePath}:${width}x${height}`;
+  if (cache.has(cacheKey)) return cache.get(cacheKey)!;
   try {
     const { data } = await sharp(filePath)
+      .resize(width, height)
       .ensureAlpha()
       .raw()
       .toBuffer({ resolveWithObject: true });
-    cache.set(filePath, data);
+    cache.set(cacheKey, data);
     return data;
   } catch {
     // Cache transparent fallback so we don't retry the failed read on every request
     console.warn(`Icon not found: ${filePath}, using transparent`);
-    const blank = Buffer.alloc(ICON_WIDTH * ICON_HEIGHT * 4);
-    cache.set(filePath, blank);
+    const blank = Buffer.alloc(width * height * 4);
+    cache.set(cacheKey, blank);
     return blank;
   }
 }
@@ -94,6 +98,8 @@ export async function buildClassIconSprite(
   classCode: ClassCode,
   placements: SkillPlacement[],
   skillDescIconCels: Map<string, number>, // skilldesc name → original IconCel
+  width: number = ICON_WIDTH,
+  height: number = ICON_HEIGHT,
 ): Promise<Buffer> {
   // Sort placements by skillIndex to ensure correct order
   const sorted = [...placements].sort((a, b) => a.skillIndex - b.skillIndex);
@@ -104,17 +110,17 @@ export async function buildClassIconSprite(
     const originalClass = placement.skill.charclass;
     const originalIconCel = skillDescIconCels.get(placement.skill.skilldesc) ?? 0;
     const { normalPath, pressedPath } = getIconPaths(originalClass, originalIconCel);
-    const normal = await loadIconToRGBA(normalPath);
-    const pressed = await loadIconToRGBA(pressedPath);
+    const normal = await loadIconToRGBA(normalPath, width, height);
+    const pressed = await loadIconToRGBA(pressedPath, width, height);
     frames.push(normal, pressed);
   }
 
   // Pad to 60 frames if needed (shouldn't normally happen)
   while (frames.length < ICONS_PER_CLASS) {
-    frames.push(Buffer.alloc(ICON_WIDTH * ICON_HEIGHT * 4));
+    frames.push(Buffer.alloc(width * height * 4));
   }
 
-  return buildSprite(frames, ICON_WIDTH, ICON_HEIGHT);
+  return buildSprite(frames, width, height);
 }
 
 /**
@@ -144,8 +150,8 @@ export async function buildHireableSprite(
     const originalClass = placement.skill.charclass;
     const originalIconCel = skillDescIconCels.get(placement.skill.skilldesc) ?? 0;
     const { normalPath, pressedPath } = getIconPaths(originalClass, originalIconCel);
-    const normal = await loadIconToRGBA(normalPath);
-    const pressed = await loadIconToRGBA(pressedPath);
+    const normal = await loadIconToRGBA(normalPath, ICON_WIDTH, ICON_HEIGHT);
+    const pressed = await loadIconToRGBA(pressedPath, ICON_WIDTH, ICON_HEIGHT);
     frames.push(normal, pressed);
   }
 
@@ -165,8 +171,12 @@ export async function buildAllIconSprites(
   for (const [classCode, placements] of placementsByClass.entries()) {
     const classDef = CLASS_BY_CODE.get(classCode);
     if (!classDef) continue;
+    // Full resolution
     const sprite = await buildClassIconSprite(classCode, placements, skillDescIconCels);
     results.set(`${classDef.spritePrefix}skillicon.sprite`, sprite);
+    // Lowend — half resolution, used by D2R on low graphics quality settings
+    const lowendSprite = await buildClassIconSprite(classCode, placements, skillDescIconCels, ICON_WIDTH_LOWEND, ICON_HEIGHT_LOWEND);
+    results.set(`${classDef.spritePrefix}skillicon.lowend.sprite`, lowendSprite);
   }
 
   return results;

@@ -54,6 +54,8 @@ export const TREES_PER_CLASS = 3;
 // Icon dimensions
 export const ICON_WIDTH = 132;
 export const ICON_HEIGHT = 130;
+export const ICON_WIDTH_LOWEND = Math.floor(ICON_WIDTH / 2);  // 66
+export const ICON_HEIGHT_LOWEND = Math.floor(ICON_HEIGHT / 2); // 65
 export const ICONS_PER_CLASS = 60; // 30 skills × 2 frames each (normal + pressed)
 
 // Sprite header size
