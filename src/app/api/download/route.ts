@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     const isWeekly = weeklyParam && Number.isInteger(weekNumber) && weekNumber >= 1;
     const filename = isWeekly
       ? `d2rr_${slugifyChallenge(getWeekName(weekNumber))}_${formatLaIsoDate(getWeekStart(weekNumber))}.zip`
-      : `d2rr_seed${seed}.zip`;
+      : `d2rr_export_${seed}.zip`;
 
     return new NextResponse(new Uint8Array(zip.toBuffer()), {
       headers: {

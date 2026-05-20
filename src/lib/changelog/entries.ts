@@ -12,6 +12,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.244',
+    date: 'May 2026',
+    tagline: 'Downloaded zip renamed so it no longer looks like the mod folder inside it',
+    notes: [
+      'The downloaded file is now named d2rr_export_[seed].zip instead of d2rr_seed[seed].zip. The mod folder inside (seed[seed]) keeps the same name — only the archive you download has changed',
+    ],
+  },
+  {
     version: 'v0.243',
     date: 'May 2026',
     tagline: 'Skill icons now shuffle correctly on low graphics settings',
