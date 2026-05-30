@@ -20,6 +20,7 @@ interface Options {
   disableChat: boolean;
   xpMultiplier: number;
   xpActs: number[];
+  expandProcPool: boolean;
 }
 
 const defaultOptions: Options = {
@@ -32,6 +33,7 @@ const defaultOptions: Options = {
   disableChat: false,
   xpMultiplier: 1,
   xpActs: [1, 2, 3, 4, 5],
+  expandProcPool: false,
 };
 
 function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearchParams>): Options | null {
@@ -58,6 +60,7 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
     xpActs: p.has('xpActs')
       ? p.get('xpActs')!.split(',').map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5],
+    expandProcPool: p.get('procPool') === '1',
   };
 }
 
@@ -94,7 +97,8 @@ export default function RandomizerApp() {
     const disableChatParam  = opts.disableChat     ? '&disableChat=1'  : '';
     const xpParam           = opts.xpMultiplier > 1 ? `&xpMultiplier=${opts.xpMultiplier}` : '';
     const xpActsParam       = opts.xpMultiplier > 1 ? `&xpActs=${[...opts.xpActs].sort((a, b) => a - b).join(',')}` : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}`;
+    const procPoolParam     = opts.expandProcPool ? '&procPool=1' : '';
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${procPoolParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -125,7 +129,7 @@ export default function RandomizerApp() {
 
       setStatus('building');
       const buildingStart = Date.now();
-      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs });
+      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, expandProcPool: options.expandProcPool });
 
       // Retry up to 2 times on 503 (queue full). Exponential-ish backoff:
       // 3s → 6s. Matches the server-side queue window (~3-5s per gen × 8 deep
