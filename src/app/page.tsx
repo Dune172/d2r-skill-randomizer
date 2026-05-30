@@ -109,9 +109,9 @@ const communityCards = [
     ),
   },
   {
-    href: 'https://ko-fi.com/dune172',
+    href: 'https://patreon.com/D2RR?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink',
     external: true,
-    label: 'Ko-fi',
+    label: 'Patreon',
     desc: 'Enjoying the randomizer? Support development and keep the seeds flowing.',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">

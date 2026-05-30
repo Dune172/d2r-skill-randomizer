@@ -23,12 +23,12 @@ export default function SiteFooter() {
           </a>
           <span className="text-[#3a1510] select-none">|</span>
           <a
-            href="https://ko-fi.com/dune172"
+            href="https://patreon.com/D2RR?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink"
             target="_blank"
             rel="noopener noreferrer"
             className="font-cinzel text-[10px] tracking-[0.3em] uppercase px-3 py-1.5 text-[#a87830] hover:text-[#c8942a] transition-colors"
           >
-            Ko-fi
+            Patreon
           </a>
           <span className="text-[#3a1510] select-none">|</span>
           <Link

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { getEntries, stripIp } from '@/lib/leaderboard';
 import { ArchiveWeekCard } from './ArchiveWeekCard';
-import { KofiPopup } from './KofiPopup';
+import { PatreonPopup } from './KofiPopup';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +31,7 @@ export default function ArchivePage() {
 
   return (
     <main className="min-h-screen">
-      <KofiPopup />
+      <PatreonPopup />
       <section className="max-w-4xl mx-auto px-4 pt-12 pb-6 text-center">
         <h1 className="anim-fade-up font-cinzel font-black tracking-[0.14em] text-3xl md:text-4xl text-[#c8942a] glow-gold uppercase mb-3">
           Mutation Challenge Archive

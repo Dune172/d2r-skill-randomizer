@@ -18,11 +18,11 @@ const BUILDING_MESSAGES = [
   'Rebalancing the cosmic loot table…',
   'Whispering with Mephisto…',
   'Counting Larzuk\u2019s sockets…',
-  'Have you considered supporting Dune on Ko-fi?',
-  'I wonder how Dune\u2019s Ko-fi is doing?',
-  'If you\u2019re enjoying this, Dune\u2019s Ko-fi would love a visit.',
-  'Fun fact: randomizers run on Ko-fi donations.',
-  'Help support D2RR on Dune\u2019s Ko-fi.',
+  'Have you considered supporting Dune on Patreon?',
+  'I wonder how Dune\u2019s Patreon is doing?',
+  'If you\u2019re enjoying this, Dune\u2019s Patreon would love a visit.',
+  'Fun fact: randomizers run on Patreon supporters.',
+  'Help support D2RR on Dune\u2019s Patreon.',
 ];
 
 const SUPPORT_INDICES = new Set<number>([10, 11, 12, 13, 14]);

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-export function KofiPopup() {
+export function PatreonPopup() {
   const [open, setOpen] = useState(true);
   const [closeable, setCloseable] = useState(false);
 
@@ -25,7 +25,7 @@ export function KofiPopup() {
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="kofi-popup-title"
+      aria-labelledby="patreon-popup-title"
       className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm anim-fade-up"
       onClick={() => { if (closeable) setOpen(false); }}
     >
@@ -49,25 +49,25 @@ export function KofiPopup() {
           A Word From Dune
         </p>
         <h2
-          id="kofi-popup-title"
+          id="patreon-popup-title"
           className="font-cinzel font-black text-2xl md:text-3xl text-[#c8942a] glow-gold tracking-[0.12em] uppercase mb-4 leading-tight"
         >
           Enjoying The Randomizer?
         </h2>
         <p className="text-[#a89060] text-sm leading-relaxed mb-6">
           D2R Randomizer is a free, ad-free passion project. If you&apos;re digging the weekly challenges,
-          consider tossing a coin to your randomizer-maker on Ko-fi. Every bit keeps the seeds rolling.
+          consider supporting your randomizer-maker on Patreon. Every bit keeps the seeds rolling.
         </p>
 
         <a
-          href="https://ko-fi.com/dune172"
+          href="https://patreon.com/D2RR?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink"
           target="_blank"
           rel="noopener noreferrer"
           className="btn-shimmer inline-block font-cinzel tracking-[0.2em] uppercase text-sm px-8 py-3
             bg-[#7a1f0a] hover:bg-[#9a2c0f] border border-[#c8942a]/40 text-[#e8c87a]
             transition-colors panel-shadow"
         >
-          Support on Ko-fi
+          Support on Patreon
         </a>
 
         <p className="text-[11px] text-[#8a7040] italic mt-5">

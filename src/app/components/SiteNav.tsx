@@ -11,7 +11,7 @@ const navLinks = [
 
 const communityLinks = [
   { href: 'https://discord.gg/y5r2sTxwS5', label: 'Discord Community', external: true },
-  { href: 'https://ko-fi.com/dune172', label: 'Support on Ko-fi', external: true },
+  { href: 'https://patreon.com/D2RR?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink', label: 'Support on Patreon', external: true },
   { href: '/changelog', label: 'Patch Notes', external: false },
 ];
 
