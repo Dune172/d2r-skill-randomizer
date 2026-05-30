@@ -210,7 +210,7 @@ export function WeekCard() {
             Install Instructions
           </p>
         </div>
-        <InstallInstructions seed={currentSeed} />
+        <InstallInstructions seed={currentSeed} raceMode={false} />
       </div>
     )}
     </>

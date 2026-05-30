@@ -17,6 +17,7 @@ interface FormState {
   disableChat: boolean;
   xpMultiplier: number;
   xpActs: number[];
+  raceMode: boolean;
 }
 
 const SEASON1_PRESET: FormState = {
@@ -32,6 +33,7 @@ const SEASON1_PRESET: FormState = {
   disableChat: false,
   xpMultiplier: 1.5,
   xpActs: [1, 2],
+  raceMode: true,
 };
 
 const DEFAULT_STATE: FormState = {
@@ -47,11 +49,12 @@ const DEFAULT_STATE: FormState = {
   disableChat: false,
   xpMultiplier: 1,
   xpActs: [1, 2, 3, 4, 5],
+  raceMode: true,
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[] };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[] }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; raceMode: boolean };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; raceMode: boolean }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -151,6 +154,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [disableChat, setDisableChat] = useState(initialOptions?.disableChat ?? SEASON1_PRESET.disableChat);
   const [xpMultiplier, setXpMultiplier] = useState(initialOptions?.xpMultiplier ?? SEASON1_PRESET.xpMultiplier);
   const [xpActs, setXpActs] = useState<number[]>(initialOptions?.xpActs ?? SEASON1_PRESET.xpActs);
+  const [raceMode, setRaceMode] = useState(initialOptions?.raceMode ?? SEASON1_PRESET.raceMode);
   const applyPreset = (p: Preset) => {
     setPreset(p);
     if (p === 'season1race') {
@@ -166,6 +170,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setDisableChat(SEASON1_PRESET.disableChat);
       setXpMultiplier(SEASON1_PRESET.xpMultiplier);
       setXpActs(SEASON1_PRESET.xpActs);
+      setRaceMode(SEASON1_PRESET.raceMode);
     }
   };
 
@@ -198,6 +203,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       disableChat,
       xpMultiplier,
       xpActs,
+      raceMode,
     });
   };
 
@@ -396,6 +402,13 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       {/* Seed */}
       <div className="space-y-3 pt-1 pb-2">
         <div className="h-px bg-[#3a1510]/50" />
+        <Checkbox
+          id="raceMode"
+          checked={raceMode}
+          onChange={field(setRaceMode)}
+          label="Race Mode"
+          tooltip="Includes -seed in the launch shortcut and manual args, locking the map seed so all racers see the same maps."
+        />
         <div className="flex items-center gap-3">
           <label htmlFor="seed" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap flex-shrink-0">
             Seed

@@ -20,6 +20,7 @@ interface Options {
   disableChat: boolean;
   xpMultiplier: number;
   xpActs: number[];
+  raceMode: boolean;
 }
 
 const defaultOptions: Options = {
@@ -32,6 +33,7 @@ const defaultOptions: Options = {
   disableChat: false,
   xpMultiplier: 1,
   xpActs: [1, 2, 3, 4, 5],
+  raceMode: true,
 };
 
 function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearchParams>): Options | null {
@@ -58,6 +60,7 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
     xpActs: p.has('xpActs')
       ? p.get('xpActs')!.split(',').map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5],
+    raceMode: p.get('raceMode') !== '0',
   };
 }
 
@@ -94,7 +97,8 @@ export default function RandomizerApp() {
     const disableChatParam  = opts.disableChat     ? '&disableChat=1'  : '';
     const xpParam           = opts.xpMultiplier > 1 ? `&xpMultiplier=${opts.xpMultiplier}` : '';
     const xpActsParam       = opts.xpMultiplier > 1 ? `&xpActs=${[...opts.xpActs].sort((a, b) => a - b).join(',')}` : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}`;
+    const raceModeParam     = !opts.raceMode ? '&raceMode=0' : '';
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${raceModeParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -195,7 +199,7 @@ export default function RandomizerApp() {
             </button>
 
             <div className="pt-0.5">
-              <InstallInstructions seed={currentSeed!} />
+              <InstallInstructions seed={currentSeed!} raceMode={currentOptions.raceMode} />
             </div>
           </div>
         )}

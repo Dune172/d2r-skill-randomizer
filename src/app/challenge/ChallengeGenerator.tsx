@@ -51,7 +51,8 @@ export function ChallengeGenerator({
     `&xpActs=${SEASON1_OPTIONS.xpActs.join(',')}` +
     `&weekly=1` +
     `&week=${weekNumber}` +
-    (weekOverride ? `&weekOverride=${weekOverride}` : '');
+    (weekOverride ? `&weekOverride=${weekOverride}` : '') +
+    `&raceMode=0`;
 
   const handleGenerate = async () => {
     setStatus('building');

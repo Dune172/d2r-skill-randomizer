@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
       : null;
     const weeklyKey = weeklyParam ? (weekOverride ?? -1) : 0;
     const teleportStaffSpeed = teleportStaffLevel > 0 && searchParams.get('staffSpeed') !== '0';
+    const raceMode = searchParams.get('raceMode') !== '0';
     const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, weeklyKey, teleportStaffSpeed);
     const zipBuffer = getCached(cacheKey);
 
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
     const modName = `seed${seed}`;
     const mapSeed = seed >>> 0;
     const zip = new AdmZip(Buffer.from(zipBuffer));
-    zip.addFile(`D2R Randomizer ${seed}.lnk`, createD2RShortcut(modName, mapSeed));
+    zip.addFile(`D2R Randomizer ${seed}.lnk`, createD2RShortcut(modName, mapSeed, raceMode));
 
     const weekParam = searchParams.get('week');
     const weekNumber = weekParam ? Number(weekParam) : NaN;
