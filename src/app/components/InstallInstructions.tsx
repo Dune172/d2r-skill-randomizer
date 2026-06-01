@@ -1,4 +1,4 @@
-export function InstallInstructions({ seed }: { seed: number }) {
+export function InstallInstructions({ seed, raceMode = true }: { seed: number; raceMode?: boolean }) {
   const seedUnsigned = seed >>> 0;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-[#c8a870]">
@@ -47,7 +47,7 @@ export function InstallInstructions({ seed }: { seed: number }) {
               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">4b</span>
               <div>
                 <span className="text-[#c8a870]">Manual</span> — In Battle.net, go to D2R → <em>Settings</em> → <em>Game Settings</em> → <em>Additional Command Line Arguments</em> and add:
-                <code className="block text-[#a89858] break-all mt-0.5">-mod seed{seed} -txt -seed {seedUnsigned}</code>
+                <code className="block text-[#a89858] break-all mt-0.5">-mod seed{seed} -txt{raceMode ? ` -seed ${seedUnsigned}` : ''}</code>
               </div>
             </div>
           </div>
@@ -89,7 +89,7 @@ export function InstallInstructions({ seed }: { seed: number }) {
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">4</span>
             <div>
               In Steam, right-click D2R → <em>Properties</em> → <em>General</em> → <em>Launch Options</em> and add:
-              <code className="block text-[#a89858] break-all mt-0.5">-mod seed{seed} -txt -seed {seedUnsigned}</code>
+              <code className="block text-[#a89858] break-all mt-0.5">-mod seed{seed} -txt{raceMode ? ` -seed ${seedUnsigned}` : ''}</code>
             </div>
           </div>
         </div>
