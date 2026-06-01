@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-type Preset = 'custom' | 'season1race';
+type Preset = 'custom' | 'season1race' | 'turbo';
 
 interface FormState {
   enablePrereqs: boolean;
@@ -32,6 +32,21 @@ const SEASON1_PRESET: FormState = {
   disableChat: false,
   xpMultiplier: 1.5,
   xpActs: [1, 2],
+};
+
+const TURBO_PRESET: FormState = {
+  enablePrereqs: true,
+  playersCount: 1,
+  playersActs: [1, 2, 3, 4, 5],
+  teleportStaff: true,
+  teleportStaffLevel: 6,
+  teleportStaffDropSource: 'Corpsefire',
+  teleportStaffSpeed: true,
+  horadricCube: true,
+  hirelingAura: true,
+  disableChat: false,
+  xpMultiplier: 3,
+  xpActs: [1, 2, 3, 4, 5],
 };
 
 const DEFAULT_STATE: FormState = {
@@ -153,19 +168,20 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [xpActs, setXpActs] = useState<number[]>(initialOptions?.xpActs ?? SEASON1_PRESET.xpActs);
   const applyPreset = (p: Preset) => {
     setPreset(p);
-    if (p === 'season1race') {
-      setEnablePrereqs(SEASON1_PRESET.enablePrereqs);
-      setPlayersCount(SEASON1_PRESET.playersCount);
-      setPlayersActs(SEASON1_PRESET.playersActs);
-      setTeleportStaff(SEASON1_PRESET.teleportStaff);
-      setTeleportStaffLevel(SEASON1_PRESET.teleportStaffLevel);
-      setTeleportStaffDropSource(SEASON1_PRESET.teleportStaffDropSource);
-      setTeleportStaffSpeed(SEASON1_PRESET.teleportStaffSpeed);
-      setHoradricCube(SEASON1_PRESET.horadricCube);
-      setHirelingAura(SEASON1_PRESET.hirelingAura);
-      setDisableChat(SEASON1_PRESET.disableChat);
-      setXpMultiplier(SEASON1_PRESET.xpMultiplier);
-      setXpActs(SEASON1_PRESET.xpActs);
+    const src = p === 'season1race' ? SEASON1_PRESET : p === 'turbo' ? TURBO_PRESET : null;
+    if (src) {
+      setEnablePrereqs(src.enablePrereqs);
+      setPlayersCount(src.playersCount);
+      setPlayersActs(src.playersActs);
+      setTeleportStaff(src.teleportStaff);
+      setTeleportStaffLevel(src.teleportStaffLevel);
+      setTeleportStaffDropSource(src.teleportStaffDropSource);
+      setTeleportStaffSpeed(src.teleportStaffSpeed);
+      setHoradricCube(src.horadricCube);
+      setHirelingAura(src.hirelingAura);
+      setDisableChat(src.disableChat);
+      setXpMultiplier(src.xpMultiplier);
+      setXpActs(src.xpActs);
     }
   };
 
@@ -221,11 +237,17 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           >
             <option value="custom">Custom</option>
             <option value="season1race" title="Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!">Season Beta Race</option>
+            <option value="turbo" title="Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.">Turbo</option>
           </select>
           <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
           {preset === 'season1race' && (
             <div className="pointer-events-none absolute right-0 top-full mt-1.5 z-10 w-72 rounded border border-[#3a1510] bg-[#0d0305] px-3 py-2 text-xs text-[#c8a870] leading-relaxed shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150">
               Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!
+            </div>
+          )}
+          {preset === 'turbo' && (
+            <div className="pointer-events-none absolute right-0 top-full mt-1.5 z-10 w-72 rounded border border-[#3a1510] bg-[#0d0305] px-3 py-2 text-xs text-[#c8a870] leading-relaxed shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.
             </div>
           )}
         </div>
