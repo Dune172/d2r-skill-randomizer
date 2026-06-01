@@ -80,8 +80,6 @@ export async function POST(request: NextRequest) {
       typeof body.weeklyChallenge?.weekOverride === 'number'
         ? Math.max(1, Math.trunc(body.weeklyChallenge.weekOverride))
         : undefined;
-    const expandProcPool = body.expandProcPool === true;
-
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
     }
@@ -93,7 +91,7 @@ export async function POST(request: NextRequest) {
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed, false, expandProcPool);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed, false);
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
@@ -288,13 +286,12 @@ export async function POST(request: NextRequest) {
     // dedicated sub-RNG so we don't disturb the main pipeline's RNG order.
     const magicPrefixTxt = loadTxtFile('magicprefix.txt');
     const magicSuffixTxt = loadTxtFile('magicsuffix.txt');
-    const procRng = createRNG(seedFromString(`${seed}:item-procs`));
     if (weeklyEnabled) {
       const preWeekNum = weeklyOverride ?? getCurrentWeekNumber();
       preApplyMagicAffixMutations(preWeekNum, magicPrefixTxt, magicSuffixTxt);
     }
-    magicPrefixTxt.rows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping, procRng, expandProcPool);
-    magicSuffixTxt.rows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping, procRng, expandProcPool);
+    magicPrefixTxt.rows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping);
+    magicSuffixTxt.rows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping);
     let magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, magicPrefixTxt.rows);
     let magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, magicSuffixTxt.rows);
 
@@ -450,7 +447,7 @@ export async function POST(request: NextRequest) {
       const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
       ui = fs.existsSync(uiPath) ? loadTxtFile('uniqueitems.txt') : null;
       if (ui) {
-        ui.rows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping, procRng, expandProcPool);
+        ui.rows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping);
         if (startingTeleportStaff) {
           ui.rows = applyTeleportStaffUnique(ui.headers, ui.rows, teleportStaffLevel, idMapping, teleportStaffSpeed);
         }

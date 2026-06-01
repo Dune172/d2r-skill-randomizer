@@ -17,7 +17,6 @@ interface FormState {
   disableChat: boolean;
   xpMultiplier: number;
   xpActs: number[];
-  expandProcPool: boolean;
   raceMode: boolean;
 }
 
@@ -34,7 +33,6 @@ const SEASON1_PRESET: FormState = {
   disableChat: false,
   xpMultiplier: 1.5,
   xpActs: [1, 2],
-  expandProcPool: false,
   raceMode: true,
 };
 
@@ -51,7 +49,6 @@ const TURBO_PRESET: FormState = {
   disableChat: false,
   xpMultiplier: 3,
   xpActs: [1, 2, 3, 4, 5],
-  expandProcPool: false,
   raceMode: false,
 };
 
@@ -68,13 +65,12 @@ const DEFAULT_STATE: FormState = {
   disableChat: false,
   xpMultiplier: 1,
   xpActs: [1, 2, 3, 4, 5],
-  expandProcPool: false,
   raceMode: true,
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; expandProcPool: boolean; raceMode: boolean };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; expandProcPool: boolean; raceMode: boolean }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; raceMode: boolean };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; raceMode: boolean }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -174,7 +170,6 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [disableChat, setDisableChat] = useState(initialOptions?.disableChat ?? SEASON1_PRESET.disableChat);
   const [xpMultiplier, setXpMultiplier] = useState(initialOptions?.xpMultiplier ?? SEASON1_PRESET.xpMultiplier);
   const [xpActs, setXpActs] = useState<number[]>(initialOptions?.xpActs ?? SEASON1_PRESET.xpActs);
-  const [expandProcPool, setExpandProcPool] = useState(initialOptions?.expandProcPool ?? SEASON1_PRESET.expandProcPool);
   const [raceMode, setRaceMode] = useState(initialOptions?.raceMode ?? SEASON1_PRESET.raceMode);
   const applyPreset = (p: Preset) => {
     setPreset(p);
@@ -192,7 +187,6 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setDisableChat(src.disableChat);
       setXpMultiplier(src.xpMultiplier);
       setXpActs(src.xpActs);
-      setExpandProcPool(src.expandProcPool);
       setRaceMode(src.raceMode);
     }
   };
@@ -226,7 +220,6 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       disableChat,
       xpMultiplier,
       xpActs,
-      expandProcPool,
       raceMode,
     });
   };
@@ -288,13 +281,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               label="No skill prerequisites"
               tooltip="Removes skill prerequisites, letting you invest points in any skill freely without unlocking earlier ones first."
             />
-            <Checkbox
-              id="expandProcPool"
-              checked={expandProcPool}
-              onChange={field(setExpandProcPool)}
-              label="Expand proc skill pool"
-              tooltip="When enabled, each item proc (chance to cast on hit/attack/death/etc.) is randomly assigned from the castable skill pool instead of using the original D2R skill assignments."
-            />
+
           </div>
 
           {/* Right: XP Boost */}

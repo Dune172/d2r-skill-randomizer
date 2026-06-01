@@ -1,21 +1,5 @@
 import { ClassCode, SkillPlacement } from './types';
-import { SeededRNG } from './seed';
 import { isCastableTarget } from './skill-filters';
-import { loadSkills } from '../data-loader';
-
-// Vanilla reqlevel by skill name. Substitute SkillEntries inherit reqlevel
-// from their source skill, not the dropped skill — so p.skill.reqlevel can
-// say "6" for a substitute "Frenzy" even though vanilla Frenzy is reqlevel
-// 24. The user wants exclusion based on the *displayed* skill name (vanilla
-// reqlevel), so look up by name from skills.json.
-let _vanillaReqlevelByName: Map<string, number> | null = null;
-function vanillaReqlevelByName(): Map<string, number> {
-  if (_vanillaReqlevelByName) return _vanillaReqlevelByName;
-  const m = new Map<string, number>();
-  for (const s of loadSkills()) m.set(s.skill, s.reqlevel ?? 1);
-  _vanillaReqlevelByName = m;
-  return m;
-}
 
 // Walk the placement fallback chain (exact tab/row/col → same row+col, any tab →
 // same row, any col/tab → any placement in class) and return the first castable
@@ -73,40 +57,6 @@ function remapRowIndexParam(par: string, idMapping?: Map<number, number>): strin
   return mapped !== undefined ? String(mapped) : par;
 }
 
-// Vanilla reqlevels are 1 / 6 / 12 / 18 / 24 / 30. Procs that fire random
-// top-tier skills (Meteor, Hydra, Frozen Orb, etc.) are too strong for
-// item affixes — exclude them from the pool. SkillEntry.reqlevel is loaded
-// from skills.json so it reflects the VANILLA reqlevel, not any post-
-// shuffle reassignment.
-const PROC_POOL_MAX_REQLEVEL = 30;
-
-// Per-class castable placement pools, plus a global pool of all castable
-// placements. Used by proc-slot randomization. Built once per remap call.
-function buildCastablePools(placements: SkillPlacement[]) {
-  const reqByName = vanillaReqlevelByName();
-  const byClass = new Map<string, SkillPlacement[]>();
-  const all: SkillPlacement[] = [];
-  for (const p of placements) {
-    if (!isCastableTarget(p.skill)) continue;
-    // Filter by VANILLA reqlevel of the displayed skill name. Substitutes
-    // keep the dropped skill's name but inherit source's reqlevel; we want
-    // to exclude based on what the player sees in the proc tooltip.
-    const vanillaReq = reqByName.get(p.skill.skill) ?? p.skill.reqlevel ?? 1;
-    if (vanillaReq > PROC_POOL_MAX_REQLEVEL) continue;
-    const k = String(p.targetClass);
-    (byClass.get(k) ?? byClass.set(k, []).get(k)!).push(p);
-    all.push(p);
-  }
-  return { byClassCastable: byClass, allCastable: all };
-}
-
-function pickRandomFromPool(
-  pool: SkillPlacement[],
-  rng: SeededRNG,
-): SkillPlacement | undefined {
-  if (pool.length === 0) return undefined;
-  return pool[rng.randInt(0, pool.length - 1)];
-}
 
 function buildPlacementIndices(placements: SkillPlacement[]) {
   const byPos = new Map<string, SkillPlacement[]>();
@@ -187,13 +137,10 @@ export function remapUniqueItemSkills(
   rows: string[][],
   placements: SkillPlacement[],
   idMapping: Map<number, number> | undefined,
-  procRng: SeededRNG,
-  expandProcPool: boolean = false,
 ): string[][] {
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
   const byId = new Map<number, SkillPlacement>(placements.map(p => [p.skill.id, p]));
   const { byPos, byClassRowCol, byClassRow, byClass } = buildPlacementIndices(placements);
-  const { byClassCastable, allCastable } = expandProcPool ? buildCastablePools(placements) : { byClassCastable: new Map<string, SkillPlacement[]>(), allCastable: [] };
 
   const codeCol = headers.indexOf('code');
   if (codeCol === -1) return rows;
@@ -214,21 +161,10 @@ export function remapUniqueItemSkills(
       const par = updated[parCol];
       if (!par?.trim()) continue;
 
-      // Procs (CTC family + charged): when expandProcPool is on, randomly pick
-      // from the castable pool; when off, identity-remap the vanilla skill via
+      // Procs (CTC family + charged): identity-remap the vanilla skill via
       // idMapping so the original D2R proc assignment is preserved.
       if (PROC_CODES.has(prop)) {
-        if (expandProcPool) {
-          const pool = classRestriction
-            ? (byClassCastable.get(classRestriction) ?? allCastable)
-            : allCastable;
-          const pick = pickRandomFromPool(pool, procRng);
-          if (pick) {
-            updated[parCol] = String(idMapping?.get(pick.skill.id) ?? pick.skill.id);
-          }
-        } else {
-          updated[parCol] = remapRowIndexParam(par, idMapping);
-        }
+        updated[parCol] = remapRowIndexParam(par, idMapping);
         continue;
       }
 
@@ -302,13 +238,10 @@ export function remapClassItemSkills(
   rows: string[][],
   placements: SkillPlacement[],
   idMapping: Map<number, number> | undefined,
-  procRng: SeededRNG,
-  expandProcPool: boolean = false,
 ): string[][] {
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
   const byId = new Map<number, SkillPlacement>(placements.map(p => [p.skill.id, p]));
   const { byPos, byClassRowCol, byClassRow, byClass } = buildPlacementIndices(placements);
-  const { byClassCastable, allCastable } = expandProcPool ? buildCastablePools(placements) : { byClassCastable: new Map<string, SkillPlacement[]>(), allCastable: [] };
 
   const classCol = headers.indexOf('class');
   if (classCol === -1) return rows;
@@ -326,21 +259,10 @@ export function remapClassItemSkills(
       const param = updated[paramCol];
       if (!param?.trim()) continue;
 
-      // Procs (CTC family + charged): when expandProcPool is on, randomly pick
-      // from the castable pool; when off, identity-remap the vanilla skill via
+      // Procs (CTC family + charged): identity-remap the vanilla skill via
       // idMapping so the original D2R proc assignment is preserved.
       if (PROC_CODES.has(code)) {
-        if (expandProcPool) {
-          const pool = classRestriction
-            ? (byClassCastable.get(classRestriction) ?? allCastable)
-            : allCastable;
-          const pick = pickRandomFromPool(pool, procRng);
-          if (pick) {
-            updated[paramCol] = String(idMapping?.get(pick.skill.id) ?? pick.skill.id);
-          }
-        } else {
-          updated[paramCol] = remapRowIndexParam(param, idMapping);
-        }
+        updated[paramCol] = remapRowIndexParam(param, idMapping);
         continue;
       }
 
