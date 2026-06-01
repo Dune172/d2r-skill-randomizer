@@ -188,11 +188,12 @@ export function remapUniqueItemSkills(
   placements: SkillPlacement[],
   idMapping: Map<number, number> | undefined,
   procRng: SeededRNG,
+  expandProcPool: boolean = false,
 ): string[][] {
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
   const byId = new Map<number, SkillPlacement>(placements.map(p => [p.skill.id, p]));
   const { byPos, byClassRowCol, byClassRow, byClass } = buildPlacementIndices(placements);
-  const { byClassCastable, allCastable } = buildCastablePools(placements);
+  const { byClassCastable, allCastable } = expandProcPool ? buildCastablePools(placements) : { byClassCastable: new Map<string, SkillPlacement[]>(), allCastable: [] };
 
   const codeCol = headers.indexOf('code');
   if (codeCol === -1) return rows;
@@ -213,16 +214,20 @@ export function remapUniqueItemSkills(
       const par = updated[parCol];
       if (!par?.trim()) continue;
 
-      // Procs (CTC family + charged): random castable pick from class pool
-      // (or global pool if not class-restricted). Output is the new row
-      // index of the picked skill.
+      // Procs (CTC family + charged): when expandProcPool is on, randomly pick
+      // from the castable pool; when off, identity-remap the vanilla skill via
+      // idMapping so the original D2R proc assignment is preserved.
       if (PROC_CODES.has(prop)) {
-        const pool = classRestriction
-          ? (byClassCastable.get(classRestriction) ?? allCastable)
-          : allCastable;
-        const pick = pickRandomFromPool(pool, procRng);
-        if (pick) {
-          updated[parCol] = String(idMapping?.get(pick.skill.id) ?? pick.skill.id);
+        if (expandProcPool) {
+          const pool = classRestriction
+            ? (byClassCastable.get(classRestriction) ?? allCastable)
+            : allCastable;
+          const pick = pickRandomFromPool(pool, procRng);
+          if (pick) {
+            updated[parCol] = String(idMapping?.get(pick.skill.id) ?? pick.skill.id);
+          }
+        } else {
+          updated[parCol] = remapRowIndexParam(par, idMapping);
         }
         continue;
       }
@@ -298,11 +303,12 @@ export function remapClassItemSkills(
   placements: SkillPlacement[],
   idMapping: Map<number, number> | undefined,
   procRng: SeededRNG,
+  expandProcPool: boolean = false,
 ): string[][] {
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
   const byId = new Map<number, SkillPlacement>(placements.map(p => [p.skill.id, p]));
   const { byPos, byClassRowCol, byClassRow, byClass } = buildPlacementIndices(placements);
-  const { byClassCastable, allCastable } = buildCastablePools(placements);
+  const { byClassCastable, allCastable } = expandProcPool ? buildCastablePools(placements) : { byClassCastable: new Map<string, SkillPlacement[]>(), allCastable: [] };
 
   const classCol = headers.indexOf('class');
   if (classCol === -1) return rows;
@@ -320,17 +326,20 @@ export function remapClassItemSkills(
       const param = updated[paramCol];
       if (!param?.trim()) continue;
 
-      // Procs (CTC family + charged): random castable pick from class pool
-      // (or global pool if no class restriction). Most magic-suffix CTCs
-      // have no class column, so this branch runs whether or not
-      // classRestriction is set.
+      // Procs (CTC family + charged): when expandProcPool is on, randomly pick
+      // from the castable pool; when off, identity-remap the vanilla skill via
+      // idMapping so the original D2R proc assignment is preserved.
       if (PROC_CODES.has(code)) {
-        const pool = classRestriction
-          ? (byClassCastable.get(classRestriction) ?? allCastable)
-          : allCastable;
-        const pick = pickRandomFromPool(pool, procRng);
-        if (pick) {
-          updated[paramCol] = String(idMapping?.get(pick.skill.id) ?? pick.skill.id);
+        if (expandProcPool) {
+          const pool = classRestriction
+            ? (byClassCastable.get(classRestriction) ?? allCastable)
+            : allCastable;
+          const pick = pickRandomFromPool(pool, procRng);
+          if (pick) {
+            updated[paramCol] = String(idMapping?.get(pick.skill.id) ?? pick.skill.id);
+          }
+        } else {
+          updated[paramCol] = remapRowIndexParam(param, idMapping);
         }
         continue;
       }
