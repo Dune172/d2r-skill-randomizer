@@ -12,6 +12,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.25',
+    date: 'May 2026',
+    tagline: 'Turbo preset and Race Mode toggle',
+    notes: [
+      'New Turbo preset: 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries — great for casual or power-levelling runs',
+      'New Race Mode toggle on the generate page: when enabled, the included shortcut launches the game in race-friendly configuration. On by default for the Season Beta Race preset, off for Turbo',
+    ],
+  },
+  {
     version: 'v0.244',
     date: 'May 2026',
     tagline: 'Downloaded zip renamed so it no longer looks like the mod folder inside it',
