@@ -73,6 +73,12 @@ export function preApplyMagicAffixMutations(
   }
 }
 
+/** True if the given mutation id is one of the two active for this week number. */
+export function isMutationActiveForWeek(weekNumber: number, mutationId: string): boolean {
+  const [a, b] = WEEKLY_PAIRS[(weekNumber - 1) % WEEKLY_PAIRS.length];
+  return MUTATIONS[a]?.id === mutationId || MUTATIONS[b]?.id === mutationId;
+}
+
 /** Apply both mutations for the given week number to the provided context. */
 export function applyWeeklyMutations(weekNumber: number, ctx: MutationContext): void {
   const [a, b] = WEEKLY_PAIRS[(weekNumber - 1) % WEEKLY_PAIRS.length];

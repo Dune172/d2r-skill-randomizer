@@ -71,6 +71,14 @@ export const MUTATIONS: Record<number, MutationDef> = {
     description:
       'All skill mana costs are doubled. In return, all skills deal 50% increased elemental damage.',
   },
+  12: {
+    id: 'mystery-box',
+    name: 'Mystery Box',
+    emoji: '🎁',
+    description:
+      'Every skill in the tree is disguised — all icons look identical and all names ' +
+      'and descriptions read "???". You pick blind and find out what you got by using it.',
+  },
   10: {
     id: 'tempered-edge',
     name: 'Tempered Edge',

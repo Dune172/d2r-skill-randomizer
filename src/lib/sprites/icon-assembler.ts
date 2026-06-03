@@ -15,6 +15,10 @@ import { buildSprite } from './sprite-parser';
 
 const ICONS_DIR = path.join(process.cwd(), 'data', 'sprites', 'icons');
 
+/** When set, every skill frame borrows this single source icon instead of its own
+ *  (Mystery Box mutation). */
+export type IconOverride = { charclass: string; iconCel: number };
+
 /**
  * Get the source icon PNG paths for a skill.
  * Each skill has 2 frames: normal (even index) and pressed (odd index).
@@ -100,6 +104,7 @@ export async function buildClassIconSprite(
   skillDescIconCels: Map<string, number>, // skilldesc name → original IconCel
   width: number = ICON_WIDTH,
   height: number = ICON_HEIGHT,
+  iconOverride?: IconOverride,
 ): Promise<Buffer> {
   // Sort placements by skillIndex to ensure correct order
   const sorted = [...placements].sort((a, b) => a.skillIndex - b.skillIndex);
@@ -107,8 +112,10 @@ export async function buildClassIconSprite(
   const frames: Buffer[] = [];
 
   for (const placement of sorted) {
-    const originalClass = placement.skill.charclass;
-    const originalIconCel = skillDescIconCels.get(placement.skill.skilldesc) ?? 0;
+    const originalClass = iconOverride ? iconOverride.charclass : placement.skill.charclass;
+    const originalIconCel = iconOverride
+      ? iconOverride.iconCel
+      : (skillDescIconCels.get(placement.skill.skilldesc) ?? 0);
     const { normalPath, pressedPath } = getIconPaths(originalClass, originalIconCel);
     const normal = await loadIconToRGBA(normalPath, width, height);
     const pressed = await loadIconToRGBA(pressedPath, width, height);
@@ -165,6 +172,7 @@ export async function buildHireableSprite(
 export async function buildAllIconSprites(
   placementsByClass: Map<ClassCode, SkillPlacement[]>,
   skillDescIconCels: Map<string, number>,
+  iconOverride?: IconOverride,
 ): Promise<Map<string, Buffer>> {
   const results = new Map<string, Buffer>();
 
@@ -172,10 +180,10 @@ export async function buildAllIconSprites(
     const classDef = CLASS_BY_CODE.get(classCode);
     if (!classDef) continue;
     // Full resolution
-    const sprite = await buildClassIconSprite(classCode, placements, skillDescIconCels);
+    const sprite = await buildClassIconSprite(classCode, placements, skillDescIconCels, ICON_WIDTH, ICON_HEIGHT, iconOverride);
     results.set(`${classDef.spritePrefix}skillicon.sprite`, sprite);
     // Lowend — half resolution, used by D2R on low graphics quality settings
-    const lowendSprite = await buildClassIconSprite(classCode, placements, skillDescIconCels, ICON_WIDTH_LOWEND, ICON_HEIGHT_LOWEND);
+    const lowendSprite = await buildClassIconSprite(classCode, placements, skillDescIconCels, ICON_WIDTH_LOWEND, ICON_HEIGHT_LOWEND, iconOverride);
     results.set(`${classDef.spritePrefix}skillicon.lowend.sprite`, lowendSprite);
   }
 
