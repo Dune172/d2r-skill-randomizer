@@ -71,6 +71,13 @@ export const MUTATIONS: Record<number, MutationDef> = {
     description:
       'All skill mana costs are doubled. In return, all skills deal 50% increased elemental damage.',
   },
+  9: {
+    id: 'house-always-wins',
+    name: 'House Always Wins',
+    emoji: '🎰',
+    description:
+      'Vendors no longer sell weapons or armor, and monsters no longer drop them — every kill spills gold instead, and gold drops are massively increased. Gambling is now the only way to arm yourself.',
+  },
   10: {
     id: 'tempered-edge',
     name: 'Tempered Edge',
@@ -118,7 +125,7 @@ export const WEEKLY_PAIRS: [number, number][] = [
   [7, 4],   // 9
   [3, 13],  // 10
   [14, 7],  // 11
-  [8, 13],  // 12
+  [9, 13],  // 12
   [1, 5],   // 13
   [4, 13],  // 14
   [3, 6],   // 15
@@ -129,7 +136,7 @@ export const WEEKLY_PAIRS: [number, number][] = [
   [6, 7],   // 20
   [1, 3],   // 21
   [2, 7],   // 22
-  [3, 6],   // 23
+  [9, 5],   // 23
   [5, 11],  // 24
   [2, 10],  // 25
   [11, 13], // 26
@@ -156,7 +163,7 @@ export const WEEK_NAMES: string[] = [
   'Sanguine Plague',     // 9  Pestilence + Bloodthirst
   'Running on Fumes',    // 10 Hollow Shell + Dead Reckoning
   'Rust and Rot',        // 11 Entropy + Pestilence
-  'Magical Debt',        // 12 Arcane Surge + Dead Reckoning
+  'Jackpot',             // 12 House Always Wins + Dead Reckoning
   'The Stampede',        // 13 Hyperdrive + The Horde
   'Pyrrhic Victory',     // 14 Bloodthirst + Dead Reckoning
   'Fragile Fury',        // 15 Hollow Shell + Glass Cannon
@@ -167,7 +174,7 @@ export const WEEK_NAMES: string[] = [
   'Shattered Venom',     // 20 Glass Cannon + Pestilence
   'Fragile Flash',       // 21 Hyperdrive + Hollow Shell
   'Poisoned Chains',     // 22 Heavy Burden + Pestilence
-  'Paper Tigers',        // 23 Hollow Shell + Glass Cannon
+  'Penny Slots',         // 23 House Always Wins + The Horde
   'Iron Tide',           // 24 The Horde + Titan's Grip
   'Iron Will',           // 25 Heavy Burden + Tempered Edge
   'The Long March',      // 26 Titan's Grip + Dead Reckoning

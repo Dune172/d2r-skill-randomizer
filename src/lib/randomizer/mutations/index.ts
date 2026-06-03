@@ -15,6 +15,7 @@ import { applyTitansGrip } from './titans-grip';
 import { applyDeadReckoning } from './dead-reckoning';
 import { applyTemperedEdge } from './tempered-edge';
 import { applyEntropy } from './entropy';
+import { applyHouseAlwaysWins } from './house-always-wins';
 
 export { getActivePair };
 
@@ -48,6 +49,7 @@ const APPLY_FNS: Record<number, ApplyFn> = {
   6:  applyGlassCannon,
   7:  applyPestilence,
   8:  applyArcaneSurge,
+  9:  applyHouseAlwaysWins,
   10: applyTemperedEdge,
   11: applyTitansGrip,
   13: applyDeadReckoning,
