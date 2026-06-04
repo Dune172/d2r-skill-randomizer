@@ -78,6 +78,14 @@ export const MUTATIONS: Record<number, MutationDef> = {
     description:
       'Vendors no longer sell weapons or armor, and monsters no longer drop them — every kill spills gold instead, and gold drops are massively increased. Gambling is now the only way to arm yourself.',
   },
+  12: {
+    id: 'mystery-box',
+    name: 'Mystery Box',
+    emoji: '🎁',
+    description:
+      'Every skill in the tree is disguised — all icons look identical and all names ' +
+      'and descriptions read "???". You pick blind and find out what you got by using it.',
+  },
   10: {
     id: 'tempered-edge',
     name: 'Tempered Edge',

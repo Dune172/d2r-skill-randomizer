@@ -11,6 +11,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const seedInput = body.seed;
+    // When the Mystery Box mutation is active, the spoiler must not reveal skills.
+    // Mask names/source-class server-side so the real values never leave the server.
+    const maskSkills = body.maskSkills === true;
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -60,8 +63,8 @@ export async function POST(request: NextRequest) {
             sourceClass: tree.className,
             sourceTree: tree.treeIndex,
             skills: classPlacs.map(p => ({
-              name: resolveDisplayName(p.skill),
-              originalClass: p.skill.charclass,
+              name: maskSkills ? '???' : resolveDisplayName(p.skill),
+              originalClass: maskSkills ? '?' : p.skill.charclass,
               row: p.row,
               col: p.col,
             })),

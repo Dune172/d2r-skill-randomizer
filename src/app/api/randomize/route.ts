@@ -26,7 +26,8 @@ import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
-import { applyWeeklyMutations, preApplyMagicAffixMutations } from '@/lib/randomizer/mutations';
+import { applyWeeklyMutations, preApplyMagicAffixMutations, isMutationActiveForWeek } from '@/lib/randomizer/mutations';
+import { MYSTERY_ICON, applyMysteryStrings, hideSkillDetailLines } from '@/lib/randomizer/mutations/mystery-box';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
 import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
 
@@ -129,6 +130,11 @@ export async function POST(request: NextRequest) {
     if (hasCached(cacheKey)) return;
 
     const rng = createRNG(seed);
+
+    // Resolve the weekly challenge week once — used by the magic-affix pre-hook,
+    // the Mystery Box icon/string hooks, and applyWeeklyMutations below.
+    const weekNumber = weeklyEnabled ? (weeklyOverride ?? getCurrentWeekNumber()) : 0;
+    const mysteryActive = weeklyEnabled && isMutationActiveForWeek(weekNumber, 'mystery-box');
 
     // Load all data
     const treePages = loadTreeGrid();
@@ -287,8 +293,7 @@ export async function POST(request: NextRequest) {
     const magicPrefixTxt = loadTxtFile('magicprefix.txt');
     const magicSuffixTxt = loadTxtFile('magicsuffix.txt');
     if (weeklyEnabled) {
-      const preWeekNum = weeklyOverride ?? getCurrentWeekNumber();
-      preApplyMagicAffixMutations(preWeekNum, magicPrefixTxt, magicSuffixTxt);
+      preApplyMagicAffixMutations(weekNumber, magicPrefixTxt, magicSuffixTxt);
     }
     magicPrefixTxt.rows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping);
     magicSuffixTxt.rows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping);
@@ -391,6 +396,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Mystery Box: blank every placed skill's name/description/synergy strings to "???".
+    // Runs last so it overrides the shapeshift marker and any other string edits.
+    if (mysteryActive) {
+      const placedSkilldescs = new Set(placements.map(p => p.skill.skilldesc));
+      applyMysteryStrings(skillDescTxt.headers, skillDescTxt.rows, skillStringsEntries, placedSkilldescs);
+      // Hide all tooltip detail lines (stat block + synergies) so only "???" shows.
+      hideSkillDetailLines(skillDescTxt.headers, skillDescTxt.rows, placedSkilldescs);
+    }
+
     const skillStringsJson = '\uFEFF' + JSON.stringify(skillStringsEntries, null, 2).replace(/\n/g, '\r\n');
 
     // Load item-modifiers.json; normalize BOM + CRLF like other D2R string files.
@@ -476,7 +490,11 @@ export async function POST(request: NextRequest) {
       skillDescIconCels.set(name, desc.IconCel);
     }
 
-    const iconSprites = await buildAllIconSprites(placementsByClass, skillDescIconCels);
+    const iconSprites = await buildAllIconSprites(
+      placementsByClass,
+      skillDescIconCels,
+      mysteryActive ? MYSTERY_ICON : undefined,
+    );
 
     // Build skill-name → placement lookup for hireable sprite
     const skillToPlacement = new Map(placements.map(p => [p.skill.skill, p]));
@@ -541,10 +559,6 @@ export async function POST(request: NextRequest) {
       const armorSrc = loadTxtFile('armor.txt');
       const weaponsSrc = loadTxtFile('weapons.txt');
       const miscSrc = loadTxtFile('misc.txt');
-
-      // Determine week number using the shared LA-timezone calendar
-      const computedWeek = getCurrentWeekNumber();
-      const weekNumber = weeklyOverride ?? computedWeek;
 
       applyWeeklyMutations(weekNumber, {
         monstats:      monstatsSrc,
