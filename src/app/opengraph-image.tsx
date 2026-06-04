@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element, jsx-a11y/alt-text */
 import { ImageResponse } from 'next/og';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
-import { getActivePair, getWeekName } from '@/lib/mutations/registry';
+import { getActiveMutations, getWeekName } from '@/lib/mutations/registry';
 import { OG_FONTS } from '@/lib/og/fonts';
 import { OG_PALETTE } from '@/lib/og/palette';
 import { OgFrame, OG_SIZE, OG_CONTENT_TYPE } from '@/lib/og/frame';
@@ -57,11 +57,8 @@ function MiniMutation({ iconUrl, name }: { iconUrl: string | null; name: string 
 export default async function Image() {
   const weekNumber = getCurrentWeekNumber();
   const weekName = getWeekName(weekNumber);
-  const [mutA, mutB] = getActivePair(weekNumber);
-  const [iconA, iconB] = await Promise.all([
-    mutationIconDataUrl(mutA.id),
-    mutationIconDataUrl(mutB.id),
-  ]);
+  const mutations = getActiveMutations(weekNumber);
+  const icons = await Promise.all(mutations.map((m) => mutationIconDataUrl(m.id)));
 
   return new ImageResponse(
     (
@@ -147,11 +144,10 @@ export default async function Image() {
             This Week · {weekName}
           </div>
 
-          <div style={{ display: 'flex' }}>
-            <div style={{ marginRight: 16, display: 'flex' }}>
-              <MiniMutation iconUrl={iconA} name={mutA.name} />
-            </div>
-            <MiniMutation iconUrl={iconB} name={mutB.name} />
+          <div style={{ display: 'flex', gap: 16 }}>
+            {mutations.map((m, i) => (
+              <MiniMutation key={m.id} iconUrl={icons[i]} name={m.name} />
+            ))}
           </div>
 
           {/* Trust row */}

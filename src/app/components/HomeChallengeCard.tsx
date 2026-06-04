@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { getActivePair, getWeekName } from '@/lib/mutations/registry';
+import { getActiveMutations, getWeekName } from '@/lib/mutations/registry';
 import { HomeMutationCard } from './HomeMutationCard';
 
 export function HomeChallengeCard({ weekNumber }: { weekNumber: number }) {
   const weekName = getWeekName(weekNumber);
-  const [mutA, mutB] = getActivePair(weekNumber);
+  const mutations = getActiveMutations(weekNumber);
 
   return (
     <div className="border border-[#c8942a]/25 bg-[#0c0304] panel-shadow p-7 text-center">
@@ -17,8 +17,9 @@ export function HomeChallengeCard({ weekNumber }: { weekNumber: number }) {
       </div>
 
       <div className="flex flex-wrap justify-center gap-3 mb-6">
-        <HomeMutationCard mutation={mutA} />
-        <HomeMutationCard mutation={mutB} />
+        {mutations.map((m) => (
+          <HomeMutationCard key={m.id} mutation={m} />
+        ))}
       </div>
 
       <Link

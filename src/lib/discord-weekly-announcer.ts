@@ -1,7 +1,7 @@
 /**
  * Mutation challenge Discord announcement — fires every other Monday at 09:00 LA into
- * the DISCORD_WEEKLY_WEBHOOK_URL channel. Posts the challenge's theme name, both
- * mutations with one-line descriptions, plus the gold OG card PNG attached.
+ * the DISCORD_WEEKLY_WEBHOOK_URL channel. Posts the challenge's theme name, the
+ * active mutations with one-line descriptions, plus the gold OG card PNG attached.
  *
  * Persists `lastAnnouncedWeek` to a JSON file next to counter.json so we don't
  * double-post on restart and so a server reboot across the challenge boundary
@@ -15,7 +15,7 @@ import {
   getCurrentWeekNumber,
   getWeekStart,
 } from './challenge/week';
-import { getActivePair, getWeekName, type MutationDef } from './mutations/registry';
+import { getActiveMutations, getWeekName, type MutationDef } from './mutations/registry';
 import { renderChallengeCardPng } from './og/challengeCard';
 
 const POST_HOUR_LA = 9;
@@ -53,12 +53,11 @@ function firstSentence(description: string): string {
   return description.slice(0, idx + 1).trim();
 }
 
-function formatMessage(weekNumber: number, weekName: string, mutA: MutationDef, mutB: MutationDef): string {
+function formatMessage(weekNumber: number, weekName: string, mutations: MutationDef[]): string {
   return [
     `**Challenge ${weekNumber} — ${weekName}**`,
     '',
-    `${mutA.name} — ${firstSentence(mutA.description)}`,
-    `${mutB.name} — ${firstSentence(mutB.description)}`,
+    ...mutations.map((m) => `${m.name} — ${firstSentence(m.description)}`),
   ].join('\n');
 }
 
@@ -74,8 +73,8 @@ export async function postWeeklyAnnouncement(weekNumber: number): Promise<boolea
   }
 
   const weekName = getWeekName(weekNumber);
-  const [mutA, mutB] = getActivePair(weekNumber);
-  const content = formatMessage(weekNumber, weekName, mutA, mutB);
+  const mutations = getActiveMutations(weekNumber);
+  const content = formatMessage(weekNumber, weekName, mutations);
 
   let png: Buffer;
   try {

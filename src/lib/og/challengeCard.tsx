@@ -13,7 +13,7 @@ import {
   getWeekSeed,
   formatWeekDate,
 } from '@/lib/challenge/week';
-import { getActivePair, getWeekName, type MutationDef } from '@/lib/mutations/registry';
+import { getActiveMutations, getWeekName, type MutationDef } from '@/lib/mutations/registry';
 import { OG_FONTS } from './fonts';
 import { OG_PALETTE } from './palette';
 import { OgFrame, OG_SIZE, OG_CONTENT_TYPE } from './frame';
@@ -77,11 +77,8 @@ export async function buildChallengeCardImageResponse(weekNumber: number): Promi
   const end = getWeekEnd(weekNumber);
   const dateRange = `${formatWeekDate(start)} – ${formatWeekDate(end)}`;
   const weekName = getWeekName(weekNumber);
-  const [mutA, mutB] = getActivePair(weekNumber);
-  const [iconA, iconB] = await Promise.all([
-    mutationIconDataUrl(mutA.id),
-    mutationIconDataUrl(mutB.id),
-  ]);
+  const mutations = getActiveMutations(weekNumber);
+  const icons = await Promise.all(mutations.map((m) => mutationIconDataUrl(m.id)));
 
   return new ImageResponse(
     (
@@ -149,8 +146,9 @@ export async function buildChallengeCardImageResponse(weekNumber: number): Promi
           />
 
           <div style={{ display: 'flex', gap: 28, marginBottom: 24 }}>
-            <MutationCard mutation={mutA} iconUrl={iconA} />
-            <MutationCard mutation={mutB} iconUrl={iconB} />
+            {mutations.map((m, i) => (
+              <MutationCard key={m.id} mutation={m} iconUrl={icons[i]} />
+            ))}
           </div>
 
           <div

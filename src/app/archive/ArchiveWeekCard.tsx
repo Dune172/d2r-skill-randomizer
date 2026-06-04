@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { getActivePair, getWeekName } from '@/lib/mutations/registry';
+import { getActiveMutations, getWeekName } from '@/lib/mutations/registry';
 import { getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
 import { HomeMutationCard } from '@/app/components/HomeMutationCard';
 import { ChallengeGenerator } from '@/app/challenge/ChallengeGenerator';
@@ -16,7 +16,7 @@ type Props = {
 
 export function ArchiveWeekCard({ weekNumber, entries = [] }: Props) {
   const weekName = getWeekName(weekNumber);
-  const [mutA, mutB] = getActivePair(weekNumber);
+  const mutations = getActiveMutations(weekNumber);
   const seed = getWeekSeed(weekNumber);
   const start = getWeekStart(weekNumber);
   const end = getWeekEnd(weekNumber);
@@ -61,8 +61,9 @@ export function ArchiveWeekCard({ weekNumber, entries = [] }: Props) {
       {expanded && (
         <div id={`archive-week-${weekNumber}-body`} className="px-6 pb-6 pt-1">
           <div className="flex flex-wrap justify-center gap-3 mb-6">
-            <HomeMutationCard mutation={mutA} />
-            <HomeMutationCard mutation={mutB} />
+            {mutations.map((m) => (
+              <HomeMutationCard key={m.id} mutation={m} />
+            ))}
           </div>
 
           {entries.length > 0 && (

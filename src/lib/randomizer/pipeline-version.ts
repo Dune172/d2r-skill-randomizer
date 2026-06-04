@@ -23,4 +23,4 @@
  * edits, build/deploy config, or anything that doesn't touch the bytes inside
  * the generated ZIP.
  */
-export const PIPELINE_VERSION = 23;
+export const PIPELINE_VERSION = 24;

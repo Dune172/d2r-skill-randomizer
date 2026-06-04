@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { getActivePair, getWeekName, type MutationDef } from '@/lib/mutations/registry';
+import { getActiveMutations, getWeekName, type MutationDef } from '@/lib/mutations/registry';
 import { InstallInstructions } from '@/app/components/InstallInstructions';
 import { getCurrentWeekNumber, getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
 import { ChallengeGenerator } from './ChallengeGenerator';
@@ -111,10 +111,10 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
 
 export function WeekCard() {
   const { weekNumber, currentSeed, currentStart, currentEnd } = getWeekData();
-  const [mutA, mutB] = getActivePair(weekNumber);
+  const mutations = getActiveMutations(weekNumber);
   const weekName = getWeekName(weekNumber);
   // Mystery Box hides skill identities — the spoiler must show "???" too.
-  const mysteryActive = [mutA, mutB].some(m => m.id === 'mystery-box');
+  const mysteryActive = mutations.some(m => m.id === 'mystery-box');
   const [generated, setGenerated] = useState(false);
   const [leaderboardKey, setLeaderboardKey] = useState(0);
   const [preview, setPreview] = useState<PreviewData | null>(null);
@@ -135,7 +135,7 @@ export function WeekCard() {
 
   return (
     <>
-    <div className="card-ornate border border-t-2 border-[#3a1510] border-t-[#c8942a]/30 bg-[#0c0304] panel-shadow shadow-[inset_0_1px_0_rgba(200,148,42,0.15)] p-8 mb-8 max-w-2xl mx-auto">
+    <div className="card-ornate border border-t-2 border-[#3a1510] border-t-[#c8942a]/30 bg-[#0c0304] panel-shadow shadow-[inset_0_1px_0_rgba(200,148,42,0.15)] p-8 mb-8 max-w-3xl mx-auto">
       <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase mb-3">
         Challenge {weekNumber} &nbsp;·&nbsp; {formatWeekDate(currentStart)} – {formatWeekDate(currentEnd)}
       </p>
@@ -151,9 +151,10 @@ export function WeekCard() {
         <p className="font-cinzel text-xs tracking-[0.4em] text-[#9a7a2a] uppercase text-center mb-4">
           Mutations
         </p>
-        <div className="flex flex-wrap justify-center gap-4 mb-3">
-          <MutationCard mutation={mutA} />
-          <MutationCard mutation={mutB} />
+        <div className="flex flex-wrap md:flex-nowrap justify-center gap-4 mb-3">
+          {mutations.map((m) => (
+            <MutationCard key={m.id} mutation={m} />
+          ))}
         </div>
         <p className="text-xs text-[#9a7a2a] tracking-wider text-center hidden md:block">
           Hover for details

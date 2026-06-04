@@ -117,46 +117,48 @@ export const MUTATIONS: Record<number, MutationDef> = {
 };
 
 /**
- * 26-week rotation schedule. Entry i is used on week (weekNumber % 26).
- * Each pair is [mutationId, mutationId].
+ * 31-slot rotation schedule. Slot i is used on week (weekNumber % 31).
+ * Each entry lists the 2–3 active mutation ids for that slot. Slots 0–6 are the
+ * original pairs (past + current challenges, kept intact); slots 7–30 carry a
+ * third mutation for future challenges.
  */
-export const WEEKLY_PAIRS: [number, number][] = [
-  [5, 7],   // 0
-  [8, 13],  // 1
-  [1, 6],   // 2
-  [2, 10],  // 3
-  [4, 5],   // 4
-  [7, 13],  // 5
-  [3, 5],   // 6
-  [8, 11],  // 7
-  [2, 13],  // 8
-  [7, 4],   // 9
-  [3, 13],  // 10
-  [14, 7],  // 11
-  [9, 13],  // 12
-  [1, 5],   // 13
-  [4, 13],  // 14
-  [3, 6],   // 15
-  [1, 13],  // 16
-  [2, 5],   // 17
-  [6, 13],  // 18
-  [4, 14],  // 19
-  [6, 7],   // 20
-  [1, 3],   // 21
-  [2, 7],   // 22
-  [9, 5],   // 23
-  [5, 11],  // 24
-  [2, 10],  // 25
-  [11, 13], // 26
-  [10, 5],  // 27
-  [14, 4],  // 28
-  [10, 8],  // 29
-  [1, 4],   // 30
+export const WEEKLY_MUTATIONS: number[][] = [
+  [5, 7],       // 0
+  [8, 13],      // 1
+  [1, 6],       // 2
+  [2, 10],      // 3
+  [4, 5],       // 4
+  [7, 13],      // 5
+  [3, 5],       // 6
+  [8, 11, 9],   // 7
+  [2, 13, 12],  // 8
+  [7, 4, 5],    // 9
+  [3, 13, 8],   // 10
+  [14, 7, 2],   // 11
+  [9, 13, 12],  // 12
+  [1, 5, 6],    // 13
+  [4, 13, 6],   // 14
+  [3, 6, 1],    // 15
+  [1, 13, 5],   // 16
+  [2, 5, 10],   // 17
+  [6, 13, 14],  // 18
+  [4, 14, 7],   // 19
+  [6, 7, 1],    // 20
+  [1, 3, 6],    // 21
+  [2, 7, 14],   // 22
+  [9, 5, 12],   // 23
+  [5, 11, 2],   // 24
+  [2, 10, 11],  // 25
+  [11, 13, 2],  // 26
+  [10, 5, 11],  // 27
+  [14, 4, 10],  // 28
+  [10, 8, 11],  // 29
+  [1, 4, 6],    // 30
 ];
 
 /**
- * Thematic name for each rotation slot — one per WEEKLY_PAIRS entry.
- * Index matches WEEKLY_PAIRS index (0-based).
+ * Thematic name for each rotation slot — one per WEEKLY_MUTATIONS entry.
+ * Index matches WEEKLY_MUTATIONS index (0-based).
  */
 export const WEEK_NAMES: string[] = [
   'Swarming Plague',     // 0  The Horde + Pestilence
@@ -166,36 +168,36 @@ export const WEEK_NAMES: string[] = [
   'Blood Ocean',         // 4  Bloodthirst + The Horde
   'Slow Death',          // 5  Pestilence + Dead Reckoning
   'Thin Ice',            // 6  Hollow Shell + The Horde
-  'Iron Mage',           // 7  Arcane Surge + Titan's Grip
-  'Toil and Trouble',    // 8  Heavy Burden + Dead Reckoning
-  'Sanguine Plague',     // 9  Pestilence + Bloodthirst
-  'Running on Fumes',    // 10 Hollow Shell + Dead Reckoning
-  'Rust and Rot',        // 11 Entropy + Pestilence
-  'Jackpot',             // 12 House Always Wins + Dead Reckoning
-  'The Stampede',        // 13 Hyperdrive + The Horde
-  'Pyrrhic Victory',     // 14 Bloodthirst + Dead Reckoning
-  'Fragile Fury',        // 15 Hollow Shell + Glass Cannon
-  'Race to the Bottom',  // 16 Hyperdrive + Dead Reckoning
-  'March of the Fallen', // 17 Heavy Burden + The Horde
-  'Brittle Fortune',     // 18 Glass Cannon + Dead Reckoning
-  'Gnawing Rust',        // 19 Bloodthirst + Entropy
-  'Shattered Venom',     // 20 Glass Cannon + Pestilence
-  'Fragile Flash',       // 21 Hyperdrive + Hollow Shell
-  'Poisoned Chains',     // 22 Heavy Burden + Pestilence
-  'Penny Slots',         // 23 House Always Wins + The Horde
-  'Iron Tide',           // 24 The Horde + Titan's Grip
-  'Iron Will',           // 25 Heavy Burden + Tempered Edge
-  'The Long March',      // 26 Titan's Grip + Dead Reckoning
-  'Fortress Siege',      // 27 Tempered Edge + The Horde
-  'The Corrosion',       // 28 Entropy + Bloodthirst
-  'Spell and Steel',     // 29 Tempered Edge + Arcane Surge
-  'Blood Rush',          // 30 Hyperdrive + Bloodthirst
+  'High Stakes',         // 7  Arcane Surge + Titan's Grip + House Always Wins
+  'Toil and Trouble',    // 8  Heavy Burden + Dead Reckoning + Mystery Box
+  'Sanguine Plague',     // 9  Pestilence + Bloodthirst + The Horde
+  'Running on Fumes',    // 10 Hollow Shell + Dead Reckoning + Arcane Surge
+  'Rust and Rot',        // 11 Entropy + Pestilence + Heavy Burden
+  'Jackpot',             // 12 House Always Wins + Dead Reckoning + Mystery Box
+  'The Stampede',        // 13 Hyperdrive + The Horde + Glass Cannon
+  'Pyrrhic Victory',     // 14 Bloodthirst + Dead Reckoning + Glass Cannon
+  'Fragile Fury',        // 15 Hollow Shell + Glass Cannon + Hyperdrive
+  'Race to the Bottom',  // 16 Hyperdrive + Dead Reckoning + The Horde
+  'March of the Fallen', // 17 Heavy Burden + The Horde + Tempered Edge
+  'Brittle Fortune',     // 18 Glass Cannon + Dead Reckoning + Entropy
+  'Gnawing Rust',        // 19 Bloodthirst + Entropy + Pestilence
+  'Shattered Venom',     // 20 Glass Cannon + Pestilence + Hyperdrive
+  'Fragile Flash',       // 21 Hyperdrive + Hollow Shell + Glass Cannon
+  'Poisoned Chains',     // 22 Heavy Burden + Pestilence + Entropy
+  'Penny Slots',         // 23 House Always Wins + The Horde + Mystery Box
+  'Iron Tide',           // 24 The Horde + Titan's Grip + Heavy Burden
+  'Iron Will',           // 25 Heavy Burden + Tempered Edge + Titan's Grip
+  'The Long March',      // 26 Titan's Grip + Dead Reckoning + Heavy Burden
+  'Fortress Siege',      // 27 Tempered Edge + The Horde + Titan's Grip
+  'The Corrosion',       // 28 Entropy + Bloodthirst + Tempered Edge
+  'Spell and Steel',     // 29 Tempered Edge + Arcane Surge + Titan's Grip
+  'Blood Rush',          // 30 Hyperdrive + Bloodthirst + Glass Cannon
 ];
 
-/** Return the two active MutationDefs for the given week number (1-based). */
-export function getActivePair(weekNumber: number): [MutationDef, MutationDef] {
-  const [a, b] = WEEKLY_PAIRS[(weekNumber - 1) % WEEKLY_PAIRS.length];
-  return [MUTATIONS[a], MUTATIONS[b]];
+/** Return the active MutationDefs for the given week number (1-based); 2 or 3. */
+export function getActiveMutations(weekNumber: number): MutationDef[] {
+  const ids = WEEKLY_MUTATIONS[(weekNumber - 1) % WEEKLY_MUTATIONS.length];
+  return ids.map((id) => MUTATIONS[id]);
 }
 
 /** Return the thematic name for the given week number (1-based). */

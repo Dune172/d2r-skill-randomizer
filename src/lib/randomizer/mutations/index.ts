@@ -2,7 +2,7 @@
  * Weekly challenge mutation orchestrator.
  * Server-only — imports file I/O via the individual mutation modules.
  */
-import { MUTATIONS, WEEKLY_PAIRS, getActivePair } from '@/lib/mutations/registry';
+import { MUTATIONS, WEEKLY_MUTATIONS, getActiveMutations } from '@/lib/mutations/registry';
 import { applyHyperdrive } from './hyperdrive';
 import { applyHeavyBurden, injectArmorProcs } from './heavy-burden';
 import { applyHollowShell } from './hollow-shell';
@@ -17,7 +17,7 @@ import { applyTemperedEdge } from './tempered-edge';
 import { applyEntropy } from './entropy';
 import { applyHouseAlwaysWins } from './house-always-wins';
 
-export { getActivePair };
+export { getActiveMutations };
 
 /**
  * All mutable txt data needed across mutations.
@@ -66,8 +66,8 @@ export function preApplyMagicAffixMutations(
   prefix: { headers: string[]; rows: string[][] },
   suffix: { headers: string[]; rows: string[][] },
 ): void {
-  const [a, b] = WEEKLY_PAIRS[(weekNumber - 1) % WEEKLY_PAIRS.length];
-  for (const id of [a, b]) {
+  const ids = WEEKLY_MUTATIONS[(weekNumber - 1) % WEEKLY_MUTATIONS.length];
+  for (const id of ids) {
     if (MUTATIONS[id]?.id === 'heavy-burden') {
       injectArmorProcs(prefix.headers, prefix.rows);
       injectArmorProcs(suffix.headers, suffix.rows);
@@ -75,16 +75,16 @@ export function preApplyMagicAffixMutations(
   }
 }
 
-/** True if the given mutation id is one of the two active for this week number. */
+/** True if the given mutation id is one of the active mutations for this week number. */
 export function isMutationActiveForWeek(weekNumber: number, mutationId: string): boolean {
-  const [a, b] = WEEKLY_PAIRS[(weekNumber - 1) % WEEKLY_PAIRS.length];
-  return MUTATIONS[a]?.id === mutationId || MUTATIONS[b]?.id === mutationId;
+  const ids = WEEKLY_MUTATIONS[(weekNumber - 1) % WEEKLY_MUTATIONS.length];
+  return ids.some((id) => MUTATIONS[id]?.id === mutationId);
 }
 
-/** Apply both mutations for the given week number to the provided context. */
+/** Apply the active mutations for the given week number to the provided context. */
 export function applyWeeklyMutations(weekNumber: number, ctx: MutationContext): void {
-  const [a, b] = WEEKLY_PAIRS[(weekNumber - 1) % WEEKLY_PAIRS.length];
-  for (const id of [a, b]) {
+  const ids = WEEKLY_MUTATIONS[(weekNumber - 1) % WEEKLY_MUTATIONS.length];
+  for (const id of ids) {
     const fn = APPLY_FNS[id];
     if (fn) fn(ctx);
   }
