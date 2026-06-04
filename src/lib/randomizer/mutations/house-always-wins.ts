@@ -8,8 +8,13 @@ import type { MutationContext } from './index';
  *  - All gold drops are boosted ~+1000% via the `gld,mul=N` treasureclass form.
  */
 
-const GOLD_MUL = 11; // target ≈ +1000%; calibrate in-game
-const GOLD_CELL = `"gld,mul=${GOLD_MUL}"`;
+// D2R gold drops use a fixed-point multiplier in 1024ths: a bare `gld` is
+// implicitly mul=1024 (= 100%). So mul=N gives N/1024 of normal gold — e.g. the
+// Herald Charm's mul=2048 is 2×. The multiplier must be scaled by 1024 or gold
+// rounds to 0 (the original mul=11 was ~1% of normal → every pile showed 0).
+const GOLD_MULT_X = 4; // 4× normal gold; calibrate in-game
+const MUL_FIXED_POINT = 1024; // D2R mul base: 1024 = 100%
+const GOLD_CELL = `"gld,mul=${GOLD_MULT_X * MUL_FIXED_POINT}"`;
 
 const GENERIC_GEAR_RE = /^(weap|armo)\d+$/;
 const ITEM_COLS = ['Item1', 'Item2', 'Item3', 'Item4', 'Item5', 'Item6', 'Item7', 'Item8', 'Item9', 'Item10'];
