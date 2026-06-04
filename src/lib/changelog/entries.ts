@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.251',
+    date: 'June 2026',
+    tagline: 'Three mutations per challenge, plus two new mutations',
+    notes: [
+      'Future Mutation Challenges now run with three mutations instead of two, for a tougher and more varied twist each cycle. Past and current challenges keep their original two',
+      'New mutation — House Always Wins: vendors no longer sell weapons or armor, and monsters drop gold instead of gear. Gold drops are massively increased, and gambling becomes the only way to arm yourself',
+      'New mutation — Mystery Box: every skill in the tree is disguised, with identical icons and "???" for every name and description. You pick blind and find out what you got by using it',
+    ],
+  },
+  {
     version: 'v0.25',
     date: 'May 2026',
     tagline: 'Turbo preset and Race Mode toggle',
