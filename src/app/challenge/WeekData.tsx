@@ -113,6 +113,8 @@ export function WeekCard() {
   const { weekNumber, currentSeed, currentStart, currentEnd } = getWeekData();
   const [mutA, mutB] = getActivePair(weekNumber);
   const weekName = getWeekName(weekNumber);
+  // Mystery Box hides skill identities — the spoiler must show "???" too.
+  const mysteryActive = [mutA, mutB].some(m => m.id === 'mystery-box');
   const [generated, setGenerated] = useState(false);
   const [leaderboardKey, setLeaderboardKey] = useState(0);
   const [preview, setPreview] = useState<PreviewData | null>(null);
@@ -122,14 +124,14 @@ export function WeekCard() {
     fetch('/api/preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seed: currentSeed }),
+      body: JSON.stringify({ seed: currentSeed, maskSkills: mysteryActive }),
     })
       .then(async r => {
         if (!ignore && r.ok) setPreview(await r.json() as PreviewData);
       })
       .catch(() => {});
     return () => { ignore = true; };
-  }, [currentSeed]);
+  }, [currentSeed, mysteryActive]);
 
   return (
     <>

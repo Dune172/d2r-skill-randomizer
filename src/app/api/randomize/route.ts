@@ -27,7 +27,7 @@ import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/it
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
 import { applyWeeklyMutations, preApplyMagicAffixMutations, isMutationActiveForWeek } from '@/lib/randomizer/mutations';
-import { MYSTERY_ICON, applyMysteryStrings } from '@/lib/randomizer/mutations/mystery-box';
+import { MYSTERY_ICON, applyMysteryStrings, hideSkillDetailLines } from '@/lib/randomizer/mutations/mystery-box';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
 import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
 
@@ -401,6 +401,8 @@ export async function POST(request: NextRequest) {
     if (mysteryActive) {
       const placedSkilldescs = new Set(placements.map(p => p.skill.skilldesc));
       applyMysteryStrings(skillDescTxt.headers, skillDescTxt.rows, skillStringsEntries, placedSkilldescs);
+      // Hide all tooltip detail lines (stat block + synergies) so only "???" shows.
+      hideSkillDetailLines(skillDescTxt.headers, skillDescTxt.rows, placedSkilldescs);
     }
 
     const skillStringsJson = '\uFEFF' + JSON.stringify(skillStringsEntries, null, 2).replace(/\n/g, '\r\n');
