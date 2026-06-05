@@ -431,7 +431,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           checked={raceMode}
           onChange={field(setRaceMode)}
           label="Race Mode"
-          tooltip="Includes -seed in the launch shortcut and manual args, locking the map seed so all racers see the same maps."
+          tooltip="Includes -seed in the launch shortcut and manual args, locking the map seed so all racers see the same maps. Also hides the spoiler so the randomized skill trees stay secret."
         />
         <div className="flex items-center gap-3">
           <label htmlFor="seed" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap flex-shrink-0">

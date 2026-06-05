@@ -211,7 +211,7 @@ export default function RandomizerApp() {
         )}
       </div>
 
-      {preview && (
+      {preview && !currentOptions.raceMode && (
         <SkillTreePreview data={preview} />
       )}
 
