@@ -7,6 +7,7 @@ import { createRNG, seedFromString } from '@/lib/randomizer/seed';
 import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings } from '@/lib/data-loader';
 import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
+import { applyRaceMode } from '@/lib/randomizer/race-mode';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
 import { writeSkillsRows, reorderSkillsRows } from '@/lib/randomizer/skills-writer';
 import { writeSkillDescRows } from '@/lib/randomizer/skilldesc-writer';
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
     const xpActs: number[] = Array.isArray(body.xpActs)
       ? (body.xpActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
+    const raceMode = body.raceMode !== false; // default true (matches Season preset + download route)
     const weeklyEnabled = body.weeklyChallenge?.enabled === true;
     const weeklyOverride: number | undefined =
       typeof body.weeklyChallenge?.weekOverride === 'number'
@@ -92,7 +94,7 @@ export async function POST(request: NextRequest) {
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed, false);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed, false, raceMode);
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
@@ -145,7 +147,17 @@ export async function POST(request: NextRequest) {
 
     // Step 5-6: Randomize trees and place skills
     const treeAssignments = randomizeTrees(rng, treePages);
-    const { placements, droppedSkillNames, substitutes } = placeSkills(rng, skills, treeAssignments);
+    const placed = placeSkills(rng, skills, treeAssignments);
+    const droppedSkillNames = placed.droppedSkillNames;
+    let placements = placed.placements;
+    let substitutes = placed.substitutes;
+
+    // Race Mode: keep one seed-chosen class as the real randomized tree; replace every
+    // other class's 30 slots with Prayer filler. Runs after placeSkills (does not consume
+    // the main RNG) so the race class's shuffle stays reproducible.
+    if (raceMode) {
+      ({ placements, substitutes } = applyRaceMode(seed, placements, substitutes, skills));
+    }
     const placementsByClass = groupByClass(placements);
 
     // Substitute in-place row overwrite: for each dropped skill that got a substitute,

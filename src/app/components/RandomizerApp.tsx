@@ -6,6 +6,7 @@ import RandomizerForm from '@/components/RandomizerForm';
 import SkillTreePreview from '@/components/SkillTreePreview';
 import ProgressIndicator from '@/components/ProgressIndicator';
 import { InstallInstructions } from './InstallInstructions';
+import { pickRaceClassName } from '@/lib/classes';
 import type { PreviewData } from '@/lib/randomizer/types';
 
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
@@ -129,7 +130,7 @@ export default function RandomizerApp() {
 
       setStatus('building');
       const buildingStart = Date.now();
-      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs });
+      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, raceMode: options.raceMode });
 
       // Retry up to 2 times on 503 (queue full). Exponential-ish backoff:
       // 3s → 6s. Matches the server-side queue window (~3-5s per gen × 8 deep
@@ -198,6 +199,17 @@ export default function RandomizerApp() {
               Download Zip
             </button>
 
+            {currentOptions.raceMode && currentSeed !== null && (
+              <div className="rounded p-3 bg-[#0a2010]/60 border border-[#2a5a2a] text-center space-y-1">
+                <div className="font-cinzel font-bold tracking-[0.22em] text-sm uppercase text-[#c8942a]">
+                  Race Class: {pickRaceClassName(currentSeed)}
+                </div>
+                <div className="text-[11px] text-[#6abf6a]">
+                  Everyone on this seed plays the {pickRaceClassName(currentSeed)}. All other classes are Prayer filler.
+                </div>
+              </div>
+            )}
+
             <div className="pt-0.5">
               <InstallInstructions seed={currentSeed!} raceMode={currentOptions.raceMode} />
             </div>
@@ -228,7 +240,7 @@ export default function RandomizerApp() {
       </p>
 
       <p className="text-center font-cinzel text-[11px] tracking-[0.3em] uppercase text-[#7a5818] pt-2">
-        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.251: updated June 2026
+        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.252: updated June 2026
       </p>
     </div>
   );

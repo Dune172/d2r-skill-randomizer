@@ -12,6 +12,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.252',
+    date: 'June 2026',
+    tagline: 'Race Mode now locks the field to a single class',
+    notes: [
+      'Race Mode now randomizes only one class — chosen automatically from the seed, so everyone racing the same seed plays the same class. The generate page tells you which class to use after generating',
+      'Every other class is filled with 30 Prayer skills, leaving exactly one usable class for a fair, focused race',
+    ],
+  },
+  {
     version: 'v0.251',
     date: 'June 2026',
     tagline: 'Three mutations per challenge, plus two new mutations',

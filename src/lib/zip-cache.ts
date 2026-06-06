@@ -336,8 +336,9 @@ export function makeCacheKey(
   weeklyKey: number = 0,
   teleportStaffSpeed: boolean = true,
   excludeTeleport: boolean = false,
+  raceMode: boolean = true,
 ): string {
   const actsKey = [...playersActs].sort((a, b) => a - b).join('');
   const xpActsKey = [...xpActs].sort((a, b) => a - b).join('');
-  return `${versionPrefix()}${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${hirelingAura?1:0}:${dropSource}:${disableChat?1:0}:${horadricCube?1:0}:${enablePrereqs?1:0}:${xpMultiplier}:${xpActsKey}:${weeklyKey}:${teleportStaffSpeed?1:0}:${excludeTeleport?1:0}`;
+  return `${versionPrefix()}${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${hirelingAura?1:0}:${dropSource}:${disableChat?1:0}:${horadricCube?1:0}:${enablePrereqs?1:0}:${xpMultiplier}:${xpActsKey}:${weeklyKey}:${teleportStaffSpeed?1:0}:${excludeTeleport?1:0}:${raceMode?1:0}`;
 }

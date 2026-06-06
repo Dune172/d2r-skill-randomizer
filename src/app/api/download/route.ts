@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     const weeklyKey = weeklyParam ? (weekOverride ?? -1) : 0;
     const teleportStaffSpeed = teleportStaffLevel > 0 && searchParams.get('staffSpeed') !== '0';
     const raceMode = searchParams.get('raceMode') !== '0';
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, weeklyKey, teleportStaffSpeed, false);
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, weeklyKey, teleportStaffSpeed, false, raceMode);
     const zipBuffer = getCached(cacheKey);
 
     if (!zipBuffer) {
