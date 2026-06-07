@@ -20,6 +20,11 @@ export const SEASON1_OPTIONS = {
   disableChat: false,
   xpMultiplier: 1.5,
   xpActs: [1, 2],
+  // The weekly challenge is full randomization, not race mode. This must match
+  // the `&raceMode=0` in downloadUrl below — otherwise /api/randomize caches the
+  // ZIP under raceMode=true while /api/download looks it up under raceMode=false,
+  // producing a cache miss (404 "Zip not found") when the download link is followed.
+  raceMode: false,
 };
 
 type GenStatus = 'idle' | 'building' | 'ready' | 'error';
