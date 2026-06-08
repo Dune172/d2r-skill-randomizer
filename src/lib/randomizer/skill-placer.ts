@@ -13,11 +13,49 @@ import { CLASS_DEFS } from './config';
 // Sacrifice (cltdofunc=34) is a Paladin-hardcoded client handler timed to A1
 // frame events. On classes without A1 (sor, war), pickBestAnim falls back to
 // SQ and the A1 event never fires, so no attack animation plays.
+//
+// Note: A1-native melee skills (Bash, Stun, Concentrate, Berserk, Vengeance,
+// Power Strike, etc.) are NOT listed per-name here — they're handled by the
+// data-driven rule in isSkillExcludedOnClass below, which keeps any melee skill
+// whose native anim is A1 off sor/war. The A1 weapon-contact hit can't fire on
+// those models (they lack A1; pickBestAnim falls back to SQ, which plays a swing
+// but never triggers the hit), so the skill would do no damage. Zeal/Sacrifice
+// remain listed for documentation but are also covered by that rule.
 const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
   nec: new Set(['Charge', 'Zeal']),
   sor: new Set(['Zeal', 'Sacrifice']),
   war: new Set(['Zeal', 'Sacrifice']),
 };
+
+// Melee weapon types (mirror of MELEE_TYPES in skills-writer.ts; duplicated here
+// to avoid a circular import — skills-writer.ts already imports from this file).
+const MELEE_TYPES = new Set([
+  'mele', 'swor', 'axe', 'mace', 'hamm', 'spea', 'pole',
+  'club', 'scep', 'knif', 'tkni',
+]);
+
+// Classes whose character model lacks the A1 (weapon-swing) animation.
+// See CLASS_SUPPORTED_ANIMS in skills-writer.ts.
+const NO_A1_CLASSES = new Set<ClassCode>(['sor', 'war']);
+
+// A1-native melee skills fire their hit on the A1 weapon-contact frame event.
+// On a class without A1, pickBestAnim() falls the skill back to SQ — which plays
+// a swing but (with no seqnum) never fires the hit event, so it does no damage.
+// SQ-native melee skills (e.g. Impale) carry a seqnum and keep working; they are
+// not matched here because their anim isn't A1.
+function isA1MeleeSkill(skill: SkillEntry): boolean {
+  if (skill.anim !== 'A1') return false;
+  return [skill.itypea1, skill.itypea2, skill.itypea3].some(t => !!t && MELEE_TYPES.has(t));
+}
+
+// Single source of truth for "can this skill be placed on this class?".
+// Combines the explicit special-case table (e.g. nec: Charge/Zeal) with the
+// data-driven A1-melee-on-sor/war rule.
+function isSkillExcludedOnClass(skill: SkillEntry, cls: ClassCode): boolean {
+  if (SKILL_CLASS_EXCLUSIONS[cls]?.has(skill.skill)) return true;
+  if (NO_A1_CLASSES.has(cls) && isA1MeleeSkill(skill)) return true;
+  return false;
+}
 
 // Skills pinned to their native class. Each entry is (a) pinned to its native
 // class (never shuffled to another class), (b) row-pinned at its vanilla
@@ -366,8 +404,7 @@ export function placeSkills(
 function resolveExclusions(placements: SkillPlacement[]): void {
   for (let i = 0; i < placements.length; i++) {
     const p = placements[i];
-    const excluded = SKILL_CLASS_EXCLUSIONS[p.targetClass];
-    if (!excluded?.has(p.skill.skill)) continue;
+    if (!isSkillExcludedOnClass(p.skill, p.targetClass)) continue;
 
     // Find a swap partner on a different class
     let swapped = false;
@@ -377,11 +414,10 @@ function resolveExclusions(placements: SkillPlacement[]): void {
       if (partner.targetClass === p.targetClass) continue;
 
       // p.skill must be allowed on partner.targetClass
-      const partnerClassExcluded = SKILL_CLASS_EXCLUSIONS[partner.targetClass];
-      if (partnerClassExcluded?.has(p.skill.skill)) continue;
+      if (isSkillExcludedOnClass(p.skill, partner.targetClass)) continue;
 
       // partner.skill must be allowed on p.targetClass
-      if (excluded.has(partner.skill.skill)) continue;
+      if (isSkillExcludedOnClass(partner.skill, p.targetClass)) continue;
 
       // Can't pull a pinned skill off its native class.
       if (partner.skill.skill in HARDCODED_CLASS_SKILLS) continue;
@@ -486,9 +522,9 @@ function resolveCoplacements(placements: SkillPlacement[], droppedSkillNames: Se
       // Can't move a peer anchor (would orphan other constraints that depend on it).
       if (COPACEMENT_PEERS.has(partner.skill.skill)) continue;
 
-      // Respect static exclusions in both directions
-      if (SKILL_CLASS_EXCLUSIONS[destClass]?.has(skillName)) continue;
-      if (SKILL_CLASS_EXCLUSIONS[currentClass]?.has(partner.skill.skill)) continue;
+      // Respect class exclusions in both directions
+      if (isSkillExcludedOnClass(placements[skillIdx].skill, destClass)) continue;
+      if (isSkillExcludedOnClass(partner.skill, currentClass)) continue;
 
       [placements[skillIdx].skill, placements[j].skill] = [placements[j].skill, placements[skillIdx].skill];
       bySkill.set(placements[skillIdx].skill.skill, skillIdx);

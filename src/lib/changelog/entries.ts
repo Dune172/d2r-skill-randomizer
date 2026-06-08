@@ -12,6 +12,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.253',
+    date: 'June 2026',
+    tagline: 'Fixed melee attack skills doing no damage on Sorceress and Warlock',
+    notes: [
+      'Fixed melee attack skills (Bash, Stun, Concentrate, Berserk, Vengeance, and more) swinging but dealing no damage when shuffled onto the Sorceress or Warlock — those classes lack the weapon-swing animation these skills need to land a hit. Such skills are now kept on classes that can actually use them',
+    ],
+  },
+  {
     version: 'v0.252',
     date: 'June 2026',
     tagline: 'Race Mode now locks the field to a single class',
