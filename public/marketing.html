@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>D2RR Marketing Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: #faf8f5; color: #1f1b16; font: 14px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 2px; }
+  .sub { color: #6b6258; font-size: 12px; margin-bottom: 14px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .card { background: #fff; border: 1px solid #e6e0d6; border-radius: 10px; padding: 12px 14px; }
+  .card .label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #8a7f70; }
+  .card .value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+  .card .note { font-size: 11px; color: #6b6258; margin-top: 2px; }
+  .panel { background: #fff; border: 1px solid #e6e0d6; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .panel h2 { font-size: 13px; margin: 0 0 10px; color: #4a4138; }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .row .panel { flex: 1 1 280px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #f0ebe2; }
+  th { color: #8a7f70; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .muted { color: #8a7f70; font-style: italic; }
+  .warn { background: #fdf3e7; border: 1px solid #eed7b8; color: #7a5318; padding: 8px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 12px; }
+  .tag { display: inline-block; background: #f3eee6; border-radius: 6px; padding: 1px 8px; margin: 0 4px 4px 0; font-size: 12px; }
+  .range { float: right; }
+  .range button { border: 1px solid #d9d1c4; background: #fff; border-radius: 6px; padding: 2px 9px; margin-left: 4px; cursor: pointer; font-size: 12px; color: #4a4138; }
+  .range button.on { background: #4a4138; color: #fff; border-color: #4a4138; }
+  #chartWrap { height: 200px; position: relative; }
+  a { color: #8a4a12; }
+</style>
+</head>
+<body>
+  <h1>D2R Randomizer — Marketing Dashboard</h1>
+  <div class="sub" id="updated">Loading…</div>
+  <div id="statsWarn" class="warn" style="display:none"></div>
+
+  <div class="cards">
+    <div class="card"><div class="label">Total generations</div><div class="value" id="cGen">—</div><div class="note" id="cGenNote"></div></div>
+    <div class="card"><div class="label">Sessions</div><div class="value" id="cSess">—</div><div class="note" id="cSessNote"></div></div>
+    <div class="card"><div class="label">Challenge</div><div class="value" id="cWeek">—</div><div class="note" id="cWeekNote"></div></div>
+    <div class="card"><div class="label">Leaderboard entries</div><div class="value" id="cLb">—</div><div class="note" id="cLbNote"></div></div>
+    <div class="card"><div class="label">Server</div><div class="value" id="cSrv">—</div><div class="note" id="cSrvNote"></div></div>
+  </div>
+
+  <div class="panel">
+    <h2>Sessions by day
+      <span class="range" id="rangeBtns">
+        <button data-d="7">7d</button><button data-d="30">30d</button><button data-d="90">90d</button>
+      </span>
+    </h2>
+    <div id="chartWrap"><canvas id="chart"></canvas></div>
+    <div id="chartEmpty" class="muted" style="display:none">No session data yet.</div>
+  </div>
+
+  <div class="row">
+    <div class="panel"><h2>Sessions by source (UTM)</h2><div id="srcTbl" class="muted">—</div></div>
+    <div class="panel"><h2>Top referrers</h2><div id="refTbl" class="muted">—</div></div>
+  </div>
+
+  <div class="panel"><h2 id="lbTitle">Current challenge leaderboard</h2><div id="lbTbl" class="muted">—</div></div>
+
+<script>
+const WEEK_NAMES = ["Swarming Plague","Borrowed Power","Glass Rush","Immovable Object","Blood Ocean","Slow Death","Thin Ice","High Stakes","Toil and Trouble","Sanguine Plague","Running on Fumes","Rust and Rot","Jackpot","The Stampede","Pyrrhic Victory","Fragile Fury","Race to the Bottom","March of the Fallen","Brittle Fortune","Gnawing Rust","Shattered Venom","Fragile Flash","Poisoned Chains","Penny Slots","Iron Tide","Iron Will","The Long March","Fortress Siege","The Corrosion","Spell and Steel","Blood Rush"];
+const MUT_NAMES = {1:"Hyperdrive",2:"Heavy Burden",3:"Hollow Shell",4:"Bloodthirst",5:"The Horde",6:"Glass Cannon",7:"Pestilence",8:"Arcane Surge",9:"House Always Wins",10:"Tempered Edge",11:"Titan's Grip",12:"Mystery Box",13:"Dead Reckoning",14:"Entropy"};
+const WEEKLY_MUTATIONS = [[5,7],[8,13],[1,6],[2,10],[4,5],[7,13],[3,5],[8,11,9],[2,13,12],[7,4,5],[3,13,8],[14,7,2],[9,13,12],[1,5,6],[4,13,6],[3,6,1],[1,13,5],[2,5,10],[6,13,14],[4,14,7],[6,7,1],[1,3,6],[2,7,14],[9,5,12],[5,11,2],[2,10,11],[11,13,2],[10,5,11],[14,4,10],[10,8,11],[1,4,6]];
+
+async function fetchJson(path) {
+  const r = await fetch(path, {cache: 'no-store'});
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' on ' + path);
+  return r.json();
+}
+
+function fmt(n) { return Number(n).toLocaleString('en-US'); }
+function hms(total) {
+  const h = Math.floor(total/3600), m = Math.floor(total%3600/60), s = total%60;
+  return (h? h+'h ' : '') + String(m).padStart(2,'0') + 'm ' + String(s).padStart(2,'0') + 's';
+}
+function table(el, pairs, headers) {
+  if (!pairs.length) { el.textContent = 'Nothing yet.'; return; }
+  const total = pairs.reduce((a, p) => a + p[1], 0);
+  el.classList.remove('muted');
+  el.innerHTML = '<table><tr><th>' + headers[0] + '</th><th class="num">' + headers[1] + '</th><th class="num">%</th></tr>' +
+    pairs.map(p => '<tr><td>' + p[0] + '</td><td class="num">' + fmt(p[1]) + '</td><td class="num">' + (100*p[1]/total).toFixed(0) + '%</td></tr>').join('') + '</table>';
+}
+
+let chart;
+function drawChart(byDay, days) {
+  const labels = [], data = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(Date.now() - i*86400000).toISOString().slice(0,10);
+    labels.push(d.slice(5)); data.push(byDay[d] || 0);
+  }
+  const hasData = data.some(v => v > 0);
+  document.getElementById('chartEmpty').style.display = hasData ? 'none' : '';
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById('chart'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Sessions', data, borderColor: '#8a4a12', backgroundColor: 'rgba(138,74,18,.12)', fill: true, tension: .25, pointRadius: days > 35 ? 0 : 2 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+}
+
+async function loadStats(days) {
+  try {
+    const s = await fetchJson('/api/stats?days=' + days);
+    document.getElementById('cSess').textContent = fmt(s.total);
+    document.getElementById('cSessNote').textContent = 'last ' + s.rangeDays + ' days';
+    drawChart(s.byDay || {}, days);
+    table(document.getElementById('srcTbl'), Object.entries(s.sources || {}).sort((a,b)=>b[1]-a[1]).slice(0,12), ['Source','Sessions']);
+    table(document.getElementById('refTbl'), Object.entries(s.referrers || {}).sort((a,b)=>b[1]-a[1]).slice(0,12), ['Referrer','Sessions']);
+  } catch (e) {
+    const w = document.getElementById('statsWarn');
+    w.style.display = '';
+    w.textContent = 'Could not load /api/stats — ' + e.message;
+  }
+}
+
+async function load() {
+  const days = Number(localStorage.getItem('d2rr_days') || 30);
+  document.querySelectorAll('#rangeBtns button').forEach(b => b.classList.toggle('on', Number(b.dataset.d) === days));
+  document.getElementById('updated').textContent = 'Updated ' + new Date().toLocaleString();
+
+  loadStats(days);
+
+  try {
+    const h = await fetchJson('/api/health');
+    document.getElementById('cGen').textContent = fmt(h.counter);
+    document.getElementById('cGenNote').textContent = 'all-time mods generated';
+    document.getElementById('cSrv').textContent = h.ok ? 'OK' : 'DOWN';
+    document.getElementById('cSrvNote').textContent = 'queue ' + h.queueDepth + ' · rss ' + Math.round(h.memory.rss/1048576) + ' MB';
+  } catch (e) {
+    document.getElementById('cSrv').textContent = 'DOWN?';
+    document.getElementById('cSrvNote').textContent = 'health check failed';
+  }
+
+  try {
+    const lb = await fetchJson('/api/leaderboard');
+    const slot = (lb.weekNumber - 1) % 31;
+    document.getElementById('cWeek').textContent = '#' + lb.weekNumber;
+    document.getElementById('cWeekNote').textContent = WEEK_NAMES[slot];
+    document.getElementById('cLb').textContent = lb.entries.length;
+    document.getElementById('cLbNote').textContent = lb.entries.length ? 'best: ' + hms(Math.min(...lb.entries.map(e=>e.timeSeconds))) : 'board is open';
+    document.getElementById('lbTitle').innerHTML = 'Challenge ' + lb.weekNumber + ' — ' + WEEK_NAMES[slot] + ' &nbsp; ' +
+      (WEEKLY_MUTATIONS[slot]||[]).map(id => '<span class="tag">' + MUT_NAMES[id] + '</span>').join('');
+    const el = document.getElementById('lbTbl');
+    if (!lb.entries.length) { el.textContent = 'No runs submitted yet this cycle.'; }
+    else {
+      el.classList.remove('muted');
+      const rows = lb.entries.slice().sort((a,b)=>a.timeSeconds-b.timeSeconds).slice(0,10);
+      el.innerHTML = '<table><tr><th>#</th><th>Player</th><th>Class</th><th class="num">Time</th><th>Video</th></tr>' +
+        rows.map((e,i) => '<tr><td>' + (i+1) + '</td><td>' + String(e.name).replace(/[<>&]/g,'') + '</td><td>' + String(e.className).replace(/[<>&]/g,'') + '</td><td class="num">' + hms(e.timeSeconds) + '</td><td><a href="' + encodeURI(e.proofUrl) + '" target="_blank" rel="noopener">watch</a></td></tr>').join('') + '</table>';
+    }
+  } catch (e) {
+    document.getElementById('lbTbl').textContent = 'Leaderboard unavailable.';
+  }
+}
+
+document.getElementById('rangeBtns').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  localStorage.setItem('d2rr_days', b.dataset.d);
+  load();
+});
+
+load();
+</script>
+</body>
+</html>
