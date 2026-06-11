@@ -68,6 +68,18 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     if(r&&(r.name==='ChunkLoadError'||String(r.message||'').toLowerCase().indexOf('chunk')!==-1)){maybeReload();}
   });
 })();` }} />
+        {/* First-party attribution beacon: one hit per browser session, no cookies.
+            Aggregate-only storage — see src/lib/traffic-stats.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){
+  try{
+    if(sessionStorage.getItem('_hit'))return;
+    sessionStorage.setItem('_hit','1');
+    var p=new URLSearchParams(location.search);
+    var data=JSON.stringify({path:location.pathname,utm_source:p.get('utm_source')||'',ref:document.referrer||''});
+    if(navigator.sendBeacon){navigator.sendBeacon('/api/hit',new Blob([data],{type:'application/json'}));}
+    else{fetch('/api/hit',{method:'POST',headers:{'Content-Type':'application/json'},body:data,keepalive:true});}
+  }catch(e){}
+})();` }} />
         <SiteNav />
         <div className="flex-1">{children}</div>
         <SiteFooter />

@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
   const entries = getEntries(weekNumber).map(stripIp);
   return NextResponse.json(
     { weekNumber, entries },
-    { headers: { 'Cache-Control': 'no-store' } },
+    // Open CORS: public read-only data; lets the marketing dashboard poll it.
+    { headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' } },
   );
 }
 
