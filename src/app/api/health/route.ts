@@ -30,5 +30,8 @@ export async function GET() {
       heapTotal: mem.heapTotal,
     },
     counter: getCount(),
+  }, {
+    // Open CORS: read-only, non-sensitive; lets the marketing dashboard poll it.
+    headers: { 'Access-Control-Allow-Origin': '*' },
   });
 }
