@@ -167,6 +167,7 @@ document.getElementById('rangeBtns').addEventListener('click', ev => {
   load();
 });
 
+<<<<<<< HEAD
 // Password gate. Note: client-side only — keeps casual visitors out, not a security boundary.
 async function gate() {
   const KEY = 'd2rr_dash_auth';
@@ -183,6 +184,9 @@ async function gate() {
 }
 
 gate().then(ok => { if (ok) load(); });
+=======
+load();
+>>>>>>> 36a159d1be633b794f049b5b12a2649650b135c4
 </script>
 </body>
 </html>
