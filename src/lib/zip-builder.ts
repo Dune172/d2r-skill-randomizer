@@ -29,6 +29,7 @@ export interface ZipContents {
   weaponsTxt?: string;              // weapons.txt modified by weekly mutations
   experienceTxt?: string;           // experience.txt modified by weekly mutations
   miscTxt?: string;                 // misc.txt modified by weekly mutations (e.g. antidote potion cost)
+  animDataD2?: Buffer;              // animdata.d2 with Warlock A1/A2 records synced to their COFs
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -131,6 +132,12 @@ export function buildZip(contents: ZipContents): Buffer {
   // Data version file — prevents "out of date data" prompt on startup
   if (contents.dataVersionBuild) {
     zip.addFile(`${d}/data/global/DataVersionBuild.txt`, str(contents.dataVersionBuild));
+  }
+
+  // Animation frame data with the desynced Warlock A1/A2 records repaired —
+  // required for melee skills on Warlock to land their hits (see src/lib/anim/).
+  if (contents.animDataD2) {
+    zip.addFile(`${d}/data/global/animdata.d2`, contents.animDataD2);
   }
 
   // Weekly mutation files

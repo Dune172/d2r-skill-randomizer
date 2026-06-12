@@ -16,6 +16,7 @@ import { buildAllTreeSprites } from '@/lib/sprites/tree-stitcher';
 import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-assembler';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { buildZip } from '@/lib/zip-builder';
+import { loadPatchedAnimData } from '@/lib/anim/anim-assets';
 import { getZipCache, getZipCacheStats, hasCached, setCached, makeCacheKey } from '@/lib/zip-cache';
 import { incrementCount } from '@/lib/counter';
 import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
@@ -643,6 +644,7 @@ export async function POST(request: NextRequest) {
       weaponsTxt,
       experienceTxt,
       miscTxt,
+      animDataD2: loadPatchedAnimData(),
     });
 
     // Cache the result (byte-bounded LRU handles eviction internally)

@@ -8,15 +8,34 @@ import { HARDCODED_CLASS_SKILLS } from './skill-placer';
 // Animation codes each class's character model supports.
 // Using an animation code not in this set causes game freezes.
 // TH (throw) is supported by all classes — every character has throw animation frames.
+//
+// A1 on sor and war is backed by a COF/animdata.d2 audit (scripts/audit-cof.mjs):
+// both tokens ship A1 COFs for every weapon class with attack trigger frames
+// present (vanilla normal Attack uses them). Warlock additionally needs the
+// animdata.d2 repair shipped with every mod (src/lib/anim/anim-assets.ts) —
+// the 14 vanilla WK A1/A2 records carry frame counts that don't match the
+// WK COFs/DCC art, which made A1 hits misfire on that class.
+// Verified in-game: Sacrifice lands on Warlock, Poison Dagger on Sorceress.
+//
+// KK (kick) is Assassin-only despite complete animation DATA everywhere:
+// all 8 tokens ship KK COFs with attack triggers AND full HD kick clips, but
+// in-game testing showed non-Assassin classes play no animation for KK-mode
+// skills (the engine gates KK mode entry in code) — see the Dragon Talon /
+// Dragon Tail note in skill-placer.ts.
+//
+// S1 is added where the audit shows in-sync COFs with attack triggers:
+// sor/nec/war/dru/ass (benefits Smite + the Dodge/Avoid/Evade reaction anim).
+// bar is deliberately left out — BAS1* COFs exist but carry no events, so an
+// S1-timed attack (Smite) would swing without hitting there.
 const CLASS_SUPPORTED_ANIMS: Record<string, Set<string>> = {
   ama: new Set(['A1', 'S1', 'SC', 'SQ', 'TH']),
-  sor: new Set(['SC', 'SQ', 'TH']),
-  nec: new Set(['A1', 'SC', 'TH']),
+  sor: new Set(['A1', 'S1', 'SC', 'SQ', 'TH']),
+  nec: new Set(['A1', 'S1', 'SC', 'TH']),
   pal: new Set(['A1', 'S1', 'SC', 'SQ', 'TH']),
   bar: new Set(['A1', 'SC', 'SQ', 'TH']),
-  dru: new Set(['A1', 'S3', 'SC', 'SQ', 'TH']),
-  ass: new Set(['A1', 'KK', 'S2', 'SC', 'SQ', 'TH']),
-  war: new Set(['SC', 'SQ', 'TH']),
+  dru: new Set(['A1', 'S1', 'S3', 'SC', 'SQ', 'TH']),
+  ass: new Set(['A1', 'KK', 'S1', 'S2', 'SC', 'SQ', 'TH']),
+  war: new Set(['A1', 'S1', 'SC', 'SQ', 'TH']),
 };
 
 // Weapon types that indicate a hand-to-hand / melee skill.
@@ -155,6 +174,7 @@ export function writeSkillsRows(
   const seqinputIdx = safeGetCol(headers, 'seqinput', COL.seqinput);
   const leftskillIdx = safeGetCol(headers, 'leftskill', 194);
   const aurastateIdx = safeGetCol(headers, 'aurastate', COL.aurastate);
+  const srvstfuncIdx = safeGetCol(headers, 'srvstfunc', 4);
 
   for (const row of rows) {
     const skillName = row[0]; // skill column is always first
@@ -253,6 +273,18 @@ export function writeSkillsRows(
     // Paladin-specific overlay — on other classes the shield vanishes with no replacement.
     if (!isNativeClass && aurastateIdx >= 0 && row[aurastateIdx] === 'holyshield') {
       row[aurastateIdx] = '';
+    }
+
+    // Smite has NO start function (srvstfunc/cltstfunc both blank) — on the
+    // Paladin its hardcoded srvdofunc=150 drives the whole action including
+    // the animation, but on any other class the engine applies the hit with
+    // no animation at all (the character just stands there). Give it the
+    // generic melee attack-start (srvstfunc=32, the Bash/Stun family, which
+    // animates fine cross-class with no client func) so the engine runs the
+    // normal walk-to-range → play anim → fire dofunc-on-trigger-frame flow.
+    // The native Paladin row is left untouched.
+    if (!isNativeClass && skillName === 'Smite' && srvstfuncIdx >= 0) {
+      row[srvstfuncIdx] = '32';
     }
 
     // Melee attacks, auras, and weapon masteries on the form-host class's tree

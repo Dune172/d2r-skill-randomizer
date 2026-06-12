@@ -6,17 +6,19 @@ import { CLASS_DEFS } from './config';
 // Charge requires SQ animation + seqinput=8 for smooth client-side movement;
 // Necromancer lacks SQ support, so Charge on nec always breaks movement/shake.
 //
-// Zeal (srvdofunc=13/cltdofunc=21) fires multiple hits on A1 frame events.
-// On classes without A1 (sor, nec, war), pickBestAnim falls back to SQ, which
-// means mana drains once but the multi-swing never triggers.
-//
-// Sacrifice (cltdofunc=34) is a Paladin-hardcoded client handler timed to A1
-// frame events. On classes without A1 (sor, war), pickBestAnim falls back to
-// SQ and the A1 event never fires, so no attack animation plays.
+// Sacrifice and Zeal were previously excluded on sor/war/nec because those
+// classes lacked A1 support, so their A1-frame-event-timed handlers never
+// fired. A1 is now supported on sor and war (audit-backed; Warlock also gets
+// the animdata.d2 repair shipped in every mod — see src/lib/anim/), which
+// removed the reason for the Sacrifice exclusions. Verified in-game: Sacrifice
+// lands hits on Warlock (so cltdofunc=34 is NOT class-gated, unlike
+// Fury/Zeal's cltdofunc=21 family), and A1 melee works on Sorceress.
+// The old Zeal entries were inert either way: Zeal is pinned to pal via
+// HARDCODED_CLASS_SKILLS and rejected as a swap partner, and when coin-flip
+// dropped its mechanics leave the seed entirely — it can never reach an
+// excluded class.
 const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
-  nec: new Set(['Charge', 'Zeal']),
-  sor: new Set(['Zeal', 'Sacrifice']),
-  war: new Set(['Zeal', 'Sacrifice']),
+  nec: new Set(['Charge']),
 };
 
 // Skills pinned to their native class. Each entry is (a) pinned to its native
@@ -28,9 +30,17 @@ const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
 // the dropped skill's name/*Id/skilldesc identity) fills its tree slot.
 //
 // Membership rationale: either the skill's mechanics are only executable on
-// its native class (weapsel=3 dual-wield, h2h claws, Assassin-only KK anim)
-// OR the engine resolves its animation handler by vanilla row position.
-// Both cases boil down to "must stay home".
+// its native class (weapsel=3 dual-wield, h2h claws) OR the engine resolves
+// its animation handler by vanilla row position. Both cases boil down to
+// "must stay home".
+//
+// Dragon Talon / Dragon Tail KK unpin attempt (June 2026): every token ships
+// KK COFs with attack triggers AND full HD kick clips, so the animation data
+// is complete for all classes — but in-game the kicks play NO animation on
+// non-Assassin classes (damage lands, character stands idle), even after
+// clearing their Assassin client funcs (cltstfunc=6/9, cltdofunc=4/7) to use
+// the server-driven pattern that works for Bash. Conclusion: KK mode entry is
+// class-gated in engine code. Don't retry with data edits — they stay pinned.
 //
 // Most shapeshift-only skills (restrict=2: Maul, Feral Rage, Fire Claws,
 // Hunger, Rabies) and the Shape Shifting passive are intentionally NOT
