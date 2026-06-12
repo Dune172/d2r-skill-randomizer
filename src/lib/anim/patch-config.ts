@@ -39,3 +39,29 @@ export const ANIMDATA_SYNC_COFS: readonly string[] = [
   'wka22ht.cof',
   'wka2stf.cof',
 ];
+
+/**
+ * Trigger-frame injections: vanilla animations that are MISSING their attack
+ * event entirely. The event byte is poked into the COF, the matching
+ * animdata.d2 record is synced to the patched COF, and the patched COF ships
+ * in the zip (unlike ANIMDATA_SYNC_COFS, where the game's own COFs are
+ * already correct, here they aren't — shipping only one side would create
+ * the COF↔animdata desync failure mode).
+ *
+ * Amazon S1: three of her S1 weapon-class variants carry no attack event
+ * (audit: AMS11HS / AMS11HT / AMS1XBW, F=9, zero events), while every other
+ * AMS1 variant fires attack on frame 2 (e.g. AMS12HS f2=1). All are 9-frame
+ * anims, so the donor frame index transfers directly. Without this, an
+ * S1-timed attack (Smite shuffled onto the Amazon) swings without hitting
+ * while a 1h sword, 1h throwing weapon, or crossbow is equipped.
+ */
+export const COF_TRIGGER_INJECTIONS: ReadonlyArray<{
+  cof: string;
+  frame: number;
+  event: number;
+  zipPath: string;
+}> = [
+  { cof: 'ams11hs.cof', frame: 2, event: 1, zipPath: 'data/global/chars/am/cof/ams11hs.cof' },
+  { cof: 'ams11ht.cof', frame: 2, event: 1, zipPath: 'data/global/chars/am/cof/ams11ht.cof' },
+  { cof: 'ams1xbw.cof', frame: 2, event: 1, zipPath: 'data/global/chars/am/cof/ams1xbw.cof' },
+];

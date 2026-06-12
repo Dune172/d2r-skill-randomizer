@@ -61,4 +61,13 @@ for (const f of wanted) {
   fs.copyFileSync(path.join(wkCofDir, f), path.join(outCofDir, f.toLowerCase()));
   console.log(`copied ${f}`);
 }
-console.log(`done: animdata.d2 + ${wanted.length} COFs -> ${outAnimDir}`);
+
+// The 3 Amazon S1 COFs that lack attack trigger frames in vanilla — they get
+// the event injected at runtime (COF_TRIGGER_INJECTIONS in patch-config.ts).
+const amCofDir = path.join(dataRoot, 'global', 'chars', 'am', 'cof');
+const amWanted = ['ams11hs.cof', 'ams11ht.cof', 'ams1xbw.cof'];
+for (const f of amWanted) {
+  fs.copyFileSync(path.join(amCofDir, f), path.join(outCofDir, f));
+  console.log(`copied ${f}`);
+}
+console.log(`done: animdata.d2 + ${wanted.length + amWanted.length} COFs -> ${outAnimDir}`);
