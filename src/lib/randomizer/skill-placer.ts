@@ -6,17 +6,20 @@ import { CLASS_DEFS } from './config';
 // Charge requires SQ animation + seqinput=8 for smooth client-side movement;
 // Necromancer lacks SQ support, so Charge on nec always breaks movement/shake.
 //
-// Zeal (srvdofunc=13/cltdofunc=21) fires multiple hits on A1 frame events.
-// On classes without A1 (sor, nec, war), pickBestAnim falls back to SQ, which
-// means mana drains once but the multi-swing never triggers.
+// Zeal is NOT excluded anywhere. It's a plain restrict=0 melee attack
+// (srvdofunc=13/cltdofunc=21) and that handler is class-agnostic — the oskill
+// version (e.g. the Passion runeword) grants Zeal to any class and the multi-hit
+// animates fine. The only requirement is the A1 attack swing, which every class
+// now has (A1 is in CLASS_SUPPORTED_ANIMS for all 8 classes in skills-writer.ts),
+// so pickBestAnim keeps anim=A1 on every host.
 //
 // Sacrifice (cltdofunc=34) is a Paladin-hardcoded client handler timed to A1
 // frame events. On classes without A1 (sor, war), pickBestAnim falls back to
 // SQ and the A1 event never fires, so no attack animation plays.
 const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
-  nec: new Set(['Charge', 'Zeal']),
-  sor: new Set(['Zeal', 'Sacrifice']),
-  war: new Set(['Zeal', 'Sacrifice']),
+  nec: new Set(['Charge']),
+  sor: new Set(['Sacrifice']),
+  war: new Set(['Sacrifice']),
 };
 
 // Skills pinned to their native class. Each entry is (a) pinned to its native
@@ -37,16 +40,17 @@ const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
 // listed here — they go in the shuffle pool so COPACEMENT_REQUIRES can
 // co-locate them with whichever class hosts Wearwolf/Wearbear.
 //
-// Exception: Fury (cltdofunc=21) and Shock Wave (cltdofunc=17) ARE pinned
-// despite restrict=2. The wolf/bear form model owns its own anim sheet, but
-// the engine's client handler dispatch is keyed on the host character class,
-// not the active form. Fury's cltdofunc=21 is the same Druid-class-gated
-// handler family as Zeal (Paladin/cltdofunc=21) and Strafe (Amazon/cltdofunc=20):
-// on a non-Druid host, no handler fires, so no animation start signal and
-// no attack — even though anim=A1 is preserved correctly. Shock Wave is
-// pinned for the same reason on the Wearbear side. See FORM_GATED_PINS
-// in placeSkills for the conditional-drop logic that vacates them when
-// the form anchor (Wearwolf / Wearbear) didn't land on Druid.
+// Exception: Fury and Shock Wave ARE pinned despite restrict=2 — but the gate
+// is restrict=2 (form-only), NOT a class-keyed handler. Fury shares Zeal's exact
+// function quartet (srvstfunc=37/srvdofunc=13/cltstfunc=53/cltdofunc=21/anim=A1);
+// the only difference is restrict=2, which locks Fury to the werewolf form. That
+// form only exists when Wearwolf is on the same class, so a Fury stranded on a
+// non-Druid host (or a Druid without Wearwolf) has no form to fire in and stays
+// idle — even though anim=A1 is preserved. (Zeal, restrict=0, has no such gate
+// and is fully shuffleable; see SKILL_CLASS_EXCLUSIONS above.) Shock Wave is the
+// Wearbear-side equivalent. See FORM_GATED_PINS in placeSkills for the
+// conditional-drop logic that vacates them when the form anchor (Wearwolf /
+// Wearbear) didn't land on Druid.
 export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   // Amazon
   'Fend': 'ama',
@@ -61,8 +65,6 @@ export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   'Frenzy': 'bar',
   // Sorceress
   'Inferno': 'sor',
-  // Paladin
-  'Zeal': 'pal',
   // Druid
   'Arctic Blast': 'dru',
   'Fury': 'dru',

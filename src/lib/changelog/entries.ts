@@ -12,6 +12,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.253',
+    date: 'June 2026',
+    tagline: 'Zeal can now land on any class',
+    notes: [
+      'Zeal is no longer locked to the Paladin — it now shuffles onto any class and performs its multi-hit swing correctly. It turns out Zeal\'s rapid-attack handler was never tied to the Paladin (the same skill granted by items like Passion works on every class), so there was no reason to keep it pinned',
+      'Enabled the basic attack-swing animation for the Sorceress and Warlock so melee skills like Zeal animate properly when they land there, instead of falling back to a broken cast pose',
+    ],
+  },
+  {
     version: 'v0.252',
     date: 'June 2026',
     tagline: 'Race Mode now locks the field to a single class',

@@ -8,15 +8,20 @@ import { HARDCODED_CLASS_SKILLS } from './skill-placer';
 // Animation codes each class's character model supports.
 // Using an animation code not in this set causes game freezes.
 // TH (throw) is supported by all classes — every character has throw animation frames.
+// A1 (basic weapon swing) is supported on all 8 classes: every character model
+// has an A1 attack sequence, including the casters. This is what lets melee
+// skills like Zeal (srvdofunc=13/cltdofunc=21, the class-agnostic multi-hit
+// handler, proven by its oskill version working on every class) keep anim=A1
+// on any host instead of degrading to SQ.
 const CLASS_SUPPORTED_ANIMS: Record<string, Set<string>> = {
   ama: new Set(['A1', 'S1', 'SC', 'SQ', 'TH']),
-  sor: new Set(['SC', 'SQ', 'TH']),
+  sor: new Set(['A1', 'SC', 'SQ', 'TH']),
   nec: new Set(['A1', 'SC', 'TH']),
   pal: new Set(['A1', 'S1', 'SC', 'SQ', 'TH']),
   bar: new Set(['A1', 'SC', 'SQ', 'TH']),
   dru: new Set(['A1', 'S3', 'SC', 'SQ', 'TH']),
   ass: new Set(['A1', 'KK', 'S2', 'SC', 'SQ', 'TH']),
-  war: new Set(['SC', 'SQ', 'TH']),
+  war: new Set(['A1', 'SC', 'SQ', 'TH']),
 };
 
 // Weapon types that indicate a hand-to-hand / melee skill.
@@ -321,8 +326,9 @@ export function reorderSkillsRows(
   // Bucket rows by target class; unrecognized names go to nonClassRows.
   // Rows for HARDCODED_CLASS_SKILLS placed on their native class are pinned at
   // their original row index: D2R's engine resolves some hardcoded-animation
-  // skills (Zeal's multi-hit cltdofunc=21, Leap's landing, etc.) by row position,
-  // so drift breaks the animation even though skills.txt anim columns are correct.
+  // skills (Leap's landing, etc.) by row position, so drift breaks the animation
+  // even though skills.txt anim columns are correct. (Zeal is no longer in this
+  // set — its multi-hit handler is class-agnostic and it shuffles freely.)
   const classBuckets = new Map<ClassCode, { index: number; row: string[] }[]>(
     CLASS_ORDER.map(c => [c, []] as [ClassCode, { index: number; row: string[] }[]])
   );
