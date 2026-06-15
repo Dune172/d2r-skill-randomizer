@@ -353,8 +353,9 @@ export function reorderSkillsRows(
   // Bucket rows by target class; unrecognized names go to nonClassRows.
   // Rows for HARDCODED_CLASS_SKILLS placed on their native class are pinned at
   // their original row index: D2R's engine resolves some hardcoded-animation
-  // skills (Zeal's multi-hit cltdofunc=21, Leap's landing, etc.) by row position,
-  // so drift breaks the animation even though skills.txt anim columns are correct.
+  // skills (Leap's landing, etc.) by row position, so drift breaks the animation
+  // even though skills.txt anim columns are correct. (Zeal is no longer in this
+  // set — its multi-hit handler is class-agnostic and it shuffles freely.)
   const classBuckets = new Map<ClassCode, { index: number; row: string[] }[]>(
     CLASS_ORDER.map(c => [c, []] as [ClassCode, { index: number; row: string[] }[]])
   );
