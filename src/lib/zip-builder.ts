@@ -4,6 +4,7 @@ import { CLASS_BY_CODE, CLASS_DEFS } from './randomizer/config';
 
 export interface ZipContents {
   modName: string;
+  savepath?: string;                // save folder in modinfo.json; defaults to the shared 'D2RRandomizer'
   skillsTxt: string;
   skillDescTxt: string;
   treeSprites: Map<string, Buffer>; // filename → sprite buffer
@@ -65,7 +66,7 @@ export function buildZip(contents: ZipContents): Buffer {
   const str = (s: string) => Buffer.from(s, 'utf-8');
 
   // Add modinfo.json
-  const modinfo = JSON.stringify({ name: m, savepath: 'D2RRandomizer' });
+  const modinfo = JSON.stringify({ name: m, savepath: contents.savepath ?? 'D2RRandomizer' });
   zip.addFile(`${d}/modinfo.json`, str(modinfo));
 
   // Add text files

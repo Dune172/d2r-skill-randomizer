@@ -7,7 +7,7 @@ import { createRNG, seedFromString } from '@/lib/randomizer/seed';
 import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings } from '@/lib/data-loader';
 import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
-import { applyRaceMode } from '@/lib/randomizer/race-mode';
+import { applyRaceMode, pickRaceClassCode } from '@/lib/randomizer/race-mode';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
 import { writeSkillsRows, reorderSkillsRows } from '@/lib/randomizer/skills-writer';
 import { writeSkillDescRows } from '@/lib/randomizer/skilldesc-writer';
@@ -614,12 +614,21 @@ export async function POST(request: NextRequest) {
 
     // Step 12: Build zip
     const modName = `seed${seed}`;
+    // Race mode and the weekly challenge get isolated save folders so competitive
+    // characters don't mix with casual ones. Race: seed + race class (e.g. seed123pal).
+    // Weekly: the mod name — unique per challenge since the weekly seed is week-derived.
+    const savepath = raceMode
+      ? `${modName}${pickRaceClassCode(seed)}`
+      : weeklyEnabled
+        ? modName
+        : 'D2RRandomizer';
     const formatUiJson = (obj: unknown) =>
       '\uFEFF' + JSON.stringify(obj, null, 4).replace(/\n/g, '\r\n');
     const dataVersionBuild = fs.readFileSync(path.join(DATA_DIR, 'dataversionbuild.txt'), 'utf-8').trim();
     const animAssets = loadPatchedAnimAssets();
     const zipBuffer = buildZip({
       modName,
+      savepath,
       skillsTxt: skillsTxtContent,
       skillDescTxt: skillDescTxtContent,
       treeSprites,
