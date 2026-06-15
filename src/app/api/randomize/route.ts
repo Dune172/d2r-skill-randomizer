@@ -16,6 +16,7 @@ import { buildAllTreeSprites } from '@/lib/sprites/tree-stitcher';
 import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-assembler';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { buildZip } from '@/lib/zip-builder';
+import { loadPatchedAnimAssets } from '@/lib/anim/anim-assets';
 import { getZipCache, getZipCacheStats, hasCached, setCached, makeCacheKey } from '@/lib/zip-cache';
 import { incrementCount } from '@/lib/counter';
 import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
@@ -616,6 +617,7 @@ export async function POST(request: NextRequest) {
     const formatUiJson = (obj: unknown) =>
       '\uFEFF' + JSON.stringify(obj, null, 4).replace(/\n/g, '\r\n');
     const dataVersionBuild = fs.readFileSync(path.join(DATA_DIR, 'dataversionbuild.txt'), 'utf-8').trim();
+    const animAssets = loadPatchedAnimAssets();
     const zipBuffer = buildZip({
       modName,
       skillsTxt: skillsTxtContent,
@@ -643,6 +645,8 @@ export async function POST(request: NextRequest) {
       weaponsTxt,
       experienceTxt,
       miscTxt,
+      animDataD2: animAssets.animData,
+      charCofs: animAssets.cofs,
     });
 
     // Cache the result (byte-bounded LRU handles eviction internally)

@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.253',
+    date: 'June 2026',
+    tagline: 'Melee skills now hit properly on Sorceress and Warlock',
+    notes: [
+      'Melee skills shuffled onto the Sorceress and Warlock now keep their real weapon-swing animation (A1) instead of being downgraded to a cast, so they look and feel like proper attacks',
+      'Fixed a vanilla data bug where the Warlock’s attack animations had mismatched frame data — the cause of swings that played but never landed a hit. Every generated mod now ships a repaired animdata.d2',
+      'Sacrifice can now be shuffled onto the Sorceress and Warlock, and Smite now plays a proper attack animation when shuffled to other classes',
+      'Fixed a vanilla gap where three Amazon animations were missing their hit trigger — without this, Smite shuffled onto the Amazon could swing without connecting while holding certain weapons',
+    ],
+  },
+  {
     version: 'v0.252',
     date: 'June 2026',
     tagline: 'Race Mode now locks the field to a single class',
