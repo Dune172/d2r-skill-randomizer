@@ -132,7 +132,7 @@ export const WEEKLY_MUTATIONS: number[][] = [
   [3, 5],       // 6
   [8, 11, 9],   // 7
   [2, 13, 12],  // 8
-  [7, 4, 5],    // 9
+  [9, 3, 14],   // 9
   [3, 13, 8],   // 10
   [14, 7, 2],   // 11
   [9, 13, 12],  // 12
@@ -170,7 +170,7 @@ export const WEEK_NAMES: string[] = [
   'Thin Ice',            // 6  Hollow Shell + The Horde
   'High Stakes',         // 7  Arcane Surge + Titan's Grip + House Always Wins
   'Toil and Trouble',    // 8  Heavy Burden + Dead Reckoning + Mystery Box
-  'Sanguine Plague',     // 9  Pestilence + Bloodthirst + The Horde
+  "Fool's Gold",         // 9  House Always Wins + Hollow Shell + Entropy
   'Running on Fumes',    // 10 Hollow Shell + Dead Reckoning + Arcane Surge
   'Rust and Rot',        // 11 Entropy + Pestilence + Heavy Burden
   'Jackpot',             // 12 House Always Wins + Dead Reckoning + Mystery Box
