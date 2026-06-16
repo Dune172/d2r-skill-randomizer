@@ -82,6 +82,14 @@ const CHANNELED_SQ_SKILLS = new Set(['Inferno', 'Arctic Blast', 'Bind Demon']);
 // Clear seqnum/seqinput whenever these skills land on a non-native class.
 const BARB_SEQNUM_SKILLS = new Set(['Leap', 'Leap Attack']);
 
+// Lightning and Chain Lightning use anim=SQ with a Sorceress-tuned quick-cast
+// sequence (seqnum=12 in vanilla Sequence.txt). That sequence's frame indices
+// are keyed to the Sorceress SC frame layout, so on any other class no cast
+// animation plays (the bolt still fires server-side). Their sibling lightning
+// spells (Charged Bolt, Nova) use a plain SC cast that animates on every class,
+// so fall these back to SC when shuffled off the Sorceress.
+const SQ_SEQUENCE_TUNED_SKILLS = new Set(['Lightning', 'Chain Lightning']);
+
 function pickBestAnim(
   skill: SkillEntry,
   originalAnim: string,
@@ -92,6 +100,9 @@ function pickBestAnim(
       (SQ_DEPENDENT_SKILLS.has(skill.skill) || CHANNELED_SQ_SKILLS.has(skill.skill))) {
     return 'SQ';
   }
+
+  // Sorceress-tuned SQ sequences don't animate off-class; cast them as plain SC.
+  if (SQ_SEQUENCE_TUNED_SKILLS.has(skill.skill)) return 'SC';
 
   const category = getSkillCategory(skill);
   if (category === 'default') {
