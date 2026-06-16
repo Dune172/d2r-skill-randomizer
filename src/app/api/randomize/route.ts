@@ -22,7 +22,7 @@ import { incrementCount } from '@/lib/counter';
 import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
-import { remapMonstatsSkillIds } from '@/lib/randomizer/monstats-skill-remapper';
+import { remapMonstatsSkillIds, stripSubstitutedMonsterSkills } from '@/lib/randomizer/monstats-skill-remapper';
 import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
@@ -548,6 +548,13 @@ export async function POST(request: NextRequest) {
     const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
     // Remap Skill1–8 numeric IDs to match the new row positions in skills.txt
     let scaledMonRows = remapMonstatsSkillIds(monstatsSrc.headers, monstatsSrc.rows, idMapping);
+    // Strip from every monster any Skill1-8 slot whose skill was substituted this
+    // seed (its skills.txt row now holds foreign mechanics). Monsters cast by name
+    // under a hardcoded sequence, so a repurposed row crashes the game (Ancients/
+    // Whirlwind, Duriel/Jab, Shadow summons/claws). Purely monster-side: player
+    // skill trees are unchanged. Skills that kept their mechanics are left in.
+    const substitutedSkillNames = new Set(substitutes.map(s => s.droppedSkill.skill));
+    scaledMonRows = stripSubstitutedMonsterSkills(monstatsSrc.headers, scaledMonRows, substitutedSkillNames);
     if (playersEnabled && playersCount > 1)
       scaledMonRows = scaleMonstats(monstatsSrc.headers, scaledMonRows, playersCount, playersActs, summonIds);
     if (xpMultiplier > 1)

@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.254',
+    date: 'June 2026',
+    tagline: 'Fixed crashes when fighting the Ancients, Duriel, and other skill-using monsters',
+    notes: [
+      'Fixed a crash when fighting the Ancients: on some seeds Korlic’s Whirlwind had its underlying skill data reshuffled into a different skill, and the game would crash the instant he tried to use it — which is why it could crash before any whirlwind even appeared',
+      'The same crash could hit any monster that performs a reshuffled skill — including Duriel and the Act 2 mercenary (Jab), and the Assassin’s Shadow Warrior and Shadow Master (their martial-arts skills)',
+      'The fix is entirely on the monster’s side: when a monster’s skill has been reshuffled this way, it simply drops that skill and falls back to a basic attack. Your skill trees are untouched, so existing characters and the current challenge seed play exactly the same — only the crash is gone',
+    ],
+  },
+  {
     version: 'v0.253',
     date: 'June 2026',
     tagline: 'Melee skills now hit properly on Sorceress and Warlock',
