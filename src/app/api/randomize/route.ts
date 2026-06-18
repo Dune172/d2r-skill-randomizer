@@ -235,6 +235,7 @@ export async function POST(request: NextRequest) {
       placements,
       placementsByClass,
       rng,
+      skillsTxt.headers,
     );
 
     // Build str name lookup from effective skilldesc data (substitute-aware)
