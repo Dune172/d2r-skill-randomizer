@@ -29,6 +29,7 @@ import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/it
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
 import { applyWeeklyMutations, preApplyMagicAffixMutations, isMutationActiveForWeek } from '@/lib/randomizer/mutations';
+import { buildGambleTable } from '@/lib/randomizer/mutations/house-always-wins';
 import { MYSTERY_ICON, applyMysteryStrings, hideSkillDetailLines } from '@/lib/randomizer/mutations/mystery-box';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
 import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
@@ -573,6 +574,7 @@ export async function POST(request: NextRequest) {
     let weaponsTxt: string | undefined;
     let experienceTxt: string | undefined;
     let miscTxt: string | undefined;
+    let gambleTxt: string | undefined;
 
     if (weeklyEnabled) {
       const expSrc = loadTxtFile('experience.txt');
@@ -608,6 +610,13 @@ export async function POST(request: NextRequest) {
       weaponsTxt    = serializeTxtFile(weaponsSrc.headers, weaponsSrc.rows);
       experienceTxt = serializeTxtFile(expSrc.headers, expSrc.rows);
       miscTxt       = serializeTxtFile(miscSrc.headers, miscSrc.rows);
+
+      // House Always Wins: gambling is the only source of weapons/armor, so ship a
+      // comprehensive gamble pool (vanilla omits daggers, throwing weapons, class items…).
+      if (isMutationActiveForWeek(weekNumber, 'house-always-wins')) {
+        const g = buildGambleTable(weaponsSrc, armorSrc, miscSrc);
+        gambleTxt = serializeTxtFile(g.headers, g.rows);
+      }
       magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, magicPrefixTxt.rows);
       magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, magicSuffixTxt.rows);
     }
@@ -661,6 +670,7 @@ export async function POST(request: NextRequest) {
       weaponsTxt,
       experienceTxt,
       miscTxt,
+      gambleTxt,
       animDataD2: animAssets.animData,
       charCofs: animAssets.cofs,
     });

@@ -16,7 +16,10 @@ const GOLD_MULT_X = 4; // 4× normal gold; calibrate in-game
 const MUL_FIXED_POINT = 1024; // D2R mul base: 1024 = 100%
 const GOLD_CELL = `"gld,mul=${GOLD_MULT_X * MUL_FIXED_POINT}"`;
 
-const GENERIC_GEAR_RE = /^(weap|armo)\d+$/;
+// D2 splits gear drops into four generic treasure-class families: body armor
+// (armo*) plus three weapon families (weap*, bow*, mele*). Missing bow*/mele*
+// let monsters keep dropping bows and melee weapons (which roll sockets).
+const GENERIC_GEAR_RE = /^(weap|armo|bow|mele)\d+$/;
 const ITEM_COLS = ['Item1', 'Item2', 'Item3', 'Item4', 'Item5', 'Item6', 'Item7', 'Item8', 'Item9', 'Item10'];
 const CODE_COLS = ['code', 'normcode', 'ubercode', 'ultracode'];
 
@@ -73,4 +76,65 @@ export function applyHouseAlwaysWins(ctx: MutationContext): void {
       for (const idx of vendorIdxs) row[idx] = '';
     }
   }
+}
+
+type Table = { headers: string[]; rows: string[][] };
+
+/** Truthy iff a `gamble cost` cell represents a real (non-zero) cost. */
+function hasGambleCost(cell: string | undefined): boolean {
+  const v = cell?.trim();
+  return !!v && v !== '0';
+}
+
+/**
+ * Build a comprehensive `gamble.txt` (columns: name, code) so the gamble window
+ * offers everything that carries a `gamble cost`. House Always Wins makes
+ * gambling the only source of weapons/armor, so anything missing from the pool
+ * is otherwise unobtainable. The shipped vanilla pool omits daggers, throwing
+ * weapons, javelins/spears, staves/wands/scepters and every class item.
+ *
+ * Only the normal-tier base of each line is listed (`code === normcode`); the
+ * D2R gamble engine upgrades it to the level-appropriate exceptional/elite tier.
+ * Reads only — does not mutate the tables.
+ */
+export function buildGambleTable(weapons: Table, armor: Table, misc: Table): Table {
+  const rows: string[][] = [];
+
+  for (const { headers, rows: src } of [weapons, armor]) {
+    const ci = headers.indexOf('code');
+    const ni = headers.indexOf('name');
+    const nci = headers.indexOf('normcode');
+    const gi = headers.indexOf('gamble cost');
+    if (ci === -1 || nci === -1 || gi === -1) continue;
+    for (const row of src) {
+      const code = row[ci]?.trim();
+      if (!code) continue;
+      // Normal-tier base = a row whose normcode points to itself.
+      if (code !== row[nci]?.trim()) continue;
+      if (!hasGambleCost(row[gi])) continue;
+      const name = ni !== -1 ? row[ni]?.trim() || code : code;
+      rows.push([name, code]);
+    }
+  }
+
+  // Jewelry: keep rings/amulets gamblable. Charms (cm1/cm2/cm3/cs2) are excluded
+  // — they aren't gear, still drop under House Always Wins, and gambling sunder
+  // charms would be off-intent.
+  {
+    const ci = misc.headers.indexOf('code');
+    const ni = misc.headers.indexOf('name');
+    const gi = misc.headers.indexOf('gamble cost');
+    const JEWELRY = new Set(['rin', 'amu']);
+    if (ci !== -1 && gi !== -1) {
+      for (const row of misc.rows) {
+        const code = row[ci]?.trim();
+        if (!code || !JEWELRY.has(code)) continue;
+        if (!hasGambleCost(row[gi])) continue;
+        const name = ni !== -1 ? row[ni]?.trim() || code : code;
+        rows.push([name, code]);
+      }
+    }
+  }
+
+  return { headers: ['name', 'code'], rows };
 }
