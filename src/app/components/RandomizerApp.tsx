@@ -172,9 +172,9 @@ export default function RandomizerApp() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 py-6 md:py-8 space-y-6">
       {/* ── Form panel ── */}
-      <div className="rounded-lg border border-[#4a1e14] bg-[#0c0405]/80 p-6 panel-shadow">
+      <div className="rounded-lg border border-[#4a1e14] bg-[#0c0405]/80 p-4 md:p-6 panel-shadow">
         <RandomizerForm
           initialOptions={parseOptionsFromParams(searchParams) ?? undefined}
           onGenerate={handleGenerate}

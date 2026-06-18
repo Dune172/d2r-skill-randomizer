@@ -39,7 +39,7 @@ export default function SkillTreePreview({ data }: SkillTreePreviewProps) {
 
   return (
     <div>
-      <div className="w-full flex items-center gap-4 mb-6">
+      <div className="w-full flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-6">
         <div className="h-px flex-1 bg-[#3a1510]" />
         <button
           onClick={() => setExpanded(e => !e)}

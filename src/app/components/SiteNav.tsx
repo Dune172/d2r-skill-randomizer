@@ -32,24 +32,24 @@ export default function SiteNav() {
 
   return (
     <header className="sticky top-0 z-50 bg-[#060203]/95 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-6">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
         {/* Brand — left */}
         <Link
           href="/"
-          className="font-cinzel font-black tracking-[0.14em] text-xl text-[#c8942a] glow-gold uppercase hover:text-[#e0ac4a] transition-colors shrink-0"
+          className="font-cinzel font-black tracking-[0.14em] text-lg md:text-xl text-[#c8942a] glow-gold uppercase hover:text-[#e0ac4a] transition-colors shrink-0"
         >
           D2R Randomizer
         </Link>
 
         {/* Nav links — right */}
-        <nav className="flex items-center gap-1 flex-wrap justify-end">
+        <nav className="flex items-center gap-1 flex-wrap w-full md:w-auto justify-center md:justify-end">
           {navLinks.map(({ href, label }) => {
             const isActive = pathname === href;
             return (
               <Link
                 key={href}
                 href={href}
-                className={`font-cinzel text-[11px] tracking-[0.3em] uppercase px-3 py-1.5 transition-colors ${
+                className={`font-cinzel text-[11px] tracking-[0.2em] md:tracking-[0.3em] uppercase px-2 md:px-3 py-1.5 transition-colors ${
                   isActive
                     ? 'text-[#c8942a]'
                     : 'text-[#a87830] hover:text-[#c8942a]'
@@ -66,7 +66,7 @@ export default function SiteNav() {
           <div ref={dropdownRef} className="relative">
             <button
               onClick={() => setCommunityOpen(o => !o)}
-              className="font-cinzel text-[11px] tracking-[0.3em] uppercase px-3 py-1.5 text-[#a87830] hover:text-[#c8942a] transition-colors flex items-center gap-1"
+              className="font-cinzel text-[11px] tracking-[0.2em] md:tracking-[0.3em] uppercase px-2 md:px-3 py-1.5 text-[#a87830] hover:text-[#c8942a] transition-colors flex items-center gap-1"
             >
               Community
               <span className="text-[10px]">{communityOpen ? '▲' : '▼'}</span>

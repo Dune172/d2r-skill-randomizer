@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 type Preset = 'custom' | 'season1race' | 'turbo';
 
@@ -77,11 +77,34 @@ interface RandomizerFormProps {
   hideSubmit?: boolean;
 }
 
-function Tip({ text }: { text: string }) {
+function Tip({ text, align = 'center', width = 'w-56', below = false }: { text: string; align?: 'center' | 'right'; width?: string; below?: boolean }) {
+  // Hover reveals on desktop; tap toggles `open` so the tooltip is reachable on touch.
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  const pos = below ? 'top-full mt-2' : 'bottom-full mb-2';
+  const alignCls = align === 'right' ? 'right-0' : 'left-1/2 -translate-x-1/2';
+
   return (
-    <span className="relative group/tip inline-flex items-center ml-1.5 cursor-default" onClick={e => e.preventDefault()}>
-      <span className="text-[#5a3820] hover:text-[#c8a870] text-[11px] leading-none select-none transition-colors">ⓘ</span>
-      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 w-56 rounded border border-[#3a1510] bg-[#0d0305] px-2.5 py-1.5 text-xs text-[#c8a870] leading-relaxed shadow-lg opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 text-left whitespace-normal">
+    <span ref={ref} className="relative group/tip inline-flex items-center ml-1.5">
+      <button
+        type="button"
+        aria-label="More information"
+        onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(o => !o); }}
+        className="text-[#5a3820] hover:text-[#c8a870] text-[11px] leading-none select-none transition-colors cursor-help"
+      >
+        ⓘ
+      </button>
+      <span className={`pointer-events-none absolute ${pos} ${alignCls} z-20 ${width} rounded border border-[#3a1510] bg-[#0d0305] px-2.5 py-1.5 text-xs text-[#c8a870] leading-relaxed shadow-lg transition-opacity duration-150 text-left whitespace-normal group-hover/tip:opacity-100 ${open ? 'opacity-100' : 'opacity-0'}`}>
         {text}
       </span>
     </span>
@@ -224,15 +247,23 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
     });
   };
 
+  const presetDesc =
+    preset === 'season1race'
+      ? 'Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!'
+      : preset === 'turbo'
+        ? 'Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.'
+        : null;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-1">
 
       {/* Preset */}
       <div className="flex items-center justify-end gap-2 pb-0">
-        <label htmlFor="preset" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870]">
+        <label htmlFor="preset" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] flex items-center">
           Preset
+          {presetDesc && <Tip text={presetDesc} align="right" width="w-72" below />}
         </label>
-        <div className="relative group">
+        <div className="relative">
           <select
             id="preset"
             value={preset}
@@ -247,16 +278,6 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
             <option value="turbo" title="Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.">Turbo</option>
           </select>
           <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
-          {preset === 'season1race' && (
-            <div className="pointer-events-none absolute right-0 top-full mt-1.5 z-10 w-72 rounded border border-[#3a1510] bg-[#0d0305] px-3 py-2 text-xs text-[#c8a870] leading-relaxed shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!
-            </div>
-          )}
-          {preset === 'turbo' && (
-            <div className="pointer-events-none absolute right-0 top-full mt-1.5 z-10 w-72 rounded border border-[#3a1510] bg-[#0d0305] px-3 py-2 text-xs text-[#c8a870] leading-relaxed shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.
-            </div>
-          )}
         </div>
       </div>
 
@@ -264,7 +285,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       <div className="space-y-3 pt-1 pb-2">
         <SectionDivider label="Gameplay" />
 
-        <div className="grid grid-cols-2 gap-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           {/* Left: Disable chat + Prereqs + Proc pool */}
           <div className="flex flex-col justify-start gap-3">
             <Checkbox
@@ -323,7 +344,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       <div className="space-y-3 pt-1 pb-2">
         <SectionDivider label="Items" />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Left: Teleport Staff */}
           <div className={teleportStaff ? 'rounded border border-[#5c1818] bg-[#1a0606]/50 p-3 -m-3 w-fit justify-self-start' : ''}>
             <Checkbox
