@@ -187,8 +187,11 @@ export function WeekCard() {
           <p className="font-cinzel text-xs tracking-[0.4em] text-[#d8784a] uppercase text-center mb-2">
             Leaderboard
           </p>
-          <p className="text-xs text-[#9a5a3a] tracking-wider text-center mb-5">
+          <p className="text-xs text-[#9a5a3a] tracking-wider text-center mb-1">
             Fastest time to beat Baal on Normal · top 3 shown
+          </p>
+          <p className="text-[11px] text-[#7a4a30] tracking-wider text-center mb-5">
+            In Game Time is used. RTA is used if IGT is not present.
           </p>
           <div className="mb-5">
             <Leaderboard weekNumber={weekNumber} refreshKey={leaderboardKey} expandable />
