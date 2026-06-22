@@ -1,4 +1,5 @@
 import type { MutationContext } from './index';
+import { INJECTED_PROC_PARAM } from '../item-skills-writer';
 
 const REQ_MULT = 1.5;
 const DEF_MULT = 1.5;
@@ -28,8 +29,8 @@ const PROC_CHANCE = 10;
 
 /**
  * Inject a gethit-skill proc into every armor-applicable affix that doesn't
- * already have one. Called on raw (pre-remap) affix data so remapClassItemSkills
- * assigns the skill ID from the shuffled castable pool.
+ * already have one. Called on raw (pre-remap) affix data; the sentinel param
+ * makes remapClassItemSkills assign a random skill from the shuffled castable pool.
  */
 export function injectArmorProcs(headers: string[], rows: string[][]): void {
   const itypeIdxs = ['itype1','itype2','itype3','itype4','itype5','itype6','itype7']
@@ -54,7 +55,7 @@ export function injectArmorProcs(headers: string[], rows: string[][]): void {
     row[free.code] = 'gethit-skill';
     row[free.min]  = String(PROC_CHANCE);
     row[free.max]  = String(skillLevel);
-    if (free.param !== -1) row[free.param] = '0';
+    if (free.param !== -1) row[free.param] = INJECTED_PROC_PARAM;
   }
 }
 

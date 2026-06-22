@@ -69,7 +69,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Arcane Surge',
     emoji: '🌊',
     description:
-      'All skill mana costs are doubled. In return, all skills deal 50% increased elemental damage.',
+      'All skill mana costs are increased to 2.5×. In return, all skills deal 50% increased elemental damage.',
   },
   9: {
     id: 'house-always-wins',
@@ -98,7 +98,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: "Titan's Grip",
     emoji: '🌀',
     description:
-      'All weapon strength and dexterity requirements are increased by 50%. Weapons with stat requirements deal twice as much damage. Proc chances on qualifying weapons are doubled, and proc skill level scales with item level.',
+      'All weapon strength and dexterity requirements are increased by 50%. Weapons with stat requirements deal twice as much damage. Magic weapon affixes gain chance-to-cast procs drawn from a wide skill pool, existing proc chances are doubled, and proc skill level scales with item level.',
   },
   13: {
     id: 'dead-reckoning',

@@ -78,8 +78,13 @@ export async function POST(request: NextRequest) {
     const xpActs: number[] = Array.isArray(body.xpActs)
       ? (body.xpActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
-    const raceMode = body.raceMode !== false; // default true (matches Season preset + download route)
     const weeklyEnabled = body.weeklyChallenge?.enabled === true;
+    // Weekly challenges are always full randomization — never Race Mode. Force it
+    // off server-side so no caller (challenge page, warmup, or a hand-built link)
+    // can produce a race-mode challenge regardless of the raceMode they pass.
+    // Must stay in lockstep with the identical guard in /api/download so the cache
+    // keys agree. Outside weekly, raceMode defaults true (matches Season preset).
+    const raceMode = weeklyEnabled ? false : (body.raceMode !== false);
     const weeklyOverride: number | undefined =
       typeof body.weeklyChallenge?.weekOverride === 'number'
         ? Math.max(1, Math.trunc(body.weeklyChallenge.weekOverride))
@@ -308,8 +313,11 @@ export async function POST(request: NextRequest) {
     if (weeklyEnabled) {
       preApplyMagicAffixMutations(weekNumber, magicPrefixTxt, magicSuffixTxt);
     }
-    magicPrefixTxt.rows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping);
-    magicSuffixTxt.rows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping);
+    // Dedicated sub-RNG (derived from, but independent of, the main seed) so
+    // injected-proc skill selection doesn't disturb the main pipeline's RNG order.
+    const procRng = createRNG(seed ^ 0x50524f43); // 'PROC'
+    magicPrefixTxt.rows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping, procRng);
+    magicSuffixTxt.rows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping, procRng);
     let magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, magicPrefixTxt.rows);
     let magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, magicSuffixTxt.rows);
 

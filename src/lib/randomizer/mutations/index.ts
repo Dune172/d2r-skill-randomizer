@@ -11,7 +11,7 @@ import { applyTheHorde } from './the-horde';
 import { applyGlassCannon } from './glass-cannon';
 import { applyPestilence } from './pestilence';
 import { applyArcaneSurge } from './arcane-surge';
-import { applyTitansGrip } from './titans-grip';
+import { applyTitansGrip, injectWeaponProcs } from './titans-grip';
 import { applyDeadReckoning } from './dead-reckoning';
 import { applyTemperedEdge } from './tempered-edge';
 import { applyEntropy } from './entropy';
@@ -71,6 +71,10 @@ export function preApplyMagicAffixMutations(
     if (MUTATIONS[id]?.id === 'heavy-burden') {
       injectArmorProcs(prefix.headers, prefix.rows);
       injectArmorProcs(suffix.headers, suffix.rows);
+    }
+    if (MUTATIONS[id]?.id === 'titans-grip') {
+      injectWeaponProcs(prefix.headers, prefix.rows);
+      injectWeaponProcs(suffix.headers, suffix.rows);
     }
   }
 }

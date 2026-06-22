@@ -127,9 +127,9 @@ Mutations are optional modifiers applied on top of the shuffle. Each one modifie
 | The Horde | Pack sizes ×3; experience reduced by a third |
 | Glass Cannon | Monsters deal 2× damage but have half the life |
 | Pestilence | All monsters deal poison damage; antidote potions cost 10× more |
-| Arcane Surge | Skill mana costs ×2; all skills deal 50% more elemental damage |
+| Arcane Surge | Skill mana costs ×2.5; all skills deal 50% more elemental damage |
 | Tempered Edge | Monsters gain +30 elemental resistances but lose 40 physical resistance |
-| Titan's Grip | Weapon requirements +50%; qualifying weapons deal 2× damage |
+| Titan's Grip | Weapon requirements +50%; qualifying weapons deal 2× damage; magic weapons gain/boost chance-to-cast procs from a wide skill pool |
 | Dead Reckoning | Fewer stat points per level; monsters drop better loot |
 | Entropy | Equipment degrades 4× faster; repairs cost 10× more |
 

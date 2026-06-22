@@ -1,6 +1,6 @@
 import type { MutationContext } from './index';
 
-const MANA_MULT = 2;
+const MANA_MULT = 2.5;
 const ELEM_DMG_MULT = 1.5;
 
 const MANA_COLS = ['mana', 'lvlmana'];
@@ -29,7 +29,7 @@ export function applyArcaneSurge(ctx: MutationContext): void {
     // Only player skills (have a charclass)
     if (charclassIdx !== -1 && !row[charclassIdx]) continue;
 
-    // Double mana cost
+    // 2.5× mana cost
     for (const idx of manaIdxs) {
       const val = parseFloat(row[idx]);
       if (!isNaN(val) && val !== 0) row[idx] = String(Math.round(val * MANA_MULT * 100) / 100);
