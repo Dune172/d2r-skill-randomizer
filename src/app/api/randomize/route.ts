@@ -78,6 +78,9 @@ export async function POST(request: NextRequest) {
     const xpActs: number[] = Array.isArray(body.xpActs)
       ? (body.xpActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
+    const xpDifficulties: number[] = Array.isArray(body.xpDifficulties)
+      ? (body.xpDifficulties as unknown[]).map(Number).filter(n => n >= 1 && n <= 3)
+      : [1, 2, 3];
     const raceMode = body.raceMode !== false; // default true (matches Season preset + download route)
     const weeklyEnabled = body.weeklyChallenge?.enabled === true;
     const weeklyOverride: number | undefined =
@@ -95,7 +98,8 @@ export async function POST(request: NextRequest) {
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed, false, raceMode);
+    const effectiveXpDifficulties = xpMultiplier > 1 ? xpDifficulties : [1, 2, 3];
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed, false, raceMode);
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
@@ -558,7 +562,7 @@ export async function POST(request: NextRequest) {
     if (playersEnabled && playersCount > 1)
       scaledMonRows = scaleMonstats(monstatsSrc.headers, scaledMonRows, playersCount, playersActs, summonIds);
     if (xpMultiplier > 1)
-      scaledMonRows = scaleExperienceRows(monstatsSrc.headers, scaledMonRows, xpMultiplier, xpActs, summonIds);
+      scaledMonRows = scaleExperienceRows(monstatsSrc.headers, scaledMonRows, xpMultiplier, xpActs, xpDifficulties, summonIds);
     monstatsSrc.rows = scaledMonRows;
 
     // Step 11c: superuniques — Corpsefire TC drop (always included in zip)

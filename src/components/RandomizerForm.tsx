@@ -17,6 +17,7 @@ interface FormState {
   disableChat: boolean;
   xpMultiplier: number;
   xpActs: number[];
+  xpDifficulties: number[];
   raceMode: boolean;
 }
 
@@ -33,6 +34,7 @@ const SEASON1_PRESET: FormState = {
   disableChat: false,
   xpMultiplier: 1.5,
   xpActs: [1, 2],
+  xpDifficulties: [1],
   raceMode: true,
 };
 
@@ -49,6 +51,7 @@ const TURBO_PRESET: FormState = {
   disableChat: false,
   xpMultiplier: 3,
   xpActs: [1, 2, 3, 4, 5],
+  xpDifficulties: [1, 2, 3],
   raceMode: false,
 };
 
@@ -65,12 +68,13 @@ const DEFAULT_STATE: FormState = {
   disableChat: false,
   xpMultiplier: 1,
   xpActs: [1, 2, 3, 4, 5],
+  xpDifficulties: [1],
   raceMode: true,
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; raceMode: boolean };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; raceMode: boolean }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -137,16 +141,20 @@ function ActPillRow({
   acts,
   selected,
   onToggle,
+  label = 'Acts',
+  labels = ['I', 'II', 'III', 'IV', 'V'],
 }: {
   acts: readonly number[];
   selected: number[];
   onToggle: (act: number) => void;
+  label?: string;
+  labels?: readonly string[];
 }) {
-  const actLabels = ['I', 'II', 'III', 'IV', 'V'];
+  const actLabels = labels;
   return (
     <div className="ml-1 pl-3 border-l-2 border-[#7a1010]/60 mt-2">
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-[#c8a870] font-cinzel tracking-wide mr-0.5">Acts</span>
+        <span className="text-xs text-[#c8a870] font-cinzel tracking-wide mr-0.5">{label}</span>
         {acts.map(act => {
           const active = selected.includes(act);
           return (
@@ -193,6 +201,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [disableChat, setDisableChat] = useState(initialOptions?.disableChat ?? SEASON1_PRESET.disableChat);
   const [xpMultiplier, setXpMultiplier] = useState(initialOptions?.xpMultiplier ?? SEASON1_PRESET.xpMultiplier);
   const [xpActs, setXpActs] = useState<number[]>(initialOptions?.xpActs ?? SEASON1_PRESET.xpActs);
+  const [xpDifficulties, setXpDifficulties] = useState<number[]>(initialOptions?.xpDifficulties ?? SEASON1_PRESET.xpDifficulties);
   const [raceMode, setRaceMode] = useState(initialOptions?.raceMode ?? SEASON1_PRESET.raceMode);
   const applyPreset = (p: Preset) => {
     setPreset(p);
@@ -210,6 +219,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setDisableChat(src.disableChat);
       setXpMultiplier(src.xpMultiplier);
       setXpActs(src.xpActs);
+      setXpDifficulties(src.xpDifficulties);
       setRaceMode(src.raceMode);
     }
   };
@@ -229,6 +239,11 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
     setXpActs(prev => prev.includes(act) ? prev.filter(a => a !== act) : [...prev, act]);
   };
 
+  const toggleXpDifficulty = (diff: number) => {
+    setPreset('custom');
+    setXpDifficulties(prev => prev.includes(diff) ? prev.filter(d => d !== diff) : [...prev, diff]);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const effectiveSeed = seed.trim() || Math.floor(Math.random() * 2147483647).toString();
@@ -243,6 +258,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       disableChat,
       xpMultiplier,
       xpActs,
+      xpDifficulties,
       raceMode,
     });
   };
@@ -311,7 +327,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               <div className="flex items-center gap-2.5">
                 <label htmlFor="xpMultiplier" className="text-sm text-[#c8a870] whitespace-nowrap flex items-center">
                   XP Boost
-                  <Tip text="Multiplies experience gained from monsters. Select which acts it applies to below." />
+                  <Tip text="Multiplies experience gained from monsters. Select which acts and difficulties it applies to below." />
                 </label>
                 <div className="relative">
                   <select
@@ -333,7 +349,16 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
                 </div>
               </div>
               {xpMultiplier > 1 && (
-                <ActPillRow acts={[1, 2, 3, 4, 5]} selected={xpActs} onToggle={toggleXpAct} />
+                <>
+                  <ActPillRow acts={[1, 2, 3, 4, 5]} selected={xpActs} onToggle={toggleXpAct} />
+                  <ActPillRow
+                    acts={[1, 2, 3]}
+                    selected={xpDifficulties}
+                    onToggle={toggleXpDifficulty}
+                    label="Diff"
+                    labels={['Normal', 'NM', 'Hell']}
+                  />
+                </>
               )}
             </div>
           </div>
