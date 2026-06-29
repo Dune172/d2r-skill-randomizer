@@ -11,7 +11,7 @@
     "@types/archiver": "^7.0.0",
     "adm-zip": "^0.5.16",
     "archiver": "^7.0.1",
-    "next": "16.1.6",
+    "next": "16.2.9",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "sharp": "^0.34.5"
@@ -25,5 +25,8 @@
     "autocannon": "^8.0.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
   }
 }
