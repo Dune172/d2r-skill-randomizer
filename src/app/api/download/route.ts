@@ -58,6 +58,10 @@ export async function GET(request: NextRequest) {
     const xpActs = xpActsParam
       ? xpActsParam.split(',').map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
+    const xpDifficultiesParam = searchParams.get('xpDifficulties');
+    const xpDifficulties = xpDifficultiesParam
+      ? xpDifficultiesParam.split(',').map(Number).filter(n => n >= 1 && n <= 3)
+      : [1, 2, 3];
 
     const weeklyParam = searchParams.get('weekly') === '1';
     const weekOverrideParam = searchParams.get('weekOverride');
@@ -66,8 +70,11 @@ export async function GET(request: NextRequest) {
       : null;
     const weeklyKey = weeklyParam ? (weekOverride ?? -1) : 0;
     const teleportStaffSpeed = teleportStaffLevel > 0 && searchParams.get('staffSpeed') !== '0';
-    const raceMode = searchParams.get('raceMode') !== '0';
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, weeklyKey, teleportStaffSpeed, false, raceMode);
+    // Weekly challenges are never Race Mode — force off (matching the identical
+    // guard in /api/randomize) so the cache key resolves even if the link omits
+    // raceMode=0. Outside weekly, raceMode defaults true.
+    const raceMode = weeklyParam ? false : (searchParams.get('raceMode') !== '0');
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode);
     const zipBuffer = getCached(cacheKey);
 
     if (!zipBuffer) {

@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { formatHMS } from '@/lib/time-format';
-import type { PublicSubmission } from '@/lib/leaderboard';
+import type { Difficulty, PublicSubmission } from '@/lib/leaderboard';
 
 type Props = {
   weekNumber: number;
+  /** Which board to read. Defaults to 'normal'. */
+  difficulty?: Difficulty;
   /** When provided, render these directly and skip the fetch (used by archive cards). */
   entries?: PublicSubmission[];
   /** Bump to force a refetch (used after a successful submission). */
@@ -37,7 +39,7 @@ function CrownIcon() {
   );
 }
 
-export function Leaderboard({ weekNumber, entries: prop, refreshKey = 0, limit = 3, expandable = false }: Props) {
+export function Leaderboard({ weekNumber, difficulty = 'normal', entries: prop, refreshKey = 0, limit = 3, expandable = false }: Props) {
   const [entries, setEntries] = useState<PublicSubmission[] | null>(prop ?? null);
   const [loading, setLoading] = useState(prop === undefined);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export function Leaderboard({ weekNumber, entries: prop, refreshKey = 0, limit =
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch(`/api/leaderboard?week=${weekNumber}`, { cache: 'no-store' })
+    fetch(`/api/leaderboard?week=${weekNumber}&difficulty=${difficulty}`, { cache: 'no-store' })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -73,7 +75,7 @@ export function Leaderboard({ weekNumber, entries: prop, refreshKey = 0, limit =
     return () => {
       cancelled = true;
     };
-  }, [weekNumber, refreshKey, propsControlled, prop]);
+  }, [weekNumber, difficulty, refreshKey, propsControlled, prop]);
 
   if (loading) {
     return (

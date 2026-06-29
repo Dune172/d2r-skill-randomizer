@@ -117,6 +117,7 @@ export function WeekCard() {
   const mysteryActive = mutations.some(m => m.id === 'mystery-box');
   const [generated, setGenerated] = useState(false);
   const [leaderboardKey, setLeaderboardKey] = useState(0);
+  const [hellLeaderboardKey, setHellLeaderboardKey] = useState(0);
   const [preview, setPreview] = useState<PreviewData | null>(null);
 
   useEffect(() => {
@@ -187,13 +188,37 @@ export function WeekCard() {
           <p className="font-cinzel text-xs tracking-[0.4em] text-[#d8784a] uppercase text-center mb-2">
             Leaderboard
           </p>
-          <p className="text-xs text-[#9a5a3a] tracking-wider text-center mb-5">
+          <p className="text-xs text-[#9a5a3a] tracking-wider text-center mb-1">
             Fastest time to beat Baal on Normal · top 3 shown
+          </p>
+          <p className="text-[11px] text-[#7a4a30] tracking-wider text-center mb-5">
+            In Game Time is used. RTA is used if IGT is not present.
           </p>
           <div className="mb-5">
             <Leaderboard weekNumber={weekNumber} refreshKey={leaderboardKey} expandable />
           </div>
           <SubmitRunForm weekNumber={weekNumber} onSubmitted={() => setLeaderboardKey((k) => k + 1)} />
+        </div>
+      </div>
+
+      {/* Hell leaderboard — single top spot, hotter ember styling to mark the harder feat */}
+      <div className="w-full mt-6">
+        <div
+          className="relative border border-[#6a1410] border-t-2 border-t-[#d8482e]/55
+            bg-gradient-to-b from-[#220606] to-[#0c0304]
+            shadow-[inset_0_1px_0_rgba(230,90,50,0.22),0_0_28px_rgba(200,60,30,0.08)]
+            p-6"
+        >
+          <p className="font-cinzel text-xs tracking-[0.4em] text-[#e8602e] uppercase text-center mb-2">
+            Hell Leaderboard
+          </p>
+          <p className="text-xs text-[#b05a36] tracking-wider text-center mb-5">
+            Fastest to beat Baal on Hell · champion only
+          </p>
+          <div className="mb-5">
+            <Leaderboard weekNumber={weekNumber} difficulty="hell" refreshKey={hellLeaderboardKey} limit={1} />
+          </div>
+          <SubmitRunForm weekNumber={weekNumber} difficulty="hell" onSubmitted={() => setHellLeaderboardKey((k) => k + 1)} />
         </div>
       </div>
     </div>

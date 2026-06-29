@@ -12,6 +12,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.255',
+    date: 'June 2026',
+    tagline: 'New Hell leaderboard, per-difficulty XP Boost, and a round of balance fixes',
+    notes: [
+      'New Hell leaderboard on each weekly challenge — a single top spot crowning the fastest Baal kill on Hell, shown alongside the existing Normal board',
+      'XP Boost can now be toggled per difficulty — turn the bonus on for Normal, Nightmare, and Hell independently instead of all or nothing',
+      'The challenge leaderboard now spells out how runs are timed: In-Game Time is used, falling back to real time (RTA) when no IGT is shown',
+      'Fixed summoned pets missing their synergy bonuses — summon synergies now properly scale your pets’ damage',
+      'Reworked the bonus skill procs that can roll on items and rebalanced Arcane Surge',
+      'House Always Wins tweaks: monsters no longer drop bows or melee weapons, and the gamble pool now includes more item types — daggers, throwing weapons, and class-specific items',
+      'Weekly Mutation Challenges can no longer accidentally generate in Race Mode',
+    ],
+  },
+  {
     version: 'v0.254',
     date: 'June 2026',
     tagline: 'Fixed crashes when fighting the Ancients, Duriel, and other skill-using monsters',

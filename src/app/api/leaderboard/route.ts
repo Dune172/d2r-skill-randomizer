@@ -4,6 +4,7 @@ import {
   getEntries,
   lastOtherSubmissionFromIp,
   stripIp,
+  type Difficulty,
   type Submission,
 } from '@/lib/leaderboard';
 import { isClean } from '@/lib/profanity';
@@ -22,6 +23,10 @@ function bad(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
+function parseDifficulty(value: unknown): Difficulty {
+  return value === 'hell' ? 'hell' : 'normal';
+}
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const weekParam = url.searchParams.get('week');
@@ -29,10 +34,11 @@ export async function GET(request: NextRequest) {
   if (!Number.isFinite(weekNumber) || weekNumber < 1) {
     return bad('Invalid week.');
   }
+  const difficulty = parseDifficulty(url.searchParams.get('difficulty'));
 
-  const entries = getEntries(weekNumber).map(stripIp);
+  const entries = getEntries(weekNumber, difficulty).map(stripIp);
   return NextResponse.json(
-    { weekNumber, entries },
+    { weekNumber, difficulty, entries },
     // Open CORS: public read-only data; lets the marketing dashboard poll it.
     { headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' } },
   );
@@ -64,6 +70,8 @@ export async function POST(request: NextRequest) {
     return bad('Submissions for that week are closed.');
   }
 
+  const difficulty = parseDifficulty(b.difficulty);
+
   const rawName = typeof b.name === 'string' ? b.name.trim() : '';
   if (rawName.length < 2 || rawName.length > 20) {
     return bad('Name must be 2–20 characters.');
@@ -91,7 +99,11 @@ export async function POST(request: NextRequest) {
     s: typeof b.seconds === 'number' || typeof b.seconds === 'string' ? b.seconds : 0,
   });
   if (totalSeconds < MIN_RUN_SECONDS) {
-    return bad('Time must be at least 30 minutes — Baal Normal can’t be cleared faster than that.');
+    return bad(
+      difficulty === 'hell'
+        ? 'Time must be at least 30 minutes.'
+        : 'Time must be at least 30 minutes — Baal Normal can’t be cleared faster than that.',
+    );
   }
   if (totalSeconds > MAX_RUN_SECONDS) {
     return bad('Time must be under 7 days.');
@@ -108,7 +120,7 @@ export async function POST(request: NextRequest) {
   // Per-IP cooldown: at most one submission per IP per hour, EXCEPT for updates
   // to the submitter's own existing entry (same name, same IP).
   const HOUR_MS = 60 * 60 * 1000;
-  const recent = lastOtherSubmissionFromIp(ip, weekNumber, rawName);
+  const recent = lastOtherSubmissionFromIp(ip, weekNumber, rawName, difficulty);
   if (recent && Date.now() - recent.submittedAt < HOUR_MS) {
     const minsLeft = Math.ceil((HOUR_MS - (Date.now() - recent.submittedAt)) / 60_000);
     return NextResponse.json(
@@ -131,9 +143,9 @@ export async function POST(request: NextRequest) {
     ip,
   };
 
-  const result = await addOrReplace(submission);
+  const result = await addOrReplace(submission, difficulty);
   if (result.status === 'added' || result.status === 'updated') {
-    await notifyNewRun(submission, { status: result.status, rank: result.rank });
+    await notifyNewRun(submission, { status: result.status, rank: result.rank, difficulty });
   }
   return NextResponse.json(result);
 }

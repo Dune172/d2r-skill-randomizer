@@ -20,6 +20,7 @@ export const SEASON1_OPTIONS = {
   disableChat: false,
   xpMultiplier: 1.5,
   xpActs: [1, 2],
+  xpDifficulties: [1],
   // The weekly challenge is full randomization, not race mode. This must match
   // the `&raceMode=0` in downloadUrl below — otherwise /api/randomize caches the
   // ZIP under raceMode=true while /api/download looks it up under raceMode=false,
@@ -54,6 +55,7 @@ export function ChallengeGenerator({
     (SEASON1_OPTIONS.disableChat ? '&disableChat=1' : '') +
     `&xpMultiplier=${SEASON1_OPTIONS.xpMultiplier}` +
     `&xpActs=${SEASON1_OPTIONS.xpActs.join(',')}` +
+    `&xpDifficulties=${SEASON1_OPTIONS.xpDifficulties.join(',')}` +
     `&weekly=1` +
     `&week=${weekNumber}` +
     (weekOverride ? `&weekOverride=${weekOverride}` : '') +

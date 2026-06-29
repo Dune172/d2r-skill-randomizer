@@ -29,6 +29,7 @@ import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/it
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
 import { applyWeeklyMutations, preApplyMagicAffixMutations, isMutationActiveForWeek } from '@/lib/randomizer/mutations';
+import { buildGambleTable } from '@/lib/randomizer/mutations/house-always-wins';
 import { MYSTERY_ICON, applyMysteryStrings, hideSkillDetailLines } from '@/lib/randomizer/mutations/mystery-box';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
 import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
@@ -78,8 +79,16 @@ export async function POST(request: NextRequest) {
     const xpActs: number[] = Array.isArray(body.xpActs)
       ? (body.xpActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
-    const raceMode = body.raceMode !== false; // default true (matches Season preset + download route)
+    const xpDifficulties: number[] = Array.isArray(body.xpDifficulties)
+      ? (body.xpDifficulties as unknown[]).map(Number).filter(n => n >= 1 && n <= 3)
+      : [1, 2, 3];
     const weeklyEnabled = body.weeklyChallenge?.enabled === true;
+    // Weekly challenges are always full randomization — never Race Mode. Force it
+    // off server-side so no caller (challenge page, warmup, or a hand-built link)
+    // can produce a race-mode challenge regardless of the raceMode they pass.
+    // Must stay in lockstep with the identical guard in /api/download so the cache
+    // keys agree. Outside weekly, raceMode defaults true (matches Season preset).
+    const raceMode = weeklyEnabled ? false : (body.raceMode !== false);
     const weeklyOverride: number | undefined =
       typeof body.weeklyChallenge?.weekOverride === 'number'
         ? Math.max(1, Math.trunc(body.weeklyChallenge.weekOverride))
@@ -95,7 +104,8 @@ export async function POST(request: NextRequest) {
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed, false, raceMode);
+    const effectiveXpDifficulties = xpMultiplier > 1 ? xpDifficulties : [1, 2, 3];
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed, false, raceMode);
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
@@ -235,6 +245,7 @@ export async function POST(request: NextRequest) {
       placements,
       placementsByClass,
       rng,
+      skillsTxt.headers,
     );
 
     // Build str name lookup from effective skilldesc data (substitute-aware)
@@ -308,8 +319,11 @@ export async function POST(request: NextRequest) {
     if (weeklyEnabled) {
       preApplyMagicAffixMutations(weekNumber, magicPrefixTxt, magicSuffixTxt);
     }
-    magicPrefixTxt.rows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping);
-    magicSuffixTxt.rows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping);
+    // Dedicated sub-RNG (derived from, but independent of, the main seed) so
+    // injected-proc skill selection doesn't disturb the main pipeline's RNG order.
+    const procRng = createRNG(seed ^ 0x50524f43); // 'PROC'
+    magicPrefixTxt.rows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping, procRng);
+    magicSuffixTxt.rows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping, procRng);
     let magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, magicPrefixTxt.rows);
     let magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, magicSuffixTxt.rows);
 
@@ -558,7 +572,7 @@ export async function POST(request: NextRequest) {
     if (playersEnabled && playersCount > 1)
       scaledMonRows = scaleMonstats(monstatsSrc.headers, scaledMonRows, playersCount, playersActs, summonIds);
     if (xpMultiplier > 1)
-      scaledMonRows = scaleExperienceRows(monstatsSrc.headers, scaledMonRows, xpMultiplier, xpActs, summonIds);
+      scaledMonRows = scaleExperienceRows(monstatsSrc.headers, scaledMonRows, xpMultiplier, xpActs, xpDifficulties, summonIds);
     monstatsSrc.rows = scaledMonRows;
 
     // Step 11c: superuniques — Corpsefire TC drop (always included in zip)
@@ -573,6 +587,7 @@ export async function POST(request: NextRequest) {
     let weaponsTxt: string | undefined;
     let experienceTxt: string | undefined;
     let miscTxt: string | undefined;
+    let gambleTxt: string | undefined;
 
     if (weeklyEnabled) {
       const expSrc = loadTxtFile('experience.txt');
@@ -608,6 +623,13 @@ export async function POST(request: NextRequest) {
       weaponsTxt    = serializeTxtFile(weaponsSrc.headers, weaponsSrc.rows);
       experienceTxt = serializeTxtFile(expSrc.headers, expSrc.rows);
       miscTxt       = serializeTxtFile(miscSrc.headers, miscSrc.rows);
+
+      // House Always Wins: gambling is the only source of weapons/armor, so ship a
+      // comprehensive gamble pool (vanilla omits daggers, throwing weapons, class items…).
+      if (isMutationActiveForWeek(weekNumber, 'house-always-wins')) {
+        const g = buildGambleTable(weaponsSrc, armorSrc, miscSrc);
+        gambleTxt = serializeTxtFile(g.headers, g.rows);
+      }
       magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, magicPrefixTxt.rows);
       magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, magicSuffixTxt.rows);
     }
@@ -661,6 +683,7 @@ export async function POST(request: NextRequest) {
       weaponsTxt,
       experienceTxt,
       miscTxt,
+      gambleTxt,
       animDataD2: animAssets.animData,
       charCofs: animAssets.cofs,
     });

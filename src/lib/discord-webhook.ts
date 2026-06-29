@@ -6,18 +6,20 @@
  * Disabled (no-op) when DISCORD_WEBHOOK_URL is unset.
  */
 import { formatHMS } from './time-format';
-import type { Submission } from './leaderboard';
+import type { Difficulty, Submission } from './leaderboard';
 
 const GOLD = 0xc8942a;
+const HELL_RED = 0xa83830;
 const TIMEOUT_MS = 5_000;
 
 export async function notifyNewRun(
   sub: Submission,
-  meta: { status: 'added' | 'updated'; rank: number },
+  meta: { status: 'added' | 'updated'; rank: number; difficulty?: Difficulty },
 ): Promise<void> {
   const url = process.env.DISCORD_WEBHOOK_URL;
   if (!url) return;
 
+  const isHell = meta.difficulty === 'hell';
   const verb = meta.status === 'updated' ? 'Updated run' : 'New run';
   const rankLabel = meta.rank === 1 ? '#1 — Champion' : `#${meta.rank}`;
 
@@ -25,9 +27,9 @@ export async function notifyNewRun(
     username: 'D2R Randomizer',
     embeds: [
       {
-        title: `${verb} — Week ${sub.weekNumber}`,
+        title: `${verb} — Week ${sub.weekNumber}${isHell ? ' (Hell)' : ''}`,
         url: sub.proofUrl,
-        color: GOLD,
+        color: isHell ? HELL_RED : GOLD,
         fields: [
           { name: 'Player', value: sub.name, inline: true },
           { name: 'Class', value: sub.className, inline: true },

@@ -12,9 +12,10 @@ import type { PublicSubmission } from '@/lib/leaderboard';
 type Props = {
   weekNumber: number;
   entries?: PublicSubmission[];
+  hellEntries?: PublicSubmission[];
 };
 
-export function ArchiveWeekCard({ weekNumber, entries = [] }: Props) {
+export function ArchiveWeekCard({ weekNumber, entries = [], hellEntries = [] }: Props) {
   const weekName = getWeekName(weekNumber);
   const mutations = getActiveMutations(weekNumber);
   const seed = getWeekSeed(weekNumber);
@@ -22,6 +23,7 @@ export function ArchiveWeekCard({ weekNumber, entries = [] }: Props) {
   const end = getWeekEnd(weekNumber);
   const [expanded, setExpanded] = useState(false);
   const champion = entries[0];
+  const hellChampion = hellEntries[0];
 
   return (
     <div className="card-ornate border border-[#3a1510] bg-[#0c0304] panel-shadow shadow-[inset_0_1px_0_rgba(200,148,42,0.08)] max-w-xl mx-auto text-center hover:border-[#c8942a]/40 transition-colors">
@@ -56,6 +58,16 @@ export function ArchiveWeekCard({ weekNumber, entries = [] }: Props) {
             <span className="font-mono normal-case tracking-normal">{formatHMS(champion.timeSeconds)}</span>
           </p>
         )}
+        {hellChampion && (
+          <p className="font-cinzel text-[11px] tracking-[0.18em] uppercase text-[#e8602e] mt-1.5">
+            Hell Champion: <span className="text-[#f08850]">{hellChampion.name}</span>
+            {hellChampion.className && (
+              <span className="text-[#b86030]"> · {hellChampion.className}</span>
+            )}
+            <span className="text-[#9a4a2a] normal-case tracking-normal"> · </span>
+            <span className="font-mono normal-case tracking-normal">{formatHMS(hellChampion.timeSeconds)}</span>
+          </p>
+        )}
       </button>
 
       {expanded && (
@@ -72,6 +84,15 @@ export function ArchiveWeekCard({ weekNumber, entries = [] }: Props) {
                 Leaderboard
               </p>
               <Leaderboard weekNumber={weekNumber} entries={entries} />
+            </div>
+          )}
+
+          {hellEntries.length > 0 && (
+            <div className="mb-6">
+              <p className="font-cinzel text-[10px] tracking-[0.32em] uppercase text-[#e8602e] mb-3">
+                Hell Leaderboard
+              </p>
+              <Leaderboard weekNumber={weekNumber} difficulty="hell" entries={hellEntries} limit={1} />
             </div>
           )}
 

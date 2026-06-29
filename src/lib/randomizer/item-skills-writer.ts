@@ -1,5 +1,12 @@
 import { ClassCode, SkillPlacement } from './types';
-import { isCastableTarget } from './skill-filters';
+import { isCastableTarget, isProcTarget } from './skill-filters';
+import type { SeededRNG } from './seed';
+
+// Sentinel proc param written by mutation proc-injectors (Heavy Burden's
+// injectArmorProcs, Titan's Grip's injectWeaponProcs). When remapClassItemSkills
+// sees a proc whose param is this sentinel, it assigns a RANDOM castable skill
+// from the seeded pool instead of identity-remapping a vanilla reference.
+export const INJECTED_PROC_PARAM = '-1';
 
 // Walk the placement fallback chain (exact tab/row/col → same row+col, any tab →
 // same row, any col/tab → any placement in class) and return the first castable
@@ -27,9 +34,10 @@ function findCastableDestination(
   return undefined;
 }
 
-// Proc codes — destination must be castable AND each slot is randomized
-// from the seeded pool. On class-restricted items the pool is the restricted
-// class's castable skills; on unrestricted items, all castables.
+// Proc codes (CTC family + charged). Vanilla proc references are identity-
+// preserved through idMapping. Mutation-INJECTED procs (param === INJECTED_PROC_PARAM)
+// are randomized from the seeded castable pool: on class-restricted items the pool
+// is the restricted class's castable skills; on unrestricted items, all castables.
 // `charged` is included because charges-based effects are also procs.
 const PROC_CODES: ReadonlySet<string> = new Set([
   'hit-skill',     'hit-skill-noc',
@@ -238,10 +246,30 @@ export function remapClassItemSkills(
   rows: string[][],
   placements: SkillPlacement[],
   idMapping: Map<number, number> | undefined,
+  procRng?: SeededRNG,
 ): string[][] {
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
   const byId = new Map<number, SkillPlacement>(placements.map(p => [p.skill.id, p]));
   const { byPos, byClassRowCol, byClassRow, byClass } = buildPlacementIndices(placements);
+
+  // Proc pools for INJECTED_PROC_PARAM resolution: all eligible proc targets,
+  // plus a per-class subset for class-restricted affixes. Built once per call.
+  // Uses isProcTarget (castable minus summons / poor-proc skills), NOT the
+  // broader isCastableTarget used by the `+N to skill` granter path below.
+  const allCastable = placements.filter(p => isProcTarget(p.skill));
+  const castableByClass = new Map<string, SkillPlacement[]>();
+  for (const [cls, ps] of byClass) {
+    castableByClass.set(cls, ps.filter(p => isProcTarget(p.skill)));
+  }
+
+  // Resolve a sentinel-injected proc to a random castable skill's final row index.
+  const pickInjectedProcParam = (classRestriction: string | undefined): string => {
+    let pool = classRestriction ? castableByClass.get(classRestriction) : allCastable;
+    if (!pool || pool.length === 0) pool = allCastable;
+    if (pool.length === 0) return '0';
+    const chosen = procRng ? pool[procRng.randInt(0, pool.length - 1)] : pool[0];
+    return String(idMapping?.get(chosen.skill.id) ?? chosen.skill.id);
+  };
 
   const classCol = headers.indexOf('class');
   if (classCol === -1) return rows;
@@ -259,10 +287,13 @@ export function remapClassItemSkills(
       const param = updated[paramCol];
       if (!param?.trim()) continue;
 
-      // Procs (CTC family + charged): identity-remap the vanilla skill via
+      // Procs (CTC family + charged). Mutation-injected procs carry the sentinel
+      // param and get a random castable skill; vanilla procs identity-remap via
       // idMapping so the original D2R proc assignment is preserved.
       if (PROC_CODES.has(code)) {
-        updated[paramCol] = remapRowIndexParam(param, idMapping);
+        updated[paramCol] = param.trim() === INJECTED_PROC_PARAM
+          ? pickInjectedProcParam(classRestriction)
+          : remapRowIndexParam(param, idMapping);
         continue;
       }
 

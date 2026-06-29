@@ -30,6 +30,7 @@ export interface ZipContents {
   weaponsTxt?: string;              // weapons.txt modified by weekly mutations
   experienceTxt?: string;           // experience.txt modified by weekly mutations
   miscTxt?: string;                 // misc.txt modified by weekly mutations (e.g. antidote potion cost)
+  gambleTxt?: string;               // gamble.txt — comprehensive gamble pool (House Always Wins only)
   animDataD2?: Buffer;              // animdata.d2 with Warlock A1/A2 records synced to their COFs
   charCofs?: Map<string, Buffer>;   // zip path under data/ → COF with injected trigger frame (must match animDataD2)
 }
@@ -162,6 +163,9 @@ export function buildZip(contents: ZipContents): Buffer {
   }
   if (contents.miscTxt) {
     zip.addFile(`${d}/data/global/excel/misc.txt`, str(contents.miscTxt));
+  }
+  if (contents.gambleTxt) {
+    zip.addFile(`${d}/data/global/excel/gamble.txt`, str(contents.gambleTxt));
   }
 
   // Disable chat input to prevent /players x commands (optional)

@@ -34,6 +34,7 @@ export function updateSkillsSynergies(
   placements: SkillPlacement[],
   placementsByClass: Map<ClassCode, SkillPlacement[]>,
   rng: SeededRNG,
+  headers: string[],
 ): Map<string, string[]> {
   const substitutions = new Map<string, string[]>();
 
@@ -45,11 +46,25 @@ export function updateSkillsSynergies(
     }
   }
 
-  // skill name → row lookup
+  // skill name → row lookup. Includes non-placed pet rows (empty charclass)
+  // such as Tainted Fire Ball, so summon pets can be reached by name below.
   const rowBySkill = new Map<string, string[]>();
   for (const row of rows) {
     if (row[0]) rowBySkill.set(row[0], row);
   }
+
+  // Summons grant their damage via pet skills listed in sumskill1..6. Those
+  // pet skills have empty charclass, so they're never placed/shuffled and
+  // their synergy formulas would otherwise keep dangling refs to the summon's
+  // vanilla synergy skill (which the shuffle moved off-class). We remap those
+  // pet rows alongside their summon below.
+  const sumskillCols: number[] = [];
+  for (let i = 1; i <= 6; i++) {
+    const idx = headers.indexOf(`sumskill${i}`);
+    if (idx !== -1) sumskillCols.push(idx);
+  }
+  const placedSkillNames = new Set(placements.map(p => p.skill.skill));
+  const processedPetRows = new Set<string>();
 
   for (const placement of placements) {
     const skillName = placement.skill.skill;
@@ -57,56 +72,79 @@ export function updateSkillsSynergies(
     if (!row) continue;
     const otherClassmates = otherClassmatesBySkill.get(skillName) ?? [];
 
-    // Allocation state shared across all cells in this row so a given
-    // classmate isn't used twice anywhere in the skill, and the
-    // 1-cross-tab cap applies to the whole skill.
+    // Allocation state shared across all cells in this row (and any pet rows
+    // this summon grants) so a given classmate isn't used twice anywhere in
+    // the skill, the 1-cross-tab cap applies to the whole skill, and a given
+    // original ref maps to one consistent replacement.
     const usedClassmates = new Set<string>();
     const chosenOrder: string[] = [];
     let crossTabUsed = 0;
     // Cache refSkillName → replacement so repeated references within/across
-    // cells in the same row map consistently (needed for correctness when a
-    // synergy formula and its display string both reference the same skill).
+    // cells (and across the summon + its pet rows) map consistently (needed
+    // for correctness when a synergy formula and its display string both
+    // reference the same skill).
     const refToReplacement = new Map<string, string>();
 
-    for (let col = 0; col < row.length; col++) {
-      const cell = row[col];
-      if (!cell || !cell.includes("skill('")) continue;
+    // Scan + rewrite every `skill('X'.blvl)` ref in a row using the shared
+    // per-skill allocation state above. Mutates the row in place.
+    const remapRow = (target: string[]) => {
+      for (let col = 0; col < target.length; col++) {
+        const cell = target[col];
+        if (!cell || !cell.includes("skill('")) continue;
 
-      const matches = [...cell.matchAll(SYNERGY_REGEX)];
-      if (matches.length === 0) continue;
+        const matches = [...cell.matchAll(SYNERGY_REGEX)];
+        if (matches.length === 0) continue;
 
-      let newCell = cell;
-      for (const match of matches) {
-        const refSkillName = match[1];
+        let newCell = cell;
+        for (const match of matches) {
+          const refSkillName = match[1];
 
-        let replacementName = refToReplacement.get(refSkillName);
-        if (!replacementName) {
-          const sameTabAvailable = otherClassmates.filter(
-            p => !usedClassmates.has(p.skill.skill) && p.tabIndex === placement.tabIndex,
+          let replacementName = refToReplacement.get(refSkillName);
+          if (!replacementName) {
+            const sameTabAvailable = otherClassmates.filter(
+              p => !usedClassmates.has(p.skill.skill) && p.tabIndex === placement.tabIndex,
+            );
+            const otherTabAvailable = otherClassmates.filter(
+              p => !usedClassmates.has(p.skill.skill) && p.tabIndex !== placement.tabIndex,
+            );
+            const available = sameTabAvailable.length > 0
+              ? sameTabAvailable
+              : crossTabUsed < 1 ? otherTabAvailable : [];
+            if (available.length === 0) continue;
+
+            const pick = available[rng.randInt(0, available.length - 1)];
+            if (pick.tabIndex !== placement.tabIndex) crossTabUsed++;
+            replacementName = pick.skill.skill;
+            usedClassmates.add(replacementName);
+            chosenOrder.push(replacementName);
+            refToReplacement.set(refSkillName, replacementName);
+          }
+
+          newCell = newCell.replace(
+            `skill('${refSkillName}'.blvl)`,
+            `skill('${replacementName}'.blvl)`,
           );
-          const otherTabAvailable = otherClassmates.filter(
-            p => !usedClassmates.has(p.skill.skill) && p.tabIndex !== placement.tabIndex,
-          );
-          const available = sameTabAvailable.length > 0
-            ? sameTabAvailable
-            : crossTabUsed < 1 ? otherTabAvailable : [];
-          if (available.length === 0) continue;
-
-          const pick = available[rng.randInt(0, available.length - 1)];
-          if (pick.tabIndex !== placement.tabIndex) crossTabUsed++;
-          replacementName = pick.skill.skill;
-          usedClassmates.add(replacementName);
-          chosenOrder.push(replacementName);
-          refToReplacement.set(refSkillName, replacementName);
         }
 
-        newCell = newCell.replace(
-          `skill('${refSkillName}'.blvl)`,
-          `skill('${replacementName}'.blvl)`,
-        );
+        target[col] = newCell;
       }
+    };
 
-      row[col] = newCell;
+    remapRow(row);
+
+    // Also remap the non-placed pet skills this summon grants, so the pet's
+    // actual damage synergy scales off (and the skilldesc updater can name) a
+    // real co-located classmate. A pet skill's `.blvl` synergy calc evaluates
+    // against the owner's skill levels, so a classmate of the summon is the
+    // correct target. Placed pet skills are skipped — they get remapped on
+    // their own class. Pet rows are processed once.
+    for (const col of sumskillCols) {
+      const petName = row[col];
+      if (!petName || placedSkillNames.has(petName) || processedPetRows.has(petName)) continue;
+      const petRow = rowBySkill.get(petName);
+      if (!petRow) continue;
+      processedPetRows.add(petName);
+      remapRow(petRow);
     }
 
     if (chosenOrder.length > 0) {

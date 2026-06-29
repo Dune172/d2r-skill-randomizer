@@ -73,6 +73,7 @@ export default function ArchivePage() {
                 key={week}
                 weekNumber={week}
                 entries={getEntries(week).map(stripIp)}
+                hellEntries={getEntries(week, 'hell').map(stripIp)}
               />
             ))}
           </div>

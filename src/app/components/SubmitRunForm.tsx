@@ -4,15 +4,18 @@ import { useState } from 'react';
 import { MAX_RUN_SECONDS, MIN_RUN_SECONDS, parseHMS } from '@/lib/time-format';
 import { isSpecificVideoUrl, VIDEO_HOSTS_LABEL } from '@/lib/video-host';
 import { CLASS_NAMES, type ClassName } from '@/lib/classes';
+import type { Difficulty } from '@/lib/leaderboard';
 
 type Props = {
   weekNumber: number;
+  difficulty?: Difficulty;
   onSubmitted?: () => void;
 };
 
 const NAME_RE = /^[\w\s.\-']+$/u;
 
-export function SubmitRunForm({ weekNumber, onSubmitted }: Props) {
+export function SubmitRunForm({ weekNumber, difficulty = 'normal', onSubmitted }: Props) {
+  const isHell = difficulty === 'hell';
   const [name, setName] = useState('');
   const [className, setClassName] = useState<ClassName | ''>('');
   const [hours, setHours] = useState('');
@@ -54,6 +57,7 @@ export function SubmitRunForm({ weekNumber, onSubmitted }: Props) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           weekNumber,
+          difficulty,
           name: name.trim(),
           className,
           hours: Number(hours) || 0,
@@ -106,7 +110,7 @@ export function SubmitRunForm({ weekNumber, onSubmitted }: Props) {
             border border-[#3a1510] text-[#c8a870] hover:border-[#c8942a]/60 hover:text-[#c8942a]
             transition-colors"
         >
-          Submit Your Run
+          {isHell ? 'Submit Hell Run' : 'Submit Your Run'}
         </button>
       </div>
     );
@@ -150,7 +154,7 @@ export function SubmitRunForm({ weekNumber, onSubmitted }: Props) {
 
       <div>
         <label className="font-cinzel text-[10px] tracking-[0.32em] uppercase text-[#9a7a2a] block mb-1">
-          Time to Beat Baal (Normal)
+          Time to Beat Baal ({isHell ? 'Hell' : 'Normal'})
         </label>
         <div className="flex gap-2">
           <TimeInput value={hours} setValue={setHours} max={168} suffix="h" />

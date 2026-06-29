@@ -7,6 +7,8 @@ import type { ClassName } from './classes';
 const LEADERBOARD_FILE =
   process.env.LEADERBOARD_FILE || path.join(process.cwd(), '..', 'leaderboard.json');
 
+export type Difficulty = 'normal' | 'hell';
+
 export type Submission = {
   id: string;
   weekNumber: number;
@@ -19,8 +21,20 @@ export type Submission = {
 };
 
 export type LeaderboardFile = {
-  byWeek: Record<string, Submission[]>;
+  byWeek: Record<string, Submission[]>; // normal board
+  byWeekHell?: Record<string, Submission[]>; // hell board (lazily created)
 };
+
+/**
+ * Returns the per-week bucket for the given difficulty, creating the hell bucket
+ * on first use. 'normal' stays on `byWeek` for backward-compat with existing files.
+ */
+function bucket(data: LeaderboardFile, difficulty: Difficulty): Record<string, Submission[]> {
+  if (difficulty === 'hell') {
+    return (data.byWeekHell ??= {});
+  }
+  return data.byWeek;
+}
 
 export type PublicSubmission = Omit<Submission, 'ip'>;
 
@@ -76,9 +90,9 @@ export function stripIp(s: Submission): PublicSubmission {
 }
 
 /** Sorted ascending by time, then by submittedAt. IPs not stripped — caller's job. */
-export function getEntries(weekNumber: number): Submission[] {
+export function getEntries(weekNumber: number, difficulty: Difficulty = 'normal'): Submission[] {
   const data = readCached();
-  const list = data.byWeek[String(weekNumber)] ?? [];
+  const list = bucket(data, difficulty)[String(weekNumber)] ?? [];
   return sortEntries(list);
 }
 
@@ -91,9 +105,10 @@ export function lastOtherSubmissionFromIp(
   ip: string,
   weekNumber: number,
   excludeName: string,
+  difficulty: Difficulty = 'normal',
 ): Submission | null {
   const data = readCached();
-  const list = data.byWeek[String(weekNumber)] ?? [];
+  const list = bucket(data, difficulty)[String(weekNumber)] ?? [];
   const lower = excludeName.toLowerCase();
   let latest: Submission | null = null;
   for (const e of list) {
@@ -110,13 +125,17 @@ export type AddResult = { status: 'added' | 'updated' | 'unchanged'; rank: numbe
  * Per-(week, IP, lowercased-name) dedupe: replaces a prior entry only if the new
  * time is strictly faster. Otherwise returns 'unchanged' and leaves disk alone.
  */
-export async function addOrReplace(sub: Submission): Promise<AddResult> {
+export async function addOrReplace(
+  sub: Submission,
+  difficulty: Difficulty = 'normal',
+): Promise<AddResult> {
   let result: AddResult = { status: 'added', rank: 0 };
 
   const next = writeLock.then(() => {
     const data = readFromDisk();
+    const board = bucket(data, difficulty);
     const key = String(sub.weekNumber);
-    const list = data.byWeek[key] ?? [];
+    const list = board[key] ?? [];
 
     const lowerName = sub.name.toLowerCase();
     const existingIdx = list.findIndex(
@@ -136,7 +155,7 @@ export async function addOrReplace(sub: Submission): Promise<AddResult> {
       list.push(sub);
     }
 
-    data.byWeek[key] = list;
+    board[key] = list;
     writeToDisk(data);
 
     const sorted = sortEntries(list);
@@ -156,10 +175,13 @@ export async function deleteById(id: string): Promise<boolean> {
   const next = writeLock.then(() => {
     const data = readFromDisk();
     let changed = false;
-    for (const week of Object.keys(data.byWeek)) {
-      const before = data.byWeek[week].length;
-      data.byWeek[week] = data.byWeek[week].filter((e) => e.id !== id);
-      if (data.byWeek[week].length !== before) changed = true;
+    const boards = [data.byWeek, data.byWeekHell].filter(Boolean) as Record<string, Submission[]>[];
+    for (const board of boards) {
+      for (const week of Object.keys(board)) {
+        const before = board[week].length;
+        board[week] = board[week].filter((e) => e.id !== id);
+        if (board[week].length !== before) changed = true;
+      }
     }
     if (changed) {
       writeToDisk(data);
