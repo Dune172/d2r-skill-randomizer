@@ -205,13 +205,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Derived skilldesc map: for substitute placements, look up display/synergy/icon
-    // data under the source's skilldesc rather than the dropped skill's original entry.
-    // Prevents updateSkillDescSynergies / icon-assembler from reading stale Zeal data
-    // when the row has been repurposed for Charged Bolt.
+    // Derived skilldesc map: for substitute placements, look up display/icon
+    // data under the source's skilldesc rather than the dropped skill's original
+    // entry. Prevents the icon-assembler from reading stale Zeal data when the
+    // row has been repurposed for Charged Bolt.
+    //
+    // Substitution can CHAIN: sources are drawn from `placements`, which already
+    // contains earlier substitutes, so sub.sourceSkill can itself be a synthetic
+    // substitute whose skilldesc names an earlier DROPPED skill. The txt-row
+    // overwrite above resolves chains implicitly (each copy reads a row earlier
+    // subs already overwrote, in creation order), but this parsed-model map must
+    // follow the chain explicitly — otherwise a chained substitute inherits the
+    // INTERMEDIATE skill's vanilla entry, and the icon path slices the final
+    // source's class sheet (placement.skill.charclass, which the SkillEntry
+    // spread resolves transitively) at the intermediate skill's IconCel,
+    // rendering unrelated art. Chains are acyclic by construction (a sub's
+    // source predates it), the seen-guard is just insurance.
+    const subSourceDesc = new Map<string, string>();
+    for (const sub of substitutes) {
+      subSourceDesc.set(sub.droppedSkill.skilldesc, sub.sourceSkill.skilldesc);
+    }
+    const resolveSourceDesc = (desc: string): string => {
+      const seen = new Set<string>();
+      while (subSourceDesc.has(desc) && !seen.has(desc)) {
+        seen.add(desc);
+        desc = subSourceDesc.get(desc)!;
+      }
+      return desc;
+    };
     const effectiveSkillDescs = new Map(skillDescs);
     for (const sub of substitutes) {
-      const source = skillDescs.get(sub.sourceSkill.skilldesc);
+      const source = skillDescs.get(resolveSourceDesc(sub.sourceSkill.skilldesc));
       if (source) {
         effectiveSkillDescs.set(sub.droppedSkill.skilldesc, {
           ...source,

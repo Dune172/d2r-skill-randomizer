@@ -12,6 +12,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.258',
+    date: 'July 2026',
+    tagline: 'Fixed skills showing the wrong icon',
+    notes: [
+      'Fixed skills that displayed a completely unrelated icon. When a dropped skill was replaced by another skill that had itself been replaced, the icon was taken from the middle of that chain instead of the skill you actually got — so the name, tooltip and behaviour were right but the picture was wrong. Roughly one skill per seed was affected',
+    ],
+  },
+  {
     version: 'v0.257',
     date: 'July 2026',
     tagline: 'Synergies actually apply their bonus, and Zeal returns to the Paladin',
