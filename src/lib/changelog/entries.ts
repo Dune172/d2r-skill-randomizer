@@ -14,9 +14,10 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: 'v0.258',
     date: 'July 2026',
-    tagline: 'Fixed skills showing the wrong icon',
+    tagline: 'Fixed skills showing the wrong icon, and updated dependencies for security fixes',
     notes: [
       'Fixed skills that displayed a completely unrelated icon. When a dropped skill was replaced by another skill that had itself been replaced, the icon was taken from the middle of that chain instead of the skill you actually got — so the name, tooltip and behaviour were right but the picture was wrong. Roughly one skill per seed was affected',
+      'Updated Next.js, sharp, adm-zip and several supporting libraries to pick up published security fixes',
     ],
   },
   {

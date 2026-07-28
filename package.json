@@ -9,12 +9,12 @@
   },
   "dependencies": {
     "@types/archiver": "^7.0.0",
-    "adm-zip": "^0.5.16",
+    "adm-zip": "^0.6.0",
     "archiver": "^7.0.1",
-    "next": "16.2.9",
+    "next": "16.2.12",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "sharp": "^0.34.5"
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -27,6 +27,9 @@
     "typescript": "^5"
   },
   "overrides": {
-    "postcss": "^8.5.10"
+    "postcss": "^8.5.18",
+    "brace-expansion": "^5.0.8",
+    "uuid": "^11.1.1",
+    "sharp": "$sharp"
   }
 }
