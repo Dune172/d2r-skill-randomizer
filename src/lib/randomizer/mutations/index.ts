@@ -16,6 +16,7 @@ import { applyDeadReckoning } from './dead-reckoning';
 import { applyTemperedEdge } from './tempered-edge';
 import { applyEntropy } from './entropy';
 import { applyHouseAlwaysWins } from './house-always-wins';
+import { assertNoFractionalCells } from './util';
 
 export { getActiveMutations };
 
@@ -91,5 +92,12 @@ export function applyWeeklyMutations(weekNumber: number, ctx: MutationContext): 
   for (const id of ids) {
     const fn = APPLY_FNS[id];
     if (fn) fn(ctx);
+  }
+
+  // Every txt column a mutation touches is an integer field, and the game
+  // misreads a decimal cell as a much larger number. Vanilla data has no bare
+  // decimal cells, so any match here is a mutation bug.
+  for (const [name, file] of Object.entries(ctx) as [string, MutationContext[keyof MutationContext]][]) {
+    assertNoFractionalCells(`${name}.txt`, file.headers, file.rows);
   }
 }

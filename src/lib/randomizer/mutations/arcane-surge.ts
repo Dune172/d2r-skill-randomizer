@@ -1,4 +1,5 @@
 import type { MutationContext } from './index';
+import { scaleIntCell } from './util';
 
 const MANA_MULT = 2.5;
 const ELEM_DMG_MULT = 1.5;
@@ -29,10 +30,11 @@ export function applyArcaneSurge(ctx: MutationContext): void {
     // Only player skills (have a charclass)
     if (charclassIdx !== -1 && !row[charclassIdx]) continue;
 
-    // 2.5× mana cost
+    // 2.5× mana cost. Must land on a whole number — an odd `mana` scaled by 2.5
+    // yields x.5, and the game reads a decimal cell as a 4-digit number
+    // (Iron Golem's 35 → "87.5" → 8685 mana). See scaleIntCell.
     for (const idx of manaIdxs) {
-      const val = parseFloat(row[idx]);
-      if (!isNaN(val) && val !== 0) row[idx] = String(Math.round(val * MANA_MULT * 100) / 100);
+      scaleIntCell(row, idx, MANA_MULT);
     }
 
     // Boost elemental damage: scale max, preserve the min-max delta

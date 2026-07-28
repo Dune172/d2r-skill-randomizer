@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.256',
+    date: 'July 2026',
+    tagline: 'Fixed absurd mana costs on some skills under Arcane Surge',
+    notes: [
+      'Fixed skills costing thousands of mana under the Arcane Surge mutation — Iron Golem wanted 8,685 mana instead of 88. Revive, the other golems, Blizzard, Enchant and Valkyrie were hit the same way',
+      'The cause: Arcane Surge’s 2.5× multiplier left half-mana values like 87.5 in the skill data, and the game reads a fractional mana cost as a much larger whole number. Costs are now always rounded to a whole number',
+      'Grab a fresh download of the current challenge to pick up the fix — your skill tree layout is identical, so the seed plays exactly the same in every other respect and any run in progress stays valid',
+    ],
+  },
+  {
     version: 'v0.255',
     date: 'June 2026',
     tagline: 'New Hell leaderboard, per-difficulty XP Boost, and a round of balance fixes',

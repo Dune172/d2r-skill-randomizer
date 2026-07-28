@@ -22,5 +22,12 @@
  * Do NOT bump for: UI/CSS changes, changelog entries, README edits, comment-only
  * edits, build/deploy config, or anything that doesn't touch the bytes inside
  * the generated ZIP.
+ *
+ * Note: this value is ONLY used as a cache-key prefix (src/lib/zip-cache.ts) —
+ * it is never fed into the RNG. Bumping it therefore invalidates cached ZIPs
+ * WITHOUT changing what a given seed generates. A bug fix that changes output
+ * bytes but consumes no RNG (v0.256's Arcane Surge mana rounding) still needs a
+ * bump, or players keep being served the cached broken ZIP; their skill layouts
+ * are unaffected.
  */
-export const PIPELINE_VERSION = 39;
+export const PIPELINE_VERSION = 40;
