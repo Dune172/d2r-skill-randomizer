@@ -17,7 +17,7 @@ import { CLASS_DEFS } from './config';
 // Zeal was unpinned alongside Sacrifice in v0.253 on the same reasoning
 // (cltdofunc=21 is class-agnostic — the oskill version granted by the Passion
 // runeword fires its multi-hit on any class). It is pinned back to pal as of
-// v0.257 via HARDCODED_CLASS_SKILLS below, so it no longer needs an entry here.
+// v0.256 via HARDCODED_CLASS_SKILLS below, so it no longer needs an entry here.
 const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
   nec: new Set(['Charge']),
 };

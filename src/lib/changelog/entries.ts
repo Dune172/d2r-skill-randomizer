@@ -12,34 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: 'v0.258',
-    date: 'July 2026',
-    tagline: 'Fixed skills showing the wrong icon, and updated dependencies for security fixes',
-    notes: [
-      'Fixed skills that displayed a completely unrelated icon. When a dropped skill was replaced by another skill that had itself been replaced, the icon was taken from the middle of that chain instead of the skill you actually got — so the name, tooltip and behaviour were right but the picture was wrong. Roughly one skill per seed was affected',
-      'Updated Next.js, sharp, adm-zip and several supporting libraries to pick up published security fixes',
-    ],
-  },
-  {
-    version: 'v0.257',
-    date: 'July 2026',
-    tagline: 'Synergies actually apply their bonus, and Zeal returns to the Paladin',
-    notes: [
-      'Fixed synergy bonuses that never showed up on your damage. A skill’s tooltip named the right synergy — Skeleton Mastery boosting Zeal, for example — but the Damage % line and damage range were still being calculated from the skill that synergy replaced, which sits at level 0 once it moves to another class. Both now use the same skill',
-      'Fixed synergy lines naming the wrong skill: on skills with several synergies (Vengeance and the resistance auras were the worst), the names and the bonuses they applied to were listed in different orders, so most lines credited a skill that wasn’t driving that number',
-      'Revive, the Druid’s wolf and bear summons, and Health Link now get their synergy bonuses — their formulas used a reference style the randomizer wasn’t rewriting, so they silently gave nothing',
-      'Zeal is pinned to the Paladin again. Like the other pinned skills it can still be dropped from a seed, in which case another skill takes its slot',
-      'These changes re-roll every seed, so a given seed number now generates a different set of skill trees than it did before',
-    ],
-  },
-  {
     version: 'v0.256',
     date: 'July 2026',
-    tagline: 'Fixed absurd mana costs on some skills under Arcane Surge',
+    tagline: 'Synergies actually boost your damage now, plus mana, icon and Zeal fixes',
     notes: [
-      'Fixed skills costing thousands of mana under the Arcane Surge mutation — Iron Golem wanted 8,685 mana instead of 88. Revive, the other golems, Blizzard, Enchant and Valkyrie were hit the same way',
-      'The cause: Arcane Surge’s 2.5× multiplier left half-mana values like 87.5 in the skill data, and the game reads a fractional mana cost as a much larger whole number. Costs are now always rounded to a whole number',
-      'Grab a fresh download of the current challenge to pick up the fix — your skill tree layout is identical, so the seed plays exactly the same in every other respect and any run in progress stays valid',
+      'Synergy bonuses now actually apply. A skill would list the right synergy, say Skeleton Mastery boosting Zeal, but the damage was still coming from whatever skill that synergy replaced. Points you spent did nothing',
+      'Fixed synergy lines naming the wrong skill. On skills with several synergies, like Vengeance and the resistance auras, most lines credited a skill that was not driving that number',
+      'Revive, the Druid wolf and bear summons, and Health Link now get their synergy bonuses. They were silently giving nothing',
+      'Fixed skills costing thousands of mana under Arcane Surge. Iron Golem wanted 8,685 mana instead of 88, and Revive, the other golems, Blizzard, Enchant and Valkyrie were hit the same way',
+      'Fixed skills showing a completely unrelated icon. The name, tooltip and behaviour were right, only the picture was wrong',
+      'Zeal is pinned to the Paladin again. It can still be dropped from a seed like the other pinned skills, in which case another skill takes its slot',
+      'These fixes re-roll every seed, so a seed number now generates different trees than it did before',
     ],
   },
   {
