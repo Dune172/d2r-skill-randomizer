@@ -236,22 +236,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Step 7: Update synergies. Scans every cell of each placed skill's row
-    // and rewrites `skill('X'.blvl)` refs to point at co-located classmates.
-    // Mutates skillsTxt.rows in place; returns the substitutions chosen so
-    // the skilldesc display can be kept consistent with the formula.
+    // Step 7: Update synergies. Scans every cell of each placed skill's rows
+    // and rewrites `skill('X'.blvl|.lvl)` refs to point at co-located
+    // classmates. Covers skillsTxt.rows, the pet rows a summon grants, and the
+    // matching skilldesc.txt row — skilldesc carries its own copy of many
+    // damage formulas, and leaving those unremapped made tooltips compute off
+    // the pre-shuffle synergy skill. All three share one allocation state per
+    // skill, so a given ref resolves identically everywhere. Mutates both row
+    // sets in place; returns the substitutions chosen so the skilldesc display
+    // can be kept consistent with the formula.
     const formulaSubstitutions = updateSkillsSynergies(
       skillsTxt.rows,
       placements,
       placementsByClass,
       rng,
       skillsTxt.headers,
+      skillDescTxt.rows,
     );
 
-    // Build str name lookup from effective skilldesc data (substitute-aware)
+    // Build str name lookup from the live skilldesc.txt rows. The substitution
+    // pass above already overwrote each dropped row's `str name` with its
+    // source's, so the row is substitute-aware by construction — and unlike
+    // effectiveSkillDescs it stays correct when substitution CHAINS (a source
+    // is itself picked from `placements`, which already holds earlier
+    // substitutes, so resolving a source through vanilla data can name the
+    // wrong skill).
+    const descStrNameIdx = skillDescTxt.headers.indexOf('str name');
     const skillDescStrNames = new Map<string, string>();
-    for (const [name, desc] of effectiveSkillDescs.entries()) {
-      skillDescStrNames.set(name, desc.strName);
+    if (descStrNameIdx !== -1) {
+      for (const row of skillDescTxt.rows) {
+        if (row[0] && row[descStrNameIdx]) skillDescStrNames.set(row[0], row[descStrNameIdx]);
+      }
     }
 
     // skill name → skilldesc, needed to translate formula-substituted skill
@@ -261,13 +276,26 @@ export async function POST(request: NextRequest) {
       skillByName.set(p.skill.skill, { skilldesc: p.skill.skilldesc });
     }
 
+    // Reverse lookup for the dsc3textb slots: a slot holds a str name like
+    // `skillname96`, and we need the skill it originally named so the slot can
+    // be rekeyed to whatever replaced that skill in the formula. Built from
+    // VANILLA skilldesc data (not effectiveSkillDescs) — the slot values were
+    // copied verbatim from the source row during substitution, so they carry
+    // vanilla semantics.
+    const strNameToSkillName = new Map<string, string>();
+    for (const s of skills) {
+      const desc = skillDescs.get(s.skilldesc);
+      if (desc?.strName) strNameToSkillName.set(desc.strName, s.skill);
+    }
+
     const descSynergyUpdates = updateSkillDescSynergies(
       placements,
       placementsByClass,
       skillDescStrNames,
-      effectiveSkillDescs,
+      skillDescTxt,
       formulaSubstitutions,
       skillByName,
+      strNameToSkillName,
       rng,
     );
 

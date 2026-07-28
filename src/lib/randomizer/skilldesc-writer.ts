@@ -13,7 +13,8 @@ export function writeSkillDescRows(
   headers: string[],
   rows: string[][],
   placements: SkillPlacement[],
-  descSynergyUpdates: Map<string, string[]>, // skill name → new dsc3textb str name values
+  // skill name → (original dsc3textb str name → replacement str name)
+  descSynergyUpdates: Map<string, Map<string, string>>,
 ): void {
   // Build lookup: skilldesc name → placement
   const skilldescToPlacement = new Map<string, SkillPlacement>();
@@ -66,20 +67,25 @@ export function writeSkillDescRows(
     // IconCel = new icon index
     if (iconCelIdx >= 0) row[iconCelIdx] = String(placement.iconCel);
 
-    // Update dsc3textb synergy references (preserve original line/texta/calca/calcb)
-    const newTextBs = descSynergyUpdates.get(placement.skill.skill);
-    if (newTextBs) {
-      // Swap dsc3textb values for synergy entries only.
-      // Skip line type "40" (header: "X receives bonuses from:") — textb1 is a self-reference.
-      // Only swap where dsc3line is "76" or other synergy entry types.
-      let newIdx = 0;
-      for (let i = 0; i < 7 && newIdx < newTextBs.length; i++) {
+    // Update dsc3textb synergy references (preserve original line/texta).
+    // The dsc3calca/calcb formulas are rewritten upstream by
+    // updateSkillsSynergies, which remaps every skill('X'.blvl|.lvl) ref in
+    // this row alongside the skills.txt row.
+    //
+    // Each slot is looked up by the skill it originally named, so the name on
+    // a line always matches the skill driving that line's calc — not by slot
+    // position, which mismatched them whenever formula order differed from
+    // dsc3 order.
+    const synergyMap = descSynergyUpdates.get(placement.skill.skill);
+    if (synergyMap) {
+      for (let i = 0; i < 7; i++) {
         if (dsc3TextbIdx[i] < 0 || dsc3TextbIdx[i] >= row.length) continue;
-        if (dsc3LineIdx[i] >= 0 && row[dsc3LineIdx[i]] === '40') continue; // skip header
+        // Skip line type "40" (header: "X receives bonuses from:") — textb1 is a self-reference.
+        if (dsc3LineIdx[i] >= 0 && row[dsc3LineIdx[i]] === '40') continue;
         const origTextB = row[dsc3TextbIdx[i]];
-        if (origTextB) {
-          row[dsc3TextbIdx[i]] = newTextBs[newIdx++];
-        }
+        if (!origTextB) continue;
+        const replacement = synergyMap.get(origTextB);
+        if (replacement) row[dsc3TextbIdx[i]] = replacement;
       }
     }
   }

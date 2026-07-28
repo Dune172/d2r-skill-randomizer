@@ -30,14 +30,16 @@ const HARDCODED = {
 };
 
 async function generateAndFetch(seed) {
+  // raceMode must be off: it replaces 7 of the 8 classes with Prayer filler,
+  // which would make the pin and ~50%-appearance checks meaningless.
   const rand = await fetch(`${BASE}/api/randomize`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ seed }),
+    body: JSON.stringify({ seed, raceMode: false }),
   });
   if (!rand.ok) throw new Error(`randomize ${seed}: ${rand.status} ${await rand.text()}`);
 
-  const dl = await fetch(`${BASE}/api/download?seed=${seed}`);
+  const dl = await fetch(`${BASE}/api/download?seed=${seed}&raceMode=0`);
   if (!dl.ok) throw new Error(`download ${seed}: ${dl.status} ${await dl.text()}`);
 
   const buf = Buffer.from(await dl.arrayBuffer());

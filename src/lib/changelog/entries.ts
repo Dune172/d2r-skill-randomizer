@@ -12,6 +12,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.257',
+    date: 'July 2026',
+    tagline: 'Synergies actually apply their bonus, and Zeal returns to the Paladin',
+    notes: [
+      'Fixed synergy bonuses that never showed up on your damage. A skill’s tooltip named the right synergy — Skeleton Mastery boosting Zeal, for example — but the Damage % line and damage range were still being calculated from the skill that synergy replaced, which sits at level 0 once it moves to another class. Both now use the same skill',
+      'Fixed synergy lines naming the wrong skill: on skills with several synergies (Vengeance and the resistance auras were the worst), the names and the bonuses they applied to were listed in different orders, so most lines credited a skill that wasn’t driving that number',
+      'Revive, the Druid’s wolf and bear summons, and Health Link now get their synergy bonuses — their formulas used a reference style the randomizer wasn’t rewriting, so they silently gave nothing',
+      'Zeal is pinned to the Paladin again. Like the other pinned skills it can still be dropped from a seed, in which case another skill takes its slot',
+      'These changes re-roll every seed, so a given seed number now generates a different set of skill trees than it did before',
+    ],
+  },
+  {
     version: 'v0.256',
     date: 'July 2026',
     tagline: 'Fixed absurd mana costs on some skills under Arcane Surge',

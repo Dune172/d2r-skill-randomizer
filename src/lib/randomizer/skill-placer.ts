@@ -12,10 +12,12 @@ import { CLASS_DEFS } from './config';
 // the animdata.d2 repair shipped in every mod — see src/lib/anim/), which
 // removed the reason for those exclusions. Verified in-game: Sacrifice lands
 // hits on Warlock (cltdofunc=34 is not class-gated) and A1 melee works on
-// Sorceress. Zeal (cltdofunc=21) is likewise class-agnostic — the oskill
-// version granted by the Passion runeword fires its multi-hit on any class —
-// so it is no longer pinned to pal and shuffles freely (see
-// HARDCODED_CLASS_SKILLS below).
+// Sorceress, so Sacrifice shuffles freely.
+//
+// Zeal was unpinned alongside Sacrifice in v0.253 on the same reasoning
+// (cltdofunc=21 is class-agnostic — the oskill version granted by the Passion
+// runeword fires its multi-hit on any class). It is pinned back to pal as of
+// v0.257 via HARDCODED_CLASS_SKILLS below, so it no longer needs an entry here.
 const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
   nec: new Set(['Charge']),
 };
@@ -52,11 +54,11 @@ const SKILL_CLASS_EXCLUSIONS: Partial<Record<ClassCode, Set<string>>> = {
 // the only difference is restrict=2, which locks Fury to the werewolf form. That
 // form only exists when Wearwolf is on the same class, so a Fury stranded on a
 // non-Druid host (or a Druid without Wearwolf) has no form to fire in and stays
-// idle — even though anim=A1 is preserved. (Zeal, restrict=0, has no such gate
-// and is fully shuffleable; see the exclusion note above.) Shock Wave is the
-// Wearbear-side equivalent. See FORM_GATED_PINS in placeSkills for the
-// conditional-drop logic that vacates them when the form anchor (Wearwolf /
-// Wearbear) didn't land on Druid.
+// idle — even though anim=A1 is preserved. Shock Wave is the Wearbear-side
+// equivalent. See FORM_GATED_PINS in placeSkills for the conditional-drop logic
+// that vacates them when the form anchor (Wearwolf / Wearbear) didn't land on
+// Druid. (Zeal is restrict=0 and has no such form gate — it is pinned below for
+// a separate reason.)
 export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   // Amazon
   'Fend': 'ama',
@@ -71,6 +73,8 @@ export const HARDCODED_CLASS_SKILLS: Readonly<Record<string, ClassCode>> = {
   'Frenzy': 'bar',
   // Sorceress
   'Inferno': 'sor',
+  // Paladin
+  'Zeal': 'pal',
   // Druid
   'Arctic Blast': 'dru',
   'Fury': 'dru',
