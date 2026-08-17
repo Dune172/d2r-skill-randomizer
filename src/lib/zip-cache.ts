@@ -11,6 +11,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { PIPELINE_VERSION } from './randomizer/pipeline-version';
+import { statePath } from './state-dir';
 
 const CACHE_KEY = '__d2r_zip_cache__';
 const CACHE_META_KEY = '__d2r_zip_cache_meta__';
@@ -27,7 +28,10 @@ const MAX_ENTRIES_DISK = 2000;
 const MAX_BYTES_DISK = 3 * 1024 * 1024 * 1024;
 
 function cacheDir(): string {
-  return path.join(process.cwd(), '..', 'zip-cache');
+  // Lives in STATE_DIR (see state-dir.ts). Unlike the counters, losing this only
+  // costs a cache warm-up — but a cwd-relative path also means a per-build deploy
+  // directory silently orphans the old cache instead of reusing it.
+  return process.env.ZIP_CACHE_DIR || statePath('zip-cache');
 }
 
 function keyHash(cacheKey: string): string {

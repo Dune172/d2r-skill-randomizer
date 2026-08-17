@@ -1,11 +1,12 @@
 import fs from 'fs';
-import path from 'path';
 import type { ClassName } from './classes';
+import { statePath } from './state-dir';
 
-// One directory above the project so deployments (fresh clone/pull) can't wipe it.
+// Lives in STATE_DIR (see state-dir.ts) so it survives deploys.
 // Override by setting LEADERBOARD_FILE to any absolute path on the server.
-const LEADERBOARD_FILE =
-  process.env.LEADERBOARD_FILE || path.join(process.cwd(), '..', 'leaderboard.json');
+const LEADERBOARD_FILE = process.env.LEADERBOARD_FILE || statePath('leaderboard.json');
+
+console.log(`[leaderboard] using ${LEADERBOARD_FILE}`);
 
 export type Difficulty = 'normal' | 'hell';
 

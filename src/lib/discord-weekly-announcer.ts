@@ -10,7 +10,7 @@
  * Best-effort: HTTP and disk errors are logged but never thrown.
  */
 import { promises as fs } from 'node:fs';
-import path from 'node:path';
+import { statePath } from './state-dir';
 import {
   getCurrentWeekNumber,
   getWeekStart,
@@ -21,7 +21,9 @@ import { renderChallengeCardPng } from './og/challengeCard';
 const POST_HOUR_LA = 9;
 const POST_HOUR_OFFSET_MS = POST_HOUR_LA * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 15_000;
-const STATE_PATH = path.join(process.cwd(), '..', 'weekly-announce.json');
+// Lives in STATE_DIR (see state-dir.ts) so it survives deploys. Losing this
+// makes the announcer re-post the current week to Discord after a deploy.
+const STATE_PATH = process.env.WEEKLY_ANNOUNCE_FILE || statePath('weekly-announce.json');
 
 interface AnnouncerState {
   lastAnnouncedWeek: number;

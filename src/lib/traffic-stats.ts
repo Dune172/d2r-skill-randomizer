@@ -1,6 +1,5 @@
-import path from 'path';
-
 import { readJsonWithBackup, writeJsonDurable } from './durable-json';
+import { statePath } from './state-dir';
 
 /**
  * First-party, privacy-friendly traffic attribution.
@@ -13,15 +12,11 @@ import { readJsonWithBackup, writeJsonDurable } from './durable-json';
  * the rest of the app's file-backed state.
  */
 
-const STATS_FILE =
-  process.env.TRAFFIC_STATS_FILE || path.join(process.cwd(), '..', 'traffic-stats.json');
+const STATS_FILE = process.env.TRAFFIC_STATS_FILE || statePath('traffic-stats.json');
 
 // Same reasoning as counter.ts: surface the resolved path at startup so a
 // mismatch with the file being inspected isn't invisible.
-console.log(
-  `[traffic-stats] using ${STATS_FILE}` +
-  `${process.env.TRAFFIC_STATS_FILE ? '' : ` (TRAFFIC_STATS_FILE unset; derived from cwd ${process.cwd()})`}`,
-);
+console.log(`[traffic-stats] using ${STATS_FILE}`);
 
 /** Keep at most this many days of history. */
 const MAX_DAYS = 366;
