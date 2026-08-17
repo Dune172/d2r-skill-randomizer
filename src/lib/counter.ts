@@ -7,6 +7,17 @@ import { readJsonWithBackup, writeJsonDurable } from './durable-json';
 // Production pins this to /var/www/counter.json via ecosystem.config.js.
 const COUNTER_FILE = process.env.COUNTER_FILE || path.join(process.cwd(), '..', 'counter.json');
 
+// Log the resolved path at startup. When this doesn't match the file an
+// operator is editing, the symptom is silent and misleading — the app reports 0
+// and starts counting from 1 while the real total sits in a file nothing reads.
+// `pm2 reload` does not re-read ecosystem.config.js env unless you pass
+// --update-env, so COUNTER_FILE can easily be unset in a long-lived process and
+// fall back to cwd/../counter.json.
+console.log(
+  `[counter] using ${COUNTER_FILE}` +
+  `${process.env.COUNTER_FILE ? '' : ` (COUNTER_FILE unset; derived from cwd ${process.cwd()})`}`,
+);
+
 let writeLock: Promise<void> = Promise.resolve();
 
 // 5s in-memory TTL cache to keep /api/counter from hitting disk on every

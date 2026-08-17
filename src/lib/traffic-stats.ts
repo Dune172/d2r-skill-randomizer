@@ -16,6 +16,13 @@ import { readJsonWithBackup, writeJsonDurable } from './durable-json';
 const STATS_FILE =
   process.env.TRAFFIC_STATS_FILE || path.join(process.cwd(), '..', 'traffic-stats.json');
 
+// Same reasoning as counter.ts: surface the resolved path at startup so a
+// mismatch with the file being inspected isn't invisible.
+console.log(
+  `[traffic-stats] using ${STATS_FILE}` +
+  `${process.env.TRAFFIC_STATS_FILE ? '' : ` (TRAFFIC_STATS_FILE unset; derived from cwd ${process.cwd()})`}`,
+);
+
 /** Keep at most this many days of history. */
 const MAX_DAYS = 366;
 /** Cap distinct keys per map per day; overflow buckets into 'other'. */
