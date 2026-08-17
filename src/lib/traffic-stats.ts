@@ -115,6 +115,13 @@ export function recordHit(hit: HitInput): void {
 export interface StatsSummary {
   rangeDays: number;
   since: string;
+  /**
+   * Earliest day ever recorded, across the whole file rather than the requested
+   * range — null when nothing has been recorded yet. Consumers need this to
+   * tell "no visitors that day" from "not measuring yet": before this date the
+   * absence of a number means no data, not a zero.
+   */
+  trackingSince: string | null;
   total: number;
   byDay: Record<string, number>;
   sources: Record<string, number>;
@@ -128,9 +135,11 @@ export function getStats(rangeDays = 30): StatsSummary {
   // never feeds back into a write.
   const stats = readFromDisk() ?? { days: {} };
   const cutoff = utcDayKey(new Date(Date.now() - (rangeDays - 1) * 86_400_000));
+  const recordedDays = Object.keys(stats.days).sort();
   const summary: StatsSummary = {
     rangeDays,
     since: cutoff,
+    trackingSince: recordedDays[0] ?? null,
     total: 0,
     byDay: {},
     sources: {},

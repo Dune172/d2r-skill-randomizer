@@ -90,18 +90,21 @@ function table(el, pairs, headers) {
 }
 
 let chart;
-function drawChart(byDay, days) {
+function drawChart(byDay, days, trackingSince) {
   const labels = [], data = [];
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(Date.now() - i*86400000).toISOString().slice(0,10);
-    labels.push(d.slice(5)); data.push(byDay[d] || 0);
+    labels.push(d.slice(5));
+    // null (a gap), not 0, for days before tracking started — plotting those as
+    // zero claims we measured no visitors when we simply weren't measuring.
+    data.push(trackingSince && d < trackingSince ? null : (byDay[d] || 0));
   }
   const hasData = data.some(v => v > 0);
   document.getElementById('chartEmpty').style.display = hasData ? 'none' : '';
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById('chart'), {
     type: 'line',
-    data: { labels, datasets: [{ label: 'Sessions', data, borderColor: '#8a4a12', backgroundColor: 'rgba(138,74,18,.12)', fill: true, tension: .25, pointRadius: days > 35 ? 0 : 2 }] },
+    data: { labels, datasets: [{ label: 'Sessions', data, spanGaps: false, borderColor: '#8a4a12', backgroundColor: 'rgba(138,74,18,.12)', fill: true, tension: .25, pointRadius: days > 35 ? 0 : 2 }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
   });
 }
@@ -110,8 +113,19 @@ async function loadStats(days) {
   try {
     const s = await fetchJson('/api/stats?days=' + days);
     document.getElementById('cSess').textContent = fmt(s.total);
-    document.getElementById('cSessNote').textContent = 'last ' + s.rangeDays + ' days';
-    drawChart(s.byDay || {}, days);
+    // Say what the number actually covers. When tracking started partway into
+    // the window, "last 30 days" overstates it — the shortfall is missing
+    // measurement, not quiet days.
+    // Compare UTC day keys, not timestamps — a partial day would otherwise
+    // round up and overstate the window by one.
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const covered = s.trackingSince && s.trackingSince > s.since
+      ? Math.round((Date.parse(todayKey + 'T00:00:00Z') - Date.parse(s.trackingSince + 'T00:00:00Z')) / 86400000) + 1
+      : null;
+    document.getElementById('cSessNote').textContent = covered
+      ? 'last ' + covered + ' day' + (covered === 1 ? '' : 's') + ' — tracking began ' + s.trackingSince
+      : 'last ' + s.rangeDays + ' days';
+    drawChart(s.byDay || {}, days, s.trackingSince);
     table(document.getElementById('srcTbl'), Object.entries(s.sources || {}).sort((a,b)=>b[1]-a[1]).slice(0,12), ['Source','Sessions']);
     table(document.getElementById('refTbl'), Object.entries(s.referrers || {}).sort((a,b)=>b[1]-a[1]).slice(0,12), ['Referrer','Sessions']);
   } catch (e) {
