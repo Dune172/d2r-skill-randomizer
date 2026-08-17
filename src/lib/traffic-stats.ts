@@ -1,5 +1,6 @@
-import fs from 'fs';
 import path from 'path';
+
+import { readJsonWithBackup, writeJsonDurable } from './durable-json';
 
 /**
  * First-party, privacy-friendly traffic attribution.
@@ -33,14 +34,30 @@ interface StatsFile {
 
 let writeLock: Promise<void> = Promise.resolve();
 
-function readFromDisk(): StatsFile {
-  try {
-    const raw = fs.readFileSync(STATS_FILE, 'utf-8');
-    const parsed = JSON.parse(raw) as Partial<StatsFile>;
-    return { days: parsed.days ?? {} };
-  } catch {
-    return { days: {} };
-  }
+function isStatsFile(v: unknown): v is StatsFile {
+  const days = (v as StatsFile | null)?.days;
+  return typeof days === 'object' && days !== null && !Array.isArray(days);
+}
+
+/**
+ * Read the stats file, or null when neither it nor its backup is readable.
+ *
+ * A corrupt read must NOT collapse to "no history": recordHit writes the whole
+ * file back, so returning an empty object here would overwrite every recorded
+ * day with just the current hit. See durable-json.ts.
+ */
+function readFromDisk(): StatsFile | null {
+  const read = readJsonWithBackup(
+    STATS_FILE,
+    isStatsFile,
+    // History only grows (bar the 366-day prune), so a primary with no days at
+    // all next to a populated backup means the primary was reset by an older
+    // build or a lost write.
+    (primary, backup) =>
+      Object.keys(primary.days).length === 0 && Object.keys(backup.days).length > 0,
+  );
+  if (read.status === 'unreadable') return null;
+  return read.status === 'missing' ? { days: {} } : { days: read.value.days };
 }
 
 function utcDayKey(at = new Date()): string {
@@ -69,6 +86,13 @@ export function recordHit(hit: HitInput): void {
   writeLock = writeLock
     .then(() => {
       const stats = readFromDisk();
+      if (stats === null) {
+        // Dropping one hit beats overwriting the whole history with it.
+        console.error(
+          `[traffic-stats] refusing to record: neither ${STATS_FILE} nor its backup is readable`,
+        );
+        return;
+      }
       const day = (stats.days[utcDayKey()] ??= {
         total: 0,
         sources: {},
@@ -81,9 +105,11 @@ export function recordHit(hit: HitInput): void {
       if (hit.referrerHost) bump(day.referrers, hit.referrerHost);
       bump(day.paths, hit.pathname || '/');
       prune(stats);
-      fs.writeFileSync(STATS_FILE, JSON.stringify(stats), 'utf-8');
+      writeJsonDurable(STATS_FILE, stats);
     })
-    .catch(() => {});
+    .catch(err => {
+      console.error('[traffic-stats] recordHit failed:', err);
+    });
 }
 
 export interface StatsSummary {
@@ -98,7 +124,9 @@ export interface StatsSummary {
 
 /** Aggregate the last `rangeDays` days (UTC). */
 export function getStats(rangeDays = 30): StatsSummary {
-  const stats = readFromDisk();
+  // An unreadable file reports as empty here — this is display only, and it
+  // never feeds back into a write.
+  const stats = readFromDisk() ?? { days: {} };
   const cutoff = utcDayKey(new Date(Date.now() - (rangeDays - 1) * 86_400_000));
   const summary: StatsSummary = {
     rangeDays,
