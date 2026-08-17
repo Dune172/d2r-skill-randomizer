@@ -65,6 +65,12 @@ export interface SkillDescEntry {
   IconCel: number;
   hireableIconCel?: number; // vanilla HireableIconCel from skilldesc.json (if present)
   strName: string;
+  // 'str long' / 'str short' — string KEYS into data/local/strings/skills.json,
+  // not text; resolve via Key → enUS the same way strName is. These are the
+  // in-game flavour description ("blast a continuous jet of ice\n..."), used by
+  // the web spoiler tooltip. Empty for the ~9 rows that define neither.
+  strLong: string;
+  strShort: string;
   lineNumber: number; // index in skilldesc.json
   // dsc3 synergy display columns
   dsc3textb: string[]; // up to 7 entries
@@ -101,6 +107,10 @@ export interface RandomizerResult {
 
 export interface PreviewData {
   seed: number;
+  // True when the Mystery Box mutation is active: names are '???', descriptions
+  // empty, and every icon is the single shared MYSTERY_ICON. Decided server-side
+  // so the client never has to infer masking — and never receives the real values.
+  masked: boolean;
   classes: {
     code: ClassCode;
     name: string;
@@ -109,7 +119,16 @@ export interface PreviewData {
       sourceTree: number;
       skills: {
         name: string;
+        // In-game flavour text; may contain a literal '\n'. Empty when the
+        // skilldesc defines no description, or when masked.
+        desc: string;
         originalClass: string;
+        // ClassCode whose icon tile to render. Equals originalClass except when
+        // masked, where it's MYSTERY_ICON.charclass.
+        iconClass: string;
+        // Vanilla IconCel — even, 0..58. Resolved through substitution chains;
+        // see the comment in /api/preview.
+        iconCel: number;
         row: number;
         col: number;
       }[];

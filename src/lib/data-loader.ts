@@ -149,6 +149,8 @@ export function loadSkillDescs(): Map<string, SkillDescEntry> {
       IconCel: (v.IconCel as number) || 0,
       hireableIconCel: typeof v.HireableIconCel === 'number' ? v.HireableIconCel : undefined,
       strName: (v['str name'] as string) || '',
+      strLong: (v['str long'] as string) || '',
+      strShort: (v['str short'] as string) || '',
       lineNumber: parseInt(key),
       dsc3textb,
     });

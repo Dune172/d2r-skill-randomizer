@@ -12,6 +12,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.260',
+    date: 'August 2026',
+    tagline: 'The seed spoiler now shows the real skill icons, with tooltips',
+    notes: [
+      'The spoiler now shows the actual in-game skill icons laid out like the skill window, three trees side by side for each class, instead of a list of names in boxes',
+      'Hover or tap any icon for the skill name and its description, styled like the tooltip you see in game',
+      'Each icon is framed in the colour of the class the skill came from, so you can see at a glance how mixed a tree is',
+      'Classes start collapsed so you can open just the one you are playing instead of scrolling past all eight',
+      'Fixed a handful of skills being labelled with the wrong name in the spoiler. Where one shuffled skill had been chained onto another, the spoiler credited the skill in the middle of the chain — the game itself was always right, only the spoiler was lying',
+      'Your seed still generates exactly the same trees — this only changes what the spoiler shows you',
+    ],
+  },
+  {
     version: 'v0.259',
     date: 'August 2026',
     tagline: 'Skill tree bonuses on items now name the tree they actually boost',

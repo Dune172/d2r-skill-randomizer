@@ -1,99 +1,181 @@
 'use client';
 
-interface Skill {
-  name: string;
-  originalClass: string;
-  row: number;
-  col: number;
-}
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { classTheme } from '@/lib/ui/class-theme';
+import SkillIconCell, { PreviewSkill } from './SkillIconCell';
 
 interface Tab {
   sourceClass: string;
   sourceTree: number;
-  skills: Skill[];
+  skills: PreviewSkill[];
 }
 
 interface ClassTreeCardProps {
   code: string;
   name: string;
   tabs: Tab[];
+  /** Mystery Box is active — skills arrive pre-masked from the server. */
+  masked: boolean;
+  /** Owned by SkillTreePreview: the two cards sharing a grid row open and close
+   *  together, so a row is never half height. */
+  expanded: boolean;
+  onToggleExpanded: () => void;
 }
 
-const CLASS_THEME: Record<string, { headerBg: string; headerText: string; accent: string; badge: string }> = {
-  ama: { headerBg: 'bg-[#071a09]', headerText: 'text-[#58c070]', accent: 'border-[#1e4a22]', badge: 'bg-[#0e2e12] text-[#72e08a]' },
-  sor: { headerBg: 'bg-[#060a1e]', headerText: 'text-[#5898e0]', accent: 'border-[#162050]', badge: 'bg-[#0a1430] text-[#78b8ff]' },
-  nec: { headerBg: 'bg-[#050e08]', headerText: 'text-[#50b050]', accent: 'border-[#183020]', badge: 'bg-[#0a2010] text-[#68d870]' },
-  pal: { headerBg: 'bg-[#1a1406]', headerText: 'text-[#e8c050]', accent: 'border-[#4a3810]', badge: 'bg-[#2e2208] text-[#f0d868]' },
-  bar: { headerBg: 'bg-[#1c0606]', headerText: 'text-[#e05858]', accent: 'border-[#501616]', badge: 'bg-[#300a0a] text-[#f08080]' },
-  dru: { headerBg: 'bg-[#150e04]', headerText: 'text-[#c8a040]', accent: 'border-[#402e10]', badge: 'bg-[#281c08] text-[#e0c060]' },
-  ass: { headerBg: 'bg-[#0e0614]', headerText: 'text-[#b868e0]', accent: 'border-[#341060]', badge: 'bg-[#1c0a30] text-[#d890f0]' },
-  war: { headerBg: 'bg-[#1a0c04]', headerText: 'text-[#e88038]', accent: 'border-[#502010]', badge: 'bg-[#2e1208] text-[#f0a858]' },
-};
+const ROWS = 6;
+const COLS = 3;
 
-const DEFAULT_THEME = {
-  headerBg: 'bg-[#0e0808]', headerText: 'text-[#888]', accent: 'border-[#2a1a1a]', badge: 'bg-[#1a1010] text-[#aaa]',
-};
+/** One tree: the 6x3 grid of skill slots. */
+function SkillTreeGrid({
+  tab,
+  treeIdx,
+  openId,
+  setOpenId,
+}: {
+  tab: Tab;
+  treeIdx: number;
+  openId: string | null;
+  setOpenId: (id: string | null) => void;
+}) {
+  // One pass over the tab's skills instead of an 18-cell linear scan.
+  const byCell = useMemo(() => {
+    const map = new Map<string, PreviewSkill>();
+    for (const skill of tab.skills) map.set(`${skill.row}-${skill.col}`, skill);
+    return map;
+  }, [tab]);
 
-// Maps row number (1-6) to required character level
-const REQ_LEVEL = [1, 6, 12, 18, 24, 30];
+  return (
+    <div className="grid grid-cols-3 gap-[3px]">
+      {Array.from({ length: ROWS * COLS }, (_, i) => {
+        const row = Math.floor(i / COLS) + 1;
+        const col = (i % COLS) + 1;
+        const skill = byCell.get(`${row}-${col}`) ?? null;
+        const id = `${treeIdx}-${row}-${col}`;
 
-export default function ClassTreeCard({ code, name, tabs }: ClassTreeCardProps) {
-  const theme = CLASS_THEME[code] || DEFAULT_THEME;
+        // Anchor edge tooltips inward so they can't clip out of the viewport.
+        // Derived from position rather than measured — there are 144 cells a card.
+        const align = treeIdx === 0 && col === 1
+          ? 'left'
+          : treeIdx === 2 && col === COLS
+            ? 'right'
+            : 'center';
+
+        return (
+          <SkillIconCell
+            key={i}
+            skill={skill}
+            align={align}
+            below={row === 1}
+            open={openId === id}
+            onToggle={() => setOpenId(openId === id ? null : id)}
+            tipId={`tip-${id}`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+export default function ClassTreeCard({
+  code, name, tabs, masked, expanded, onToggleExpanded,
+}: ClassTreeCardProps) {
+  const theme = classTheme(masked ? '?' : code);
+  const cardRef = useRef<HTMLDivElement>(null);
+  // Tap-to-pin, one tooltip at a time — hover alone is useless on touch, and an
+  // inline description under every one of 144 cells would not be a skill tree.
+  const [openId, setOpenId] = useState<string | null>(null);
+  const panelId = `spoiler-trees-${code}`;
+
+  // Drop any pinned tooltip when the card closes, so re-opening it doesn't
+  // restore a tooltip the reader didn't ask for.
+  useEffect(() => {
+    if (!expanded) setOpenId(null);
+  }, [expanded]);
+
+  useEffect(() => {
+    if (openId === null) return;
+    const dismissOutside = (e: Event) => {
+      if (!cardRef.current?.contains(e.target as Node)) setOpenId(null);
+    };
+    const dismissEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenId(null);
+    };
+    document.addEventListener('mousedown', dismissOutside);
+    document.addEventListener('touchstart', dismissOutside);
+    document.addEventListener('keydown', dismissEscape);
+    return () => {
+      document.removeEventListener('mousedown', dismissOutside);
+      document.removeEventListener('touchstart', dismissOutside);
+      document.removeEventListener('keydown', dismissEscape);
+    };
+  }, [openId]);
 
   // `tabs` arrives in SkillPage order (1, 2, 3), which is the reverse of how the
-  // game lays the tabs out on screen. Render screen order so this card's "Tab 1"
+  // game lays the tabs out on screen. Render screen order so this card's "Random 1"
   // is the same tab the game labels "Random 1".
   const tabsInScreenOrder = [...tabs].reverse();
 
   return (
-    <div className={`rounded-lg border ${theme.accent} overflow-hidden shadow-lg`}>
-      {/* Class header */}
-      <div className={`px-4 py-3 ${theme.headerBg} border-b ${theme.accent}`}>
+    <div
+      ref={cardRef}
+      className="card-ornate border border-t-2 border-[#3a1510] border-t-[#c8942a]/30
+        bg-[#0c0304] panel-shadow"
+    >
+      {/* Class header — the collapse toggle for this card */}
+      <button
+        type="button"
+        onClick={onToggleExpanded}
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 text-left
+          ${theme.headerBg} ${expanded ? 'border-b border-[#3a1510]' : ''}
+          hover:brightness-[1.35] focus:outline-none focus-visible:ring-1 focus-visible:ring-[#c8942a]
+          transition-[filter] duration-150 cursor-pointer`}
+      >
         <h3 className={`font-cinzel font-bold text-sm tracking-[0.18em] uppercase ${theme.headerText}`}>
           {name}
         </h3>
-      </div>
+        <span className="flex items-center gap-2.5 flex-shrink-0">
+          <span className="font-cinzel text-[9px] tracking-[0.18em] uppercase text-[#8a807a] hidden sm:inline">
+            {expanded ? 'Hide' : 'Show trees'}
+          </span>
+          <span
+            aria-hidden="true"
+            className={`text-[16px] leading-none ${theme.headerText} transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+          >
+            ▾
+          </span>
+        </span>
+      </button>
 
-      {/* Grey stone background — mimics the in-game skill tree panel */}
-      <div className="p-3 space-y-4 bg-[#222222]">
-        {tabsInScreenOrder.map((tab, tabIdx) => (
-          <div key={tabIdx}>
-            <div className="text-[9px] tracking-[0.15em] text-[#9a9090] uppercase mb-1.5 font-cinzel">
-              Tab {tabIdx + 1} · {tab.sourceClass} / Tree {tab.sourceTree}
-            </div>
-            <div className="grid grid-cols-3 gap-[3px]">
-              {Array.from({ length: 18 }, (_, i) => {
-                const row = Math.floor(i / 3) + 1;
-                const col = (i % 3) + 1;
-                const skill = tab.skills.find(s => s.row === row && s.col === col);
-
-                if (!skill) {
-                  return (
-                    <div key={i} className="h-8 rounded-sm bg-[#181818] border border-[#2e2e2e]" />
-                  );
-                }
-
-                const skillTheme = CLASS_THEME[skill.originalClass] || DEFAULT_THEME;
-
-                return (
-                  <div
-                    key={i}
-                    className="h-8 rounded-sm bg-[#2e2e2e] border border-[#404040] flex items-center px-1.5 gap-1 hover:border-[#606060] transition-colors"
-                    title={`${skill.name} (from ${skill.originalClass}) — Req Lvl ${REQ_LEVEL[skill.row - 1] ?? skill.row}`}
-                  >
-                    <span className={`text-[8px] px-1 py-px rounded-sm flex-shrink-0 font-mono font-bold leading-none ${skillTheme.badge}`}>
-                      {skill.originalClass.charAt(0).toUpperCase()}
-                    </span>
-                    <span className="text-[10px] text-[#d8ccc0] truncate leading-none flex-1">
-                      {skill.name}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+      {/* Dark stone well holding the three trees — mimics the in-game skill window */}
+      {expanded && (
+        <div id={panelId} className="p-3 bg-[#171513] shadow-[inset_0_2px_10px_rgba(0,0,0,0.7)]">
+          {/* Wider gap only from xl, where there's width to spare — at lg the three
+              plates share ~440px and every extra gap pixel comes off the icons. */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-3 xl:gap-4">
+            {tabsInScreenOrder.map((tab, treeIdx) => (
+              // Each tree sits on its own lighter plate so the three read as
+              // separate trees rather than one nine-wide grid. Capped and centred
+              // so the single-column layout shows tidy icons instead of stretched
+              // ones — the cap covers the plate, hence 210px of grid + 12px padding.
+              <div
+                key={treeIdx}
+                className="w-full max-w-[222px] mx-auto p-1.5
+                  bg-[#2b2825] border border-[#3d3833]
+                  shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+              >
+                <div className="mb-1.5 px-0.5 font-cinzel text-[9px] tracking-[0.15em] uppercase text-[#a39a94] truncate">
+                  Random {treeIdx + 1}
+                  {!masked && <span className="text-[#7a716a]"> · {tab.sourceClass} / Tree {tab.sourceTree}</span>}
+                </div>
+                <SkillTreeGrid tab={tab} treeIdx={treeIdx} openId={openId} setOpenId={setOpenId} />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

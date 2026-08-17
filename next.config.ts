@@ -23,6 +23,16 @@ const nextConfig: NextConfig = {
           { key: 'Cache-Control', value: 'no-cache' },
         ],
       },
+      {
+        // Spoiler skill icons. Content-addressed by class + IconCel under a
+        // versioned path, so the bytes behind a URL never change — pin them
+        // forever rather than revalidating 240 tiles on every spoiler expand.
+        // Bump the /v1/ segment (and SKILL_ICON_VERSION) if the tiles change.
+        source: '/skill-icons/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
     ];
   },
 };
