@@ -409,6 +409,14 @@ export async function POST(request: NextRequest) {
 
     // Tab-label overrides for all 7 class skill trees (3 tabs each) + Warcraft.
     // Applied on top of the official skills.json so all skill name keys remain intact.
+    //
+    // SkillCategoryXxN is the Nth tab left-to-right, and the engine sits it over
+    // SkillPage 4-N (vanilla proof: SkillCategoryAm1 = "Javelin and Spear" while
+    // `jab` is SkillPage 3; SkillCategorySo3 = "Fire Spells" while `fire bolt` is
+    // SkillPage 1). So the tab strip reads Random 1/2/3 left-to-right, and the
+    // matching item strings (StrSklTabItem*, keyed by SkillPage via charstats.txt
+    // StrSkillTab1/2/3) must read "Random 4-P" for SkillPage P. Keep the two in
+    // sync or items name the wrong tree.
     const SKILL_CATEGORY_OVERRIDES: { id: number; Key: string; enUS: string }[] = [
       { id: 11193, Key: 'SkillCategoryAm1', enUS: 'Random 1' },
       { id: 11194, Key: 'SkillCategoryAm2', enUS: 'Random 2' },
@@ -431,9 +439,9 @@ export async function POST(request: NextRequest) {
       { id: 11211, Key: 'SkillCategoryAs1', enUS: 'Random 1' },
       { id: 11212, Key: 'SkillCategoryAs2', enUS: 'Random 2' },
       { id: 11213, Key: 'SkillCategoryAs3', enUS: 'Random 3' },
-      { id: 27563, Key: 'SkillCategoryWa1', enUS: 'Random 3' },
+      { id: 27563, Key: 'SkillCategoryWa1', enUS: 'Random 1' },
       { id: 27564, Key: 'SkillCategoryWa2', enUS: 'Random 2' },
-      { id: 27565, Key: 'SkillCategoryWa3', enUS: 'Random 1' },
+      { id: 27565, Key: 'SkillCategoryWa3', enUS: 'Random 3' },
     ];
 
     // Load the full official skills.json, patch the 24 tab-label overrides, and re-serialize.

@@ -30,4 +30,4 @@
  * bump, or players keep being served the cached broken ZIP; their skill layouts
  * are unaffected.
  */
-export const PIPELINE_VERSION = 42;
+export const PIPELINE_VERSION = 43;

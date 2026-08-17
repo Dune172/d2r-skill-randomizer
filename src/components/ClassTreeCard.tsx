@@ -40,6 +40,11 @@ const REQ_LEVEL = [1, 6, 12, 18, 24, 30];
 export default function ClassTreeCard({ code, name, tabs }: ClassTreeCardProps) {
   const theme = CLASS_THEME[code] || DEFAULT_THEME;
 
+  // `tabs` arrives in SkillPage order (1, 2, 3), which is the reverse of how the
+  // game lays the tabs out on screen. Render screen order so this card's "Tab 1"
+  // is the same tab the game labels "Random 1".
+  const tabsInScreenOrder = [...tabs].reverse();
+
   return (
     <div className={`rounded-lg border ${theme.accent} overflow-hidden shadow-lg`}>
       {/* Class header */}
@@ -51,7 +56,7 @@ export default function ClassTreeCard({ code, name, tabs }: ClassTreeCardProps) 
 
       {/* Grey stone background — mimics the in-game skill tree panel */}
       <div className="p-3 space-y-4 bg-[#222222]">
-        {tabs.map((tab, tabIdx) => (
+        {tabsInScreenOrder.map((tab, tabIdx) => (
           <div key={tabIdx}>
             <div className="text-[9px] tracking-[0.15em] text-[#9a9090] uppercase mb-1.5 font-cinzel">
               Tab {tabIdx + 1} · {tab.sourceClass} / Tree {tab.sourceTree}

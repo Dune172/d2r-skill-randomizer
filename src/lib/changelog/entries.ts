@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.259',
+    date: 'August 2026',
+    tagline: 'Skill tree bonuses on items now name the tree they actually boost',
+    notes: [
+      'Fixed items naming the wrong skill tree. An amulet reading "+1 to Random 3" was buffing the tree labelled Random 1 — the item text and the skill window numbered the trees in opposite directions. Random 2 lined up either way, which is why it only looked broken half the time',
+      'Skill tabs are now numbered left to right for every class, so the leftmost tab in the skill window is Random 1',
+      'Your seed still generates exactly the same trees — only the labels changed',
+    ],
+  },
+  {
     version: 'v0.256',
     date: 'July 2026',
     tagline: 'Synergies actually boost your damage now, plus mana, icon and Zeal fixes',
