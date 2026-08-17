@@ -13,23 +13,36 @@ All the app's persistent state lives in one directory: `counter.json`,
 `leaderboard.json`, `traffic-stats.json`, `weekly-announce.json`, and the
 `zip-cache/` directory.
 
-**Set `STATE_DIR` to an absolute path on persistent storage.** It defaults to
-`process.cwd()/..`, which is only correct when the app always runs from the same
-directory. On any host that builds each release into its own directory
-(Hostinger's Node.js hosting does — see `.builds` → `/hbuilds`), cwd moves on
-every deploy, so `..` points somewhere new and the app silently starts from zero
-against empty files while the real data sits orphaned in the old location.
-Nothing errors — the mod counter just resets and the traffic history disappears.
+The directory is resolved in this order:
+
+1. **`STATE_DIR`**, when set — always wins, no guessing. Set it if you can.
+2. **`cwd/..`**, if it already holds state. This is the VPS layout: a checkout at
+   `/var/www/d2rrandomizer` resolves to `/var/www`.
+3. **The account's home directory**, if it already holds state. This covers
+   managed hosting that runs each release from its own build directory
+   (Hostinger's Node.js hosting does — see `.builds` → `/hbuilds`), where cwd
+   moves every deploy but the home directory is stable.
+4. Otherwise `cwd/..`, the historical default for a fresh install.
+
+Steps 2 and 3 only ever *adopt* a directory that already contains state; the app
+never invents a new location, so a fresh install behaves as it always did.
+
+This matters because the failure is silent. When cwd moves and `..` points
+somewhere new, the app starts from zero against empty files while the real data
+sits orphaned in the old location — nothing errors, the mod counter just resets
+and the traffic history disappears.
 
 Confirm it after every deploy; each store logs its resolved path at startup:
 
 ```
-[counter] using /home/uXXXXXXXXX/counter.json · STATE_DIR=/home/uXXXXXXXXX
+[counter] using /home/uXXXXXXXXX/counter.json · /home/uXXXXXXXXX (via home dir of uXXXXXXXXX)
 [traffic-stats] using /home/uXXXXXXXXX/traffic-stats.json
 [leaderboard] using /home/uXXXXXXXXX/leaderboard.json
 ```
 
-A `(STATE_DIR unset; derived from cwd ...)` suffix means it is not pinned.
+The `(via ...)` suffix names which rule matched. `via cwd/.. — no existing state
+found, starting fresh` on a server that should already have data means the app
+is about to start from zero — check the path before it writes.
 
 Per-file overrides (`COUNTER_FILE`, `LEADERBOARD_FILE`, `TRAFFIC_STATS_FILE`,
 `WEEKLY_ANNOUNCE_FILE`, `ZIP_CACHE_DIR`) still take precedence where set.
