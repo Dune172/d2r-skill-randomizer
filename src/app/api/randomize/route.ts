@@ -28,7 +28,7 @@ import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
-import { applyWeeklyMutations, preApplyMagicAffixMutations, isMutationActiveForWeek } from '@/lib/randomizer/mutations';
+import { applyWeeklyMutations, preApplyMagicAffixMutations, isMutationActiveForWeek, getMutationExcludedSkills } from '@/lib/randomizer/mutations';
 import { buildGambleTable } from '@/lib/randomizer/mutations/house-always-wins';
 import { MYSTERY_ICON, applyMysteryStrings, hideSkillDetailLines } from '@/lib/randomizer/mutations/mystery-box';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
@@ -158,7 +158,11 @@ export async function POST(request: NextRequest) {
 
     // Step 5-6: Randomize trees and place skills
     const treeAssignments = randomizeTrees(rng, treePages);
-    const placed = placeSkills(rng, skills, treeAssignments);
+    // Mutation pre-hook: No Guard pulls every defense-granting skill out of the
+    // shuffle pool before placement, so their tree slots get substitutes instead.
+    const mutationExcludedSkills = getMutationExcludedSkills(weekNumber);
+    const placed = placeSkills(rng, skills, treeAssignments,
+      mutationExcludedSkills.size > 0 ? { excludeSkills: mutationExcludedSkills } : undefined);
     const droppedSkillNames = placed.droppedSkillNames;
     let placements = placed.placements;
     let substitutes = placed.substitutes;
@@ -341,11 +345,14 @@ export async function POST(request: NextRequest) {
     // Hireling randomization (aura and/or attack skills, per user options)
     let hirelingTxtContent: string | undefined;
     let assignedHirelingSkills = new Set<string>();
+    // Held across the weekly-mutation step below: Band of Brothers scales the same
+    // rows writeHirelingRows just wrote skill names into, and the file is
+    // re-serialized after mutations run.
+    let hirelingTxtFile: ReturnType<typeof loadTxtFile> | null = null;
     if (hirelingAura) {
-      const hirelingTxtFile = loadTxtFile('hireling.txt');
+      hirelingTxtFile = loadTxtFile('hireling.txt');
       assignedHirelingSkills = writeHirelingRows(hirelingTxtFile.headers, hirelingTxtFile.rows,
         placements, rng, { aura: hirelingAura, skills: false });
-      hirelingTxtContent = serializeTxtFile(hirelingTxtFile.headers, hirelingTxtFile.rows);
 
       // Also collect vanilla attack skills (Mode ∈ {4,7,14}) so they get correct
       // HireableIconCel values in the hireable sprite. Without this, all attack
@@ -648,12 +655,26 @@ export async function POST(request: NextRequest) {
     let experienceTxt: string | undefined;
     let miscTxt: string | undefined;
     let gambleTxt: string | undefined;
+    let levelsTxt: string | undefined;
 
     if (weeklyEnabled) {
       const expSrc = loadTxtFile('experience.txt');
       const armorSrc = loadTxtFile('armor.txt');
       const weaponsSrc = loadTxtFile('weapons.txt');
       const miscSrc = loadTxtFile('misc.txt');
+      // loadTxtFile deep-copies its cache entry on every call, so both of these
+      // are gated on their mutation being active rather than loaded speculatively.
+      const levelsSrc = isMutationActiveForWeek(weekNumber, 'court-of-kings')
+        ? loadTxtFile('levels.txt')
+        : null;
+      // Band of Brothers scales hireling rows. When the hireling-aura option is
+      // off nothing has loaded the file yet, so load it here; when it is on we
+      // reuse the same rows writeHirelingRows already populated. Loading is gated
+      // on the mutation being active so a weekly run without it keeps shipping no
+      // hireling.txt at all, exactly as before.
+      if (!hirelingTxtFile && isMutationActiveForWeek(weekNumber, 'band-of-brothers')) {
+        hirelingTxtFile = loadTxtFile('hireling.txt');
+      }
 
       applyWeeklyMutations(weekNumber, {
         monstats:      monstatsSrc,
@@ -668,6 +689,8 @@ export async function POST(request: NextRequest) {
         uniqueitems:   ui ?? { headers: [], rows: [] },
         magicprefix:   magicPrefixTxt,
         magicsuffix:   magicSuffixTxt,
+        levels:        levelsSrc ?? { headers: [], rows: [] },
+        hireling:      hirelingTxtFile ?? { headers: [], rows: [] },
       });
 
       // Re-serialize charstats (may have been modified by Hyperdrive/Hollow Shell)
@@ -683,6 +706,12 @@ export async function POST(request: NextRequest) {
       weaponsTxt    = serializeTxtFile(weaponsSrc.headers, weaponsSrc.rows);
       experienceTxt = serializeTxtFile(expSrc.headers, expSrc.rows);
       miscTxt       = serializeTxtFile(miscSrc.headers, miscSrc.rows);
+      // Ship levels.txt only when Court of Kings actually rewrote it — it is the
+      // largest table in the set and drives every area's spawn layout, so
+      // round-tripping an untouched copy into the mod is risk without benefit.
+      if (levelsSrc) {
+        levelsTxt = serializeTxtFile(levelsSrc.headers, levelsSrc.rows);
+      }
 
       // House Always Wins: gambling is the only source of weapons/armor, so ship a
       // comprehensive gamble pool (vanilla omits daggers, throwing weapons, class items…).
@@ -692,6 +721,13 @@ export async function POST(request: NextRequest) {
       }
       magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, magicPrefixTxt.rows);
       magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, magicSuffixTxt.rows);
+    }
+
+    // Serialized here rather than at write time so it captures both the hireling
+    // skill randomization above and any Band of Brothers scaling from the weekly
+    // mutation block.
+    if (hirelingTxtFile) {
+      hirelingTxtContent = serializeTxtFile(hirelingTxtFile.headers, hirelingTxtFile.rows);
     }
 
     monstatsTxt     = serializeTxtFile(monstatsSrc.headers, monstatsSrc.rows);
@@ -732,6 +768,7 @@ export async function POST(request: NextRequest) {
       superuniquesTxt,
       itemNamesJson,
       hirelingTxt: hirelingTxtContent,
+      levelsTxt,
       hireableSprite,
       chatPanelJson: disableChat ? formatUiJson(chatPanelRaw) : undefined,
       chatPanelHdJson: disableChat ? formatUiJson(chatPanelHdRaw) : undefined,

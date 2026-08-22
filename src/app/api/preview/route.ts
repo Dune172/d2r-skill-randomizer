@@ -7,6 +7,7 @@ import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { MYSTERY_ICON } from '@/lib/randomizer/mutations/mystery-box';
+import { getMutationExcludedSkills } from '@/lib/randomizer/mutations';
 import { PreviewData, SkillEntry } from '@/lib/randomizer/types';
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +16,10 @@ export async function POST(request: NextRequest) {
     // When the Mystery Box mutation is active, the spoiler must not reveal skills.
     // Mask names/source-class server-side so the real values never leave the server.
     const maskSkills = body.maskSkills === true;
+    // No Guard removes defense skills from the shuffle pool, which changes every
+    // downstream placement. The spoiler must run the same exclusions or it shows
+    // a tree the generated mod will not contain.
+    const weekNumber = Number.isInteger(body.weekNumber) ? Number(body.weekNumber) : 0;
 
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -32,7 +37,9 @@ export async function POST(request: NextRequest) {
 
     // Randomize
     const treeAssignments = randomizeTrees(rng, treePages);
-    const { placements, substitutes } = placeSkills(rng, skills, treeAssignments);
+    const excludeSkills = getMutationExcludedSkills(weekNumber);
+    const { placements, substitutes } = placeSkills(rng, skills, treeAssignments,
+      excludeSkills.size > 0 ? { excludeSkills } : undefined);
     const placementsByClass = groupByClass(placements);
 
     // Resolve in-game (player-facing) display data: skill → skilldesc → str name /

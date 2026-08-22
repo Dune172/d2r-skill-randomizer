@@ -2,7 +2,7 @@
  * Weekly challenge mutation orchestrator.
  * Server-only — imports file I/O via the individual mutation modules.
  */
-import { MUTATIONS, WEEKLY_MUTATIONS, getActiveMutations } from '@/lib/mutations/registry';
+import { MUTATIONS, WEEKLY_MUTATIONS, getActiveMutations, assertNoConflictingMutations } from '@/lib/mutations/registry';
 import { applyHyperdrive } from './hyperdrive';
 import { applyHeavyBurden, injectArmorProcs } from './heavy-burden';
 import { applyHollowShell } from './hollow-shell';
@@ -16,6 +16,10 @@ import { applyDeadReckoning } from './dead-reckoning';
 import { applyTemperedEdge } from './tempered-edge';
 import { applyEntropy } from './entropy';
 import { applyHouseAlwaysWins } from './house-always-wins';
+import { applyMolasses } from './molasses';
+import { applyNoGuard, NO_GUARD_EXCLUDED_SKILLS } from './no-guard';
+import { applyCourtOfKings } from './court-of-kings';
+import { applyBandOfBrothers } from './band-of-brothers';
 import { assertNoFractionalCells } from './util';
 
 export { getActiveMutations };
@@ -37,6 +41,8 @@ export interface MutationContext {
   uniqueitems:   { headers: string[]; rows: string[][] };
   magicprefix:   { headers: string[]; rows: string[][] };
   magicsuffix:   { headers: string[]; rows: string[][] };
+  levels:        { headers: string[]; rows: string[][] };
+  hireling:      { headers: string[]; rows: string[][] };
 }
 
 type ApplyFn = (ctx: MutationContext) => void;
@@ -55,7 +61,35 @@ const APPLY_FNS: Record<number, ApplyFn> = {
   11: applyTitansGrip,
   13: applyDeadReckoning,
   14: applyEntropy,
+  15: applyMolasses,
+  16: applyNoGuard,
+  17: applyCourtOfKings,
+  18: applyBandOfBrothers,
 };
+
+/**
+ * Skills the active mutations remove from the shuffle pool entirely.
+ *
+ * Placement runs long before applyWeeklyMutations — the tree is already built by
+ * the time mutations touch txt data — so this is a PRE-hook, passed straight into
+ * placeSkills(opts.excludeSkills). Excluded skills do not appear in any tree;
+ * their slot is filled by a substitute that keeps the dropped skill's row
+ * identity and borrows another placed skill's mechanics.
+ *
+ * Callers must pass the same set to the preview endpoint, or the spoiler tree
+ * will not match the tree in the generated mod.
+ */
+export function getMutationExcludedSkills(weekNumber: number): Set<string> {
+  const excluded = new Set<string>();
+  if (weekNumber <= 0) return excluded;
+  const ids = WEEKLY_MUTATIONS[(weekNumber - 1) % WEEKLY_MUTATIONS.length];
+  for (const id of ids) {
+    if (MUTATIONS[id]?.id === 'no-guard') {
+      for (const name of NO_GUARD_EXCLUDED_SKILLS) excluded.add(name);
+    }
+  }
+  return excluded;
+}
 
 /**
  * Pre-remap hook: inject magic affix modifications that must be in place
@@ -89,6 +123,7 @@ export function isMutationActiveForWeek(weekNumber: number, mutationId: string):
 /** Apply the active mutations for the given week number to the provided context. */
 export function applyWeeklyMutations(weekNumber: number, ctx: MutationContext): void {
   const ids = WEEKLY_MUTATIONS[(weekNumber - 1) % WEEKLY_MUTATIONS.length];
+  assertNoConflictingMutations(ids);
   for (const id of ids) {
     const fn = APPLY_FNS[id];
     if (fn) fn(ctx);

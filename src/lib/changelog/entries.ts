@@ -12,6 +12,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.261',
+    date: 'August 2026',
+    tagline: 'Four new mutations join the challenge rotation',
+    notes: [
+      'Molasses — every monster moves at half speed, but every blow they land hits twice as hard. Your own speed is untouched, so there is room to kite if you can make it count',
+      'No Guard — armour provides no defence at all, and every defence-granting skill is pulled out of the skill trees and replaced with something else. Resistances and blocking are all that is left between you and the floor',
+      'Court of Kings — three times as many champion and unique packs roam every area, with a third fewer common monsters between them. Almost everything you meet has a title and an aura to match',
+      'Band of Brothers — your hireling is the hero of the run: far tougher, far deadlier, and casting at much higher skill levels. In exchange you gain a quarter less life per point of vitality, so your place is behind them',
+      'Each of the four has its own icon on the challenge page, matching the rest of the set',
+      'Some mutation pairings can no longer turn up in the same challenge. A few combinations either cancelled each other out or stacked into something unplayable',
+    ],
+  },
+  {
     version: 'v0.260',
     date: 'August 2026',
     tagline: 'The seed spoiler now shows the real skill icons, with tooltips',

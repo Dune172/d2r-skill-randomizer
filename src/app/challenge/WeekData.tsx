@@ -125,14 +125,14 @@ export function WeekCard() {
     fetch('/api/preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seed: currentSeed, maskSkills: mysteryActive }),
+      body: JSON.stringify({ seed: currentSeed, maskSkills: mysteryActive, weekNumber }),
     })
       .then(async r => {
         if (!ignore && r.ok) setPreview(await r.json() as PreviewData);
       })
       .catch(() => {});
     return () => { ignore = true; };
-  }, [currentSeed, mysteryActive]);
+  }, [currentSeed, mysteryActive, weekNumber]);
 
   return (
     <>

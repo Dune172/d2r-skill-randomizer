@@ -114,7 +114,89 @@ export const MUTATIONS: Record<number, MutationDef> = {
     description:
       'All equipment degrades four times as fast and costs ten times as much to repair. Keep your gold and your whetstone ready.',
   },
+  15: {
+    id: 'molasses',
+    name: 'Molasses',
+    emoji: '🐌',
+    description:
+      'Every monster moves at half speed, and every blow they land hits twice as hard. ' +
+      'Your own speed is untouched — there is room to kite, if you can make it count.',
+  },
+  16: {
+    id: 'no-guard',
+    name: 'No Guard',
+    emoji: '🛡️',
+    description:
+      'Armor provides no defense at all, and every defense-granting skill has been ' +
+      'struck from the skill trees — replaced by something else entirely. Resistances ' +
+      'and blocking are all that stand between you and the floor.',
+  },
+  17: {
+    id: 'court-of-kings',
+    name: 'Court of Kings',
+    emoji: '👑',
+    description:
+      'Three times as many champion and unique packs roam every area, with a third ' +
+      'fewer common monsters between them. Almost everything you meet has a title ' +
+      'and an aura to match.',
+  },
+  18: {
+    id: 'band-of-brothers',
+    name: 'Band of Brothers',
+    emoji: '🤝',
+    description:
+      'Your hireling is the hero of this run — far tougher, far deadlier, and casting ' +
+      'at much higher skill levels. You gain markedly less life per point of vitality, ' +
+      'so your place is behind them.',
+  },
 };
+
+/**
+ * Mutation id pairs that must never share a rotation slot.
+ *
+ * APPLY_FNS runs mutations in sequence with no conflict guard, so two mutations
+ * writing the same cells silently resolve as last-write-wins (or compound, for
+ * multiplicative scalers). Others conflict at the design level rather than the
+ * data level — a mutation that removes weapon drops guts one that makes the
+ * hireling the damage dealer.
+ *
+ * Enforced by assertNoConflictingMutations(), called from applyWeeklyMutations.
+ */
+export const EXCLUSIVE_MUTATION_PAIRS: ReadonlyArray<readonly [number, number]> = [
+  // Molasses halves monster speed, Hyperdrive multiplies it by 1.5 — same columns,
+  // opposite intent, and the result depends purely on APPLY_FNS ordering.
+  [15, 1],
+  // Both scale the monstats damage pairs. Stacked they compound to 4x minimum
+  // damage, against Glass Cannon's already-halved monster HP.
+  [15, 6],
+  // Heavy Burden multiplies armor defense by 1.5; No Guard zeroes it. Whichever
+  // runs second wins outright.
+  [16, 2],
+  // Both scale charstats LifePerVitality (Hollow Shell to 1/3, Band of Brothers
+  // to 3/4). Stacked they compound to a quarter of vanilla.
+  [18, 3],
+  // House Always Wins removes all weapon drops, leaving the hero hireling with
+  // nothing to swing.
+  [18, 9],
+];
+
+/**
+ * Throws if the given mutation ids contain a pair that must not run together.
+ * Rotation slots are authored by hand, so this is a guard against a bad edit to
+ * WEEKLY_MUTATIONS rather than a runtime condition.
+ */
+export function assertNoConflictingMutations(ids: readonly number[]): void {
+  const active = new Set(ids);
+  for (const [a, b] of EXCLUSIVE_MUTATION_PAIRS) {
+    if (!active.has(a) || !active.has(b)) continue;
+    const nameA = MUTATIONS[a]?.name ?? `#${a}`;
+    const nameB = MUTATIONS[b]?.name ?? `#${b}`;
+    throw new Error(
+      `Conflicting mutations in the same slot: "${nameA}" and "${nameB}" ` +
+      `cannot run together (see EXCLUSIVE_MUTATION_PAIRS in mutations/registry.ts).`,
+    );
+  }
+}
 
 /**
  * 31-slot rotation schedule. Slot i is used on week (weekNumber % 31).
@@ -123,6 +205,8 @@ export const MUTATIONS: Record<number, MutationDef> = {
  * third mutation for future challenges.
  */
 export const WEEKLY_MUTATIONS: number[][] = [
+  // ── Slots 0-11: already played (challenges 1-12). Frozen — the archive page
+  // renders past challenges from these, so editing one rewrites history.
   [5, 7],       // 0
   [8, 13],      // 1
   [1, 6],       // 2
@@ -135,25 +219,27 @@ export const WEEKLY_MUTATIONS: number[][] = [
   [9, 3, 14],   // 9
   [3, 13, 8],   // 10
   [14, 7, 2],   // 11
-  [9, 13, 12],  // 12
-  [1, 5, 6],    // 13
-  [4, 13, 6],   // 14
-  [3, 6, 1],    // 15
-  [1, 13, 5],   // 16
-  [2, 5, 10],   // 17
-  [6, 13, 14],  // 18
-  [4, 14, 7],   // 19
-  [6, 7, 1],    // 20
-  [1, 3, 6],    // 21
-  [2, 7, 14],   // 22
-  [9, 5, 12],   // 23
-  [5, 11, 2],   // 24
-  [2, 10, 11],  // 25
-  [11, 13, 2],  // 26
-  [10, 5, 11],  // 27
-  [14, 4, 10],  // 28
-  [10, 8, 11],  // 29
-  [1, 4, 6],    // 30
+  // ── Slots 12+: upcoming. Every slot is validated by scripts/verify-new-mutations.mjs
+  // for exclusion-pair conflicts, duplicate combos, and mutation-usage balance.
+  [16, 11, 13], // 12
+  [18, 17, 10], // 13
+  [16, 8, 12],  // 14
+  [15, 10, 11], // 15
+  [18, 5, 6],   // 16
+  [4, 15, 7],   // 17
+  [16, 6, 14],  // 18
+  [15, 5, 9],   // 19
+  [17, 1, 14],  // 20
+  [18, 4, 10],  // 21
+  [16, 3, 8],   // 22
+  [17, 11, 2],  // 23
+  [1, 4, 12],   // 24
+  [16, 5, 10],  // 25
+  [18, 14, 1],  // 26
+  [17, 6, 3],   // 27
+  [15, 9, 2],   // 28
+  [18, 12, 6],  // 29
+  [17, 4, 8],   // 30
 ];
 
 /**
@@ -173,25 +259,25 @@ export const WEEK_NAMES: string[] = [
   "Fool's Gold",         // 9  House Always Wins + Hollow Shell + Entropy
   'Running on Fumes',    // 10 Hollow Shell + Dead Reckoning + Arcane Surge
   'Rust and Rot',        // 11 Entropy + Pestilence + Heavy Burden
-  'Jackpot',             // 12 House Always Wins + Dead Reckoning + Mystery Box
-  'The Stampede',        // 13 Hyperdrive + The Horde + Glass Cannon
-  'Pyrrhic Victory',     // 14 Bloodthirst + Dead Reckoning + Glass Cannon
-  'Fragile Fury',        // 15 Hollow Shell + Glass Cannon + Hyperdrive
-  'Race to the Bottom',  // 16 Hyperdrive + Dead Reckoning + The Horde
-  'March of the Fallen', // 17 Heavy Burden + The Horde + Tempered Edge
-  'Brittle Fortune',     // 18 Glass Cannon + Dead Reckoning + Entropy
-  'Gnawing Rust',        // 19 Bloodthirst + Entropy + Pestilence
-  'Shattered Venom',     // 20 Glass Cannon + Pestilence + Hyperdrive
-  'Fragile Flash',       // 21 Hyperdrive + Hollow Shell + Glass Cannon
-  'Poisoned Chains',     // 22 Heavy Burden + Pestilence + Entropy
-  'Penny Slots',         // 23 House Always Wins + The Horde + Mystery Box
-  'Iron Tide',           // 24 The Horde + Titan's Grip + Heavy Burden
-  'Iron Will',           // 25 Heavy Burden + Tempered Edge + Titan's Grip
-  'The Long March',      // 26 Titan's Grip + Dead Reckoning + Heavy Burden
-  'Fortress Siege',      // 27 Tempered Edge + The Horde + Titan's Grip
-  'The Corrosion',       // 28 Entropy + Bloodthirst + Tempered Edge
-  'Spell and Steel',     // 29 Tempered Edge + Arcane Surge + Titan's Grip
-  'Blood Rush',          // 30 Hyperdrive + Bloodthirst + Glass Cannon
+  'All In',              // 12 No Guard + Titan's Grip + Dead Reckoning
+  'The Vanguard',        // 13 Band of Brothers + Court of Kings + Tempered Edge
+  'Blind Faith',         // 14 No Guard + Arcane Surge + Mystery Box
+  'Dead Weight',         // 15 Molasses + Tempered Edge + Titan's Grip
+  'Shield Wall',         // 16 Band of Brothers + The Horde + Glass Cannon
+  'The Long Rot',        // 17 Bloodthirst + Molasses + Pestilence
+  'Ruin',                // 18 No Guard + Glass Cannon + Entropy
+  'Slow Fortune',        // 19 Molasses + The Horde + House Always Wins
+  'The Warband',         // 20 Court of Kings + Hyperdrive + Entropy
+  'Old Guard',           // 21 Band of Brothers + Bloodthirst + Tempered Edge
+  'Thin Veil',           // 22 No Guard + Hollow Shell + Arcane Surge
+  'Iron Court',          // 23 Court of Kings + Titan's Grip + Heavy Burden
+  'Fever Dream',         // 24 Hyperdrive + Bloodthirst + Mystery Box
+  'Bare Bones',          // 25 No Guard + The Horde + Tempered Edge
+  'Hard March',          // 26 Band of Brothers + Entropy + Hyperdrive
+  'Crown of Thorns',     // 27 Court of Kings + Glass Cannon + Hollow Shell
+  "Beggar's Iron",       // 28 Molasses + House Always Wins + Heavy Burden
+  'Sworn Sword',         // 29 Band of Brothers + Mystery Box + Glass Cannon
+  'Royal Blood',         // 30 Court of Kings + Bloodthirst + Arcane Surge
 ];
 
 /** Return the active MutationDefs for the given week number (1-based); 2 or 3. */
