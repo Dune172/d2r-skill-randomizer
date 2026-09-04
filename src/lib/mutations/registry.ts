@@ -98,7 +98,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: "Titan's Grip",
     emoji: '🌀',
     description:
-      'All weapon strength and dexterity requirements are increased by 50%. Weapons with stat requirements deal twice as much damage. Magic weapon affixes gain chance-to-cast procs drawn from a wide skill pool, existing proc chances are doubled, and proc skill level scales with item level.',
+      'All weapon strength and dexterity requirements are increased by 30%. Weapons with stat requirements deal twice as much damage. Magic weapon affixes gain chance-to-cast procs drawn from a wide skill pool, existing proc chances are doubled, and proc skill level scales with item level.',
   },
   13: {
     id: 'dead-reckoning',
@@ -127,9 +127,10 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'No Guard',
     emoji: '🛡️',
     description:
-      'Armor provides no defense at all, and every defense-granting skill has been ' +
-      'struck from the skill trees — replaced by something else entirely. Resistances ' +
-      'and blocking are all that stand between you and the floor.',
+      'Nobody has defense. Armor provides none, every defense-granting skill has been ' +
+      'struck from the skill trees — replaced by something else entirely — and every ' +
+      'enemy stands there with zero defense of their own. Resistances and blocking are ' +
+      'all that stand between you and the floor.',
   },
   17: {
     id: 'court-of-kings',

@@ -12,6 +12,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.262',
+    date: 'September 2026',
+    tagline: "No Guard strips enemy defence too, and Titan's Grip asks for less strength",
+    notes: [
+      'No Guard now sets monster defence to zero as well as yours. Taking away all of your armour and every defensive skill while enemies kept their full defence left you missing a lot of swings on top of it — now nobody on the field has defence, and the danger is how hard the hits that do land on you hit',
+      'Your own side keeps its defence under No Guard — hirelings, golems, skeletons, Valkyries and the rest are untouched, so a summoner is not left with a wall of paper',
+      'Being underlevelled still costs you accuracy under No Guard. Chance to hit also depends on the gap between your level and the monster’s, so a character fighting well above its level will keep missing even against an enemy with no defence at all',
+      "Titan's Grip now raises weapon strength and dexterity requirements by 30% instead of 50%. At 50% the best bases sat out of reach for so long that the doubled damage they carry rarely got used — a Colossus Blade now asks 246 strength instead of 284, and the requirement still costs you real stat points",
+      'Both changes affect any challenge running No Guard or Titan’s Grip. Skill trees are untouched, so a seed still generates exactly the same trees — only the monster and weapon numbers changed. Re-download the mod for the current challenge to pick them up',
+    ],
+  },
+  {
     version: 'v0.261',
     date: 'August 2026',
     tagline: 'Four new mutations join the challenge rotation',

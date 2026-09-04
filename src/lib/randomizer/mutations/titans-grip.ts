@@ -1,7 +1,11 @@
 import type { MutationContext } from './index';
 import { INJECTED_PROC_PARAM } from '../item-skills-writer';
 
-const REQ_MULT = 1.5;
+// +30%, not +50%. Weapon requirements are far tighter than armor's: an elite
+// weapon already asks for most of a melee character's stat budget, and at 1.5x
+// the good bases sat out of reach for so long that the ×2 damage they carry
+// never got used. 1.3x still costs real stat points without gating the base.
+const REQ_MULT = 1.3;
 const DMG_MULT = 2.0;
 const PROC_CHANCE_CAP = 100;
 

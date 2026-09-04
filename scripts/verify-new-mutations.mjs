@@ -138,7 +138,13 @@ console.log('\nNo Guard');
   const minI = col(armor, 'minac');
   const blockI = col(armor, 'block');
 
-  applyNoGuard({ armor });
+  const monstats = loadTxt('monstats.txt');
+  const monBefore = monstats.rows.map(r => [...r]);
+  const acI = col(monstats, 'AC');
+  const acHI = col(monstats, 'AC(H)');
+  const tcI = col(monstats, 'TreasureClass');
+
+  applyNoGuard({ armor, monstats });
 
   const hadDefense = before.filter(r => r[0] && num(r[minI]) > 0).length;
   const stillHas = armor.rows.filter(r => r[0] && num(r[minI]) > 0).length;
@@ -146,6 +152,25 @@ console.log('\nNo Guard');
     hadDefense + ' rows had defense, ' + stillHas + ' remain');
 
   check('block values untouched', armor.rows.every((r, i) => r[blockI] === before[i][blockI]));
+
+  const actMon = monstats.rows
+    .map((r, i) => i)
+    .filter(i => /^Act (\d)/.test(monBefore[i][tcI] ?? ''));
+  // A handful of rows ship a blank AC cell, which the game reads as 0 — the
+  // mutation leaves those alone, so treat blank as already zeroed.
+  const zeroAc = (v) => (num(v) ?? 0) === 0;
+  check('act monsters lose all defense',
+    actMon.every(i => zeroAc(monstats.rows[i][acI]) && zeroAc(monstats.rows[i][acHI])),
+    actMon.length + ' act-treasure-class monsters checked');
+
+  const acChanged = monstats.rows.filter((r, i) => r[acI] !== monBefore[i][acI]).length;
+  check('act guard limited the blast radius', acChanged > 100 && acChanged < monstats.rows.length,
+    acChanged + ' of ' + monstats.rows.length + ' rows had AC changed');
+
+  const golem = monstats.rows.findIndex(r => r[0] === 'bloodgolem');
+  check('player summons keep their defense',
+    golem === -1 || monstats.rows[golem][acI] === monBefore[golem][acI],
+    golem === -1 ? 'bloodgolem row not found' : 'bloodgolem AC ' + monstats.rows[golem][acI]);
 
   const skills = loadTxt('skills.txt');
   const names = new Set(skills.rows.map(r => r[0]));

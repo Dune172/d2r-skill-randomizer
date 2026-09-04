@@ -1,18 +1,25 @@
 import type { MutationContext } from './index';
+import { BOSS_ACTS, ACT_RE, TC_COL } from '../players-scaler';
 
 /**
- * No Guard — armor is a stat tax, not protection.
+ * No Guard — nobody has defense. Not you, not them.
  *
- * Every piece of armor gives zero defense, and no skill anywhere in the game
- * grants defense either: the seven defense-granting skills are pulled from the
- * shuffle pool entirely (see NO_GUARD_EXCLUDED_SKILLS) and their tree slots are
- * filled by substitutes, the same machinery "Remove Teleport" uses. Resistances
- * and block are untouched and become the only mitigation in the game.
+ * Every piece of armor gives zero defense, no skill anywhere in the game grants
+ * defense either (the seven defense-granting skills are pulled from the shuffle
+ * pool entirely — see NO_GUARD_EXCLUDED_SKILLS — and their tree slots are filled
+ * by substitutes, the same machinery "Remove Teleport" uses), and every enemy's
+ * AC is zeroed as well. Resistances and block are the only mitigation left.
  *
- * Monster defense is deliberately LEFT ALONE. Zeroing it would mean the player
- * always hits at the 95% cap, which is a large buff to attack-rating-starved
- * melee builds — the mutation would read as easier than vanilla for much of the
- * roster. The interesting half is the player losing defense, not monsters losing it.
+ * Monster AC was originally left at vanilla, on the theory that zeroing it reads
+ * as a buff: with defense 0 the to-hit roll collapses to the level term, so a
+ * character at or above the monster's level hits at the 95% cap. Play testing
+ * says the opposite — a run with no armor defense AND vanilla monster AC is just
+ * losing, and missing on top of it makes the week read as punishment rather than
+ * as a rule. Zeroing both sides is the rule the name promises, and the player
+ * still eats every hit that lands, which is where the difficulty actually lives.
+ *
+ * Note the level term survives: 2×alvl/(alvl+dlvl) still applies, so an
+ * underlevelled character misses plenty even against AC 0.
  *
  * Skills are excluded rather than nerfed because a shuffled tree makes "did you
  * happen to roll a defense skill" pure luck: nerfing leaves the asymmetry in
@@ -20,6 +27,11 @@ import type { MutationContext } from './index';
  */
 
 const AC_COLS = ['minac', 'maxac'];
+
+// Monster AC per difficulty. monlvl.txt scales these by a percentage, so a base
+// of 0 stays 0 in Nightmare and Hell; unique/champion AC bonuses are multipliers
+// on the same base and collapse the same way.
+const MONSTER_AC_COLS = ['AC', 'AC(N)', 'AC(H)'];
 
 /**
  * Skills whose primary effect is granting defense (AC). Excluded from placement
@@ -54,11 +66,30 @@ export const NO_GUARD_EXCLUDED_SKILLS: ReadonlySet<string> = new Set([
 export function applyNoGuard(ctx: MutationContext): void {
   const { headers: ah, rows: ar } = ctx.armor;
   const acIdxs = AC_COLS.map(c => ah.indexOf(c)).filter(i => i !== -1);
-  if (acIdxs.length === 0) return;
 
   for (const row of ar) {
     if (!row[0]) continue;
     for (const idx of acIdxs) {
+      const val = parseInt(row[idx], 10);
+      if (isNaN(val) || val === 0) continue;
+      row[idx] = '0';
+    }
+  }
+
+  const { headers: mh, rows: mr } = ctx.monstats;
+  const tcIdx = mh.indexOf(TC_COL);
+  const monAcIdxs = MONSTER_AC_COLS.map(c => mh.indexOf(c)).filter(i => i !== -1);
+
+  for (const row of mr) {
+    const id = row[0];
+    if (!id) continue;
+
+    // Skip player summons, hirelings, traps, and map objects — same guard as
+    // players-scaler. The player's own minions keep their defense.
+    const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
+    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS)) continue;
+
+    for (const idx of monAcIdxs) {
       const val = parseInt(row[idx], 10);
       if (isNaN(val) || val === 0) continue;
       row[idx] = '0';
