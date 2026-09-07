@@ -4,7 +4,8 @@ import path from 'path';
 
 /**
  * Where the app's persistent state lives: counter.json, leaderboard.json,
- * traffic-stats.json, weekly-announce.json and the zip-cache directory.
+ * traffic-stats.json, weekly-announce.json (plus its per-challenge
+ * `.week-<n>.lock` claim files) and the zip-cache directory.
  *
  * These all used to resolve as `process.cwd()/..` independently. That works on a
  * fixed deploy path (a VPS checkout at /var/www/d2rrandomizer resolves to
