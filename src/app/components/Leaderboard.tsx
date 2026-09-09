@@ -55,7 +55,15 @@ export function Leaderboard({ weekNumber, difficulty = 'normal', entries: prop, 
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch(`/api/leaderboard?week=${weekNumber}&difficulty=${difficulty}`, { cache: 'no-store' })
+    // Plain loads ride the 30s edge cache the route now sets, which keeps
+    // routine reads off the origin entirely. refreshKey only advances after
+    // this visitor submits a run, and they need to see their own entry
+    // immediately — so that case alone busts the cache.
+    const justSubmitted = refreshKey > 0;
+    const url =
+      `/api/leaderboard?week=${weekNumber}&difficulty=${difficulty}` +
+      (justSubmitted ? `&t=${Date.now()}` : '');
+    fetch(url, justSubmitted ? { cache: 'no-store' } : undefined)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();

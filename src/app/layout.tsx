@@ -54,10 +54,25 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} ${cinzel.variable} antialiased min-h-screen flex flex-col`}>
+        {/* Stale-chunk recovery. A deploy replaces every content-hashed chunk, so
+            a tab still holding pre-deploy HTML fails its next chunk fetch;
+            reloading picks up the new HTML.
+
+            The retry has to back off. These same handlers fire when the origin is
+            refusing requests rather than when a deploy happened — the chunk fetch
+            fails either way — and an instant location.reload() then turns a
+            struggling server into a reload storm: every affected tab retrying at
+            once, which is precisely what an origin already shedding load cannot
+            absorb. It is a feedback loop, not a recovery. Bounded attempts with
+            exponential delay and jitter spread the herd instead. The counter is
+            shared with app/error.tsx so the two handlers can't stack their
+            retries on top of each other. */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){
   function maybeReload(){
-    var n=parseInt(sessionStorage.getItem('_cr')||'0');
-    if(n<3){sessionStorage.setItem('_cr',String(n+1));location.reload();}
+    var n=parseInt(sessionStorage.getItem('_cr')||'0',10)||0;
+    if(n>=2)return;
+    sessionStorage.setItem('_cr',String(n+1));
+    setTimeout(function(){location.reload();},1000*Math.pow(2,n)+Math.random()*2000);
   }
   window.addEventListener('error',function(e){
     if(e.error&&e.error.name==='ChunkLoadError'){maybeReload();}

@@ -9,6 +9,27 @@ import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { MYSTERY_ICON } from '@/lib/randomizer/mutations/mystery-box';
 import { getMutationExcludedSkills } from '@/lib/randomizer/mutations';
 import { PreviewData, SkillEntry } from '@/lib/randomizer/types';
+
+// A preview is a pure function of (seed, maskSkills, weekNumber): same inputs,
+// same tree assignments, same placements, byte for byte. Without this cache the
+// route re-ran a full 8-class randomization — tree shuffle, skill placement,
+// skilldesc/string resolution — on EVERY request, and the challenge page fires
+// it on mount for the current week's seed. So every visitor paid for an
+// identical computation that stays identical for the whole 14-day cycle. On a
+// 2-vCPU box that is what saturates the process and gets requests shed at the
+// proxy with a 429. Now the first visitor of the cycle computes it and everyone
+// after that gets a map lookup.
+//
+// Cached as the serialized body so repeat hits skip JSON.stringify too. Entries
+// run ~200 KB, so the cap holds this well under 10 MB; Map's insertion order is
+// the eviction queue.
+const PREVIEW_CACHE_MAX = 32;
+const previewCache = new Map<string, string>();
+
+function previewJsonResponse(json: string): NextResponse {
+  return new NextResponse(json, { headers: { 'content-type': 'application/json' } });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -29,6 +50,10 @@ export async function POST(request: NextRequest) {
     const seed = (typeof seedInput === 'number' || (typeof seedInput === 'string' && !isNaN(numericSeed) && Number.isInteger(numericSeed)))
       ? Math.trunc(numericSeed)
       : seedFromString(String(seedInput));
+    const cacheKey = `${seed}|${maskSkills ? 1 : 0}|${weekNumber}`;
+    const cached = previewCache.get(cacheKey);
+    if (cached !== undefined) return previewJsonResponse(cached);
+
     const rng = createRNG(seed);
 
     // Load data
@@ -127,7 +152,13 @@ export async function POST(request: NextRequest) {
       })),
     };
 
-    return NextResponse.json(preview);
+    const json = JSON.stringify(preview);
+    if (previewCache.size >= PREVIEW_CACHE_MAX) {
+      const oldest = previewCache.keys().next().value;
+      if (oldest !== undefined) previewCache.delete(oldest);
+    }
+    previewCache.set(cacheKey, json);
+    return previewJsonResponse(json);
   } catch (error) {
     console.error('Preview error:', error);
     return NextResponse.json(

@@ -39,8 +39,20 @@ export async function GET(request: NextRequest) {
   const entries = getEntries(weekNumber, difficulty).map(stripIp);
   return NextResponse.json(
     { weekNumber, difficulty, entries },
-    // Open CORS: public read-only data; lets the marketing dashboard poll it.
-    { headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' } },
+    {
+      headers: {
+        // Public read-only data that only changes when someone submits a run.
+        // This was 'no-store', so the two Leaderboard components on the
+        // challenge page (normal + hell) each sent an uncacheable request to
+        // the origin on every page view. A 30s edge cache collapses that to
+        // about one origin hit per half-minute however many people are reading.
+        // A visitor who just submitted bypasses it — see
+        // src/app/components/Leaderboard.tsx.
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
+        // Open CORS: public read-only data; lets the marketing dashboard poll it.
+        'Access-Control-Allow-Origin': '*',
+      },
+    },
   );
 }
 
