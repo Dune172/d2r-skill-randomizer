@@ -2,7 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CHANGELOG } from '@/lib/changelog/entries';
 
-export const dynamic = 'force-static';
+// Not force-static: Next emits Cache-Control s-maxage=31536000 for those, so
+// Cloudflare pins the page at the edge for a YEAR and deploys never reach
+// anyone without a manual CDN purge. Worse, year-old HTML keeps referencing
+// content-hashed chunk filenames that no longer exist on the server, which is
+// the stale-chunk 404 those reload handlers were papering over. Short ISR gives
+// the same near-zero origin cost with an edge TTL that actually turns over.
+export const revalidate = 60;
 
 const description = 'Version history and patch notes for D2R Randomizer — free skill randomizer mod for Diablo 2 Resurrected.';
 

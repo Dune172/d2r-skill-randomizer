@@ -71,18 +71,24 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
   };
 }
 
-export default function RandomizerApp() {
+export default function RandomizerApp({ initialModCount }: { initialModCount?: number } = {}) {
   const searchParams = useSearchParams();
 
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentSeed, setCurrentSeed] = useState<number | null>(null);
-  const [modCount, setModCount] = useState<number | null>(null);
+  const [modCount, setModCount] = useState<number | null>(initialModCount ?? null);
 
   useEffect(() => {
+    // Rendered into the page by app/generate/page.tsx. Cloudflare does not cache
+    // /api/*, so fetching it here cost an origin hit per page view for a single
+    // integer nobody can tell is a minute stale. The refetch after a successful
+    // build (below) still runs — that one is worth a request, since the visitor
+    // just moved the number themselves.
+    if (initialModCount !== undefined) return;
     fetch('/api/counter').then(r => r.json()).then(d => setModCount(d.count)).catch(() => {});
-  }, []);
+  }, [initialModCount]);
   const [currentOptions, setCurrentOptions] = useState<Options>(
     () => parseOptionsFromParams(searchParams) ?? { ...defaultOptions }
   );

@@ -1,8 +1,14 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import RandomizerApp from '@/app/components/RandomizerApp';
+import { getCount } from '@/lib/counter';
 
-export const dynamic = 'force-static';
+// 60s ISR rather than force-static so the mod counter can be rendered into the
+// HTML. force-static shipped a page with no count in it, so every visitor's
+// browser fetched /api/counter to fill it in — and Cloudflare never caches
+// /api/*, making that an origin hit per view. The HTML is edge-cached; the
+// count is not.
+export const revalidate = 60;
 
 
 export const metadata: Metadata = {
@@ -37,7 +43,7 @@ export default function GeneratePage() {
       </div>
 
       <Suspense>
-        <RandomizerApp />
+        <RandomizerApp initialModCount={getCount()} />
       </Suspense>
     </main>
   );
