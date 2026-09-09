@@ -18,9 +18,13 @@ const CACHE_META_KEY = '__d2r_zip_cache_meta__';
 const DISK_INDEX_KEY = '__d2r_zip_cache_disk_index__';
 const BOOT_KEY = '__d2r_zip_cache_booted__';
 
-// Memory (hot) tier — optimized for RAM footprint on the VPS.
-const MAX_ENTRIES_MEM = 200;
-const MAX_BYTES_MEM = 500 * 1024 * 1024;
+// Memory (hot) tier. 500 MB was sized for a VPS with room to spare; on the
+// managed plan the process already sits near its ceiling with the sprite
+// buffers alone, so a hot tier that large is a licence to get OOM-killed. The
+// disk tier below is the authoritative store — evicting from memory costs a
+// file read, not a regeneration.
+const MAX_ENTRIES_MEM = 24;
+const MAX_BYTES_MEM = 64 * 1024 * 1024;
 
 // Disk (cold) tier — authoritative store. ~3GB fits thousands of ZIPs on
 // a VPS without threatening filesystem headroom.

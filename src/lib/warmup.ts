@@ -77,19 +77,21 @@ export function warmStatic(): void {
         try { loadTxtFile(f); } catch { /* missing optional files are fine */ }
       }
 
-      // Sprite buffers — static D2R assets, ~126 MB total across 8 classes.
+      // Sprite buffers — static D2R assets. Only the mkb set (~126 MB) is
+      // preloaded. The controller set is another ~185 MB and preloading it took
+      // resident memory to ~490 MB at idle, before serving a single request;
+      // loadSprite() memoizes on first use, so controller trees still cache,
+      // they just cache for the people who actually ask for them. Cutting this
+      // is the difference between sitting on the edge of the memory ceiling and
+      // having headroom for a zip build.
       const { loadSprite } = await import('./sprites/tree-stitcher');
       const CLASS_PREFIXES = ['am', 'so', 'ne', 'pa', 'ba', 'dr', 'as', 'wa'];
       const SPRITES_DIR = path.join(process.cwd(), 'data', 'sprites', 'skill_trees');
-      const CONTROLLER_DIR = path.join(process.cwd(), 'data', 'sprites', 'skill_trees_controller');
       for (const prefix of CLASS_PREFIXES) {
         for (const suffix of ['.sprite', '.lowend.sprite']) {
           const name = `${prefix}skilltree${suffix}`;
           if (fs.existsSync(path.join(SPRITES_DIR, name))) {
             try { loadSprite(name, 'mkb'); } catch { /* ignore */ }
-          }
-          if (fs.existsSync(path.join(CONTROLLER_DIR, name))) {
-            try { loadSprite(name, 'controller'); } catch { /* ignore */ }
           }
         }
       }
@@ -103,11 +105,22 @@ export function warmStatic(): void {
       const elapsed = Date.now() - startedAt;
       console.log(`[warmup] static data + sprites warmed in ${elapsed}ms`);
 
-      // Fire-and-forget: pre-generate the current week's challenge ZIP with
-      // default options. This is the single hottest cache key on the site
-      // (everyone clicking "Try this week's challenge" from the homepage hits
-      // it), so warming it makes the first real user's download instant.
-      void warmWeeklyChallenge();
+      // Pre-generating the weekly ZIP makes the first download instant, but it
+      // is a full mod build — randomizer, sharp compositing, a ~47 MB zip held
+      // in memory — run at boot, on top of the sprite buffers just loaded. On a
+      // constrained box that is the most expensive thing the process ever does
+      // and it does it before serving anyone. Worse, if it pushes the process
+      // past its memory ceiling the supervisor kills it, and the restart runs
+      // the same warmup again: a boot loop that never serves a request, which
+      // presents from outside as the host 429ing every request.
+      //
+      // Off unless WARM_WEEKLY_CHALLENGE=1 is set. Turn it on only once the
+      // plan's memory limit is known to have room for it.
+      if (process.env.WARM_WEEKLY_CHALLENGE === '1') {
+        void warmWeeklyChallenge();
+      } else {
+        console.log('[warmup] weekly pre-gen disabled (set WARM_WEEKLY_CHALLENGE=1 to enable)');
+      }
     } catch (err) {
       console.warn('[warmup] failed to complete:', err);
     }
