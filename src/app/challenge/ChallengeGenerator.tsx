@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import ProgressIndicator from '@/components/ProgressIndicator';
+import { generateMod } from '@/lib/generate-mod';
 
 // Season Beta Race preset — same settings as the randomizer's season1race preset
 export const SEASON1_OPTIONS = {
@@ -67,19 +68,11 @@ export function ChallengeGenerator({
     const buildingStart = Date.now();
 
     try {
-      const res = await fetch('/api/randomize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          seed,
-          ...SEASON1_OPTIONS,
-          weeklyChallenge: weekOverride ? { enabled: true, weekOverride } : { enabled: true },
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Generation failed');
-      }
+      await generateMod(JSON.stringify({
+        seed,
+        ...SEASON1_OPTIONS,
+        weeklyChallenge: weekOverride ? { enabled: true, weekOverride } : { enabled: true },
+      }), setErrorMsg);
       const elapsed = Date.now() - buildingStart;
       if (elapsed < 6000) await new Promise(r => setTimeout(r, 6000 - elapsed));
       setStatus('ready');

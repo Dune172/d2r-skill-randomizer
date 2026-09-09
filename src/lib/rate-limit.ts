@@ -77,13 +77,14 @@ export function checkRateLimit(
 export function rateLimitResponse(retryAfter: number, message?: string) {
   return NextResponse.json(
     {
+      retryAfter,
       error:
         message ??
         'Too many requests — please slow down and try again in a moment.',
     },
     {
       status: 429,
-      headers: { 'Retry-After': String(retryAfter) },
+      headers: { 'Retry-After': String(retryAfter), 'Cache-Control': 'no-store' },
     },
   );
 }

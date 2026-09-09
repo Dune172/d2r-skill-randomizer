@@ -79,6 +79,31 @@ pm2 reload d2rr              # zero-downtime reload if ecosystem already loaded
 
 `curl https://d2rrandomizer.com/api/health` returns queue depth, zip cache size, RSS, counter. Point an UptimeRobot monitor at it during a spike.
 
+## Investigating HTTP 429
+
+Capture the failing URL, response body, `Retry-After`, and any `CF-Ray` or
+`x-hcdn-request-id` headers from the browser's Network panel. The public site
+can pass through both Cloudflare and Hostinger's CDN before reaching Next.js;
+a healthy `/api/health` response alone cannot identify which layer rejected
+another request.
+
+The application's generation limiter allows three new builds per IP per
+minute. Cached mods and requests joining a build already in progress bypass
+that quota. A full queue returns 503 with `Retry-After: 5` without consuming
+quota. Both generator pages retry 429/503 up to twice, respecting waits of up
+to 60 seconds. Longer waits are shown as errors without an early retry.
+
+Application rate-limit responses are JSON with `error`, `retryAfter`, and
+`Cache-Control: no-store`. There is no application rate limiter on page loads.
+For an HTML 429 on `/` or `/generate`, investigate the hosting/CDN rules and
+logs using the captured request IDs. For unexpected shared generation quotas,
+verify the hosting proxy supplies distinct, trustworthy client addresses in
+`X-Forwarded-For`/`X-Real-IP`; missing headers currently share the `unknown`
+bucket. Do not change which proxy header is trusted without checking the
+actual deployment's forwarding configuration.
+
+Local regression check: `node --test scripts/verify-generation-retries.mjs`.
+
 ## Stress test against live
 
 From a different machine (not the VPS — you'd bottleneck on its network):

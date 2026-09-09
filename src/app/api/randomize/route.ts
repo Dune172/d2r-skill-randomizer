@@ -35,6 +35,8 @@ import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
 import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
+// Concurrent requests for the same mod share one build and one rate-limit slot.
+const pendingBuilds = new Map<string, Promise<void>>();
 
 // Rate-limited 503 telemetry: log at most once per 10s so a sustained overload
 // doesn't spam stdout. Shows enough context (depth, RSS, cache) to post-mortem
@@ -113,9 +115,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ seed, status: 'ready' });
     }
 
-    // Per-IP rate limit: 3 fresh generations per 60s. Users retrying different
-    // seeds stay under; scripted abuse hits the ceiling quickly.
+    const pending = pendingBuilds.get(cacheKey);
+    if (pending) {
+      await pending;
+      return NextResponse.json({ seed, status: 'ready' });
+    }
+
     const ip = getClientIp(request);
+    // Reject early if queue is already backed up to prevent cascade timeouts.
+    // 8 deep: with ~3-5s per gen, worst-case wait is ~30-40s — better UX than
+    // hard-rejecting a legitimate burst. Check BEFORE charging the rate limit:
+    // automatic retries of a rejected build must not use up the user's quota.
+    if (getQueueDepth() >= 8) {
+      logBusy(ip);
+      return NextResponse.json(
+        { error: 'Server is busy — too many mods generating at once. Try again in a moment!' },
+        { status: 503, headers: { 'Retry-After': '5', 'Cache-Control': 'no-store' } },
+      );
+    }
+
+    // Per-IP rate limit: 3 admitted fresh generations per 60s.
     const rl = checkRateLimit(`randomize:${ip}`, 3, 60_000);
     if (!rl.ok) {
       return rateLimitResponse(
@@ -124,20 +143,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reject early if queue is already backed up to prevent cascade timeouts.
-    // 8 deep: with ~3-5s per gen, worst-case wait is ~30-40s — better UX than
-    // hard-rejecting a legitimate burst. The rate limiter (3/60s/IP) upstream
-    // still blocks scripted abuse from piling on.
-    if (getQueueDepth() >= 8) {
-      logBusy(ip);
-      return NextResponse.json(
-        { error: 'Server is busy — too many mods generating at once. Try again in a moment!' },
-        { status: 503 },
-      );
-    }
-
     // Serialize generation so only one mod builds at a time
-    await enqueueGeneration(async () => {
+    const build = enqueueGeneration(async () => {
 
     // Re-check cache inside the queue in case another request built it while we waited
     if (hasCached(cacheKey)) return;
@@ -790,6 +797,12 @@ export async function POST(request: NextRequest) {
     incrementCount();
 
     }); // end enqueueGeneration
+    pendingBuilds.set(cacheKey, build);
+    try {
+      await build;
+    } finally {
+      pendingBuilds.delete(cacheKey);
+    }
 
     return NextResponse.json({ seed, status: 'ready' });
   } catch (error) {

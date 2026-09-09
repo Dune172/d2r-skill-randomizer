@@ -60,7 +60,7 @@ export default function ProgressIndicator({ status, message }: ProgressIndicator
   if (status === 'idle') return null;
 
   const cfg = STATUS_CONFIG[status];
-  const text = status === 'building' ? BUILDING_MESSAGES[buildingIndex] : cfg.text;
+  const text = status === 'building' ? (message || BUILDING_MESSAGES[buildingIndex]) : cfg.text;
 
   return (
     <div className={`flex items-center gap-3 font-cinzel text-[11px] tracking-[0.18em] uppercase ${cfg.color}`}>
