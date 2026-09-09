@@ -1,9 +1,10 @@
 import AdmZip from 'adm-zip';
-import { ClassCode } from './randomizer/types';
-import { CLASS_BY_CODE, CLASS_DEFS } from './randomizer/config';
+import { createD2RShortcut } from './lnk-builder';
 
 export interface ZipContents {
   modName: string;
+  seed: number;
+  raceMode: boolean;
   savepath?: string;                // save folder in modinfo.json; defaults to the shared 'D2RRandomizer'
   skillsTxt: string;
   skillDescTxt: string;
@@ -66,6 +67,10 @@ export function buildZip(contents: ZipContents): Buffer {
   const d = `${m}/${m}.mpq`; // data root — D2R requires this subfolder name
 
   const str = (s: string) => Buffer.from(s, 'utf-8');
+
+  // Cache the complete download, including its seed/mode-specific launcher.
+  zip.addFile(`D2R Randomizer ${contents.seed}.lnk`,
+    createD2RShortcut(m, contents.seed >>> 0, contents.raceMode));
 
   // Add modinfo.json
   const modinfo = JSON.stringify({ name: m, savepath: contents.savepath ?? 'D2RRandomizer' });

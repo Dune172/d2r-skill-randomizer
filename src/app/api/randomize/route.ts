@@ -760,6 +760,8 @@ export async function POST(request: NextRequest) {
     const animAssets = loadPatchedAnimAssets();
     const zipBuffer = buildZip({
       modName,
+      seed,
+      raceMode,
       savepath,
       skillsTxt: skillsTxtContent,
       skillDescTxt: skillDescTxtContent,

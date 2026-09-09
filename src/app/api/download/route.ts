@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import AdmZip from 'adm-zip';
 import { seedFromString } from '@/lib/randomizer/seed';
 import { getCached, makeCacheKey } from '@/lib/zip-cache';
-import { createD2RShortcut } from '@/lib/lnk-builder';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { getWeekName } from '@/lib/mutations/registry';
 import { getWeekStart } from '@/lib/challenge/week';
@@ -84,11 +82,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const modName = `seed${seed}`;
-    const mapSeed = seed >>> 0;
-    const zip = new AdmZip(Buffer.from(zipBuffer));
-    zip.addFile(`D2R Randomizer ${seed}.lnk`, createD2RShortcut(modName, mapSeed, raceMode));
-
     const weekParam = searchParams.get('week');
     const weekNumber = weekParam ? Number(weekParam) : NaN;
     const isWeekly = weeklyParam && Number.isInteger(weekNumber) && weekNumber >= 1;
@@ -96,10 +89,19 @@ export async function GET(request: NextRequest) {
       ? `d2rr_${slugifyChallenge(getWeekName(weekNumber))}_${formatLaIsoDate(getWeekStart(weekNumber))}.zip`
       : `d2rr_export_${seed}.zip`;
 
-    return new NextResponse(new Uint8Array(zip.toBuffer()), {
+    // A stream serves the cached bytes without rebuilding the archive or
+    // copying the whole Buffer into a new response body for each download.
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(zipBuffer);
+        controller.close();
+      },
+    });
+    return new NextResponse(body, {
       headers: {
         'Content-Type': 'application/zip',
         'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Length': String(zipBuffer.byteLength),
       },
     });
   } catch (error) {
