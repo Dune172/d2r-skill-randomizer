@@ -58,7 +58,7 @@ Use `pm2 reload ecosystem.config.js --update-env` when env vars change.
 1. PM2 installed globally: `npm i -g pm2`
 2. `pm2 install pm2-logrotate` once, so `~/.pm2/logs` doesn't fill disk
 3. nginx installed, TLS cert via Let's Encrypt (`certbot --nginx -d d2rrandomizer.com -d www.d2rrandomizer.com`)
-4. Cloudflare (optional but recommended): orange-cloud DNS, Page Rules caching static assets for 30d, API bypass. See plan Phase 3.1.
+4. Cloudflare (optional): proxy DNS and cache static assets, with API caching bypassed. If using Hostinger managed hosting, disable Hostinger CDN and ensure Cloudflare points to the hosting origin, not Hostinger CDN. Use only one CDN; see the 429 notes below.
 
 ## Deploy flow
 
@@ -86,6 +86,21 @@ Capture the failing URL, response body, `Retry-After`, and any `CF-Ray` or
 can pass through both Cloudflare and Hostinger's CDN before reaching Next.js;
 a healthy `/api/health` response alone cannot identify which layer rejected
 another request.
+
+**Check for two CDNs first.** On 2026-09-09, live responses contained both
+`cf-cache-status` and `x-hcdn-cache-status`. Hostinger identifies this exact
+header combination as a double-CDN setup and applies rate limits to traffic
+passing through both. This can affect the whole site independently of the
+application's generation quota. See
+[Hostinger CDN vs Cloudflare](https://www.hostinger.com/support/hostinger-cdn-vs-cloudflare/).
+
+To keep Cloudflare, use hPanel → Websites → Dashboard → Performance → CDN
+to disable Hostinger CDN, and verify Cloudflare's website DNS records point
+to the hosting plan's origin address rather than a Hostinger CDN address.
+Obtain that origin from hPanel; do not guess it or change mail/verification
+records. Afterwards, check response headers again: `cf-cache-status` should
+remain and `x-hcdn-cache-status` should disappear. This is a hosting/DNS change;
+deploying application code alone cannot remove this source of 429s.
 
 The application's generation limiter allows three new builds per IP per
 minute. Cached mods and requests joining a build already in progress bypass
