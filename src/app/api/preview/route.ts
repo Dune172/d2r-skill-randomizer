@@ -1,34 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRNG, seedFromString } from '@/lib/randomizer/seed';
+import { seedFromString } from '@/lib/randomizer/seed';
+import { getPreviewJson } from '@/lib/randomizer/preview';
 
 export const maxDuration = 30;
-import { loadTreeGrid, loadSkills, loadSkillDescs, loadSkillStrings } from '@/lib/data-loader';
-import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
-import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
-import { CLASS_DEFS } from '@/lib/randomizer/config';
-import { MYSTERY_ICON } from '@/lib/randomizer/mutations/mystery-box';
-import { getMutationExcludedSkills } from '@/lib/randomizer/mutations';
-import { PreviewData, SkillEntry } from '@/lib/randomizer/types';
-
-// A preview is a pure function of (seed, maskSkills, weekNumber): same inputs,
-// same tree assignments, same placements, byte for byte. Without this cache the
-// route re-ran a full 8-class randomization — tree shuffle, skill placement,
-// skilldesc/string resolution — on EVERY request, and the challenge page fires
-// it on mount for the current week's seed. So every visitor paid for an
-// identical computation that stays identical for the whole 14-day cycle. On a
-// 2-vCPU box that is what saturates the process and gets requests shed at the
-// proxy with a 429. Now the first visitor of the cycle computes it and everyone
-// after that gets a map lookup.
-//
-// Cached as the serialized body so repeat hits skip JSON.stringify too. Entries
-// run ~200 KB, so the cap holds this well under 10 MB; Map's insertion order is
-// the eviction queue.
-const PREVIEW_CACHE_MAX = 32;
-const previewCache = new Map<string, string>();
-
-function previewJsonResponse(json: string): NextResponse {
-  return new NextResponse(json, { headers: { 'content-type': 'application/json' } });
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,115 +24,14 @@ export async function POST(request: NextRequest) {
     const seed = (typeof seedInput === 'number' || (typeof seedInput === 'string' && !isNaN(numericSeed) && Number.isInteger(numericSeed)))
       ? Math.trunc(numericSeed)
       : seedFromString(String(seedInput));
-    const cacheKey = `${seed}|${maskSkills ? 1 : 0}|${weekNumber}`;
-    const cached = previewCache.get(cacheKey);
-    if (cached !== undefined) return previewJsonResponse(cached);
 
-    const rng = createRNG(seed);
-
-    // Load data
-    const treePages = loadTreeGrid();
-    const skills = loadSkills();
-
-    // Randomize
-    const treeAssignments = randomizeTrees(rng, treePages);
-    const excludeSkills = getMutationExcludedSkills(weekNumber);
-    const { placements, substitutes } = placeSkills(rng, skills, treeAssignments,
-      excludeSkills.size > 0 ? { excludeSkills } : undefined);
-    const placementsByClass = groupByClass(placements);
-
-    // Resolve in-game (player-facing) display data: skill → skilldesc → str name /
-    // str long → localized string. Internal skills.txt names like "Fire Trauma" map
-    // to "Fire Blast" in-game; the preview should show what the player will actually see.
-    const skillDescs = loadSkillDescs();
-    const stringsByKey = new Map(loadSkillStrings().map(s => [s.Key, s.enUS]));
-
-    // Substitute slots keep the dropped skill's identity, but the mod output
-    // overwrites that row's display columns with the SOURCE skill's — so name,
-    // description and icon must all be read under the source's skilldesc.
-    //
-    // Substitution can CHAIN: sources are drawn from `placements`, which already
-    // contains earlier substitutes, so sub.sourceSkill.skilldesc can itself name
-    // an earlier DROPPED skill. Following only one hop reads the INTERMEDIATE
-    // skill's vanilla entry, which yields the wrong name and an icon sliced from
-    // the right class at the wrong IconCel. Same bug as v0.258, which fixed it for
-    // the mod output (api/randomize/route.ts:208-246) but not for this spoiler.
-    // Chains are acyclic by construction (a sub's source predates it); the
-    // seen-guard is insurance.
-    const subSourceDesc = new Map<string, string>();
-    for (const sub of substitutes) {
-      subSourceDesc.set(sub.droppedSkill.skilldesc, sub.sourceSkill.skilldesc);
-    }
-    const resolveSourceDesc = (desc: string): string => {
-      const seen = new Set<string>();
-      while (subSourceDesc.has(desc) && !seen.has(desc)) {
-        seen.add(desc);
-        desc = subSourceDesc.get(desc)!;
-      }
-      return desc;
-    };
-
-    const localized = (key: string): string => {
-      const value = stringsByKey.get(key);
-      return value && value.trim() ? value : '';
-    };
-
-    // One resolved entry drives name, description AND icon, so the three can
-    // never disagree with each other or with the generated ZIP.
-    const resolveDisplay = (skill: SkillEntry) => {
-      const effective = skillDescs.get(resolveSourceDesc(skill.skilldesc));
-      return {
-        name: localized(effective?.strName ?? '') || skill.skill,
-        // ~9 of 263 skilldescs define neither string; fall through to ''.
-        desc: localized(effective?.strLong ?? '') || localized(effective?.strShort ?? ''),
-        // charclass is transitively correct: the synthetic substitute SkillEntry
-        // spreads the source's charclass (skill-placer.ts), which is the same
-        // class sheet buildClassIconSprite() slices for the mod.
-        iconClass: skill.charclass,
-        iconCel: effective?.IconCel ?? 0,
-      };
-    };
-
-    // Build preview data
-    const preview: PreviewData = {
-      seed,
-      masked: maskSkills,
-      classes: CLASS_DEFS.map(classDef => ({
-        code: classDef.code,
-        name: classDef.name,
-        tabs: (treeAssignments.get(classDef.code) || []).map((tree, tabIdx) => {
-          const classPlacs = (placementsByClass.get(classDef.code) || [])
-            .filter(p => p.tabIndex === tabIdx);
-
-          return {
-            sourceClass: tree.className,
-            sourceTree: tree.treeIndex,
-            skills: classPlacs.map(p => {
-              const display = resolveDisplay(p.skill);
-              return {
-                name: maskSkills ? '???' : display.name,
-                desc: maskSkills ? '' : display.desc,
-                originalClass: maskSkills ? '?' : p.skill.charclass,
-                // Under Mystery Box every cell shows the one icon the mod
-                // overrides every frame with, so the spoiler matches the game.
-                iconClass: maskSkills ? MYSTERY_ICON.charclass : display.iconClass,
-                iconCel: maskSkills ? MYSTERY_ICON.iconCel : display.iconCel,
-                row: p.row,
-                col: p.col,
-              };
-            }),
-          };
-        }),
-      })),
-    };
-
-    const json = JSON.stringify(preview);
-    if (previewCache.size >= PREVIEW_CACHE_MAX) {
-      const oldest = previewCache.keys().next().value;
-      if (oldest !== undefined) previewCache.delete(oldest);
-    }
-    previewCache.set(cacheKey, json);
-    return previewJsonResponse(json);
+    // Memoized in src/lib/randomizer/preview.ts — identical inputs never
+    // recompute. The challenge page renders its own preview server-side and
+    // does not call this at all; this route serves arbitrary user seeds from
+    // /generate.
+    return new NextResponse(getPreviewJson(seed, maskSkills, weekNumber), {
+      headers: { 'content-type': 'application/json' },
+    });
   } catch (error) {
     console.error('Preview error:', error);
     return NextResponse.json(

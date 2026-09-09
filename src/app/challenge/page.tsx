@@ -2,6 +2,10 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { WeekCard } from './WeekData';
+import { getCurrentWeekNumber, getWeekSeed } from '@/lib/challenge/week';
+import { getActiveMutations } from '@/lib/mutations/registry';
+import { getPreviewData } from '@/lib/randomizer/preview';
+import { getEntries, stripIp } from '@/lib/leaderboard';
 
 function Step({ number, text }: { number: number; text: ReactNode }) {
   return (
@@ -14,7 +18,14 @@ function Step({ number, text }: { number: number; text: ReactNode }) {
   );
 }
 
-export const dynamic = 'force-static';
+// Was 'force-static', which sounds cheap but wasn't: the page shipped with no
+// data, so every visitor's browser then fetched POST /api/preview and two
+// GET /api/leaderboard. Cloudflare does not cache /api/*, so that was three
+// unavoidable origin hits per view — the load the host's proxy was shedding
+// with 429s. All three are deterministic for the cycle (or near enough), so
+// render them into the HTML instead and let the edge cache serve it. 60s ISR
+// keeps the leaderboards current; a visitor who submits a run still refetches.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'D2R Mutation Challenge Seed',
@@ -47,6 +58,14 @@ const eventSchema = {
 };
 
 export default function ChallengePage() {
+  // Everything WeekCard used to fetch from the client, resolved here instead so
+  // it ships inside the edge-cached HTML.
+  const weekNumber = getCurrentWeekNumber();
+  const mysteryActive = getActiveMutations(weekNumber).some(m => m.id === 'mystery-box');
+  const preview = getPreviewData(getWeekSeed(weekNumber), mysteryActive, weekNumber);
+  const normalEntries = getEntries(weekNumber, 'normal').map(stripIp);
+  const hellEntries = getEntries(weekNumber, 'hell').map(stripIp);
+
   return (
     <main className="min-h-screen">
       <script
@@ -67,7 +86,12 @@ export default function ChallengePage() {
         </div>
 
         <div className="anim-fade-up-d2">
-          <WeekCard />
+          <WeekCard
+            initialWeekNumber={weekNumber}
+            initialPreview={preview}
+            normalEntries={normalEntries}
+            hellEntries={hellEntries}
+          />
         </div>
 
         <p className="anim-fade-up-d3 text-[#a89060] text-sm leading-relaxed max-w-lg mx-auto mb-10">

@@ -10,6 +10,9 @@ type Props = {
   difficulty?: Difficulty;
   /** When provided, render these directly and skip the fetch (used by archive cards). */
   entries?: PublicSubmission[];
+  /** Server-rendered first paint. Unlike `entries` this still refetches once
+   *  refreshKey advances, so a visitor sees their own submission appear. */
+  initialEntries?: PublicSubmission[];
   /** Bump to force a refetch (used after a successful submission). */
   refreshKey?: number;
   /** Limit the number of rows rendered. Defaults to 3. */
@@ -39,9 +42,9 @@ function CrownIcon() {
   );
 }
 
-export function Leaderboard({ weekNumber, difficulty = 'normal', entries: prop, refreshKey = 0, limit = 3, expandable = false }: Props) {
-  const [entries, setEntries] = useState<PublicSubmission[] | null>(prop ?? null);
-  const [loading, setLoading] = useState(prop === undefined);
+export function Leaderboard({ weekNumber, difficulty = 'normal', entries: prop, initialEntries, refreshKey = 0, limit = 3, expandable = false }: Props) {
+  const [entries, setEntries] = useState<PublicSubmission[] | null>(prop ?? initialEntries ?? null);
+  const [loading, setLoading] = useState(prop === undefined && initialEntries === undefined);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
@@ -50,6 +53,16 @@ export function Leaderboard({ weekNumber, difficulty = 'normal', entries: prop, 
   useEffect(() => {
     if (propsControlled) {
       setEntries(prop ?? []);
+      return;
+    }
+    // Cloudflare does not cache /api/*, so every one of these fetches is an
+    // origin hit — two per challenge page view before this. The page now ships
+    // the rows in its server-rendered HTML, which is edge-cached, so the common
+    // path makes no request at all. Only a visitor who just submitted needs
+    // fresh data.
+    if (initialEntries !== undefined && refreshKey === 0) {
+      setEntries(initialEntries);
+      setLoading(false);
       return;
     }
     let cancelled = false;
@@ -83,7 +96,7 @@ export function Leaderboard({ weekNumber, difficulty = 'normal', entries: prop, 
     return () => {
       cancelled = true;
     };
-  }, [weekNumber, difficulty, refreshKey, propsControlled, prop]);
+  }, [weekNumber, difficulty, refreshKey, propsControlled, prop, initialEntries]);
 
   if (loading) {
     return (

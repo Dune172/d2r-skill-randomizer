@@ -10,6 +10,17 @@ import { Leaderboard } from '@/app/components/Leaderboard';
 import { SubmitRunForm } from '@/app/components/SubmitRunForm';
 import SkillTreePreview from '@/components/SkillTreePreview';
 import type { PreviewData } from '@/lib/randomizer/types';
+import type { PublicSubmission } from '@/lib/leaderboard';
+
+type WeekCardProps = {
+  /** Week the server rendered the props below for. The client recomputes the
+   *  week from its own clock; if the two disagree (a rollover landed between
+   *  render and view) the server data is ignored and the old fetch path runs. */
+  initialWeekNumber?: number;
+  initialPreview?: PreviewData;
+  normalEntries?: PublicSubmission[];
+  hellEntries?: PublicSubmission[];
+};
 
 function getWeekData() {
   const weekNumber = getCurrentWeekNumber();
@@ -109,8 +120,14 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
   );
 }
 
-export function WeekCard() {
+export function WeekCard({
+  initialWeekNumber,
+  initialPreview,
+  normalEntries,
+  hellEntries,
+}: WeekCardProps = {}) {
   const { weekNumber, currentSeed, currentStart, currentEnd } = getWeekData();
+  const serverDataUsable = initialWeekNumber === weekNumber;
   const mutations = getActiveMutations(weekNumber);
   const weekName = getWeekName(weekNumber);
   // Mystery Box hides skill identities — the spoiler must show "???" too.
@@ -118,9 +135,16 @@ export function WeekCard() {
   const [generated, setGenerated] = useState(false);
   const [leaderboardKey, setLeaderboardKey] = useState(0);
   const [hellLeaderboardKey, setHellLeaderboardKey] = useState(0);
-  const [preview, setPreview] = useState<PreviewData | null>(null);
+  const [preview, setPreview] = useState<PreviewData | null>(
+    serverDataUsable ? initialPreview ?? null : null,
+  );
 
   useEffect(() => {
+    // The spoiler is deterministic for the whole cycle, so the page renders it
+    // server-side and there is nothing to fetch. This POST remains only for the
+    // rollover case above — /api/* is never edge-cached, so skipping it removes
+    // the most expensive origin hit on the page.
+    if (serverDataUsable && initialPreview) return;
     let ignore = false;
     fetch('/api/preview', {
       method: 'POST',
@@ -132,7 +156,7 @@ export function WeekCard() {
       })
       .catch(() => {});
     return () => { ignore = true; };
-  }, [currentSeed, mysteryActive, weekNumber]);
+  }, [currentSeed, mysteryActive, weekNumber, serverDataUsable, initialPreview]);
 
   return (
     <>
@@ -195,7 +219,12 @@ export function WeekCard() {
             In Game Time is used. RTA is used if IGT is not present.
           </p>
           <div className="mb-5">
-            <Leaderboard weekNumber={weekNumber} refreshKey={leaderboardKey} expandable />
+            <Leaderboard
+              weekNumber={weekNumber}
+              refreshKey={leaderboardKey}
+              expandable
+              initialEntries={serverDataUsable ? normalEntries : undefined}
+            />
           </div>
           <SubmitRunForm weekNumber={weekNumber} onSubmitted={() => setLeaderboardKey((k) => k + 1)} />
         </div>
@@ -216,7 +245,13 @@ export function WeekCard() {
             Fastest to beat Baal on Hell · champion only
           </p>
           <div className="mb-5">
-            <Leaderboard weekNumber={weekNumber} difficulty="hell" refreshKey={hellLeaderboardKey} limit={1} />
+            <Leaderboard
+              weekNumber={weekNumber}
+              difficulty="hell"
+              refreshKey={hellLeaderboardKey}
+              limit={1}
+              initialEntries={serverDataUsable ? hellEntries : undefined}
+            />
           </div>
           <SubmitRunForm weekNumber={weekNumber} difficulty="hell" onSubmitted={() => setHellLeaderboardKey((k) => k + 1)} />
         </div>
