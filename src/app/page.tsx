@@ -2,14 +2,18 @@ import Link from 'next/link';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { HomeChallengeCard } from '@/app/components/HomeChallengeCard';
 
-// Force dynamic rendering so the weekly challenge card always reflects the
-// current week from the server's NTP-synced clock. ISR caching can serve a
-// pre-deploy render after WEEK_NAMES is reordered, and any client-side
-// recompute would depend on the user's machine clock — both cause the wrong
-// week's name to appear. Server SSR per-request avoids both classes of bug.
+// Rendered on the server so the weekly challenge card follows the server's
+// NTP-synced clock rather than the visitor's machine clock — but cached for
+// 60s instead of re-rendered per request. The only per-request input here is
+// getCurrentWeekNumber(), which changes once every 14 days, so `force-dynamic`
+// bought nothing and made every homepage view — real visits, Chrome
+// speculation prefetches, crawlers — an uncacheable origin hit. That volume of
+// dynamic requests is what tripped the host's rate limiter into serving 429s
+// for `GET /`. The ISR cache is keyed per build, so a deploy that reorders
+// WEEK_NAMES invalidates it; worst-case staleness is 60s at a rollover.
 // Legacy `?seed=` shared links are handled by middleware (see
 // src/middleware.ts) before this page renders.
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 const softwareSchema = {
   '@context': 'https://schema.org',

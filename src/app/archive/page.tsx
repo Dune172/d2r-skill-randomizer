@@ -5,7 +5,13 @@ import { getEntries, stripIp } from '@/lib/leaderboard';
 import { ArchiveWeekCard } from './ArchiveWeekCard';
 import { PatreonPopup } from './KofiPopup';
 
-export const dynamic = 'force-dynamic';
+// Cached for 60s rather than rendered per request. The page's inputs are the
+// current week number (changes every 14 days) and past-week leaderboard
+// entries, which are frozen — the API rejects submissions for any week but the
+// current one. Per-request rendering only made this an uncacheable origin hit
+// on every visit and speculation prefetch. See src/app/page.tsx for the same
+// change on the homepage and why it matters.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'D2R Mutation Challenge Archive',
