@@ -30,5 +30,6 @@
  * bump, or players keep being served the cached broken ZIP; their skill layouts
  * are unaffected.
  */
-// v52 preserves shuffled monsters' original Nightmare/Hell resistances.
-export const PIPELINE_VERSION = 52;
+// v55 preserves fixed Skeleton Mastery bonuses with the original one-summon
+// placement rule, fixes summon bonus names, and corrects the game data version.
+export const PIPELINE_VERSION = 55;

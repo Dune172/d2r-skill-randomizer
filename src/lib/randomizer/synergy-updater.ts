@@ -138,6 +138,17 @@ export function updateSkillsSynergies(
           const refField = match[2];
 
           let replacementName = refToReplacement.get(refSkillName);
+          // Skeleton Mastery is a fixed summon dependency, never a random
+          // synergy. It shares a class with at least one skeleton summon;
+          // other summons can land elsewhere. Preserve the original reference
+          // in server, pet and tooltip calculations regardless of placement.
+          if (!replacementName && refSkillName === 'Skeleton Mastery' &&
+              ['31', '58'].includes(row[headers.indexOf('srvdofunc')])) {
+            replacementName = refSkillName;
+            usedClassmates.add(replacementName);
+            chosenOrder.push(replacementName);
+            refToReplacement.set(refSkillName, replacementName);
+          }
           if (!replacementName) {
             const sameTabAvailable = otherClassmates.filter(
               p => !usedClassmates.has(p.skill.skill) && p.tabIndex === placement.tabIndex,
@@ -201,7 +212,8 @@ export function updateSkillsSynergies(
 }
 
 /**
- * Update skilldesc.txt dsc3textb columns — the "receives bonuses from:" list.
+ * Update skilldesc.txt synergy names — dsc3textb for numeric bonus lines,
+ * dsc3texta for line type 18 (the name-only list used by skeleton summons).
  * These hold str name values pointing at other skills' skilldesc entries.
  *
  * Keyed by the ORIGINAL str name in each slot rather than by slot position:
@@ -241,9 +253,11 @@ export function updateSkillDescSynergies(
     if (row[0]) descRowByName.set(row[0], row);
   }
   const dsc3LineIdx: number[] = [];
+  const dsc3TextaIdx: number[] = [];
   const dsc3TextbIdx: number[] = [];
   for (let i = 1; i <= 7; i++) {
     dsc3LineIdx.push(skillDescTxt.headers.indexOf(`dsc3line${i}`));
+    dsc3TextaIdx.push(skillDescTxt.headers.indexOf(`dsc3texta${i}`));
     dsc3TextbIdx.push(skillDescTxt.headers.indexOf(`dsc3textb${i}`));
   }
 
@@ -258,11 +272,14 @@ export function updateSkillDescSynergies(
     // Non-header synergy slots, in row order. dsc3line "40" is the
     // "X receives bonuses from:" header, whose textb is a self-reference.
     const originalSlots: string[] = [];
+    const nameOnlySlots = new Set<string>();
     for (let i = 0; i < 7; i++) {
-      const ti = dsc3TextbIdx[i];
+      const nameOnly: boolean = dsc3LineIdx[i] >= 0 && descRow[dsc3LineIdx[i]] === '18';
+      const ti: number = nameOnly ? dsc3TextaIdx[i] : dsc3TextbIdx[i];
       if (ti < 0 || ti >= descRow.length || !descRow[ti]) continue;
       if (dsc3LineIdx[i] >= 0 && descRow[dsc3LineIdx[i]] === '40') continue;
       originalSlots.push(descRow[ti]);
+      if (nameOnly) nameOnlySlots.add(descRow[ti]);
     }
     if (originalSlots.length === 0) continue;
 
@@ -286,9 +303,12 @@ export function updateSkillDescSynergies(
       if (replacement && newStrName) {
         mapping.set(origStrName, newStrName);
         usedNames.add(replacement);
-      } else {
+      } else if (!nameOnlySlots.has(origStrName)) {
         unresolved.push(origStrName);
       }
+      // Name-only entries without a formula substitution (e.g. Summon Resist)
+      // describe passive/engine effects. Preserve their actual name; choosing
+      // an unrelated classmate here would advertise a bonus it cannot supply.
     }
 
     // Fill display-only slots with classmates not already named above.

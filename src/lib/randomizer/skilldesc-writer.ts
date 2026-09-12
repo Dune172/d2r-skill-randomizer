@@ -5,7 +5,7 @@ import { SkillPlacement } from './types';
  * - Update SkillPage (tab index + 1)
  * - Update SkillRow and SkillColumn
  * - Update IconCel
- * - Update dsc3textb synergy references
+ * - Update synergy names in dsc3textb, or dsc3texta for line type 18
  *
  * All column indices are resolved dynamically from headers.
  */
@@ -13,7 +13,7 @@ export function writeSkillDescRows(
   headers: string[],
   rows: string[][],
   placements: SkillPlacement[],
-  // skill name → (original dsc3textb str name → replacement str name)
+  // skill name → (original synergy str name → replacement str name)
   descSynergyUpdates: Map<string, Map<string, string>>,
 ): void {
   // Build lookup: skilldesc name → placement
@@ -67,7 +67,8 @@ export function writeSkillDescRows(
     // IconCel = new icon index
     if (iconCelIdx >= 0) row[iconCelIdx] = String(placement.iconCel);
 
-    // Update dsc3textb synergy references (preserve original line/texta).
+    // Update the skill-name column for each synergy line. Type 18 stores a
+    // name in texta; numeric bonus lines store their name in textb.
     // The dsc3calca/calcb formulas are rewritten upstream by
     // updateSkillsSynergies, which remaps every skill('X'.blvl|.lvl) ref in
     // this row alongside the skills.txt row.
@@ -79,13 +80,13 @@ export function writeSkillDescRows(
     const synergyMap = descSynergyUpdates.get(placement.skill.skill);
     if (synergyMap) {
       for (let i = 0; i < 7; i++) {
-        if (dsc3TextbIdx[i] < 0 || dsc3TextbIdx[i] >= row.length) continue;
         // Skip line type "40" (header: "X receives bonuses from:") — textb1 is a self-reference.
         if (dsc3LineIdx[i] >= 0 && row[dsc3LineIdx[i]] === '40') continue;
-        const origTextB = row[dsc3TextbIdx[i]];
-        if (!origTextB) continue;
-        const replacement = synergyMap.get(origTextB);
-        if (replacement) row[dsc3TextbIdx[i]] = replacement;
+        const textIdx = dsc3LineIdx[i] >= 0 && row[dsc3LineIdx[i]] === '18'
+          ? dsc3TextaIdx[i] : dsc3TextbIdx[i];
+        if (textIdx < 0 || textIdx >= row.length || !row[textIdx]) continue;
+        const replacement = synergyMap.get(row[textIdx]);
+        if (replacement) row[textIdx] = replacement;
       }
     }
   }

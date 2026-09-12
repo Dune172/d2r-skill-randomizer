@@ -10,7 +10,8 @@
  *     must name a skill on that skill's own class. skilldesc carries its own
  *     copy of many damage formulas, and a stale ref there means the tooltip
  *     computes off a skill the player can no longer reach (level 0).
- *  3. dsc3textb naming: every synergy line names a skill that actually appears
+ *  3. Synergy naming (textb, or texta for line 18): every formula-backed line
+ *     names a skill that actually appears
  *     in that same row's calcs, so the listed name drives the listed number.
  *
  * Level refs are `.blvl` and `.lvl`. Coefficient refs (`.parN`, `.lnNN`,
@@ -23,6 +24,7 @@ import AdmZip from 'adm-zip';
 
 const BASE = process.env.TARGET || 'http://localhost:3000';
 const args = process.argv.slice(2);
+const raceMode = args.includes('--race');
 const argValue = (flag, dflt) => {
   const i = args.indexOf(flag);
   return i !== -1 && i + 1 < args.length ? args[i + 1] : dflt;
@@ -68,13 +70,13 @@ async function generateZip(seed) {
     const r = await fetch(`${BASE}/api/randomize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seed, raceMode: false }),
+      body: JSON.stringify({ seed, raceMode }),
     });
     if (r.status === 429) { process.stdout.write('  (rate limited, waiting 25s)\n'); await sleep(25_000); continue; }
     if (!r.ok) throw new Error(`randomize ${seed}: ${r.status} ${await r.text()}`);
     break;
   }
-  const dl = await fetch(`${BASE}/api/download?seed=${seed}&raceMode=0`);
+  const dl = await fetch(`${BASE}/api/download?seed=${seed}&raceMode=${raceMode ? 1 : 0}`);
   if (!dl.ok) throw new Error(`download ${seed}: ${dl.status} ${await dl.text()}`);
   return new AdmZip(Buffer.from(await dl.arrayBuffer()));
 }
@@ -85,6 +87,8 @@ let nameChecked = 0, nameFailures = 0;
 
 for (let seed = startSeed; seed < startSeed + maxSeeds; seed++) {
   const zip = await generateZip(seed);
+  const versionEntry = zip.getEntries().find(e => e.entryName.endsWith('data/global/DataVersionBuild.txt'));
+  if (!versionEntry || versionEntry.getData().toString('utf8').trim() !== '93847') throw new Error('ZIP must carry the verified game data version 93847');
   const sEntry = zip.getEntries().find(e => e.entryName.endsWith('data/global/excel/skills.txt'));
   const dEntry = zip.getEntries().find(e => e.entryName.endsWith('data/global/excel/skilldesc.txt'));
   const skills = parseTxt(sEntry.getData().toString('utf-8'));
@@ -98,12 +102,28 @@ for (let seed = startSeed; seed < startSeed + maxSeeds; seed++) {
 
   console.log(`\n=== seed ${seed} ===`);
 
+  const mastery = skillByName.get('Skeleton Mastery');
+  for (const name of ['Raise Skeleton', 'Raise Skeletal Mage', 'Revive']) {
+    const row = skillByName.get(name);
+    if (raceMode && row && !['31', '58'].includes(row[sCol('srvdofunc')])) continue;
+    if (!row || !classOf(name) || !['31', '58'].includes(row[sCol('srvdofunc')])) continue;
+    if (!levelRefsIn(row).includes('Skeleton Mastery')) throw new Error(`${name}: fixed Mastery bonus is disconnected`);
+    console.log(`  ${name}: fixed Skeleton Mastery bonus preserved`);
+  }
+  if (mastery?.[sCol('passivestate')] === 'skel_mastery' && !['Raise Skeleton', 'Raise Skeletal Mage'].some(name =>
+      classOf(name) === classOf('Skeleton Mastery') && skillByName.get(name)?.[sCol('srvdofunc')] === '31')) throw new Error('Mastery must share a class with at least one skeleton summon');
+
   // --- 1. summon pet formulas -------------------------------------------
   for (const [summon, pet] of Object.entries(SUMMON_PETS)) {
     const summonRow = skillByName.get(summon);
     if (!summonRow) { console.log(`  ${summon}: row missing (dropped?) — skip`); continue; }
     const summonClass = summonRow[sCol('charclass')];
     if (!summonClass) { console.log(`  ${summon}: no charclass (dropped) — skip`); continue; }
+    // Race Mode keeps the old row identity but replaces inactive skills with
+    // Prayer. Only inspect pet rows that the exported skill actually grants.
+    if (!Array.from({ length: 6 }, (_, i) => summonRow[sCol(`sumskill${i + 1}`)]).includes(pet)) {
+      console.log(`  ${summon}: does not grant ${pet} (filler/substitute) — skip`); continue;
+    }
 
     const petRow = skillByName.get(pet);
     if (!petRow) { console.log(`  ${summon} -> ${pet}: pet row missing — FAIL`); failures++; continue; }
@@ -145,7 +165,8 @@ for (let seed = startSeed; seed < startSeed + maxSeeds; seed++) {
     const descRefs = levelRefsIn(descRow);
     if (descRefs.length > 0) {
       descChecked++;
-      const bad = descRefs.filter(r => classOf(r) !== cls);
+      const bad = descRefs.filter(r => classOf(r) !== cls &&
+        !(r === 'Skeleton Mastery' && ['31', '58'].includes(skillRow[sCol('srvdofunc')])));
       if (bad.length > 0) {
         descFailures++;
         descOffenders.push(`${skillRow[0]}[${cls}] desc refs off-class: ${bad.map(b => `${b}[${classOf(b) ?? '∅'}]`).join(',')}`);
@@ -170,7 +191,7 @@ for (let seed = startSeed; seed < startSeed + maxSeeds; seed++) {
     const rowOffenders = [];
     for (let i = 1; i <= 7; i++) {
       const lineIdx = dCol(`dsc3line${i}`);
-      const tbIdx = dCol(`dsc3textb${i}`);
+      const tbIdx = dCol(descRow[lineIdx] === '18' ? `dsc3texta${i}` : `dsc3textb${i}`);
       if (tbIdx < 0 || !descRow[tbIdx]) continue;
       if (lineIdx >= 0 && descRow[lineIdx] === '40') continue; // header
       slots++;

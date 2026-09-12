@@ -10,6 +10,10 @@ Live at **[d2rrandomizer.com](https://d2rrandomizer.com)**
 
 Enter a seed number, choose optional mutations, and download a ready-to-install ZIP mod. Every skill from every class — Amazon, Sorceress, Necromancer, Paladin, Barbarian, Druid, Assassin, and Warlock — gets redistributed across all eight classes using a seeded PRNG. The same seed always produces the same result, so you can share a run with friends.
 
+Skeleton Mastery shares a class with at least one of Raise Skeleton or Raise
+Skeletal Mage. Other summons still shuffle independently. Mastery's summon
+bonuses stay fixed instead of becoming random synergies.
+
 The mod is **offline-safe**: it only touches skill tree files and does not require going online, so it will not flag your Battle.net account.
 
 **Mutations** are optional difficulty modifiers (e.g. monsters move 50% faster, all skills cost double mana) that stack on top of the shuffle. Two mutations rotate each week as the weekly challenge.

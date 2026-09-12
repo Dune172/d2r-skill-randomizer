@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.301',
+    date: 'September 2026',
+    tagline: 'Skeleton Mastery and summon tooltip fixes',
+    notes: [
+      'Fixed Skeleton Mastery bonuses being replaced by random synergies. It now always improves skeleton summons',
+      'Fixed summon tooltips showing the wrong bonus skills',
+      'Fixed the data version warning when launching newly generated mods',
+    ],
+  },
+  {
     version: 'v0.30',
     date: 'September 2026',
     tagline: 'Monster randomization brings new enemies to familiar areas',
