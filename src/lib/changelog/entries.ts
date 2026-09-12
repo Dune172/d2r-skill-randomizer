@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.30',
+    date: 'September 2026',
+    tagline: 'Monster randomization brings new enemies to familiar areas',
+    notes: [
+      'New monster randomizer shuffles enemies between acts, bringing fresh encounters to familiar areas',
+      'Shuffled monsters keep their distinctive strengths and behavior, scaled for their new areas. Bosses and special encounters stay in place',
+      'Use the Randomize monsters checkbox on the Generate page to turn it on or off. Enabled by default for Season Beta Race',
+      'Mutation challenges include randomized monsters starting with Challenge 15 on September 21. Earlier challenges keep their original enemies',
+    ],
+  },
+  {
     version: 'v0.262',
     date: 'September 2026',
     tagline: "No Guard strips enemy defence too, and Titan's Grip asks for less strength",

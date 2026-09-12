@@ -19,6 +19,7 @@ interface FormState {
   xpActs: number[];
   xpDifficulties: number[];
   raceMode: boolean;
+  enemyShuffle: boolean;
 }
 
 const SEASON1_PRESET: FormState = {
@@ -36,6 +37,7 @@ const SEASON1_PRESET: FormState = {
   xpActs: [1, 2],
   xpDifficulties: [1],
   raceMode: true,
+  enemyShuffle: true,
 };
 
 const TURBO_PRESET: FormState = {
@@ -53,6 +55,7 @@ const TURBO_PRESET: FormState = {
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1, 2, 3],
   raceMode: false,
+  enemyShuffle: false,
 };
 
 const DEFAULT_STATE: FormState = {
@@ -70,11 +73,12 @@ const DEFAULT_STATE: FormState = {
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1],
   raceMode: true,
+  enemyShuffle: false,
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -119,8 +123,8 @@ function Checkbox({ id, checked, onChange, label, tooltip }: { id: string; check
   return (
     <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor={id}>
       <div className="relative flex-shrink-0">
-        <input id={id} type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="sr-only" />
-        <div className={`w-5 h-5 rounded border transition-all duration-200 flex items-center justify-center
+        <input id={id} type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="sr-only peer" />
+        <div className={`w-5 h-5 rounded border transition-colors duration-200 flex items-center justify-center peer-focus-visible:ring-2 peer-focus-visible:ring-[#f0c040]
           ${checked ? 'bg-[#7a1010] border-[#c42020]' : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}>
           {checked && (
             <svg className="w-3 h-3 text-[#f0c040]" viewBox="0 0 12 12" fill="none">
@@ -203,6 +207,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [xpActs, setXpActs] = useState<number[]>(initialOptions?.xpActs ?? SEASON1_PRESET.xpActs);
   const [xpDifficulties, setXpDifficulties] = useState<number[]>(initialOptions?.xpDifficulties ?? SEASON1_PRESET.xpDifficulties);
   const [raceMode, setRaceMode] = useState(initialOptions?.raceMode ?? SEASON1_PRESET.raceMode);
+  const [enemyShuffle, setEnemyShuffle] = useState(initialOptions?.enemyShuffle ?? SEASON1_PRESET.enemyShuffle);
   const applyPreset = (p: Preset) => {
     setPreset(p);
     const src = p === 'season1race' ? SEASON1_PRESET : p === 'turbo' ? TURBO_PRESET : null;
@@ -221,6 +226,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setXpActs(src.xpActs);
       setXpDifficulties(src.xpDifficulties);
       setRaceMode(src.raceMode);
+      setEnemyShuffle(src.enemyShuffle);
     }
   };
 
@@ -260,6 +266,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       xpActs,
       xpDifficulties,
       raceMode,
+      enemyShuffle,
     });
   };
 
@@ -304,6 +311,13 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           {/* Left: Disable chat + Prereqs + Proc pool */}
           <div className="flex flex-col justify-start gap-3">
+            <Checkbox
+              id="enemyShuffle"
+              checked={enemyShuffle}
+              onChange={field(setEnemyShuffle)}
+              label="Randomize monsters"
+              tooltip="Ordinary enemy families move between acts, with stats and rewards balanced for their new areas. Bosses and scripted encounters stay in place."
+            />
             <Checkbox
               id="disableChat"
               checked={disableChat}

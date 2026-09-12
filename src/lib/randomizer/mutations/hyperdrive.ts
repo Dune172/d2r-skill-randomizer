@@ -1,5 +1,5 @@
 import type { MutationContext } from './index';
-import { TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
+import { TC_COL, monsterAct } from '../players-scaler';
 
 const SPEED_MULT = 1.5;
 const PLAYER_SPEED_MULT = 1.3;
@@ -17,7 +17,7 @@ export function applyHyperdrive(ctx: MutationContext): void {
     const id = row[0];
     if (!id) continue;
     const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
-    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS)) continue;
+    if (monsterAct(id, tc, ctx.monsterDestinationActs) === null) continue;
     for (const idx of mSpeedIdxs) {
       const val = parseInt(row[idx], 10);
       if (!isNaN(val) && val > 0) row[idx] = String(Math.round(val * SPEED_MULT));

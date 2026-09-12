@@ -3,7 +3,8 @@ import { seedFromString } from '@/lib/randomizer/seed';
 import { getCached, makeCacheKey } from '@/lib/zip-cache';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { getWeekName } from '@/lib/mutations/registry';
-import { getWeekStart } from '@/lib/challenge/week';
+import { getWeekStart, getCurrentWeekNumber } from '@/lib/challenge/week';
+import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
 
 function slugifyChallenge(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
@@ -66,13 +67,14 @@ export async function GET(request: NextRequest) {
     const weekOverride = weekOverrideParam !== null && Number.isInteger(Number(weekOverrideParam))
       ? Math.max(1, Math.trunc(Number(weekOverrideParam)))
       : null;
-    const weeklyKey = weeklyParam ? (weekOverride ?? -1) : 0;
+    const weeklyKey = weeklyParam ? (weekOverride ?? getCurrentWeekNumber()) : 0;
     const teleportStaffSpeed = teleportStaffLevel > 0 && searchParams.get('staffSpeed') !== '0';
     // Weekly challenges are never Race Mode — force off (matching the identical
     // guard in /api/randomize) so the cache key resolves even if the link omits
     // raceMode=0. Outside weekly, raceMode defaults true.
     const raceMode = weeklyParam ? false : (searchParams.get('raceMode') !== '0');
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode);
+    const enemyShuffle = weeklyParam ? challengeRandomizesMonsters(weeklyKey) : searchParams.get('enemyShuffle') === '1';
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode, enemyShuffle);
     const zipBuffer = getCached(cacheKey);
 
     if (!zipBuffer) {

@@ -1,5 +1,5 @@
 import type { MutationContext } from './index';
-import { TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
+import { TC_COL, monsterAct } from '../players-scaler';
 
 const POISON_TYPE = 'pois';
 const POISON_PCT  = '100';
@@ -153,13 +153,10 @@ export function applyPestilence(ctx: MutationContext): void {
 
     // Skip player summons, traps, and map objects
     const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
-    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS) && !(id in PESTILENCE_EXTRA_ACTS)) continue;
+    if (monsterAct(id, tc, ctx.monsterDestinationActs) === null && !(id in PESTILENCE_EXTRA_ACTS)) continue;
 
     // Determine act for damage scaling (needed for the broken-poison fix below)
-    const actMatch = tc.match(ACT_RE);
-    const rowAct = actMatch
-      ? parseInt(actMatch[1])
-      : (BOSS_ACTS[id] ?? PESTILENCE_EXTRA_ACTS[id] ?? 0);
+    const rowAct = monsterAct(id, tc, ctx.monsterDestinationActs) ?? PESTILENCE_EXTRA_ACTS[id] ?? 0;
     const rowDmg = POISON_BY_ACT[rowAct] ?? POISON_FALLBACK;
 
     // Base-game data quirk: ~30 monsters (fetishblow, foulcrow, sandleaper,

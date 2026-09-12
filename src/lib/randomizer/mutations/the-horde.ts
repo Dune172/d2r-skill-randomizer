@@ -1,5 +1,5 @@
 import type { MutationContext } from './index';
-import { EXP_COLS, TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
+import { EXP_COLS, TC_COL, monsterAct } from '../players-scaler';
 
 // Pack size multiplier. Previously 3× — dialed back 20% to 2.4× so large
 // packs don't feel overwhelming while still noticeably swarmier than vanilla.
@@ -40,7 +40,7 @@ export function applyTheHorde(ctx: MutationContext): void {
     const id = row[0];
     if (!id) continue;
     const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
-    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS)) continue;
+    if (monsterAct(id, tc, ctx.monsterDestinationActs) === null) continue;
     const minVal = parseInt(row[minGrpIdx], 10);
     const maxVal = parseInt(row[maxGrpIdx], 10);
     if (!isNaN(minVal) && minVal > 0)

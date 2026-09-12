@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "test:enemies": "node scripts/verify-enemy-shuffle.mjs",
     "start": "VIPS_CONCURRENCY=2 UV_THREADPOOL_SIZE=4 next start"
   },
   "dependencies": {

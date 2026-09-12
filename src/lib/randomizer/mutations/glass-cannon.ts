@@ -1,5 +1,5 @@
 import type { MutationContext } from './index';
-import { BOSS_ACTS, ACT_RE, TC_COL } from '../players-scaler';
+import { TC_COL, monsterAct } from '../players-scaler';
 
 const HP_MULT = 0.5;
 
@@ -31,7 +31,7 @@ export function applyGlassCannon(ctx: MutationContext): void {
 
     // Skip player summons, traps, and map objects — same guard used by players-scaler
     const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
-    const isEnemy = ACT_RE.test(tc) || id in BOSS_ACTS;
+    const isEnemy = monsterAct(id, tc, ctx.monsterDestinationActs) !== null;
     if (!isEnemy) continue;
 
     for (const idx of hpIdxs) {

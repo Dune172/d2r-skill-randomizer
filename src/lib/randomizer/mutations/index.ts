@@ -26,9 +26,10 @@ export { getActiveMutations };
 
 /**
  * All mutable txt data needed across mutations.
- * Each property is { headers, rows } matching loadTxtFile() output.
+ * Tables match loadTxtFile() output; the optional destination map is metadata.
  */
 export interface MutationContext {
+  monsterDestinationActs?: ReadonlyMap<string, number>;
   monstats:      { headers: string[]; rows: string[][] };
   charstats:     { headers: string[]; rows: string[][] };
   skills:        { headers: string[]; rows: string[][] };
@@ -133,6 +134,7 @@ export function applyWeeklyMutations(weekNumber: number, ctx: MutationContext): 
   // misreads a decimal cell as a much larger number. Vanilla data has no bare
   // decimal cells, so any match here is a mutation bug.
   for (const [name, file] of Object.entries(ctx) as [string, MutationContext[keyof MutationContext]][]) {
+    if (!file || !('headers' in file)) continue;
     assertNoFractionalCells(`${name}.txt`, file.headers, file.rows);
   }
 }

@@ -16,7 +16,7 @@ function load(file, dependencies = {}) {
   });
   const module = { exports: {} };
   new Function('require', 'module', 'exports', outputText)(
-    id => Object.hasOwn(dependencies, id) ? dependencies[id] : require(id),
+    id => Object.hasOwn(dependencies, id) ? dependencies[id] : id.startsWith('@/') ? {} : require(id),
     module, module.exports,
   );
   return module.exports;
@@ -59,7 +59,9 @@ for (const [seed, raceMode, args] of [
   });
 }
 
-function downloadRoute(cached, allowed = true) {
+const calendar = load('src/lib/challenge/week.ts');
+const challengeRules = load('src/lib/challenge/rules.ts');
+function downloadRoute(cached, allowed = true, currentWeek = 14) {
   return load('src/app/api/download/route.ts', {
     // A regression to ZIP construction in this route must fail this test.
     'adm-zip': class { constructor() { throw new Error('Download must not rebuild the ZIP'); } },
@@ -71,7 +73,8 @@ function downloadRoute(cached, allowed = true) {
       rateLimitResponse: () => new Response(null, { status: 429 }),
     },
     '@/lib/mutations/registry': { getWeekName: () => 'Test Challenge' },
-    '@/lib/challenge/week': { getWeekStart: () => new Date('2026-04-15T12:00:00Z') },
+    '@/lib/challenge/week': { getWeekStart: () => new Date('2026-04-15T12:00:00Z'), getCurrentWeekNumber: () => currentWeek },
+    '@/lib/challenge/rules': challengeRules,
   });
 }
 
@@ -83,7 +86,8 @@ for (const weekly of [false, true]) {
     const cached = backing.subarray(6, 6 + zipBytes.length);
     const original = Buffer.from(backing);
     const route = downloadRoute(key => {
-      assert.equal(JSON.parse(key).at(-1), !weekly, 'weekly forces race mode off');
+      assert.equal(JSON.parse(key).at(-2), !weekly, 'weekly forces race mode off');
+      assert.equal(JSON.parse(key).at(-1), false, 'enemy shuffle defaults off');
       return cached;
     });
     const url = `http://localhost/api/download?seed=42${weekly ? '&weekly=1&week=1&weekOverride=1' : ''}`;
@@ -111,4 +115,48 @@ test('missing seeds, cache misses, and rate limits retain their HTTP status', as
   assert.equal((await route.GET(new Request('http://localhost/api/download?seed=42'))).status, 404);
   const limited = downloadRoute(() => { throw new Error('Must reject before cache lookup'); }, false);
   assert.equal((await limited.GET(new Request('http://localhost/api/download?seed=42'))).status, 429);
+});
+
+test('enemy shuffle has a distinct download key and stays off for challenges before rollout', async () => {
+  for (const weekly of [false, true]) {
+    const route = downloadRoute(key => {
+      assert.equal(JSON.parse(key).at(-1), !weekly);
+      return build(42, false);
+    });
+    const response = await route.GET(new Request(`http://localhost/api/download?seed=42&enemyShuffle=1${weekly ? '&weekly=1' : ''}`));
+    assert.equal(response.status, 200);
+  }
+});
+
+test('challenge 15 starts September 21; rollout follows absolute challenge number across rotations', () => {
+  assert.equal(calendar.getCurrentWeekNumber(new Date('2026-09-11T00:37:25Z')), 14);
+  assert.equal(calendar.getWeekStart(15).toISOString(), '2026-09-21T07:00:00.000Z');
+  for (let week = 1; week <= 80; week++) assert.equal(challengeRules.challengeRandomizesMonsters(week), week >= 15);
+});
+
+test('generation and download enforce the same rollout rule, ignoring client overrides', async () => {
+  for (const currentWeek of [14, 15, 46]) for (const weekOverride of [undefined, 1, 14, 15, 16, 46]) for (const flag of [undefined, false, true]) {
+    let generatedKey, downloadKey;
+    const route = load('src/app/api/randomize/route.ts', {
+      '@/lib/challenge/week': { getCurrentWeekNumber: () => currentWeek },
+      '@/lib/challenge/rules': challengeRules,
+      '@/lib/zip-cache': {
+        makeCacheKey: (...args) => JSON.stringify(args),
+        hasCached: key => { generatedKey = JSON.parse(key); return true; },
+      },
+    });
+    const response = await route.POST(new Request('http://localhost/api/randomize', {
+      method: 'POST', body: JSON.stringify({ seed: 42, enemyShuffle: flag, weeklyChallenge: { enabled: true, weekOverride } }),
+    }));
+    assert.equal(response.status, 200);
+    const params = new URLSearchParams({ seed: '42', weekly: '1' });
+    if (weekOverride !== undefined) params.set('weekOverride', String(weekOverride));
+    if (flag !== undefined) params.set('enemyShuffle', flag ? '1' : '0');
+    const download = downloadRoute(key => { downloadKey = JSON.parse(key); return Buffer.from('cached'); }, true, currentWeek);
+    assert.equal((await download.GET(new Request(`http://localhost/api/download?${params}`))).status, 200);
+    assert.deepEqual(generatedKey, downloadKey, 'generation/download keys match');
+    assert.equal(generatedKey[12], weekOverride ?? currentWeek, 'cache pins absolute challenge number');
+    assert.equal(generatedKey.at(-1), (weekOverride ?? currentWeek) >= 15);
+    assert.equal(generatedKey.at(-2), false, 'challenges remain full-class randomization');
+  }
 });

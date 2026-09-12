@@ -1,5 +1,5 @@
 import type { MutationContext } from './index';
-import { BOSS_ACTS, ACT_RE, TC_COL } from '../players-scaler';
+import { TC_COL, monsterAct } from '../players-scaler';
 
 /**
  * No Guard — nobody has defense. Not you, not them.
@@ -87,7 +87,7 @@ export function applyNoGuard(ctx: MutationContext): void {
     // Skip player summons, hirelings, traps, and map objects — same guard as
     // players-scaler. The player's own minions keep their defense.
     const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
-    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS)) continue;
+    if (monsterAct(id, tc, ctx.monsterDestinationActs) === null) continue;
 
     for (const idx of monAcIdxs) {
       const val = parseInt(row[idx], 10);

@@ -24,6 +24,7 @@ interface Options {
   xpActs: number[];
   xpDifficulties: number[];
   raceMode: boolean;
+  enemyShuffle: boolean;
 }
 
 const defaultOptions: Options = {
@@ -38,6 +39,7 @@ const defaultOptions: Options = {
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1],
   raceMode: true,
+  enemyShuffle: false,
 };
 
 function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearchParams>): Options | null {
@@ -69,6 +71,7 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
       ? p.get('xpDifficulties')!.split(',').map(Number).filter(n => n >= 1 && n <= 3)
       : [1, 2, 3],
     raceMode: p.get('raceMode') !== '0',
+    enemyShuffle: p.get('enemyShuffle') === '1',
   };
 }
 
@@ -107,7 +110,8 @@ export default function RandomizerApp() {
     const xpActsParam       = opts.xpMultiplier > 1 ? `&xpActs=${[...opts.xpActs].sort((a, b) => a - b).join(',')}` : '';
     const xpDiffParam       = opts.xpMultiplier > 1 ? `&xpDifficulties=${[...opts.xpDifficulties].sort((a, b) => a - b).join(',')}` : '';
     const raceModeParam     = !opts.raceMode ? '&raceMode=0' : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}`;
+    const enemyParam = opts.enemyShuffle ? '&enemyShuffle=1' : '';
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -138,7 +142,7 @@ export default function RandomizerApp() {
 
       setStatus('building');
       const buildingStart = Date.now();
-      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, raceMode: options.raceMode });
+      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle });
 
       await generateMod(buildBody, setErrorMessage);
 
@@ -227,7 +231,7 @@ export default function RandomizerApp() {
       </p>
 
       <p className="text-center font-cinzel text-[11px] tracking-[0.3em] uppercase text-[#7a5818] pt-2">
-        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.262: updated September 2026
+        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.30: updated September 2026
       </p>
     </div>
   );

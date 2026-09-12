@@ -15,6 +15,7 @@ import { assignPrerequisites } from '@/lib/randomizer/prereq-assigner';
 import { buildAllTreeSprites } from '@/lib/sprites/tree-stitcher';
 import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-assembler';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
+import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
 import { buildZip } from '@/lib/zip-builder';
 import { loadPatchedAnimAssets } from '@/lib/anim/anim-assets';
 import { getZipCache, getZipCacheStats, hasCached, setCached, makeCacheKey } from '@/lib/zip-cache';
@@ -22,6 +23,7 @@ import { incrementCount } from '@/lib/counter';
 import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 import { scaleMonstats } from '@/lib/randomizer/players-scaler';
+import { randomizeEnemies, finalizeEnemyManifest } from '@/lib/randomizer/enemy-randomizer';
 import { remapMonstatsSkillIds, stripSubstitutedMonsterSkills } from '@/lib/randomizer/monstats-skill-remapper';
 import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
@@ -92,9 +94,12 @@ export async function POST(request: NextRequest) {
     // keys agree. Outside weekly, raceMode defaults true (matches Season preset).
     const raceMode = weeklyEnabled ? false : (body.raceMode !== false);
     const weeklyOverride: number | undefined =
-      typeof body.weeklyChallenge?.weekOverride === 'number'
+      Number.isInteger(body.weeklyChallenge?.weekOverride)
         ? Math.max(1, Math.trunc(body.weeklyChallenge.weekOverride))
         : undefined;
+    // Resolve once before caching/queueing so a rollover cannot mix rules.
+    const weekNumber = weeklyEnabled ? (weeklyOverride ?? getCurrentWeekNumber()) : 0;
+    const enemyShuffle = weeklyEnabled ? challengeRandomizesMonsters(weekNumber) : body.enemyShuffle === true;
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
     }
@@ -107,7 +112,7 @@ export async function POST(request: NextRequest) {
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
     const effectiveXpDifficulties = xpMultiplier > 1 ? xpDifficulties : [1, 2, 3];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weeklyEnabled ? (weeklyOverride ?? -1) : 0, startingTeleportStaff && teleportStaffSpeed, false, raceMode);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle);
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
@@ -151,9 +156,6 @@ export async function POST(request: NextRequest) {
 
     const rng = createRNG(seed);
 
-    // Resolve the weekly challenge week once — used by the magic-affix pre-hook,
-    // the Mystery Box icon/string hooks, and applyWeeklyMutations below.
-    const weekNumber = weeklyEnabled ? (weeklyOverride ?? getCurrentWeekNumber()) : 0;
     const mysteryActive = weeklyEnabled && isMutationActiveForWeek(weekNumber, 'mystery-box');
 
     // Load all data
@@ -634,6 +636,14 @@ export async function POST(request: NextRequest) {
     let monstatsTxt: string | undefined;
     const monstatsSrc = loadTxtFile('monstats.txt');
     const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
+    // One shared levels table, so density mutations compose with spawn rewrites.
+    const levelsSrc = enemyShuffle || (weeklyEnabled && isMutationActiveForWeek(weekNumber, 'court-of-kings'))
+      ? loadTxtFile('levels.txt') : null;
+    const enemies = enemyShuffle && levelsSrc ? randomizeEnemies(
+      seed, monstatsSrc, levelsSrc, loadTxtFile('monstats2.txt'), loadTxtFile('missiles.txt'),
+      JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'hd', 'character', 'monsters.json'), 'utf8')),
+      summonIds,
+    ) : null;
     // Remap Skill1–8 numeric IDs to match the new row positions in skills.txt
     let scaledMonRows = remapMonstatsSkillIds(monstatsSrc.headers, monstatsSrc.rows, idMapping);
     // Strip from every monster any Skill1-8 slot whose skill was substituted this
@@ -644,9 +654,9 @@ export async function POST(request: NextRequest) {
     const substitutedSkillNames = new Set(substitutes.map(s => s.droppedSkill.skill));
     scaledMonRows = stripSubstitutedMonsterSkills(monstatsSrc.headers, scaledMonRows, substitutedSkillNames);
     if (playersEnabled && playersCount > 1)
-      scaledMonRows = scaleMonstats(monstatsSrc.headers, scaledMonRows, playersCount, playersActs, summonIds);
+      scaledMonRows = scaleMonstats(monstatsSrc.headers, scaledMonRows, playersCount, playersActs, summonIds, enemies?.destinationActs);
     if (xpMultiplier > 1)
-      scaledMonRows = scaleExperienceRows(monstatsSrc.headers, scaledMonRows, xpMultiplier, xpActs, xpDifficulties, summonIds);
+      scaledMonRows = scaleExperienceRows(monstatsSrc.headers, scaledMonRows, xpMultiplier, xpActs, xpDifficulties, summonIds, enemies?.destinationActs);
     monstatsSrc.rows = scaledMonRows;
 
     // Step 11c: superuniques — Corpsefire TC drop (always included in zip)
@@ -669,11 +679,6 @@ export async function POST(request: NextRequest) {
       const armorSrc = loadTxtFile('armor.txt');
       const weaponsSrc = loadTxtFile('weapons.txt');
       const miscSrc = loadTxtFile('misc.txt');
-      // loadTxtFile deep-copies its cache entry on every call, so both of these
-      // are gated on their mutation being active rather than loaded speculatively.
-      const levelsSrc = isMutationActiveForWeek(weekNumber, 'court-of-kings')
-        ? loadTxtFile('levels.txt')
-        : null;
       // Band of Brothers scales hireling rows. When the hireling-aura option is
       // off nothing has loaded the file yet, so load it here; when it is on we
       // reuse the same rows writeHirelingRows already populated. Loading is gated
@@ -684,6 +689,7 @@ export async function POST(request: NextRequest) {
       }
 
       applyWeeklyMutations(weekNumber, {
+        monsterDestinationActs: enemies?.destinationActs,
         monstats:      monstatsSrc,
         charstats:     charstats,
         skills:        skillsTxt,
@@ -713,12 +719,6 @@ export async function POST(request: NextRequest) {
       weaponsTxt    = serializeTxtFile(weaponsSrc.headers, weaponsSrc.rows);
       experienceTxt = serializeTxtFile(expSrc.headers, expSrc.rows);
       miscTxt       = serializeTxtFile(miscSrc.headers, miscSrc.rows);
-      // Ship levels.txt only when Court of Kings actually rewrote it — it is the
-      // largest table in the set and drives every area's spawn layout, so
-      // round-tripping an untouched copy into the mod is risk without benefit.
-      if (levelsSrc) {
-        levelsTxt = serializeTxtFile(levelsSrc.headers, levelsSrc.rows);
-      }
 
       // House Always Wins: gambling is the only source of weapons/armor, so ship a
       // comprehensive gamble pool (vanilla omits daggers, throwing weapons, class items…).
@@ -738,6 +738,8 @@ export async function POST(request: NextRequest) {
     }
 
     monstatsTxt     = serializeTxtFile(monstatsSrc.headers, monstatsSrc.rows);
+    if (levelsSrc) levelsTxt = serializeTxtFile(levelsSrc.headers, levelsSrc.rows);
+    if (enemies) finalizeEnemyManifest(enemies.manifest, monstatsSrc);
     superuniquesTxt = serializeTxtFile(suSrc.headers, suSrc.rows);
     // Serialize tcTxt if any feature modified tcSrc (teleport staff or weekly mutations)
     if (startingTeleportStaff || weeklyEnabled) {
@@ -778,6 +780,10 @@ export async function POST(request: NextRequest) {
       itemNamesJson,
       hirelingTxt: hirelingTxtContent,
       levelsTxt,
+      monsterGraphicsJson: enemies ? JSON.stringify(enemies.graphics, null, 2) : undefined,
+      enemyManifestJson: enemies ? JSON.stringify(enemies.manifest, null, 2) : undefined,
+      missilesTxt: enemies?.manifest.projectiles.length
+        ? serializeTxtFile(enemies.missiles.headers, enemies.missiles.rows) : undefined,
       hireableSprite,
       chatPanelJson: disableChat ? formatUiJson(chatPanelRaw) : undefined,
       chatPanelHdJson: disableChat ? formatUiJson(chatPanelHdRaw) : undefined,

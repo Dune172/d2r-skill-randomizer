@@ -1,5 +1,5 @@
 import type { MutationContext } from './index';
-import { TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
+import { TC_COL, monsterAct } from '../players-scaler';
 
 const REGEN_MULT = 4;
 const REGEN_BASE = 1;
@@ -14,7 +14,7 @@ export function applyBloodthirst(ctx: MutationContext): void {
     const id = row[0];
     if (!id) continue;
     const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
-    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS)) continue;
+    if (monsterAct(id, tc, ctx.monsterDestinationActs) === null) continue;
     const val = parseInt(row[regenIdx], 10);
     const effective = (!isNaN(val) && val > 0) ? val : REGEN_BASE;
     row[regenIdx] = String(effective * REGEN_MULT);

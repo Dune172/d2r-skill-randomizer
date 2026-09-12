@@ -30,5 +30,5 @@
  * bump, or players keep being served the cached broken ZIP; their skill layouts
  * are unaffected.
  */
-// v45 caches the launcher inside the ZIP; older cached archives lack it.
-export const PIPELINE_VERSION = 45;
+// v52 preserves shuffled monsters' original Nightmare/Hell resistances.
+export const PIPELINE_VERSION = 52;

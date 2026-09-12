@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ProgressIndicator from '@/components/ProgressIndicator';
 import { generateMod } from '@/lib/generate-mod';
+import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
 
 // Season Beta Race preset — same settings as the randomizer's season1race preset
 export const SEASON1_OPTIONS = {
@@ -45,6 +46,7 @@ export function ChallengeGenerator({
 }) {
   const [status, setStatus] = useState<GenStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const challengeWeek = weekOverride ?? weekNumber;
 
   const downloadUrl =
     `/api/download?seed=${seed}` +
@@ -59,7 +61,7 @@ export function ChallengeGenerator({
     `&xpDifficulties=${SEASON1_OPTIONS.xpDifficulties.join(',')}` +
     `&weekly=1` +
     `&week=${weekNumber}` +
-    (weekOverride ? `&weekOverride=${weekOverride}` : '') +
+    `&weekOverride=${challengeWeek}` +
     `&raceMode=0`;
 
   const handleGenerate = async () => {
@@ -71,7 +73,7 @@ export function ChallengeGenerator({
       await generateMod(JSON.stringify({
         seed,
         ...SEASON1_OPTIONS,
-        weeklyChallenge: weekOverride ? { enabled: true, weekOverride } : { enabled: true },
+        weeklyChallenge: { enabled: true, weekOverride: challengeWeek },
       }), setErrorMsg);
       const elapsed = Date.now() - buildingStart;
       if (elapsed < 6000) await new Promise(r => setTimeout(r, 6000 - elapsed));
@@ -108,6 +110,11 @@ export function ChallengeGenerator({
       {status !== 'ready' && (
         <p className="-mt-2 text-center text-[11px] text-[#8a7040] italic">
           Requires the Reign of the Warlock expansion.
+        </p>
+      )}
+      {challengeRandomizesMonsters(challengeWeek) && (
+        <p className="text-center text-xs text-[#c8a870]">
+          Monster randomization is enabled for this challenge, with stats balanced for each area.
         </p>
       )}
       <ProgressIndicator status={status} message={errorMsg} />

@@ -1,5 +1,5 @@
 import type { MutationContext } from './index';
-import { TC_COL, ACT_RE, BOSS_ACTS } from '../players-scaler';
+import { TC_COL, monsterAct } from '../players-scaler';
 
 const ELEM_RES_BONUS = 30;
 const PHYS_RES_PENALTY = 40;
@@ -25,7 +25,7 @@ export function applyTemperedEdge(ctx: MutationContext): void {
     const id = row[0];
     if (!id) continue;
     const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
-    if (!ACT_RE.test(tc) && !(id in BOSS_ACTS)) continue;
+    if (monsterAct(id, tc, ctx.monsterDestinationActs) === null) continue;
 
     for (const idx of elemIdxs) {
       const val = parseInt(row[idx], 10);

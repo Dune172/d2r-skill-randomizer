@@ -9,6 +9,11 @@ const DAMAGE_AR_COLS = [
 export const TC_COL = 'TreasureClass';
 export const ACT_RE = /^Act (\d)/;
 
+/** Relocated monsters belong to their destination, including special loot tables. */
+export function monsterAct(id: string, treasureClass: string, destinations?: ReadonlyMap<string, number>): number | null {
+  return destinations?.get(id) ?? (Number(treasureClass.match(ACT_RE)?.[1]) || BOSS_ACTS[id] || null);
+}
+
 // Combat monsters whose TreasureClass doesn't contain "Act N" but belong to a specific act.
 // Exported so experience-scaler can reuse the same act mapping.
 // Player summons (golem, valkyrie, druidbear), Uber bosses, Cow Level, and map objects are omitted.
@@ -62,6 +67,7 @@ export function scaleMonstats(
   playerCount: number,
   acts: number[] = [1, 2, 3, 4, 5],
   skipIds: Set<string> = new Set(),
+  destinationActs?: ReadonlyMap<string, number>,
 ): string[][] {
   const hpExpMultiplier = (playerCount + 1) / 2;
   const damageArMultiplier = 1 + (playerCount - 1) / 16;
@@ -71,13 +77,8 @@ export function scaleMonstats(
   return rows.map(row => {
     const id = row[0];
     if (skipIds.has(id)) return row;
-    let monsterAct: number | null = null;
-    if (tcIdx !== -1) {
-      const tc = row[tcIdx] ?? '';
-      const m = tc.match(ACT_RE);
-      monsterAct = m ? parseInt(m[1]) : (BOSS_ACTS[id] ?? null);
-    }
-    if (monsterAct === null || !actsSet.has(monsterAct)) return row;
+    const act = monsterAct(id, tcIdx !== -1 ? row[tcIdx] ?? '' : '', destinationActs);
+    if (act === null || !actsSet.has(act)) return row;
 
     const scaled = [...row];
 

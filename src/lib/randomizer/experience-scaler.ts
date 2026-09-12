@@ -1,4 +1,4 @@
-import { ACT_RE, BOSS_ACTS, EXP_COLS, TC_COL } from '@/lib/randomizer/players-scaler';
+import { monsterAct, EXP_COLS, TC_COL } from './players-scaler';
 
 /**
  * Scale monster XP by multiplier for monsters belonging to the specified acts.
@@ -17,6 +17,7 @@ export function scaleExperienceRows(
   acts: number[],
   difficulties: number[] = [1, 2, 3],
   skipIds: Set<string> = new Set(),
+  destinationActs?: ReadonlyMap<string, number>,
 ): string[][] {
   const tcIdx = headers.indexOf(TC_COL);
   const actsSet = new Set(acts);
@@ -25,13 +26,8 @@ export function scaleExperienceRows(
   return rows.map(row => {
     const id = row[0];
     if (skipIds.has(id)) return row;
-    let monsterAct: number | null = null;
-    if (tcIdx !== -1) {
-      const tc = row[tcIdx] ?? '';
-      const m = tc.match(ACT_RE);
-      monsterAct = m ? parseInt(m[1]) : (BOSS_ACTS[id] ?? null);
-    }
-    if (monsterAct === null || !actsSet.has(monsterAct)) return row;
+    const act = monsterAct(id, tcIdx !== -1 ? row[tcIdx] ?? '' : '', destinationActs);
+    if (act === null || !actsSet.has(act)) return row;
 
     const scaled = [...row];
     for (const col of cols) {

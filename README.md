@@ -114,6 +114,33 @@ public/
 
 ---
 
+## Enemy shuffle (experimental)
+
+The generator's **Randomize monsters** checkbox moves eligible ordinary
+monster families across acts and gives each replacement destination-appropriate
+levels and drops. The game's level scaling adjusts health, damage, defense,
+attack rating and XP using each donor's own stat multipliers. Separate limits
+handle resistances, status duration, critical hits and pack size. Starting-area
+Normal resistances are capped at 25%, so imported monsters cannot bring immunities.
+Nightmare and Hell retain each donor's original resistances and immunities without caps.
+It uses a separate seeded RNG, so enabling
+it does not change the skill trees. Bosses, scripted encounters and unsupported
+families keep their original spawns. The option defaults on for Season Beta Race
+and off for Turbo. Shared links preserve the selected setting; older links without
+`enemyShuffle=1` keep it off. Mutation challenges enable it automatically starting
+with Challenge 15 (September 21, 2026); challenges 1–14 keep it off on replay.
+
+Generated archives include `enemy-shuffle.json` in the seed folder with the roster,
+skipped encounters and stats before/after modifiers. The expanded roster changes
+301 of 540 Normal spawn entries (56%), including all three Blood Moor families.
+Mummies, Enslaved and Zakarum zealots join the donor pool. More ordinary encounters
+can be replaced, while dependent monster groups stay together.
+Relocated quill rats use private projectiles scaled from their destination attack
+budget, with original projectiles preserved. The expanded roster still needs
+in-game validation for rendering, AI, pathing and combat pacing. Run
+`npm run test:enemies` for data and integration checks. See
+[the implementation notes](docs/enemy-randomization-design.md) for scope and testing.
+
 ## Mutations
 
 Mutations are optional modifiers applied on top of the shuffle. Each one modifies one or more game data TXT files through a `MutationContext` object passed through the pipeline.

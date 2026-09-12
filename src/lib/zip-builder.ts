@@ -15,6 +15,9 @@ export interface ZipContents {
   charstatsTxt?: string;            // charstats with randomised StartSkill per class
   itemModifiersJson?: string;       // skill tab label strings (StrSklTabItem1–24)
   monstatsTxt?: string;             // monstats with HP/Exp scaled for players simulation
+  monsterGraphicsJson?: string;     // HD asset aliases for generated enemy IDs
+  enemyManifestJson?: string;       // inspectable roster and balance report (outside game data)
+  missilesTxt?: string;            // private, owner-scaled projectiles for relocated enemies
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
   treasureClassExTxt?: string;      // treasureclassex with Blood Raven quest drop TC
   superuniquesTxt?: string;         // superuniques with Blood Raven entry pointing to TC
@@ -67,6 +70,16 @@ export function buildZip(contents: ZipContents): Buffer {
   const d = `${m}/${m}.mpq`; // data root — D2R requires this subfolder name
 
   const str = (s: string) => Buffer.from(s, 'utf-8');
+
+  if (contents.monsterGraphicsJson) {
+    zip.addFile(`${d}/data/hd/character/monsters.json`, str(contents.monsterGraphicsJson));
+  }
+  if (contents.enemyManifestJson) {
+    zip.addFile(`${m}/enemy-shuffle.json`, str(contents.enemyManifestJson));
+  }
+  if (contents.missilesTxt) {
+    zip.addFile(`${d}/data/global/excel/missiles.txt`, str(contents.missilesTxt));
+  }
 
   // Cache the complete download, including its seed/mode-specific launcher.
   zip.addFile(`D2R Randomizer ${contents.seed}.lnk`,

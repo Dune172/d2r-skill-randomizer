@@ -1,5 +1,5 @@
 import type { MutationContext } from './index';
-import { BOSS_ACTS, ACT_RE, TC_COL } from '../players-scaler';
+import { TC_COL, monsterAct } from '../players-scaler';
 
 /**
  * Molasses — the world crawls, but every blow lands like a truck.
@@ -56,7 +56,7 @@ export function applyMolasses(ctx: MutationContext): void {
 
     // Skip player summons, traps, and map objects — same guard as players-scaler.
     const tc = tcIdx !== -1 ? (row[tcIdx] ?? '') : '';
-    const isEnemy = ACT_RE.test(tc) || id in BOSS_ACTS;
+    const isEnemy = monsterAct(id, tc, ctx.monsterDestinationActs) !== null;
     if (!isEnemy) continue;
 
     for (const idx of speedIdxs) {
