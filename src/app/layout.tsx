@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SiteNav from "@/app/components/SiteNav";
 import SiteFooter from "@/app/components/SiteFooter";
+import AdSenseProvider from "@/app/components/AdSenseProvider";
+import { adsense } from '@/lib/adsense';
 // Boot-time warmup is wired up via src/instrumentation.ts (Next.js register()
 // hook) — runs once per process before any request is served.
 
@@ -12,6 +14,8 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const cinzel = Cinzel({ variable: "--font-cinzel", subsets: ["latin"], weight: ["400", "700", "900"], display: 'swap' });
 
 export const metadata: Metadata = {
+  // Verification works before ad serving is enabled, without loading Google JS.
+  other: adsense.clientId ? { 'google-adsense-account': adsense.clientId } : {},
   metadataBase: new URL('https://d2rrandomizer.com'),
   title: {
     default: 'D2R Randomizer — Diablo 2 Resurrected Skill Randomizer Mod',
@@ -80,9 +84,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     else{fetch('/api/hit',{method:'POST',headers:{'Content-Type':'application/json'},body:data,keepalive:true});}
   }catch(e){}
 })();` }} />
-        <SiteNav />
-        <div className="flex-1">{children}</div>
-        <SiteFooter />
+        <AdSenseProvider>
+          <SiteNav />
+          <div className="flex-1">{children}</div>
+          <SiteFooter />
+        </AdSenseProvider>
       </body>
     </html>
   );

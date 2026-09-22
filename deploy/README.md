@@ -75,6 +75,14 @@ pm2 reload d2rr              # zero-downtime reload if ecosystem already loaded
 # first time only: pm2 start ecosystem.config.js && pm2 save
 ```
 
+## AdSense
+
+See [the implementation and activation plan](../docs/adsense-implementation-plan.md)
+and [environment template](adsense.env.example). Ads are disabled by default.
+Set public configuration before building; rebuild and redeploy to activate or
+disable ads. The publisher ID alone enables verification and `/ads.txt` without
+serving ads.
+
 ## Health check
 
 `curl https://d2rrandomizer.com/api/health` returns queue depth, zip cache size, RSS, counter. Point an UptimeRobot monitor at it during a spike.

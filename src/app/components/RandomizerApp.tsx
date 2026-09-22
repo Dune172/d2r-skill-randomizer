@@ -9,6 +9,7 @@ import { InstallInstructions } from './InstallInstructions';
 import { pickRaceClassName } from '@/lib/classes';
 import type { PreviewData } from '@/lib/randomizer/types';
 import { generateMod } from '@/lib/generate-mod';
+import AdUnit from './AdUnit';
 
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
 
@@ -217,6 +218,8 @@ export default function RandomizerApp() {
       {preview && !currentOptions.raceMode && (
         <SkillTreePreview data={preview} />
       )}
+
+      {status === 'ready' && <AdUnit placement="generate" />}
 
       <p className="text-center text-sm text-amber-700/80 pt-4">
         <a

@@ -37,6 +37,13 @@ export default function SiteFooter() {
           >
             Patch Notes
           </Link>
+          <span className="text-[#3a1510] select-none">|</span>
+          <Link
+            href="/privacy"
+            className="px-3 py-1.5 text-xs text-[#a89060] hover:text-[#c8942a]"
+          >
+            Privacy Policy
+          </Link>
         </nav>
 
         {/* Disclaimer block */}

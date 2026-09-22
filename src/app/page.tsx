@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import AdUnit from '@/app/components/AdUnit';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { HomeChallengeCard } from '@/app/components/HomeChallengeCard';
 
@@ -204,6 +205,8 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <AdUnit placement="home" />
 
       {/* ── Challenge + Community (two-column on desktop) ── */}
       <section className="max-w-5xl mx-auto px-4 mb-14 grid grid-cols-1 lg:grid-cols-2 gap-6">

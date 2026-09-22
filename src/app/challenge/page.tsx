@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { WeekCard } from './WeekData';
+import AdUnit from '@/app/components/AdUnit';
 
 function Step({ number, text }: { number: number; text: ReactNode }) {
   return (
@@ -75,6 +76,8 @@ export default function ChallengePage() {
           experience — same seed, same settings, same starting point.
         </p>
       </section>
+
+      <AdUnit placement="challenge" />
 
       {/* How It Works */}
       <section className="max-w-2xl mx-auto px-4 mb-10">
