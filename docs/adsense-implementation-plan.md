@@ -2,7 +2,9 @@
 
 Updated September 22, 2026 after inspecting the source repository. This replaces the assumptions in `ezoic-implementation-plan.md.html`; despite that filename, the supplied document describes Google AdSense.
 
-Publisher ID received: `ca-pub-3935204626299309`. It is now the site's default public configuration, with an environment override available. The next build includes the verification meta tag and serves `google.com, pub-3935204626299309, DIRECT, f08c47fec0942fa0` at `/ads.txt`. Ad serving remains disabled pending slot IDs, approval, and consent setup. These changes have not been deployed to the live site.
+Publisher ID: `ca-pub-3935204626299309`. Verification and `/ads.txt` were deployed in commit `b0923af`, and the owner has confirmed successful verification. Google's site approval is pending. Ad serving remains disabled until approval and consent setup are complete.
+
+All three ad unit IDs are configured: homepage `1283727238`; Mutation Challenge `3545174476`; after mod generation `1395407878`. These public IDs are defaults with environment overrides; an explicitly blank override disables that placement. This configuration release keeps ad serving disabled. Activation requires setting `NEXT_PUBLIC_ADSENSE_ENABLED=true` at build time and deploying a new build after approval and consent setup.
 
 ## Launch approach
 
