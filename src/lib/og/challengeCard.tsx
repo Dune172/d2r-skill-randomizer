@@ -12,6 +12,7 @@ import {
   getWeekEnd,
   getWeekSeed,
   formatWeekDate,
+  challengePeriodLabel,
 } from '@/lib/challenge/week';
 import { getActiveMutations, getWeekName, type MutationDef } from '@/lib/mutations/registry';
 import { OG_FONTS } from './fonts';
@@ -131,7 +132,7 @@ export async function buildChallengeCardImageResponse(weekNumber: number): Promi
               display: 'flex',
             }}
           >
-            This Week&apos;s Challenge Seed
+            This {challengePeriodLabel(weekNumber)}&apos;s Challenge Seed
           </div>
 
           <div

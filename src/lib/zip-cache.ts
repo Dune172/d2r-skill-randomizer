@@ -12,6 +12,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { PIPELINE_VERSION } from './randomizer/pipeline-version';
 import { statePath } from './state-dir';
+import { autumnCacheTag } from './autumn/overlay';
 
 const CACHE_KEY = '__d2r_zip_cache__';
 const CACHE_META_KEY = '__d2r_zip_cache_meta__';
@@ -344,9 +345,10 @@ export function makeCacheKey(
   raceMode: boolean = true,
   enemyShuffle: boolean = false,
   forgottenArts: boolean = false,
+  season: string = autumnCacheTag(),
 ): string {
   const actsKey = [...playersActs].sort((a, b) => a - b).join('');
   const xpActsKey = [...xpActs].sort((a, b) => a - b).join('');
   const xpDifficultiesKey = [...xpDifficulties].sort((a, b) => a - b).join('');
-  return `${versionPrefix()}${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${hirelingAura?1:0}:${dropSource}:${disableChat?1:0}:${horadricCube?1:0}:${enablePrereqs?1:0}:${xpMultiplier}:${xpActsKey}:${xpDifficultiesKey}:${weeklyKey}:${teleportStaffSpeed?1:0}:${excludeTeleport?1:0}:${raceMode?1:0}:${enemyShuffle?1:0}${forgottenArts ? ':forgotten-arts-v23' : ''}${weeklyKey >= 16 ? ':monthly-v1' : ''}`;
+  return `${versionPrefix()}${seed}:${playersCount}:${teleportStaffLevel}:${actsKey}:${hirelingAura?1:0}:${dropSource}:${disableChat?1:0}:${horadricCube?1:0}:${enablePrereqs?1:0}:${xpMultiplier}:${xpActsKey}:${xpDifficultiesKey}:${weeklyKey}:${teleportStaffSpeed?1:0}:${excludeTeleport?1:0}:${raceMode?1:0}:${enemyShuffle?1:0}${forgottenArts ? ':forgotten-arts-v23' : ''}${weeklyKey >= 16 ? ':monthly-v1' : ''}${season}`;
 }

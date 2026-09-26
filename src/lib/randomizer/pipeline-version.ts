@@ -31,4 +31,5 @@
  * are unaffected.
  */
 // v56 changes Molasses to 30% slower movement, preserving its damage settings.
-export const PIPELINE_VERSION = 56;
+// v57 adds the Autumn Towns HD overlay to mods generated in October/November.
+export const PIPELINE_VERSION = 57;

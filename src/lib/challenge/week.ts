@@ -20,6 +20,11 @@ const APPROX_WEEK_MS = 14 * 24 * 60 * 60 * 1000;
 export const FIRST_MONTHLY_CHALLENGE = 16;
 export const OCTOBER_2026_CHALLENGE = FIRST_MONTHLY_CHALLENGE;
 
+/** 'Month' for calendar-month challenges, 'Week' for the earlier fortnightly ones ("This Month's Challenge"). */
+export function challengePeriodLabel(challenge: number): 'Month' | 'Week' {
+  return challenge >= FIRST_MONTHLY_CHALLENGE ? 'Month' : 'Week';
+}
+
 /**
  * Returns the LA timezone's UTC offset, in milliseconds, for the given moment.
  * Negative for west of UTC: -25,200,000 (-7h) during PDT, -28,800,000 (-8h) during PST.

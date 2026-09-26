@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import AdUnit from '@/app/components/AdUnit';
-import { getCurrentWeekNumber } from '@/lib/challenge/week';
+import { getCurrentWeekNumber, challengePeriodLabel } from '@/lib/challenge/week';
 import { HomeChallengeCard } from '@/app/components/HomeChallengeCard';
 
 // Force dynamic rendering so the weekly challenge card always reflects the
@@ -168,7 +168,7 @@ export default function Home() {
             href="/challenge"
             className="font-cinzel tracking-[0.2em] uppercase text-sm px-10 py-3.5 bg-transparent hover:bg-[#1a0a06] border border-[#c8942a]/30 text-[#a87830] hover:text-[#c8942a] transition-colors"
           >
-            This Week&apos;s Challenge
+            This {challengePeriodLabel(weekNumber)}&apos;s Challenge
           </Link>
         </div>
 
@@ -211,7 +211,7 @@ export default function Home() {
       {/* ── Challenge + Community (two-column on desktop) ── */}
       <section className="max-w-5xl mx-auto px-4 mb-14 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {/* This Week's Challenge */}
+        {/* Current challenge */}
         <HomeChallengeCard weekNumber={weekNumber} />
 
         {/* Community Cards */}

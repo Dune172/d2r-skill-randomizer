@@ -1,0 +1,365 @@
+{
+ "act1/town/towne1": {
+  "act": 1,
+  "npcs": {
+   "akara": [
+    425,
+    93
+   ],
+   "charsi": [
+    229,
+    115
+   ],
+   "gheed": [
+    233,
+    237
+   ],
+   "kashya": [
+    343,
+    133
+   ],
+   "warriv1": [
+    293,
+    151
+   ]
+  },
+  "objects": {
+   "stash": [
+    293,
+    139
+   ]
+  }
+ },
+ "act1/town/townn1": {
+  "act": 1,
+  "npcs": {
+   "akara": [
+    385,
+    33
+   ],
+   "charsi": [
+    189,
+    55
+   ],
+   "gheed": [
+    191,
+    175
+   ],
+   "kashya": [
+    307,
+    93
+   ],
+   "warriv1": [
+    253,
+    91
+   ]
+  },
+  "objects": {
+   "stash": [
+    253,
+    79
+   ]
+  }
+ },
+ "act1/town/towns1": {
+  "act": 1,
+  "npcs": {
+   "akara": [
+    385,
+    203
+   ],
+   "charsi": [
+    189,
+    225
+   ],
+   "gheed": [
+    197,
+    355
+   ],
+   "kashya": [
+    311,
+    263
+   ],
+   "warriv1": [
+    253,
+    261
+   ]
+  },
+  "objects": {
+   "stash": [
+    253,
+    249
+   ]
+  }
+ },
+ "act1/town/townw1": {
+  "act": 1,
+  "npcs": {
+   "akara": [
+    245,
+    143
+   ],
+   "charsi": [
+    49,
+    165
+   ],
+   "gheed": [
+    51,
+    287
+   ],
+   "kashya": [
+    157,
+    187
+   ],
+   "warriv1": [
+    113,
+    201
+   ]
+  },
+  "objects": {
+   "stash": [
+    113,
+    189
+   ]
+  }
+ },
+ "act2/town/lutn": {
+  "act": 2,
+  "npcs": {
+   "act2female": [
+    299,
+    135
+   ],
+   "act2male": [
+    251,
+    139
+   ],
+   "act2vendor1": [
+    287,
+    149
+   ],
+   "act2vendor2": [
+    349,
+    209
+   ],
+   "atma": [
+    263,
+    89
+   ],
+   "cain2": [
+    261,
+    173
+   ],
+   "drognan": [
+    177,
+    53
+   ],
+   "elzix": [
+    61,
+    193
+   ],
+   "fara": [
+    231,
+    161
+   ],
+   "geglash": [
+    297,
+    57
+   ],
+   "greiz": [
+    57,
+    97
+   ],
+   "lysander": [
+    227,
+    215
+   ],
+   "meshif1": [
+    427,
+    157
+   ],
+   "warriv2": [
+    293,
+    401
+   ]
+  },
+  "objects": {
+   "stash": [
+    243,
+    147
+   ]
+  }
+ },
+ "act2/town/lutw": {
+  "act": 2,
+  "npcs": {
+   "act2female": [
+    145,
+    141
+   ],
+   "act2male": [
+    189,
+    381
+   ],
+   "act2vendor1": [
+    287,
+    149
+   ],
+   "act2vendor2": [
+    349,
+    209
+   ],
+   "atma": [
+    263,
+    89
+   ],
+   "cain2": [
+    261,
+    173
+   ],
+   "drognan": [
+    177,
+    57
+   ],
+   "elzix": [
+    53,
+    205
+   ],
+   "fara": [
+    231,
+    161
+   ],
+   "geglash": [
+    297,
+    57
+   ],
+   "greiz": [
+    53,
+    93
+   ],
+   "lysander": [
+    227,
+    215
+   ],
+   "meshif1": [
+    427,
+    157
+   ],
+   "warriv2": [
+    293,
+    401
+   ]
+  },
+  "objects": {
+   "stash": [
+    243,
+    153
+   ]
+  }
+ },
+ "act3/docktown/docktown3": {
+  "act": 3,
+  "npcs": {
+   "act3hire": [
+    451,
+    273
+   ],
+   "alkor": [
+    167,
+    17
+   ],
+   "asheara": [
+    67,
+    181
+   ],
+   "cain3": [
+    279,
+    127
+   ],
+   "meshif2": [
+    223,
+    331
+   ],
+   "natalya": [
+    443,
+    223
+   ],
+   "ormus": [
+    237,
+    171
+   ]
+  },
+  "objects": {
+   "stash": [
+    283,
+    115
+   ]
+  }
+ },
+ "act4/fort/fortress": {
+  "act": 4,
+  "npcs": {
+   "cain4": [
+    43,
+    57
+   ],
+   "halbu": [
+    167,
+    47
+   ],
+   "jamella": [
+    167,
+    117
+   ],
+   "tyrael2": [
+    41,
+    41
+   ]
+  },
+  "objects": {
+   "stash": [
+    39,
+    81
+   ]
+  }
+ },
+ "expansion/town/townwest": {
+  "act": 5,
+  "npcs": {
+   "cain6": [
+    155,
+    173
+   ],
+   "injuredbarb1": [
+    131,
+    45
+   ],
+   "injuredbarb2": [
+    161,
+    35
+   ],
+   "injuredbarb3": [
+    139,
+    25
+   ],
+   "malah": [
+    165,
+    61
+   ],
+   "nihlathak": [
+    153,
+    253
+   ],
+   "qual-kehk": [
+    117,
+    163
+   ]
+  },
+  "objects": {
+   "stash": [
+    249,
+    115
+   ]
+  }
+ }
+}

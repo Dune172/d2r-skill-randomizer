@@ -47,6 +47,7 @@ export interface ZipContents {
   gambleTxt?: string;               // gamble.txt — comprehensive gamble pool (House Always Wins only)
   animDataD2?: Buffer;              // animdata.d2 with Warlock A1/A2 records synced to their COFs
   charCofs?: Map<string, Buffer>;   // zip path under data/ → COF with injected trigger frame (must match animDataD2)
+  autumnFiles?: Map<string, Buffer>; // seasonal HD overlay, paths under data/ (src/lib/autumn)
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -111,6 +112,11 @@ export function buildZip(contents: ZipContents): Buffer {
   }
   if (contents.missilesTxt) {
     zip.addFile(`${d}/data/global/excel/missiles.txt`, str(contents.missilesTxt));
+  }
+  if (contents.autumnFiles) {
+    for (const [relativePath, buffer] of contents.autumnFiles) {
+      zip.addFile(`${d}/data/${relativePath}`, buffer);
+    }
   }
 
   // Cache the complete download, including its seed/mode-specific launcher.

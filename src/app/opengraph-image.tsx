@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element, jsx-a11y/alt-text */
 import { ImageResponse } from 'next/og';
-import { getCurrentWeekNumber } from '@/lib/challenge/week';
+import { getCurrentWeekNumber, challengePeriodLabel } from '@/lib/challenge/week';
 import { getActiveMutations, getWeekName } from '@/lib/mutations/registry';
 import { OG_FONTS } from '@/lib/og/fonts';
 import { OG_PALETTE } from '@/lib/og/palette';
@@ -130,7 +130,7 @@ export default async function Image() {
             }}
           />
 
-          {/* Week teaser */}
+          {/* Challenge teaser */}
           <div
             style={{
               color: GOLD_SOFT,
@@ -141,7 +141,7 @@ export default async function Image() {
               display: 'flex',
             }}
           >
-            This Week · {weekName}
+            This {challengePeriodLabel(weekNumber)} · {weekName}
           </div>
 
           <div style={{ display: 'flex', gap: 16 }}>

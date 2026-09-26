@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getCurrentWeekNumber } from '@/lib/challenge/week';
+import { getCurrentWeekNumber, challengePeriodLabel } from '@/lib/challenge/week';
 import { getEntries, stripIp } from '@/lib/leaderboard';
 import { ArchiveWeekCard } from './ArchiveWeekCard';
 import { PatreonPopup } from './KofiPopup';
@@ -63,7 +63,7 @@ export default function ArchivePage() {
                 hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
                 transition-colors panel-shadow inline-block mt-5"
             >
-              View This Week&apos;s Challenge
+              View This {challengePeriodLabel(currentWeek)}&apos;s Challenge
             </Link>
           </div>
         ) : (

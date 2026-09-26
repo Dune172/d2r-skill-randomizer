@@ -42,3 +42,8 @@ next-env.d.ts
 
 # runtime state
 counter.json
+
+# Autumn Towns build intermediates (the shipped overlay is data/autumn/overlay.zip)
+/data/autumn/overlay/
+/data/autumn/foliage/*.texture
+__pycache__/

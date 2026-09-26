@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.32',
+    date: 'September 2026',
+    tagline: 'Autumn comes to Sanctuary',
+    notes: [
+      'Every mod generated in October and November, every year, gets an autumn makeover. It’s purely visual and changes nothing about gameplay, and it’s HD only; the classic graphics mode looks the same as always',
+      'Pumpkins and glowing jack-o’-lanterns in all five towns: around the Rogue Encampment bonfire, by Akara, Gheed, Charsi and the stash, and near the vendors of Lut Gholein, Kurast, the Pandemonium Fortress and Harrogath',
+      'Act I outdoors turns to fall: red and orange maples, red hawthorn and golden witch hazel, fallen leaves on the grass, trees swaying in a stronger wind, and warmer, golden light',
+      'The decorations have no collision, so they never block your path',
+    ],
+  },
+  {
     version: 'v0.31',
     date: 'September 2026',
     tagline: 'Forgotten Arts: learn magic from the books you carry',
