@@ -1,0 +1,4072 @@
+WEBVTT
+X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:180000
+00:00:05.280 --> 00:00:08.080
+Hi, everyone. We are so excited that you're
+
+00:00:08.080 --> 00:00:10.960
+here today. Thank you so much for joining
+
+00:00:10.960 --> 00:00:13.205
+us. We're gonna talk a little bit about
+
+00:00:13.205 --> 00:00:16.265
+how our own marketing team uses Claude Cowork.
+
+00:00:16.885 --> 00:00:18.405
+But to kick us off, we wanna start
+
+00:00:18.405 --> 00:00:20.245
+with a poll. We would love to kinda
+
+00:00:20.245 --> 00:00:23.365
+understand how familiar you are with Cowork. Are
+
+00:00:23.365 --> 00:00:24.960
+you still kinda figuring out, like, what is
+
+00:00:24.960 --> 00:00:27.920
+it even? Have you played around with it
+
+00:00:27.920 --> 00:00:30.020
+a little bit, or are you a cowork
+
+00:00:30.960 --> 00:00:34.960
+pro? A couple of just housekeeping notes before
+
+00:00:34.960 --> 00:00:38.655
+we get started. First is this session is
+
+00:00:38.655 --> 00:00:40.575
+being recorded. So if you feel like you've
+
+00:00:40.575 --> 00:00:42.175
+missed something or if you wanna share with
+
+00:00:42.175 --> 00:00:44.415
+a teammate, it will be in your inbox
+
+00:00:44.415 --> 00:00:47.135
+within twenty four hours. The second thing is
+
+00:00:47.135 --> 00:00:49.730
+is that, we will be answering questions throughout
+
+00:00:49.730 --> 00:00:52.450
+the session. We will be holding, time at
+
+00:00:52.450 --> 00:00:54.930
+the very end to answer answer questions, but
+
+00:00:54.930 --> 00:00:58.290
+definitely make sure throughout the the webinar to
+
+00:00:58.290 --> 00:00:59.890
+type in your questions, and we'll try to
+
+00:00:59.890 --> 00:01:02.225
+get to them as quickly as possible. And
+
+00:01:02.225 --> 00:01:04.145
+then the third thing is is that we
+
+00:01:04.145 --> 00:01:08.225
+love feedback. We wanna, make these sessions helpful
+
+00:01:08.225 --> 00:01:11.345
+and better, so please make sure to to
+
+00:01:11.345 --> 00:01:13.345
+give us your feedback at the end end
+
+00:01:13.345 --> 00:01:19.000
+of this time. Okay. You have me, Emily
+
+00:01:19.000 --> 00:01:20.920
+Holman. I'm on the product marketing team here
+
+00:01:20.920 --> 00:01:24.200
+at Anthropic. And, Austin, we're going to be
+
+00:01:24.200 --> 00:01:26.280
+showing you some workflows that our team our
+
+00:01:26.280 --> 00:01:28.520
+team runs. So, Austin, do you wanna introduce
+
+00:01:28.520 --> 00:01:33.620
+yourself? Yeah. Hey, everyone. My name is Austin.
+
+00:01:33.620 --> 00:01:35.540
+I'm on the growth marketing team here at
+
+00:01:35.540 --> 00:01:38.420
+Anthropic. Been here for just a little over
+
+00:01:38.420 --> 00:01:41.175
+two years now. So my team supports sort
+
+00:01:41.175 --> 00:01:43.415
+of top of funnel acquisition across all of
+
+00:01:43.415 --> 00:01:45.815
+our products, primarily support, like, the sort of
+
+00:01:45.815 --> 00:01:48.535
+prosumer knowledge worker side. So that spans across
+
+00:01:48.535 --> 00:01:51.095
+Claude AI, Cowork, as we're talking about today,
+
+00:01:51.335 --> 00:01:53.275
+Claude Code, and sort of everything in between.
+
+00:01:58.580 --> 00:02:01.620
+Alright. So looking at the poll, and then
+
+00:02:01.620 --> 00:02:05.965
+we'll kinda jump into the content, it feels
+
+00:02:05.965 --> 00:02:07.325
+like we kind of have a mix. So
+
+00:02:07.325 --> 00:02:08.845
+it looks like a lot of folks have
+
+00:02:08.845 --> 00:02:10.525
+kinda played around with it. Some folks are
+
+00:02:10.525 --> 00:02:12.365
+trying to figure out kinda, like, what exactly
+
+00:02:12.365 --> 00:02:15.085
+it is. We have a few pros out
+
+00:02:15.085 --> 00:02:18.230
+there, which is exciting. We'll kinda walk through
+
+00:02:18.230 --> 00:02:20.070
+what the difference is between chat and co
+
+00:02:20.070 --> 00:02:23.270
+work, some really great things with connectors and
+
+00:02:23.270 --> 00:02:26.070
+skills and how you can customize Claude. But
+
+00:02:26.070 --> 00:02:27.910
+this will be a great session for you
+
+00:02:27.910 --> 00:02:29.430
+to kinda figure out, like, how you can
+
+00:02:29.430 --> 00:02:31.515
+really get started with co work. So, Austin,
+
+00:02:31.515 --> 00:02:35.630
+you wanna take it Yeah. Let's do it.
+
+00:02:35.475 --> 00:02:39.835
+away? Let's jump right in. Let's see. So
+
+00:02:39.835 --> 00:02:42.475
+I wanna start off with let's do a
+
+00:02:42.475 --> 00:02:44.955
+little storytelling about how we got here, basically.
+
+00:02:44.955 --> 00:02:47.855
+So the evolution of AI at work. So
+
+00:02:47.995 --> 00:02:52.090
+back in 2023 chat. Everyone loved chat. It
+
+00:02:52.090 --> 00:02:53.770
+was, you know, relatively new at the time.
+
+00:02:53.770 --> 00:02:55.450
+I believe Chat GBD came out in, I
+
+00:02:55.450 --> 00:02:58.490
+think, like, the end of, q four twenty
+
+00:02:58.490 --> 00:03:00.730
+twenty two. So chat was, like, kind of
+
+00:03:00.730 --> 00:03:03.255
+the new revolutionary product at the time. It's
+
+00:03:03.255 --> 00:03:06.155
+what everyone here is probably extremely familiar with.
+
+00:03:06.295 --> 00:03:08.535
+You would ask questions. You get the answers.
+
+00:03:08.535 --> 00:03:10.455
+There's lots of, like, copy pasting back and
+
+00:03:10.455 --> 00:03:13.255
+forth. Largely, the conversation is what you were
+
+00:03:13.255 --> 00:03:14.775
+after, and you were still doing a lot
+
+00:03:14.775 --> 00:03:17.600
+of the work yourself. So chat is probably
+
+00:03:17.840 --> 00:03:21.040
+or chat is how most knowledge workers get
+
+00:03:21.040 --> 00:03:23.280
+introduced to tools like Claude. You know? You
+
+00:03:23.280 --> 00:03:25.440
+basically bring all of your work to Claude,
+
+00:03:25.440 --> 00:03:27.760
+whether that's uploading a file, maybe you're pasting
+
+00:03:27.760 --> 00:03:30.535
+some text, describing a challenge you're working on,
+
+00:03:30.535 --> 00:03:31.975
+and then, you know, after a little bit
+
+00:03:31.975 --> 00:03:34.455
+of conversation, get an answer. So what chat
+
+00:03:34.455 --> 00:03:35.815
+is really good for at the end of
+
+00:03:35.815 --> 00:03:37.175
+the day is is chat is really good
+
+00:03:37.175 --> 00:03:39.815
+for answers. It's really good for brainstorming and
+
+00:03:39.815 --> 00:03:43.770
+for just, like, generally thinking out loud. Then
+
+00:03:43.990 --> 00:03:47.670
+in 2025 last year, we launched this little
+
+00:03:47.670 --> 00:03:49.350
+tool you guys may have heard of called
+
+00:03:49.350 --> 00:03:52.310
+Claude Code. So Claude Code is purpose built
+
+00:03:52.310 --> 00:03:55.030
+for developers. You can find across many different
+
+00:03:55.030 --> 00:03:57.525
+product surface areas the, you know, command line
+
+00:03:57.525 --> 00:03:59.205
+interface within the terminal is probably one of
+
+00:03:59.205 --> 00:04:01.125
+the most common. But really what it's meant
+
+00:04:01.125 --> 00:04:02.085
+for at the end of the day is
+
+00:04:02.085 --> 00:04:04.325
+it's meant for those who wanna build and
+
+00:04:04.325 --> 00:04:07.605
+ship software. If your work basically starts and
+
+00:04:07.605 --> 00:04:10.185
+ends with code, you're working at a GitHub,
+
+00:04:10.325 --> 00:04:12.620
+this is probably the tool for you. But
+
+00:04:12.620 --> 00:04:15.740
+Claude Code started including a lot of very
+
+00:04:15.740 --> 00:04:18.860
+useful features that we actually realized was also
+
+00:04:18.860 --> 00:04:21.020
+very useful for knowledge work that you couldn't
+
+00:04:21.020 --> 00:04:23.500
+find within just regular chat. Things like concepts
+
+00:04:23.500 --> 00:04:27.255
+like sub agents, compaction. All of these tools
+
+00:04:27.255 --> 00:04:29.575
+that chat didn't have, Claude Code did have.
+
+00:04:29.575 --> 00:04:32.295
+And what we started realizing is Claude Code
+
+00:04:32.295 --> 00:04:33.895
+was actually really good at not only just
+
+00:04:33.895 --> 00:04:36.235
+coding, but to use code to help orchestrate
+
+00:04:36.535 --> 00:04:40.640
+knowledge work. So here enters Cowork, which is,
+
+00:04:41.020 --> 00:04:42.860
+what we're here to talk about today. This
+
+00:04:42.860 --> 00:04:46.300
+tool launched, just earlier this year, and it's
+
+00:04:46.620 --> 00:04:48.460
+it lives on the desktop app currently. So
+
+00:04:48.460 --> 00:04:50.540
+it's a little mode that you flip from
+
+00:04:50.540 --> 00:04:52.780
+chat over to Cowork. And instead of bringing
+
+00:04:52.780 --> 00:04:54.515
+your work to Claude like you would with
+
+00:04:54.515 --> 00:04:56.995
+chat, you're you're you're now bringing Claude to
+
+00:04:56.995 --> 00:04:59.395
+your work. So you can point it at
+
+00:04:59.395 --> 00:05:01.235
+a, let's say, a folder on your computer.
+
+00:05:01.235 --> 00:05:02.755
+You can connect it with a lot of
+
+00:05:02.755 --> 00:05:04.435
+the great apps that you are using love
+
+00:05:04.435 --> 00:05:06.275
+on a daily basis, like Google Drive, you
+
+00:05:06.275 --> 00:05:08.775
+know, your Notion, Amplitude, whatever it may be.
+
+00:05:08.880 --> 00:05:10.660
+You can connect with all these different apps,
+
+00:05:10.880 --> 00:05:13.360
+and you can start delegating work to Claude.
+
+00:05:13.360 --> 00:05:15.520
+So tell Claude what you're trying to do.
+
+00:05:15.520 --> 00:05:17.920
+You wanna you wanna describe an outcome of
+
+00:05:17.920 --> 00:05:19.280
+what you're trying to do at the very
+
+00:05:19.280 --> 00:05:20.800
+end, and you can step away, and you
+
+00:05:20.800 --> 00:05:22.775
+can come back to finish work. And that's
+
+00:05:22.775 --> 00:05:25.175
+one of the really key differences between chat
+
+00:05:25.175 --> 00:05:26.775
+and cowork is the fact that you're getting
+
+00:05:26.775 --> 00:05:29.015
+a deliverable, and Claude can run sort of
+
+00:05:29.015 --> 00:05:32.215
+autonomously in the background, orchestrating these multi turn,
+
+00:05:32.215 --> 00:05:37.970
+long running tasks on your behalf. So this
+
+00:05:37.970 --> 00:05:40.930
+helps better illustrate, like, chat versus coworking sort
+
+00:05:40.930 --> 00:05:42.370
+of a visual manner. Right? So you see
+
+00:05:42.370 --> 00:05:43.730
+on the left hand side on chat, you're
+
+00:05:43.730 --> 00:05:46.210
+effectively driving the whole process end to end.
+
+00:05:46.210 --> 00:05:48.745
+Like, you're asking a question. Claude responds to
+
+00:05:48.745 --> 00:05:50.985
+something. You asked another question. This is a
+
+00:05:50.985 --> 00:05:53.145
+constant q and a that chat is known
+
+00:05:53.145 --> 00:05:55.145
+for. And then when you're done with, like,
+
+00:05:55.145 --> 00:05:57.785
+the work and you have maybe some semblance
+
+00:05:57.785 --> 00:05:59.785
+of, like, a deliverable, like, let's say it's
+
+00:05:59.785 --> 00:06:02.320
+a report, you're generally going to copy and
+
+00:06:02.320 --> 00:06:04.640
+paste that out of chat into, like, somewhere
+
+00:06:04.640 --> 00:06:06.480
+else. Whether that's sending it on Slack, you're
+
+00:06:06.480 --> 00:06:08.720
+dumping, like, a word doc or maybe you're
+
+00:06:08.720 --> 00:06:11.860
+still moving the information in the output manually.
+
+00:06:12.480 --> 00:06:14.935
+Cowork allows you to delegate this work. So
+
+00:06:14.935 --> 00:06:16.695
+you tell Claude, like, hey. This is what
+
+00:06:16.695 --> 00:06:18.535
+I'm trying to get the very end. Like,
+
+00:06:18.535 --> 00:06:21.335
+I'm trying to create this report. Here's all
+
+00:06:21.335 --> 00:06:23.575
+the inputs and context that, you know, you
+
+00:06:23.575 --> 00:06:26.055
+need North Creek support. You provide Claude the
+
+00:06:26.055 --> 00:06:28.400
+instructions, and then at the very end, Claude
+
+00:06:28.400 --> 00:06:30.320
+will orchestrate all this work for you and
+
+00:06:30.320 --> 00:06:32.800
+then give you something that's ready to go,
+
+00:06:32.800 --> 00:06:34.640
+and it can even move it across different
+
+00:06:34.640 --> 00:06:36.960
+systems for you. So that's a huge benefit
+
+00:06:36.960 --> 00:06:39.680
+here. If you think about your most common
+
+00:06:39.680 --> 00:06:42.240
+tasks, particularly when he spans across, like, multiple
+
+00:06:42.240 --> 00:06:45.835
+tools, multiple, like, file types, different systems. This
+
+00:06:45.835 --> 00:06:47.515
+is when you wanna start thinking about, like,
+
+00:06:47.515 --> 00:06:50.095
+how can I actually start reaching for cowork
+
+00:06:50.235 --> 00:06:52.475
+more often as opposed to just only reaching
+
+00:06:52.475 --> 00:06:58.230
+for chat? So what changes with Cowork? Context
+
+00:06:58.450 --> 00:07:01.250
+is key. So Claude can plug into all
+
+00:07:01.250 --> 00:07:02.850
+different types of work that you have, whether
+
+00:07:02.850 --> 00:07:04.850
+that's different types of files, file types, different
+
+00:07:04.850 --> 00:07:06.850
+types of tools you you you work with
+
+00:07:06.850 --> 00:07:09.785
+on a daily basis. So, for marketers, you
+
+00:07:09.785 --> 00:07:11.385
+know, you might be typing the CRM with
+
+00:07:11.385 --> 00:07:14.105
+us, HubSpot, Salesforce, Slack, which we all love
+
+00:07:14.105 --> 00:07:17.385
+and kinda hate sometimes. Your docs, your Google
+
+00:07:17.385 --> 00:07:20.025
+Drive, Notion, whatever it may be, providing all
+
+00:07:20.025 --> 00:07:22.105
+of this rich context to Claude is going
+
+00:07:22.105 --> 00:07:24.270
+to be extremely important because the more context
+
+00:07:24.270 --> 00:07:26.030
+Claude has, the better Claude can actually help
+
+00:07:26.030 --> 00:07:28.670
+you. Then you've heard me mention this term
+
+00:07:28.670 --> 00:07:30.270
+a couple different times at this point, but
+
+00:07:30.270 --> 00:07:32.830
+it's the idea of delegation as opposed to
+
+00:07:32.830 --> 00:07:35.965
+something like a conversation. So with delegation, what
+
+00:07:35.965 --> 00:07:37.325
+you're really trying to do is you're trying
+
+00:07:37.325 --> 00:07:39.885
+to hand off something to Claude, hand off
+
+00:07:39.885 --> 00:07:41.505
+a body of work that you want completed.
+
+00:07:41.565 --> 00:07:43.325
+So this could be anything related to, like,
+
+00:07:43.325 --> 00:07:46.285
+research. You know, you wanna draft something that
+
+00:07:46.285 --> 00:07:49.530
+pulls from multiple different files and systems. At
+
+00:07:49.530 --> 00:07:50.890
+the end of the day, what you want
+
+00:07:50.890 --> 00:07:53.370
+is finished work. So your time goes towards,
+
+00:07:53.370 --> 00:07:55.710
+like, strategy and less so on the execution
+
+00:07:55.850 --> 00:07:58.650
+piece. Where cowork really works and really shines
+
+00:07:58.650 --> 00:08:01.945
+is your judgment is usually only going to
+
+00:08:01.945 --> 00:08:04.905
+be needed at the beginning when you're giving
+
+00:08:04.905 --> 00:08:06.825
+Claude the instructions as to what you want
+
+00:08:06.825 --> 00:08:08.685
+and at the very end when you're evaluating.
+
+00:08:08.985 --> 00:08:10.825
+Everything else in, like, that middle part where,
+
+00:08:10.825 --> 00:08:12.765
+like, Claude's, like, you know, running some analysis,
+
+00:08:12.825 --> 00:08:15.465
+like, moving files around, maybe, like, creating a
+
+00:08:15.465 --> 00:08:19.080
+report, all that, like, extraction, manipulation of different
+
+00:08:19.080 --> 00:08:20.920
+files and information. That's, like, kind of, like,
+
+00:08:20.920 --> 00:08:22.680
+the boring part that you wanna hand off
+
+00:08:22.680 --> 00:08:24.520
+to Claude because Claude can probably do it
+
+00:08:24.520 --> 00:08:28.600
+faster than you can. Your expertise scales. So
+
+00:08:28.600 --> 00:08:31.605
+what really makes cohort tick outside of providing
+
+00:08:31.665 --> 00:08:34.325
+context is you wanna be able to encode
+
+00:08:34.385 --> 00:08:37.285
+your workflows and your judgment as a skill.
+
+00:08:37.425 --> 00:08:38.945
+So skills really at the end of the
+
+00:08:38.945 --> 00:08:41.105
+day is just a markdown file. It's just
+
+00:08:41.105 --> 00:08:42.785
+some plain text, really just a set of
+
+00:08:42.785 --> 00:08:45.920
+instructions. If you find yourself doing a certain
+
+00:08:45.920 --> 00:08:48.640
+task repeatedly, like, let's say you're doing reporting
+
+00:08:48.640 --> 00:08:51.360
+every single week, a huge pain. Right? Nobody
+
+00:08:51.360 --> 00:08:53.380
+really wants to do the the the reporting,
+
+00:08:53.440 --> 00:08:54.960
+but it's something you have to do as
+
+00:08:54.960 --> 00:08:57.335
+part of your job. And if you're going
+
+00:08:57.335 --> 00:08:59.435
+through the same process every week of reporting,
+
+00:08:59.575 --> 00:09:02.375
+I'm pulling website metrics from this system, and
+
+00:09:02.375 --> 00:09:04.215
+then I'm pulling, you know, how much we
+
+00:09:04.215 --> 00:09:06.615
+spent on performance marketing from this system. And
+
+00:09:06.615 --> 00:09:08.615
+I'm compiling it into, like, a week over
+
+00:09:08.615 --> 00:09:10.600
+week table, then I'm writing down, you know,
+
+00:09:10.600 --> 00:09:12.860
+maybe a couple bullet points around highlights, lowlights.
+
+00:09:13.160 --> 00:09:15.240
+If you're repeating this process every single week,
+
+00:09:15.240 --> 00:09:16.520
+you should be able to start to pattern
+
+00:09:16.520 --> 00:09:17.880
+match what are the things that I need
+
+00:09:17.880 --> 00:09:19.160
+to look out for? What are maybe some
+
+00:09:19.160 --> 00:09:21.320
+of the edge cases? What is the process
+
+00:09:21.320 --> 00:09:22.825
+that I go through? And then how do
+
+00:09:22.825 --> 00:09:24.905
+I actually just tell Claude how to do
+
+00:09:24.905 --> 00:09:29.085
+this exact same thing? Effectively teaching teaching Claude
+
+00:09:29.225 --> 00:09:30.985
+the same context and the same sort of,
+
+00:09:30.985 --> 00:09:32.745
+like, instruction flow that you have so that
+
+00:09:32.745 --> 00:09:33.865
+Claude can go out and do this on
+
+00:09:33.865 --> 00:09:36.105
+your behalf with the same level of knowledge
+
+00:09:36.105 --> 00:09:37.690
+that you do. And then you can run
+
+00:09:37.690 --> 00:09:39.950
+this repeatedly. And not only can you do
+
+00:09:40.170 --> 00:09:41.850
+it, you no longer have to be a
+
+00:09:41.850 --> 00:09:43.610
+sort of a gatekeeper in the room. You
+
+00:09:43.610 --> 00:09:45.690
+can share these skills across your team as
+
+00:09:45.690 --> 00:09:47.610
+well so they can run the same reporting
+
+00:09:47.610 --> 00:09:50.525
+on your behalf without you being there. And
+
+00:09:50.525 --> 00:09:53.245
+the last part is shifting from reactive to
+
+00:09:53.245 --> 00:09:56.205
+proactive. With just regular chat and Claude, everything's
+
+00:09:56.205 --> 00:09:58.045
+almost like a reactive thing. It's like, hey.
+
+00:09:58.045 --> 00:10:00.125
+I need something now. Therefore, let me now
+
+00:10:00.125 --> 00:10:02.445
+hop into chat, talk to Claude, try to
+
+00:10:02.445 --> 00:10:05.850
+get an answer, workshop something. With Cowork specifically,
+
+00:10:05.990 --> 00:10:07.910
+one of the coolest features is you have
+
+00:10:07.910 --> 00:10:11.530
+the luxury of scheduling recurring tasks to run
+
+00:10:11.750 --> 00:10:13.590
+whenever you want. It could be daily. It
+
+00:10:13.590 --> 00:10:16.090
+can be hourly. It can be weekly, etcetera.
+
+00:10:16.975 --> 00:10:19.075
+Again, if there are things you do repeatedly,
+
+00:10:19.775 --> 00:10:22.575
+turn that into a skill, wire up all
+
+00:10:22.575 --> 00:10:26.335
+your different, wire up all your different, tools
+
+00:10:26.335 --> 00:10:29.215
+and connectors, and then schedule it so that
+
+00:10:29.215 --> 00:10:31.695
+if you're running reporting every single Monday at
+
+00:10:31.695 --> 00:10:34.310
+9AM, just run it on a schedule so
+
+00:10:34.310 --> 00:10:36.230
+that 9AM first thing in the morning when
+
+00:10:36.230 --> 00:10:37.770
+you sit down and open up your laptop,
+
+00:10:38.070 --> 00:10:40.150
+your report has already been run and Claude's
+
+00:10:40.150 --> 00:10:41.750
+taking care of everything. And at that point,
+
+00:10:41.750 --> 00:10:43.290
+all you have to do is jump in,
+
+00:10:43.350 --> 00:10:44.790
+polish it a little bit, and then sort
+
+00:10:44.790 --> 00:10:49.305
+of take it across the finish line. So
+
+00:10:49.305 --> 00:10:52.745
+how Claude Cowork works. Claude can operate with
+
+00:10:52.745 --> 00:10:55.145
+far more agency than just the conversation. This
+
+00:10:55.145 --> 00:10:57.065
+is very important. So you can see there's
+
+00:10:57.065 --> 00:10:59.065
+a couple of different steps here as you're
+
+00:10:59.065 --> 00:11:00.745
+working with Cowork that you wanna keep in
+
+00:11:00.745 --> 00:11:03.000
+mind. One of the first things that I
+
+00:11:03.000 --> 00:11:05.640
+do right off the bat whenever I'm working
+
+00:11:05.640 --> 00:11:08.200
+with coworker is after I give Claude a
+
+00:11:08.200 --> 00:11:10.460
+bunch of instructions about how to approach something,
+
+00:11:11.160 --> 00:11:12.840
+at the very end of my prompt, I
+
+00:11:12.840 --> 00:11:15.515
+always say, Claude, hey. Ask me some clarifying
+
+00:11:15.515 --> 00:11:17.595
+questions because there's always going to be a
+
+00:11:17.595 --> 00:11:20.315
+couple of things that maybe you personally know
+
+00:11:20.315 --> 00:11:22.875
+very well that you forget that a tool
+
+00:11:22.875 --> 00:11:25.675
+like Claude might not know, that Claude should
+
+00:11:25.675 --> 00:11:27.195
+probably know. And you don't want Claude to
+
+00:11:27.195 --> 00:11:29.455
+make any assumptions around, like, hey. Edge cases.
+
+00:11:29.890 --> 00:11:32.210
+Or if you're talking about reporting, you might
+
+00:11:32.210 --> 00:11:34.050
+mentally know that you're looking at the last
+
+00:11:34.050 --> 00:11:36.290
+seven days. But, like, for the last seven
+
+00:11:36.290 --> 00:11:38.610
+days, like, do you want that to be
+
+00:11:38.610 --> 00:11:40.770
+Monday through Sunday? Does your week start a
+
+00:11:40.770 --> 00:11:42.985
+different time? You're talking about, like, you know,
+
+00:11:43.625 --> 00:11:45.625
+quarterly reporting, like, when do your quarter start?
+
+00:11:45.625 --> 00:11:47.385
+Things all of that all of that important
+
+00:11:47.385 --> 00:11:49.545
+context, wanna make sure that Claude knows exactly
+
+00:11:49.545 --> 00:11:51.385
+the same as you do. Then you wanna
+
+00:11:51.385 --> 00:11:53.065
+plan and break it up into, like, tasks.
+
+00:11:53.065 --> 00:11:55.705
+So Claude's really good at these long running
+
+00:11:55.705 --> 00:11:57.760
+multi turn tasks, but sometimes you wanna break
+
+00:11:57.760 --> 00:12:00.000
+it down to more digestible pieces, particularly if
+
+00:12:00.000 --> 00:12:02.640
+it's your first time working on working with
+
+00:12:02.640 --> 00:12:04.960
+coworker on a new workflow because you wanna
+
+00:12:04.960 --> 00:12:07.200
+make sure that at any moment, you can
+
+00:12:07.200 --> 00:12:09.040
+jump in and start to steer a little
+
+00:12:09.040 --> 00:12:10.965
+bit. Instead of letting Claude go off and
+
+00:12:10.965 --> 00:12:12.565
+run for, like, thirty minutes and coming back
+
+00:12:12.565 --> 00:12:14.245
+and you're like, damn. You know? I I
+
+00:12:14.245 --> 00:12:15.925
+wish I had the opportunity to jump in
+
+00:12:15.925 --> 00:12:18.005
+earlier on to actually steer Claude a little
+
+00:12:18.005 --> 00:12:20.825
+bit. The sort of idea of our execution,
+
+00:12:21.365 --> 00:12:23.605
+Claude works, again, works across your tools, works
+
+00:12:23.605 --> 00:12:26.160
+across your different files. You can actually use
+
+00:12:26.160 --> 00:12:27.920
+Claude not only on the desktop app, but
+
+00:12:27.920 --> 00:12:29.280
+those who set it up, you can use
+
+00:12:29.280 --> 00:12:31.440
+Claude via dispatch on the mobile app. So
+
+00:12:31.440 --> 00:12:34.400
+you can actually tell Claude to run these
+
+00:12:34.400 --> 00:12:37.200
+same tasks directly from your phone, and Claude
+
+00:12:37.200 --> 00:12:38.960
+would basically communicate with the desktop app and
+
+00:12:38.960 --> 00:12:40.395
+handle all of that for you even when
+
+00:12:40.395 --> 00:12:42.875
+you're not in front of your computer. This
+
+00:12:42.875 --> 00:12:45.195
+idea of verification again, being able to check
+
+00:12:45.195 --> 00:12:47.275
+the quality and accuracy is extremely important and
+
+00:12:47.275 --> 00:12:49.455
+part of the student process. And then finally,
+
+00:12:49.515 --> 00:12:51.995
+the deliverables. The finished output is something that's
+
+00:12:51.995 --> 00:12:54.175
+ready to share, whether that's like a report,
+
+00:12:54.640 --> 00:12:56.640
+some sort of deliverable. It could be a
+
+00:12:56.640 --> 00:12:58.400
+long message. It could be a file type.
+
+00:12:58.400 --> 00:12:59.920
+The idea is at the very end, you
+
+00:12:59.920 --> 00:13:03.280
+want something that is meaty, something that you
+
+00:13:03.280 --> 00:13:05.440
+want to share, an actual deliverable. And that's
+
+00:13:05.440 --> 00:13:10.125
+what really makes Claude Cover tick. Words and
+
+00:13:10.125 --> 00:13:11.445
+stuff into you. So I touched on this
+
+00:13:11.445 --> 00:13:14.045
+a little bit, the dispatch. You can basically
+
+00:13:14.045 --> 00:13:17.005
+remote control Claude from your phone. One of
+
+00:13:17.005 --> 00:13:19.325
+the ways I personally use it is, like,
+
+00:13:19.325 --> 00:13:21.645
+for example, if I'm not at my desk
+
+00:13:21.645 --> 00:13:23.245
+the other day, I I wasn't at my
+
+00:13:23.245 --> 00:13:25.080
+desk and I actually needed a file that's
+
+00:13:25.080 --> 00:13:26.840
+in my downloads folder that I couldn't get
+
+00:13:26.840 --> 00:13:28.840
+access to. So what I basically did was
+
+00:13:28.840 --> 00:13:30.760
+I opened up my app, asked for it,
+
+00:13:30.760 --> 00:13:32.860
+said, hey. Can you literally pull this file
+
+00:13:33.000 --> 00:13:35.980
+from my downloads? Then I want you to
+
+00:13:36.040 --> 00:13:38.875
+send it to me via Slack so that
+
+00:13:38.875 --> 00:13:41.035
+I actually have access to it. Clock and
+
+00:13:41.035 --> 00:13:42.715
+orchestrate this whole thing end to end. And,
+
+00:13:42.715 --> 00:13:43.915
+again, you don't need to be in front
+
+00:13:43.915 --> 00:13:45.995
+of your computer. Scheduled tasks, I touched upon
+
+00:13:45.995 --> 00:13:48.315
+this a little bit earlier. Again, this idea
+
+00:13:48.315 --> 00:13:52.120
+of taking things that you do repeatedly and
+
+00:13:52.120 --> 00:13:54.200
+then running it on a schedule so that
+
+00:13:54.200 --> 00:13:55.880
+you no longer need to manually do this,
+
+00:13:55.880 --> 00:13:57.400
+whether it's on, like, a daily basis or
+
+00:13:57.400 --> 00:13:59.400
+a weekly basis, and it could span across
+
+00:13:59.400 --> 00:14:01.320
+both work and personal. For work, it could
+
+00:14:01.320 --> 00:14:03.000
+be something as as small as, like, hey.
+
+00:14:03.000 --> 00:14:05.315
+I wanna check reporting. For For something personal,
+
+00:14:05.315 --> 00:14:06.395
+the other day, I was trying to buy
+
+00:14:06.395 --> 00:14:07.715
+a pair of Nikes. I want a new
+
+00:14:07.715 --> 00:14:09.315
+pair of running shoes except the size that
+
+00:14:09.315 --> 00:14:10.995
+I wanted was out of stock. So I
+
+00:14:10.995 --> 00:14:13.735
+literally had Claude I had co work run
+
+00:14:13.795 --> 00:14:16.355
+on an hourly schedule to literally open up
+
+00:14:16.355 --> 00:14:19.830
+Chrome, go to the product page on nike.com,
+
+00:14:19.970 --> 00:14:21.570
+and then let me know if it had
+
+00:14:21.570 --> 00:14:24.130
+the shoe I wanted in size nine. It's
+
+00:14:24.130 --> 00:14:26.210
+still out of stock, but I don't need
+
+00:14:26.210 --> 00:14:27.970
+to check it manually anymore. So, like, hopefully,
+
+00:14:27.970 --> 00:14:29.250
+that gives you some idea of, like, what
+
+00:14:29.250 --> 00:14:33.458
+can you do with scheduled test? Cool. I
+
+00:14:33.458 --> 00:14:36.495
+will turn it back to Emily now. Austin,
+
+00:14:36.495 --> 00:14:38.095
+we have a couple of questions that I
+
+00:14:38.095 --> 00:14:39.775
+just wanna touch on before we kinda go
+
+00:14:39.775 --> 00:14:43.215
+into, like, making Claude for your specific role
+
+00:14:43.215 --> 00:14:46.095
+in your team. We're getting some questions in
+
+00:14:46.095 --> 00:14:47.615
+terms of, like, how do you think about
+
+00:14:47.615 --> 00:14:53.140
+using cowork versus Claude code? So one very
+
+00:14:53.280 --> 00:14:58.320
+important thing, to know is, cowork is clawed
+
+00:14:58.320 --> 00:15:00.625
+code under the hood, and I think a
+
+00:15:00.625 --> 00:15:02.485
+lot of people might actually not know that.
+
+00:15:02.625 --> 00:15:04.305
+So Cowork and clogged code are both powered
+
+00:15:04.305 --> 00:15:06.785
+by our agent SDK. If you think about
+
+00:15:06.785 --> 00:15:08.945
+the front end, one is more purpose built
+
+00:15:08.945 --> 00:15:10.785
+for developers for coding because they're in the
+
+00:15:10.785 --> 00:15:12.625
+terminal. You wanna be able to see all
+
+00:15:12.625 --> 00:15:14.385
+the code, so we expose all that to
+
+00:15:14.385 --> 00:15:16.960
+you. We also expose all the commands like
+
+00:15:16.960 --> 00:15:19.360
+bash and grep. Those are all very technical
+
+00:15:19.360 --> 00:15:21.620
+terms that as a developer, you wanna know.
+
+00:15:21.760 --> 00:15:25.200
+However, with Cowork, imagine us just taking that
+
+00:15:25.200 --> 00:15:26.800
+same Claude code, but we wrap it in
+
+00:15:26.800 --> 00:15:29.255
+a much more friendly and more approachable, like,
+
+00:15:29.255 --> 00:15:31.095
+UI. One that you're already familiar with, which
+
+00:15:31.095 --> 00:15:34.055
+is a very familiar chat interface. Under the
+
+00:15:34.055 --> 00:15:35.895
+hood is doing the exact same thing Claude
+
+00:15:35.895 --> 00:15:37.575
+Code does. It might be writing some arbitrary
+
+00:15:37.575 --> 00:15:39.975
+code to, like, open your CSV file, whatever
+
+00:15:39.975 --> 00:15:41.815
+it is to manipulate some files and move
+
+00:15:41.815 --> 00:15:44.560
+stuff in between systems, but it's gonna be
+
+00:15:44.560 --> 00:15:47.200
+much more familiar. So my sort of suggestion
+
+00:15:47.200 --> 00:15:50.020
+is if you're not familiar with Claude Code,
+
+00:15:50.080 --> 00:15:51.680
+you should just reach for Cowork because it's
+
+00:15:51.680 --> 00:15:53.680
+going to be a much more familiar UI
+
+00:15:53.680 --> 00:15:58.170
+for you. Awesome. Okay. One more for you,
+
+00:15:58.170 --> 00:16:01.445
+Austin. I think, we're also getting some questions
+
+00:16:01.445 --> 00:16:03.845
+on projects versus skills. How do you think
+
+00:16:03.845 --> 00:16:07.145
+about those two things? So you can use
+
+00:16:07.145 --> 00:16:09.945
+them together. So for example, for skills, one
+
+00:16:09.945 --> 00:16:12.185
+of the benefits with skills is you can
+
+00:16:12.185 --> 00:16:15.600
+easily share skills, like, across your team. So,
+
+00:16:15.600 --> 00:16:18.160
+for example, your company could have a company
+
+00:16:18.160 --> 00:16:20.720
+wide skill around, like, here's how we talk
+
+00:16:20.720 --> 00:16:22.880
+in our brand tone and voice. That wouldn't
+
+00:16:22.880 --> 00:16:24.880
+be really well suited as a project because
+
+00:16:24.880 --> 00:16:26.845
+it'd be better suited as a skill. Because
+
+00:16:26.845 --> 00:16:29.425
+the benefit with skills is no matter which
+
+00:16:29.485 --> 00:16:32.305
+conversation you're having, a skill can be triggered
+
+00:16:32.445 --> 00:16:35.265
+at any time. Whereas for a project specifically,
+
+00:16:35.725 --> 00:16:39.160
+unless your conversation starts within the project, you
+
+00:16:39.160 --> 00:16:42.380
+can't then reference context that's in the project
+
+00:16:42.760 --> 00:16:44.540
+later on in the middle of your conversation.
+
+00:16:44.760 --> 00:16:46.600
+So let's take this for example. You could
+
+00:16:46.600 --> 00:16:48.440
+have a project that's purely around sort of,
+
+00:16:48.440 --> 00:16:50.280
+like, brand tone and voice and sort of,
+
+00:16:50.280 --> 00:16:53.195
+like, how we write for our company. But
+
+00:16:53.195 --> 00:16:55.035
+if you don't start the conversation within that
+
+00:16:55.035 --> 00:16:56.515
+project, you won't be able to access any
+
+00:16:56.515 --> 00:16:58.895
+of that context. Whereas, if it's a skill,
+
+00:16:59.035 --> 00:17:00.635
+doesn't matter where you have the conversation. It
+
+00:17:00.635 --> 00:17:01.835
+could be in chat. It could be in
+
+00:17:01.835 --> 00:17:03.615
+Claude code. It could be in cohort too.
+
+00:17:03.720 --> 00:17:05.960
+If you have that skill installed, Claude can
+
+00:17:05.960 --> 00:17:09.700
+invoke it at any time. Okay. I'm gonna
+
+00:17:09.700 --> 00:17:11.540
+move I'm gonna move us along, but some
+
+00:17:11.540 --> 00:17:13.620
+really, really great questions. Keep them keep them
+
+00:17:13.620 --> 00:17:17.300
+coming. So Austin is like a true veteran
+
+00:17:17.300 --> 00:17:19.060
+here. He's been here for two years, and
+
+00:17:19.060 --> 00:17:21.915
+I just joined three months ago. And if
+
+00:17:21.915 --> 00:17:24.235
+you've ever started at really, like, a fast
+
+00:17:24.235 --> 00:17:27.435
+moving company, you kind of all know the
+
+00:17:27.435 --> 00:17:29.275
+feeling, which is that you can feel like
+
+00:17:29.275 --> 00:17:31.595
+you are 10 steps behind where everyone else
+
+00:17:31.595 --> 00:17:33.915
+is. And I think that the biggest thing
+
+00:17:33.915 --> 00:17:36.735
+is that cowork really genuinely changed the ramp
+
+00:17:36.770 --> 00:17:40.370
+for me here. I was able to really
+
+00:17:40.370 --> 00:17:42.610
+figure out, like, what launches do we need
+
+00:17:42.610 --> 00:17:44.770
+to launch? Like, what's the road map? Pull
+
+00:17:44.770 --> 00:17:47.170
+together the latest Slacks. What's happening across Google
+
+00:17:47.170 --> 00:17:50.555
+Docs? All really, really quickly. But one thing
+
+00:17:50.555 --> 00:17:53.515
+that I've noticed is that cowork really, can
+
+00:17:53.515 --> 00:17:55.835
+work for any knowledge worker. And so what
+
+00:17:55.835 --> 00:17:57.755
+we're gonna talk about here is how can
+
+00:17:57.755 --> 00:18:00.555
+you make cowork really work for you at
+
+00:18:00.555 --> 00:18:03.115
+your role at your company and have that
+
+00:18:03.115 --> 00:18:06.230
+really customized experience. So the first thing I'm
+
+00:18:06.230 --> 00:18:10.790
+gonna dig into are connectors. So connectors really
+
+00:18:10.790 --> 00:18:13.670
+give Anthropic AI Claude the context it needs to be
+
+00:18:13.670 --> 00:18:16.550
+really useful. For marketers, that means connecting Anthropic AI Claude
+
+00:18:16.550 --> 00:18:18.615
+to systems that your work already lives in.
+
+00:18:18.615 --> 00:18:20.935
+That can be your CRM, your data warehouse,
+
+00:18:20.935 --> 00:18:24.295
+your ad platforms, your docs. Because without that,
+
+00:18:24.295 --> 00:18:26.375
+it can really just feel like you're copying
+
+00:18:26.375 --> 00:18:30.375
+and pasting information into Claude, and that's really
+
+00:18:30.375 --> 00:18:33.015
+not the most efficient way to to work
+
+00:18:33.015 --> 00:18:36.610
+with Claude. The beauty of our connectors in
+
+00:18:36.610 --> 00:18:39.090
+MCP is that, really, it's like this one
+
+00:18:39.090 --> 00:18:42.530
+click, to point Claude at certain things. So
+
+00:18:42.530 --> 00:18:44.610
+we have MCPs with Google Drive and with
+
+00:18:44.610 --> 00:18:47.730
+HubSpot, and you can pull context from those
+
+00:18:47.730 --> 00:18:50.775
+existing systems. The way to think about it
+
+00:18:50.775 --> 00:18:54.055
+is co work without connectors is smart and
+
+00:18:54.055 --> 00:18:57.015
+can be helpful, but it's oftentimes uninformed, and
+
+00:18:57.015 --> 00:19:00.935
+you'll have to continue to, drop information in
+
+00:19:00.935 --> 00:19:04.680
+there where co work with connectors is really
+
+00:19:04.680 --> 00:19:07.400
+informed and is already up to speed. The
+
+00:19:07.400 --> 00:19:10.440
+massive difference is when, you're trying to draft
+
+00:19:10.440 --> 00:19:13.000
+things like a campaign brief or a launch
+
+00:19:13.000 --> 00:19:15.660
+doc. It can pull the latest from Slack's
+
+00:19:15.800 --> 00:19:19.335
+docs, pipelines, customer calls, so you can make
+
+00:19:19.335 --> 00:19:21.015
+sure that you have the latest and greatest,
+
+00:19:21.015 --> 00:19:23.035
+and you're building off of the latest information,
+
+00:19:23.815 --> 00:19:25.975
+instead of really starting from from scratch or
+
+00:19:25.975 --> 00:19:27.755
+trying to dig in and find that information.
+
+00:19:29.670 --> 00:19:31.910
+The second thing, and Austin talked about this
+
+00:19:31.910 --> 00:19:35.670
+a little bit, is skills. So connectors give
+
+00:19:35.670 --> 00:19:39.910
+Claude the context, and skills really tell, tell
+
+00:19:39.910 --> 00:19:43.245
+Claude how your team actually works. So a
+
+00:19:43.245 --> 00:19:45.505
+skill, think about it as, like, a reusable
+
+00:19:45.725 --> 00:19:48.045
+workflow that you can build once and then
+
+00:19:48.045 --> 00:19:49.885
+you can share with your team so that
+
+00:19:49.885 --> 00:19:52.205
+everybody can run things the same way every
+
+00:19:52.205 --> 00:19:55.005
+time. The rule of thumb that I kind
+
+00:19:55.005 --> 00:19:57.325
+of use, and Austin mentioned this earlier, is
+
+00:19:57.325 --> 00:19:59.470
+that if I feel like I'm doing something
+
+00:19:59.530 --> 00:20:02.170
+multiple times a week, I try to create
+
+00:20:02.170 --> 00:20:04.650
+a skill. A fun fact is when I
+
+00:20:04.650 --> 00:20:06.970
+first started working here, a lot of folks
+
+00:20:06.970 --> 00:20:08.650
+would be like, just ask Claude. Like, I'd
+
+00:20:08.650 --> 00:20:09.770
+be like, how do I do x, y,
+
+00:20:09.770 --> 00:20:11.130
+and z? And the answer would be like,
+
+00:20:11.130 --> 00:20:13.585
+ask Claude. And now I think that if
+
+00:20:13.585 --> 00:20:15.505
+you take that approach, I think that Claude
+
+00:20:15.505 --> 00:20:16.865
+can really help you with a lot of
+
+00:20:16.865 --> 00:20:18.805
+these things. So if you're ever wondering, like,
+
+00:20:18.865 --> 00:20:20.865
+oh, should I make this a skill or
+
+00:20:20.865 --> 00:20:22.065
+what is a skill or how do I
+
+00:20:22.065 --> 00:20:24.305
+create a skill? You can ask Claude what
+
+00:20:24.305 --> 00:20:25.425
+I do at the end of every week.
+
+00:20:25.425 --> 00:20:26.625
+I ask Claude to go, like, what are
+
+00:20:26.625 --> 00:20:28.360
+the top things that I did each week
+
+00:20:28.360 --> 00:20:29.960
+or did this week? Did I do them
+
+00:20:29.960 --> 00:20:31.960
+multiple times? Anything that we can turn into
+
+00:20:31.960 --> 00:20:35.160
+a skill. For example, webinars, and creating a
+
+00:20:35.160 --> 00:20:38.600
+webinar prep. Document is one of those things,
+
+00:20:38.600 --> 00:20:41.355
+and now I just invoke that skill every
+
+00:20:41.355 --> 00:20:42.955
+single time that we're thinking about building a
+
+00:20:42.955 --> 00:20:44.955
+webinar, and it does it in the same
+
+00:20:44.955 --> 00:20:47.355
+voice, the same tone every single time instead
+
+00:20:47.355 --> 00:20:49.535
+of me kind of starting from from scratch.
+
+00:20:51.675 --> 00:20:55.290
+Okay. Now that we've talked about chat versus
+
+00:20:55.290 --> 00:21:00.010
+coworkers, skills, connectors, let's really dive into what
+
+00:21:00.010 --> 00:21:01.930
+all of this looks like in practice. I'm
+
+00:21:01.930 --> 00:21:03.690
+going to pass it over to Austin who's
+
+00:21:03.690 --> 00:21:05.850
+going to show you three workflows. The first
+
+00:21:05.850 --> 00:21:08.425
+one is a morning briefing where Claude pulls
+
+00:21:08.425 --> 00:21:11.625
+information from all of these different, sources and
+
+00:21:11.625 --> 00:21:14.185
+then prioritizes what you should focus on as
+
+00:21:14.185 --> 00:21:16.345
+soon as you sit at your computer. The
+
+00:21:16.345 --> 00:21:18.505
+second one is a search term audit, and
+
+00:21:18.505 --> 00:21:21.005
+then the third thing is a live dashboard,
+
+00:21:22.220 --> 00:21:24.060
+where Claude really keeps up to date on
+
+00:21:24.060 --> 00:21:27.820
+all of the latest metrics that are coming
+
+00:21:27.820 --> 00:21:30.220
+through. So you don't have to continue to,
+
+00:21:30.220 --> 00:21:33.580
+like, repull or update the dashboard. Claude already
+
+00:21:33.580 --> 00:21:37.535
+has that for you. Okay. Austin, take it
+
+00:21:37.535 --> 00:21:41.360
+away. Alright. Let me go ahead and share
+
+00:21:41.360 --> 00:21:53.295
+my screen. Alright. So I have, the Claude
+
+00:21:53.295 --> 00:21:56.510
+desktop app pulled up right here. And before
+
+00:21:56.510 --> 00:21:59.150
+I dive into some of these demos, one
+
+00:21:59.150 --> 00:22:00.910
+of the things that I just wanna share
+
+00:22:00.910 --> 00:22:03.390
+a little bit is a lot of these
+
+00:22:03.390 --> 00:22:05.790
+demos are going to be, you know, very
+
+00:22:05.790 --> 00:22:07.890
+interesting, and they might be, like, very cool,
+
+00:22:08.105 --> 00:22:09.945
+but they might not actually be, like, super
+
+00:22:09.945 --> 00:22:12.585
+applicable to, like, you know, everyone who's on
+
+00:22:12.585 --> 00:22:15.545
+this webinar currently. And that's actually okay. And,
+
+00:22:15.545 --> 00:22:17.625
+like, by design, a lot of, like, your
+
+00:22:17.625 --> 00:22:20.985
+best workflows in coworkers should probably honestly only
+
+00:22:20.985 --> 00:22:23.650
+be applicable to, like, yourself because that's where
+
+00:22:23.650 --> 00:22:26.770
+the highest ROI is. So instead of, like,
+
+00:22:26.770 --> 00:22:28.690
+going back afterwards and saying, like, oh, let
+
+00:22:28.690 --> 00:22:30.450
+me try to copy whatever Austin is doing.
+
+00:22:30.450 --> 00:22:31.890
+I'm a tell you I'm a I'm a
+
+00:22:31.890 --> 00:22:33.250
+clue you guys in a little bit of
+
+00:22:33.250 --> 00:22:35.515
+secret. Let me tell you guys how to
+
+00:22:35.515 --> 00:22:38.875
+actually identify what makes for a really good
+
+00:22:38.875 --> 00:22:41.435
+co work workflow. And then, like, during this
+
+00:22:41.435 --> 00:22:44.075
+process, hopefully, you can also pattern match some
+
+00:22:44.075 --> 00:22:45.835
+of these ingredients as well and how they
+
+00:22:45.835 --> 00:22:47.775
+might fit for your own personal work. So
+
+00:22:47.995 --> 00:22:50.350
+there's basically, like, what I call, like, the
+
+00:22:50.350 --> 00:22:53.630
+five ingredients of what makes a Claude CoWork
+
+00:22:53.630 --> 00:22:56.190
+shaped task. So if you're not actually sure,
+
+00:22:56.190 --> 00:22:58.430
+like, what to delegate to Claude CoWork, like,
+
+00:22:58.430 --> 00:22:59.710
+the first time you boot it up or
+
+00:22:59.710 --> 00:23:00.910
+even if you use it a couple of
+
+00:23:00.910 --> 00:23:03.645
+times, here is, like, a sort of mental
+
+00:23:03.645 --> 00:23:05.565
+checklist that I walk through that sort of
+
+00:23:05.565 --> 00:23:07.725
+helps me evaluate whether or not this is
+
+00:23:07.725 --> 00:23:09.565
+going to be a good candidate to actually
+
+00:23:09.565 --> 00:23:11.725
+use for cowork versus, like, hey. Maybe chat
+
+00:23:11.725 --> 00:23:13.565
+and just handle this whole thing. Because one
+
+00:23:13.565 --> 00:23:15.165
+of the most common questions we get is
+
+00:23:15.165 --> 00:23:16.525
+when do I reach your chat and when
+
+00:23:16.525 --> 00:23:20.240
+do I reach your cowork? So the five
+
+00:23:20.300 --> 00:23:22.220
+ingredients, like, to keep in mind. And a
+
+00:23:22.220 --> 00:23:24.300
+good candidate doesn't actually need to hit, like,
+
+00:23:24.300 --> 00:23:26.060
+all five. I would say, like, if you
+
+00:23:26.060 --> 00:23:27.980
+can come up with a workflow that maybe
+
+00:23:27.980 --> 00:23:30.220
+touches, like, three or four out of these
+
+00:23:30.220 --> 00:23:32.240
+five, that's probably gonna be a good candidate.
+
+00:23:32.525 --> 00:23:34.045
+But the first thing you wanna think of
+
+00:23:34.045 --> 00:23:37.325
+is, do I have, like, multiple things that
+
+00:23:37.325 --> 00:23:39.005
+are going in of giving Claude? This could
+
+00:23:39.005 --> 00:23:40.685
+be, like, multiple files. It could be a
+
+00:23:40.685 --> 00:23:43.085
+whole folder on my desktop. It could be
+
+00:23:43.085 --> 00:23:45.805
+maybe one file and maybe, like, two different
+
+00:23:45.805 --> 00:23:48.760
+connectors or multiple file types. It doesn't really
+
+00:23:49.060 --> 00:23:51.220
+matter. It's just am I giving Claude a
+
+00:23:51.220 --> 00:23:53.780
+lot of stuff, basically? If there's only, like,
+
+00:23:53.780 --> 00:23:55.620
+one or, like, one file, like, one word
+
+00:23:55.620 --> 00:23:57.140
+doc, you know, for the most part, chat
+
+00:23:57.140 --> 00:23:59.540
+can handle that, like, perfectly fine. The second
+
+00:23:59.540 --> 00:24:02.345
+thing you wanna think think about is, like,
+
+00:24:02.645 --> 00:24:05.445
+am I getting something at the end like
+
+00:24:05.445 --> 00:24:08.885
+a deliverable, like a file? Cowork can create
+
+00:24:08.885 --> 00:24:10.805
+files for you. You can create spreadsheets. You
+
+00:24:10.805 --> 00:24:13.045
+can create word docs. It can push content
+
+00:24:13.045 --> 00:24:15.865
+into your Notion. It could create a PowerPoint,
+
+00:24:16.210 --> 00:24:18.150
+or it can just give you a really
+
+00:24:18.210 --> 00:24:20.210
+long sort of, like, you know, blob of
+
+00:24:20.210 --> 00:24:22.050
+text, and that's totally fine as well. But
+
+00:24:22.050 --> 00:24:23.890
+the question you wanna ask yourself is, is
+
+00:24:23.890 --> 00:24:26.210
+there a deliverable at the end that you
+
+00:24:26.210 --> 00:24:29.265
+intend to do something with? The third thing
+
+00:24:29.265 --> 00:24:31.425
+is we touched upon scheduled tasks, but, like,
+
+00:24:31.425 --> 00:24:33.185
+are you going to do this again? Because
+
+00:24:33.185 --> 00:24:35.105
+this concept of running a scheduled task is
+
+00:24:35.105 --> 00:24:38.625
+very powerful because the ROI starts to compound
+
+00:24:38.625 --> 00:24:41.180
+very quickly. You build a workflow once. The
+
+00:24:41.180 --> 00:24:42.540
+next time you wanna run this, you can
+
+00:24:42.540 --> 00:24:44.460
+run it automatically. You don't need to build
+
+00:24:44.460 --> 00:24:46.300
+it again. You don't need to prompt it
+
+00:24:46.300 --> 00:24:49.280
+again. So that ROI starts compounding very quickly.
+
+00:24:49.820 --> 00:24:52.540
+The fourth thing to think about is, do
+
+00:24:52.540 --> 00:24:55.100
+you know what good looks like? And what
+
+00:24:55.100 --> 00:24:57.415
+I mean is, are you, like, generally kind
+
+00:24:57.415 --> 00:24:59.495
+of familiar with, like, the shape of the
+
+00:24:59.495 --> 00:25:02.295
+output? And the reason why I flag this
+
+00:25:02.295 --> 00:25:05.255
+is with co work, you're investing a lot
+
+00:25:05.255 --> 00:25:06.855
+of time in having Claude run sort of
+
+00:25:06.855 --> 00:25:09.175
+by itself. Sometimes Claude run for, like, twenty,
+
+00:25:09.175 --> 00:25:11.040
+thirty minutes. It kind of sucks if you
+
+00:25:11.040 --> 00:25:12.800
+have Claude run, like, thirty minutes. You come
+
+00:25:12.800 --> 00:25:14.800
+back and you're like, I have no idea
+
+00:25:14.800 --> 00:25:16.900
+if this is actually good or not. So
+
+00:25:17.200 --> 00:25:19.280
+really good sort of helpful workflows are ones
+
+00:25:19.280 --> 00:25:21.360
+that you're sort of intimately familiar with, something
+
+00:25:21.360 --> 00:25:23.655
+you do repeatedly. You're very familiar what the
+
+00:25:23.655 --> 00:25:25.255
+output looks like. So then within, like, the
+
+00:25:25.255 --> 00:25:27.735
+first, like, ten seconds after Claude is done
+
+00:25:27.735 --> 00:25:29.575
+running, you can take a quick glance and
+
+00:25:29.575 --> 00:25:31.415
+know, like, hey. This is right or maybe
+
+00:25:31.415 --> 00:25:33.575
+this is wrong or, like, this is, like,
+
+00:25:33.575 --> 00:25:35.415
+70% of the way there, and they need
+
+00:25:35.415 --> 00:25:37.095
+to go back and do some refining. Being
+
+00:25:37.095 --> 00:25:39.120
+able to pattern match that exactly is actually
+
+00:25:39.120 --> 00:25:41.680
+gonna be very important. And then the fifth
+
+00:25:41.680 --> 00:25:43.780
+and final sort of ingredient, if you will,
+
+00:25:43.840 --> 00:25:46.960
+is the middle part of when co work
+
+00:25:46.960 --> 00:25:48.640
+is running by itself is what I call,
+
+00:25:48.640 --> 00:25:50.000
+like, the boring part, and this is the
+
+00:25:50.000 --> 00:25:51.760
+part that you definitely wanna hand off to
+
+00:25:51.760 --> 00:25:54.025
+Claude. Because the part that requires the human
+
+00:25:54.025 --> 00:25:56.505
+judgment and the thinking sort of lives at
+
+00:25:56.505 --> 00:25:58.345
+the beginning of the end. At the very
+
+00:25:58.345 --> 00:26:00.585
+beginning, that's when you jump in and tell
+
+00:26:00.585 --> 00:26:02.105
+Claude, like, hey. This is what I want.
+
+00:26:02.105 --> 00:26:04.105
+Here's all the context. You're providing all of
+
+00:26:04.105 --> 00:26:06.830
+that rich context to Claude. And then at
+
+00:26:06.830 --> 00:26:08.910
+the very end, again, you're jumping back in
+
+00:26:08.910 --> 00:26:10.670
+and you're deciding, does this look right? What
+
+00:26:10.670 --> 00:26:12.190
+do I need to refine? What else do
+
+00:26:12.190 --> 00:26:13.310
+I need to do here in order to
+
+00:26:13.310 --> 00:26:15.230
+provide Claude with maybe some more instructions in
+
+00:26:15.230 --> 00:26:17.730
+order to do better next time? Then that
+
+00:26:17.870 --> 00:26:20.370
+part in the middle where Claude's, like, extracting,
+
+00:26:20.830 --> 00:26:24.325
+compiling, you know, reconciling different spreadsheets and sort
+
+00:26:24.325 --> 00:26:26.405
+of reformatting all that stuff, that's all the
+
+00:26:26.405 --> 00:26:30.005
+stuff you used to do manually previously that
+
+00:26:30.005 --> 00:26:32.825
+is probably pretty boring that Claude can do
+
+00:26:32.965 --> 00:26:34.805
+really good job at and can do very
+
+00:26:34.805 --> 00:26:37.140
+quickly. So, again, those are sort of the
+
+00:26:37.140 --> 00:26:39.140
+five different tasks or sort of five different
+
+00:26:39.140 --> 00:26:42.180
+ingredients to sort of keep in mind. Afterwards,
+
+00:26:42.180 --> 00:26:43.860
+you know, I'll also share a blog post
+
+00:26:43.860 --> 00:26:45.380
+that outlines this in detail so, like, you
+
+00:26:45.380 --> 00:26:46.820
+know, don't worry about taking notes or anything.
+
+00:26:46.820 --> 00:26:48.820
+But without further ado, I do wanna jump
+
+00:26:48.820 --> 00:26:51.355
+into the first, demo, which is now I
+
+00:26:51.355 --> 00:26:53.035
+call it sort of like the the daily
+
+00:26:53.035 --> 00:26:57.295
+morning brief. So at Anthropic, we have information
+
+00:26:57.595 --> 00:27:01.355
+overload. I think, our president, Daniela, recently said,
+
+00:27:01.355 --> 00:27:04.975
+I think there's something like 50,000 Slack channels
+
+00:27:05.035 --> 00:27:08.290
+at Anthropic. We're very big on Slack. In
+
+00:27:08.290 --> 00:27:10.130
+my role in particular, I also interface with
+
+00:27:10.130 --> 00:27:11.730
+a lot of external people, so I also
+
+00:27:11.730 --> 00:27:13.170
+use a lot of email. And one of
+
+00:27:13.170 --> 00:27:15.810
+the biggest challenges is with so many different
+
+00:27:15.810 --> 00:27:18.210
+Slack channels, so many emails coming through, so
+
+00:27:18.210 --> 00:27:19.730
+many things I check on a daily basis,
+
+00:27:19.730 --> 00:27:22.705
+it was becoming very overwhelming. So I decided
+
+00:27:22.765 --> 00:27:24.445
+to see whether or not coworker could actually
+
+00:27:24.445 --> 00:27:26.525
+help me with that. So one of the
+
+00:27:26.525 --> 00:27:28.605
+things that I realized again is there are
+
+00:27:28.605 --> 00:27:31.085
+certain things that I checked every morning, like,
+
+00:27:31.085 --> 00:27:33.565
+on repeat. Makes for a really great candidate
+
+00:27:33.565 --> 00:27:35.565
+for, like, a scheduled task. And I wanted
+
+00:27:35.565 --> 00:27:37.580
+to create a morning brief. I wanted to
+
+00:27:37.580 --> 00:27:39.820
+understand, like, hey. What are some of the
+
+00:27:39.820 --> 00:27:41.820
+emails that came in overnight that I can
+
+00:27:41.820 --> 00:27:44.140
+ignore outright? What are some of the emails
+
+00:27:44.140 --> 00:27:45.980
+that are very important that I need to
+
+00:27:45.980 --> 00:27:50.315
+actually address? What are Slack messages that I
+
+00:27:50.315 --> 00:27:52.075
+may have missed in the last day? Because
+
+00:27:52.075 --> 00:27:54.175
+I can't feasibly check all the Slack channels,
+
+00:27:54.795 --> 00:27:56.475
+that I'm that I'm currently part of. So,
+
+00:27:56.475 --> 00:27:59.835
+like, maybe some of my team channels. I
+
+00:27:59.835 --> 00:28:02.830
+manage performance marketing here at Anthropic, so I
+
+00:28:02.830 --> 00:28:04.750
+always wanna keep top of mind, like, how
+
+00:28:04.750 --> 00:28:06.590
+much did we spend yesterday? Is there anything
+
+00:28:06.590 --> 00:28:08.270
+that was off? Like, I need another sort
+
+00:28:08.270 --> 00:28:09.550
+of set of eyes that thought does a
+
+00:28:09.550 --> 00:28:11.230
+really good job of that. And then there's
+
+00:28:11.230 --> 00:28:14.670
+also other things like, are there any, like,
+
+00:28:14.670 --> 00:28:17.595
+you know, public facing, like, incidents that were
+
+00:28:17.595 --> 00:28:19.915
+open overnight related to our product that could
+
+00:28:19.915 --> 00:28:22.395
+actually impact, like, marketing or our customers that
+
+00:28:22.395 --> 00:28:23.915
+I need that I need to be sort
+
+00:28:23.915 --> 00:28:26.895
+of aware of? All these things were were
+
+00:28:27.115 --> 00:28:29.115
+very common things that I would check every
+
+00:28:29.115 --> 00:28:31.820
+single morning. So I basically created a scheduled
+
+00:28:31.820 --> 00:28:34.860
+task. And every morning at 6AM, Claude will
+
+00:28:34.860 --> 00:28:36.860
+basically run. And all I do is, again,
+
+00:28:36.860 --> 00:28:38.700
+I go in here and I basically just
+
+00:28:38.700 --> 00:28:40.940
+describe the Claude. Like, here's all the things
+
+00:28:40.940 --> 00:28:43.280
+that I'm looking for. Like, here's the specific
+
+00:28:43.340 --> 00:28:45.725
+output format. I want you to talk about,
+
+00:28:45.725 --> 00:28:48.545
+you know, the TLDR, so it's very skimmable.
+
+00:28:48.845 --> 00:28:50.685
+I want you to flag the emails, group
+
+00:28:50.685 --> 00:28:53.325
+them by category. I even tell Claude if
+
+00:28:53.325 --> 00:28:55.725
+it's specific emails that I really don't care
+
+00:28:55.725 --> 00:28:58.250
+about, like, you know, if I get a,
+
+00:28:58.570 --> 00:29:00.410
+email saying that, like, hey. Your invoice was
+
+00:29:00.410 --> 00:29:03.050
+paid or here's your login code for, like,
+
+00:29:03.050 --> 00:29:05.770
+TikTok. Like, those are all emails that I
+
+00:29:05.770 --> 00:29:07.850
+don't personally need to review myself. I just
+
+00:29:07.850 --> 00:29:09.610
+tell Claude, like, literally just mark these as
+
+00:29:09.610 --> 00:29:12.135
+read or, like, people declining meetings or, you
+
+00:29:12.135 --> 00:29:14.695
+know, accepting meetings. I don't care about that.
+
+00:29:14.695 --> 00:29:16.375
+It's all sort of noise. Just read read
+
+00:29:16.375 --> 00:29:18.215
+all those for me, mark them as read,
+
+00:29:18.215 --> 00:29:20.295
+then analyze, you know, my ad platform, Slack,
+
+00:29:20.295 --> 00:29:22.055
+etcetera. And then write up a short little
+
+00:29:22.055 --> 00:29:23.655
+doc for me so that every morning, I
+
+00:29:23.655 --> 00:29:25.540
+can hop in. First thing I do when
+
+00:29:25.540 --> 00:29:27.300
+I open my laptop is I read it.
+
+00:29:27.300 --> 00:29:30.760
+So here's sort of a a fake version.
+
+00:29:31.380 --> 00:29:33.780
+So, you know, for demo purposes, like, none
+
+00:29:33.780 --> 00:29:34.980
+of the stuff's real none of the stuff's
+
+00:29:34.980 --> 00:29:36.580
+actually real. So, like, you know, don't read
+
+00:29:36.580 --> 00:29:37.940
+too much into it. But, like, this is
+
+00:29:37.940 --> 00:29:40.375
+the exact format and the template of my
+
+00:29:40.375 --> 00:29:42.955
+morning brief that I run every single morning.
+
+00:29:43.015 --> 00:29:44.695
+At the very top, it gives me the
+
+00:29:44.695 --> 00:29:47.815
+TLDR one to two sentences of, like, the
+
+00:29:47.815 --> 00:29:50.215
+most important things. It tells me the most
+
+00:29:50.215 --> 00:29:52.990
+important emails that actually need to address. Again,
+
+00:29:52.990 --> 00:29:54.750
+what are some of the things that were
+
+00:29:54.750 --> 00:29:56.930
+auto marked as read, like a meeting decline,
+
+00:29:57.310 --> 00:29:58.670
+auth code for, like, you know, in this
+
+00:29:58.670 --> 00:30:01.390
+case, Figma. How do we paste yesterday? What
+
+00:30:01.390 --> 00:30:03.630
+do we spend? How do conversions look across
+
+00:30:03.630 --> 00:30:07.445
+all of my, ad platforms? And anything else
+
+00:30:07.445 --> 00:30:09.525
+that happened on Slack overnight. And the cool
+
+00:30:09.525 --> 00:30:12.005
+thing is all of this is orchestrated via
+
+00:30:12.005 --> 00:30:16.185
+connectors. So I'm connected, through the claw desktop
+
+00:30:16.245 --> 00:30:18.645
+app directly to my ad platforms, Google Ads,
+
+00:30:18.645 --> 00:30:22.570
+Meta Ads, etcetera. I'm connected to, Slack, again,
+
+00:30:22.570 --> 00:30:24.890
+via the Slack connector as well as my
+
+00:30:24.890 --> 00:30:27.450
+Gmail. So all this is connected. It runs
+
+00:30:27.450 --> 00:30:28.730
+overnight, and all I had to do is
+
+00:30:28.730 --> 00:30:30.570
+just describe to Claude again in very simple
+
+00:30:30.570 --> 00:30:32.650
+language. What am I actually trying to do?
+
+00:30:32.650 --> 00:30:34.330
+What do I want you to do? And
+
+00:30:34.330 --> 00:30:36.675
+what do I find important? You encode that
+
+00:30:36.675 --> 00:30:38.515
+into a scheduled task, and it runs every
+
+00:30:38.515 --> 00:30:43.315
+morning for me at 6AM. Cool. Onto the
+
+00:30:43.315 --> 00:30:46.115
+second, demo. The second one I wanna show
+
+00:30:46.115 --> 00:30:49.235
+is how I use Claude for you can
+
+00:30:49.235 --> 00:30:53.110
+call it, like, dashboarding and reporting. And, again,
+
+00:30:53.110 --> 00:30:54.550
+it's very important to kinda keep in mind
+
+00:30:54.550 --> 00:30:56.230
+sort of, like, the the five ingredients I
+
+00:30:56.230 --> 00:30:59.270
+mentioned earlier because for what for many people,
+
+00:30:59.270 --> 00:31:01.910
+how they might approach things as simple as,
+
+00:31:01.910 --> 00:31:05.210
+let's say, like, budget pacing for performance marketing.
+
+00:31:05.355 --> 00:31:07.675
+Or it could be, tracking the amount of
+
+00:31:07.675 --> 00:31:09.855
+sign ups, that we have on our website
+
+00:31:10.235 --> 00:31:14.075
+or, you know, tracking how many, let's see
+
+00:31:14.075 --> 00:31:15.195
+what else. How many how many sign ups
+
+00:31:15.195 --> 00:31:16.715
+from a webinar? How many visits to a
+
+00:31:16.715 --> 00:31:18.950
+landing page? You might be opening up, you
+
+00:31:18.950 --> 00:31:21.450
+know, Amplitude. You might be opening up HubSpot.
+
+00:31:21.510 --> 00:31:23.270
+If you're tracking budget, you're opening up your
+
+00:31:23.270 --> 00:31:26.310
+ad platforms. What people commonly do, particularly for
+
+00:31:26.310 --> 00:31:28.310
+budget tracking, is they're opening up, like, the
+
+00:31:28.310 --> 00:31:31.435
+Google Ads, their Meta Ads, Then they're downloading
+
+00:31:31.495 --> 00:31:33.895
+a CSV file maybe once a week or
+
+00:31:33.895 --> 00:31:36.695
+a couple times a week, pasting it into
+
+00:31:36.695 --> 00:31:38.215
+some sort of Google Sheets where they have
+
+00:31:38.215 --> 00:31:40.455
+some, like, formatting and maybe some, like, formulas
+
+00:31:40.455 --> 00:31:41.975
+that basically tell you, here's how much you're
+
+00:31:41.975 --> 00:31:44.320
+pacing month to date. Here's what you'd need
+
+00:31:44.320 --> 00:31:45.680
+to pay in order to hit the budget
+
+00:31:45.680 --> 00:31:49.520
+or whatever target. And, yeah, can't wait to
+
+00:31:49.520 --> 00:31:50.800
+see you next week when you have to
+
+00:31:50.800 --> 00:31:52.720
+redo redo this whole process again, exporting all
+
+00:31:52.720 --> 00:31:54.800
+these CSV files. And I realized that was
+
+00:31:54.800 --> 00:31:56.720
+what I was doing to track budget. But,
+
+00:31:56.720 --> 00:31:59.545
+again, with Cowork, you can actually just add
+
+00:31:59.545 --> 00:32:02.585
+in your connectors. And in this case, I
+
+00:32:02.585 --> 00:32:06.045
+have this, performance marketing pacing. Again, this is
+
+00:32:06.105 --> 00:32:09.705
+illustrative, not real data, but I've been connected
+
+00:32:09.705 --> 00:32:11.930
+directly to a couple of ad platforms. So
+
+00:32:11.930 --> 00:32:13.930
+in this demo, I'm connected to Google Ads.
+
+00:32:13.930 --> 00:32:16.170
+I'm connected to Facebook Ads. And what it
+
+00:32:16.170 --> 00:32:18.570
+does is because it's integrated via these connectors
+
+00:32:18.570 --> 00:32:22.650
+or MCPs, it will programmatically pull all of
+
+00:32:22.650 --> 00:32:25.105
+our spend data on my behalf. Every single
+
+00:32:25.105 --> 00:32:27.205
+time I open this, the data will refresh
+
+00:32:27.665 --> 00:32:31.425
+with the latest numbers that are available via
+
+00:32:31.425 --> 00:32:34.785
+via the API, basically. And with just sort
+
+00:32:34.785 --> 00:32:36.385
+of simple language, all I have to do
+
+00:32:36.385 --> 00:32:38.465
+was just describe to Claude in chat and
+
+00:32:38.465 --> 00:32:40.660
+say like, hey, Claude. I'm connected to Google
+
+00:32:40.660 --> 00:32:43.220
+Ads and Facebook Ads using these connectors. I
+
+00:32:43.220 --> 00:32:45.860
+wanna basically create some sort of visualization that
+
+00:32:45.860 --> 00:32:48.500
+shows me how are we pacing relative to
+
+00:32:48.500 --> 00:32:50.340
+budget. And then I just want some sort
+
+00:32:50.340 --> 00:32:53.015
+of, like, single card metrics at the top
+
+00:32:53.015 --> 00:32:54.375
+that basically tell me how much have we
+
+00:32:54.375 --> 00:32:55.655
+spent so far month to date, what's our
+
+00:32:55.655 --> 00:32:58.295
+target, variance, etcetera. And I also want you
+
+00:32:58.295 --> 00:32:59.575
+to kinda call out some of the other
+
+00:32:59.575 --> 00:33:01.655
+things, like, what's actually moving the budget? Are
+
+00:33:01.655 --> 00:33:03.755
+there any anomalies we should keep in mind?
+
+00:33:04.215 --> 00:33:06.615
+And then Claude basically created this very cool
+
+00:33:06.615 --> 00:33:09.470
+live artifact for me. And live artifact basically
+
+00:33:09.470 --> 00:33:11.470
+means that the live part effectively means that
+
+00:33:11.470 --> 00:33:14.430
+because it's connected via your connectors, all this
+
+00:33:14.430 --> 00:33:17.470
+data can be refreshed anytime. So as soon
+
+00:33:17.470 --> 00:33:18.990
+as I open any one of my live
+
+00:33:18.990 --> 00:33:22.515
+artifacts, this is, like, the most, recent data
+
+00:33:22.515 --> 00:33:25.075
+that Claude basically has. So, effectively, this becomes
+
+00:33:25.075 --> 00:33:27.795
+my own dashboard, my own BI tool. So
+
+00:33:27.795 --> 00:33:29.795
+instead of, like, maybe working with, like, your
+
+00:33:29.795 --> 00:33:31.395
+team and saying, like, hey. I need, like,
+
+00:33:31.395 --> 00:33:33.315
+a data analyst to help, like, build me
+
+00:33:33.315 --> 00:33:35.555
+a dashboard and whatever internal tool we have.
+
+00:33:35.555 --> 00:33:36.930
+If you have the connector set up, you
+
+00:33:36.930 --> 00:33:38.770
+can create your own dashboards. I can even
+
+00:33:38.770 --> 00:33:40.290
+go in and say, like, okay. Well, like,
+
+00:33:40.290 --> 00:33:42.210
+for the month of May, our budget is
+
+00:33:42.210 --> 00:33:44.690
+actually, you know, gonna be, you know, 420,000.
+
+00:33:44.690 --> 00:33:46.530
+You can save the budget, and it'll update
+
+00:33:46.530 --> 00:33:48.850
+accordingly. And it has, like, all this data
+
+00:33:48.850 --> 00:33:50.290
+from, like, the previous month, so I can
+
+00:33:50.290 --> 00:33:52.135
+see, like, you know, for, you know, the
+
+00:33:52.135 --> 00:33:54.135
+month of March for Google, how do we
+
+00:33:54.135 --> 00:33:55.975
+spend on a daily basis? Do we over
+
+00:33:55.975 --> 00:33:57.975
+pace, under pace? How does this vary in
+
+00:33:57.975 --> 00:34:01.175
+between channels? And, again, this is applicable not
+
+00:34:01.175 --> 00:34:04.615
+only to this example of budget tracking, but
+
+00:34:04.615 --> 00:34:06.295
+it could be sort of any form of
+
+00:34:06.295 --> 00:34:08.750
+tracking and dash boarding. And if you sort
+
+00:34:08.750 --> 00:34:10.510
+of circle back to the five ingredients I
+
+00:34:10.510 --> 00:34:13.150
+mentioned earlier, a couple of things I wanna
+
+00:34:13.150 --> 00:34:14.750
+keep in mind here, why was this a
+
+00:34:14.750 --> 00:34:17.810
+good co work workflow? So, like, one is,
+
+00:34:17.950 --> 00:34:20.270
+like, the first sort of ingredient I had
+
+00:34:20.270 --> 00:34:22.535
+was, are there multiple things that go in?
+
+00:34:22.535 --> 00:34:24.395
+So in the case of, like, a regular
+
+00:34:24.615 --> 00:34:27.495
+maybe, tracker that you have in a Google
+
+00:34:27.495 --> 00:34:30.055
+Sheets, you have multiple CSV files that you're
+
+00:34:30.055 --> 00:34:32.955
+exporting from your ad platforms or your CRM
+
+00:34:33.015 --> 00:34:34.935
+or wherever it may be. You're then copy
+
+00:34:34.935 --> 00:34:38.910
+and pasting it to something else. Again, pattern
+
+00:34:38.910 --> 00:34:41.150
+matching. There are multiple things, multiple files I'm
+
+00:34:41.150 --> 00:34:43.150
+working with. The second part of the ingredient
+
+00:34:43.150 --> 00:34:45.310
+list was, like, is there a deliverable at
+
+00:34:45.310 --> 00:34:46.830
+the end? So the deliverable at the end,
+
+00:34:46.830 --> 00:34:48.430
+if I were doing this manually, is I
+
+00:34:48.430 --> 00:34:49.950
+have the Google Sheets that would track my
+
+00:34:49.950 --> 00:34:52.425
+budget for me. In this case, I'm recreating
+
+00:34:52.425 --> 00:34:55.065
+as a live artifact. The third part of
+
+00:34:55.065 --> 00:34:57.945
+the five ingredients was, is there something is
+
+00:34:57.945 --> 00:35:00.505
+this something I'm going to do again? So
+
+00:35:00.505 --> 00:35:03.225
+instead of trying to export and update my
+
+00:35:03.225 --> 00:35:05.865
+Google Sheets tracker on a daily or weekly
+
+00:35:05.865 --> 00:35:08.750
+basis, I can have Claude create this live
+
+00:35:08.750 --> 00:35:11.710
+artifact, and this updates on demand whenever I
+
+00:35:11.710 --> 00:35:13.790
+want. And then number four, you know what
+
+00:35:13.790 --> 00:35:15.310
+good looks like. I know what good looks
+
+00:35:15.310 --> 00:35:17.550
+like because I can easily cross reference to
+
+00:35:17.550 --> 00:35:20.270
+see, like, is this budget? Does it reflect
+
+00:35:20.270 --> 00:35:22.110
+what I'm seeing in the app platform? If
+
+00:35:22.110 --> 00:35:24.595
+yes, then perfect. We're done. And the fifth
+
+00:35:24.595 --> 00:35:26.835
+part is the middle part is the boring
+
+00:35:26.835 --> 00:35:28.595
+part that you wanna hand off to Claude.
+
+00:35:28.595 --> 00:35:30.835
+I don't wanna spend my time opening up,
+
+00:35:30.835 --> 00:35:32.915
+you know, three different tabs with all my
+
+00:35:32.915 --> 00:35:36.195
+ad platforms, then exporting the latest CSV file
+
+00:35:36.195 --> 00:35:38.215
+with all of my spend and campaign data,
+
+00:35:38.570 --> 00:35:40.890
+copy and pasting that, then dumping it in
+
+00:35:40.890 --> 00:35:43.130
+a different sheet, then refreshing my sheet to
+
+00:35:43.130 --> 00:35:45.130
+update the table, etcetera. That's the boring part.
+
+00:35:45.130 --> 00:35:46.650
+I don't wanna spend my time doing that.
+
+00:35:46.650 --> 00:35:48.330
+Claude does a really great job with that.
+
+00:35:48.330 --> 00:35:50.350
+So you can start to pattern match again.
+
+00:35:50.535 --> 00:35:52.775
+What are some of the things that make
+
+00:35:52.775 --> 00:35:54.695
+for a good cohort task? And, like, here
+
+00:35:54.695 --> 00:35:56.295
+are the reasons why I build something like
+
+00:35:56.295 --> 00:35:57.815
+this. So you can see, like, this is
+
+00:35:57.815 --> 00:36:00.315
+like a performance marketing sort of budget pacing.
+
+00:36:00.535 --> 00:36:02.295
+I have a separate one, which is, like,
+
+00:36:02.295 --> 00:36:05.275
+a dashboard. Again, this is just a dashboard
+
+00:36:06.870 --> 00:36:09.110
+that includes a bunch of different ad platforms
+
+00:36:09.110 --> 00:36:10.970
+that sort of has, like, our spend metrics,
+
+00:36:11.430 --> 00:36:13.510
+how many conversions that we get, how many
+
+00:36:13.510 --> 00:36:16.950
+Claude code activations, etcetera. All of this is
+
+00:36:16.950 --> 00:36:19.190
+pulled in. So instead of reconciling this myself,
+
+00:36:19.190 --> 00:36:22.025
+I just have a live artifact within CoWork
+
+00:36:22.565 --> 00:36:24.165
+itself. The beauty of this as well is
+
+00:36:24.165 --> 00:36:26.245
+you can actually share this. So I can
+
+00:36:26.245 --> 00:36:29.205
+share this with anyone at the team, at
+
+00:36:29.205 --> 00:36:31.605
+the company. So long as they have the
+
+00:36:31.605 --> 00:36:35.320
+same exact connectors set up, they can also
+
+00:36:35.460 --> 00:36:38.580
+recreate this dashboard in their Claude, Cowork instance,
+
+00:36:38.580 --> 00:36:40.180
+and they can view the same exact data
+
+00:36:40.180 --> 00:36:42.260
+I have. So you can start comp this
+
+00:36:42.260 --> 00:36:44.180
+starts to compound very quickly because you can
+
+00:36:44.180 --> 00:36:45.860
+start building a lot of these, like, almost
+
+00:36:45.860 --> 00:36:49.565
+like bespoke, like, tools all within the desktop
+
+00:36:49.565 --> 00:36:52.045
+app using Claude Cowork that's applicable not only
+
+00:36:52.045 --> 00:36:54.225
+to yourself, but your team, your broader organization.
+
+00:36:54.605 --> 00:36:56.765
+And this spans across multiple different facets of,
+
+00:36:56.765 --> 00:36:58.445
+like, marketing. Right? So I have another example
+
+00:36:58.445 --> 00:37:01.165
+here. This is, like, our sort of app
+
+00:37:01.165 --> 00:37:05.550
+store where in with in in our actual,
+
+00:37:05.550 --> 00:37:07.790
+like, sort of internal version, I have a
+
+00:37:07.790 --> 00:37:11.310
+live artifact that basically analyzes all of the
+
+00:37:11.310 --> 00:37:13.150
+app reviews that are left on the app
+
+00:37:13.150 --> 00:37:14.990
+store for iOS and Google Play for the
+
+00:37:14.990 --> 00:37:18.015
+Claude app. It'll basically categorize the sentiment. It
+
+00:37:18.015 --> 00:37:20.015
+will classify it. It'll let me know, like,
+
+00:37:20.015 --> 00:37:23.775
+here's how, review ratings are trending. Here's what
+
+00:37:23.775 --> 00:37:25.375
+sentiment looks like. And it'll give me, like,
+
+00:37:25.375 --> 00:37:27.775
+just a very quick snapshot. And, like, this
+
+00:37:27.775 --> 00:37:29.695
+is something that, like, of course, your data
+
+00:37:29.695 --> 00:37:31.540
+analyst and your data science team could build,
+
+00:37:31.540 --> 00:37:32.900
+but, like, this is something that, like, I
+
+00:37:32.900 --> 00:37:34.500
+could do myself as well and I do
+
+00:37:34.500 --> 00:37:38.180
+it way faster. Cool. The last demo, I'll
+
+00:37:38.180 --> 00:37:39.860
+sort of, like, go through a little bit
+
+00:37:39.860 --> 00:37:41.540
+quicker, which is this one's gonna be a
+
+00:37:41.540 --> 00:37:44.195
+little bit more pointed, which is it's something
+
+00:37:44.195 --> 00:37:47.395
+that I built for Google Ads specifically. And
+
+00:37:47.395 --> 00:37:49.715
+I posted this on LinkedIn previously if you
+
+00:37:49.795 --> 00:37:51.395
+if you're interested in sort of reading through
+
+00:37:51.395 --> 00:37:54.915
+the specifics, but this idea of encoding your
+
+00:37:54.915 --> 00:37:57.480
+knowledge and process into a skill. So if
+
+00:37:57.480 --> 00:37:59.240
+I go into my skill, I have this
+
+00:37:59.240 --> 00:38:01.320
+Google Ads plug in over here. And, again,
+
+00:38:01.320 --> 00:38:03.000
+a plug in is just a connect a
+
+00:38:03.000 --> 00:38:05.480
+plug in is just a combination of connectors,
+
+00:38:05.480 --> 00:38:08.280
+so your MCPs, and then your skills. And
+
+00:38:08.280 --> 00:38:09.960
+one of the things I wanna do is
+
+00:38:09.960 --> 00:38:11.815
+at the level of spend we're operating after
+
+00:38:11.815 --> 00:38:14.135
+Google Ads, we're spending a lot of money,
+
+00:38:14.135 --> 00:38:15.815
+which means that we needed to check our
+
+00:38:15.815 --> 00:38:18.295
+search term report to figure out whether or
+
+00:38:18.295 --> 00:38:20.375
+not there are specific search terms that we
+
+00:38:20.375 --> 00:38:22.695
+needed to add as a negative so that
+
+00:38:22.695 --> 00:38:24.680
+we would effectively save money. This is a
+
+00:38:24.680 --> 00:38:27.560
+way to optimize your campaigns. The typical process
+
+00:38:27.560 --> 00:38:29.080
+is I will go into Google Ads. I
+
+00:38:29.080 --> 00:38:31.160
+might export a CSV file, then I'll filter
+
+00:38:31.160 --> 00:38:33.560
+the CSV file, go through line by line,
+
+00:38:33.560 --> 00:38:35.160
+row by row to figure out, does the
+
+00:38:35.160 --> 00:38:37.800
+search term is this relevant to Anthropic and
+
+00:38:37.800 --> 00:38:39.715
+Claude as a business? If the answer is
+
+00:38:39.715 --> 00:38:41.235
+yes, I'll leave it alone. If the answer
+
+00:38:41.235 --> 00:38:43.235
+is no, I need to flag it, add
+
+00:38:43.235 --> 00:38:45.235
+it as a negative keyword, then I need
+
+00:38:45.235 --> 00:38:47.315
+to actually manually upload it back into Google
+
+00:38:47.315 --> 00:38:49.395
+Ads. So I decided, what if I can
+
+00:38:49.395 --> 00:38:52.855
+just encode this entire process as a skill?
+
+00:38:53.500 --> 00:38:55.660
+And, again, all I did was I wanted
+
+00:38:55.660 --> 00:38:59.020
+to teach Claude the exact process that I
+
+00:38:59.020 --> 00:39:00.940
+would take if I were to do this
+
+00:39:00.940 --> 00:39:03.580
+myself. But instead of doing it myself, could
+
+00:39:03.580 --> 00:39:04.940
+I teach Claude to do it on my
+
+00:39:04.940 --> 00:39:07.965
+behalf? So the beauty of skills is you're
+
+00:39:07.965 --> 00:39:10.445
+just encoding your workflow. So you can see
+
+00:39:10.445 --> 00:39:11.885
+this is all just written in sort of,
+
+00:39:11.885 --> 00:39:13.805
+like, plain text. And you can see right
+
+00:39:13.805 --> 00:39:16.305
+here that for the mind search term skill,
+
+00:39:16.685 --> 00:39:18.525
+all it says is, one, I want you
+
+00:39:18.525 --> 00:39:20.650
+to load two other skills. The first one
+
+00:39:20.650 --> 00:39:23.210
+is search term methodology, which effectively just teaches
+
+00:39:23.210 --> 00:39:26.250
+clock. Here's some more context around, like, how
+
+00:39:26.250 --> 00:39:29.130
+do we actually go through search terms? Like,
+
+00:39:29.130 --> 00:39:31.530
+you know, don't make it so binary where
+
+00:39:31.530 --> 00:39:33.450
+if a search term is zero conversions, it's
+
+00:39:33.450 --> 00:39:35.965
+considered bad. What we really wanted to understand
+
+00:39:35.965 --> 00:39:37.725
+is is the search term relevant to the
+
+00:39:37.725 --> 00:39:39.565
+campaign? And here's a bunch of, you know,
+
+00:39:39.565 --> 00:39:41.965
+sort of other things like, oh, here's, like,
+
+00:39:41.965 --> 00:39:43.405
+a clear case of, like, this should be
+
+00:39:43.405 --> 00:39:45.405
+a negative keyword. Like, Anthropic jobs. Like, we
+
+00:39:45.405 --> 00:39:46.925
+don't wanna we don't wanna spend money or
+
+00:39:46.925 --> 00:39:49.480
+clicks on that. We'll also teach it, like,
+
+00:39:49.480 --> 00:39:52.360
+for example, account conventions. Like, hey, Claude. Like,
+
+00:39:52.360 --> 00:39:55.080
+here's how to actually understand what our campaigns
+
+00:39:55.080 --> 00:39:56.840
+are named and how to actually make sense
+
+00:39:56.840 --> 00:39:59.720
+of it. Like, this naming convention means that
+
+00:39:59.720 --> 00:40:02.040
+it's supporting Claude Code versus Cowork versus one
+
+00:40:02.040 --> 00:40:04.755
+of our other products. Then finally, here's the
+
+00:40:04.755 --> 00:40:07.255
+actual process I want you, Claude, to take
+
+00:40:07.635 --> 00:40:09.395
+when I invoke the skill. So, one, pull
+
+00:40:09.395 --> 00:40:12.835
+the search terms, evaluate all of this. I
+
+00:40:12.835 --> 00:40:14.755
+want you to build a CSV file for
+
+00:40:14.755 --> 00:40:16.440
+me, and then I want you to add
+
+00:40:16.440 --> 00:40:18.200
+in all these specific columns. I want you
+
+00:40:18.200 --> 00:40:19.640
+to present it to me in chat, and
+
+00:40:19.640 --> 00:40:21.320
+I also want you to be offer me
+
+00:40:21.320 --> 00:40:24.120
+the ability to actually exclude these search terms
+
+00:40:24.120 --> 00:40:26.360
+on my behalf. So if I were to
+
+00:40:26.360 --> 00:40:29.525
+run this skill, a complete output might look
+
+00:40:29.525 --> 00:40:32.005
+like this. So I first invoke the skill
+
+00:40:32.005 --> 00:40:34.165
+and say, hey, Claude. Help me identify negative
+
+00:40:34.165 --> 00:40:37.545
+keywords in my fictitious, you know, demo campaign
+
+00:40:37.605 --> 00:40:40.425
+called meeting notes campaign. You can see immediately,
+
+00:40:40.565 --> 00:40:43.285
+Cowork will load the methodology skills because, again,
+
+00:40:43.285 --> 00:40:45.760
+that was part of the workflow. It'll then
+
+00:40:45.760 --> 00:40:48.000
+go through, make the proper tool calls via
+
+00:40:48.000 --> 00:40:50.660
+the Google Ads connector, find the campaign ID,
+
+00:40:51.120 --> 00:40:53.280
+pull the search term report, start to run
+
+00:40:53.280 --> 00:40:55.360
+through the analysis. But at the very end,
+
+00:40:55.360 --> 00:40:57.360
+you can see Claude basically runs through this
+
+00:40:57.360 --> 00:41:00.025
+process. It takes, like, maybe, like, I don't
+
+00:41:00.025 --> 00:41:02.345
+know, anywhere from, like, ten to maybe twenty
+
+00:41:02.345 --> 00:41:05.305
+minutes depending on how many search terms Claude
+
+00:41:05.305 --> 00:41:07.625
+is looking at. Because see Claude says, I
+
+00:41:07.625 --> 00:41:11.020
+mined through your meeting notes campaign, and I
+
+00:41:11.020 --> 00:41:13.020
+found a bunch of search terms that you
+
+00:41:13.020 --> 00:41:15.600
+wanna add as negative keywords. It's like, great.
+
+00:41:15.820 --> 00:41:17.820
+I also wanna validate that. So, again, part
+
+00:41:17.820 --> 00:41:20.060
+of my process was I told Claude, I
+
+00:41:20.060 --> 00:41:22.975
+want you to create a CSV file. So
+
+00:41:22.975 --> 00:41:25.295
+Claude would then actually create a CSV file
+
+00:41:25.295 --> 00:41:28.415
+all within Cowork and includes all the columns
+
+00:41:28.415 --> 00:41:32.335
+that I mentioned previously with campaign, the keyword,
+
+00:41:32.335 --> 00:41:34.275
+the search term, how much we spend, etcetera.
+
+00:41:34.575 --> 00:41:36.335
+And the important part is as part of
+
+00:41:36.335 --> 00:41:38.175
+my skill, I told Claude, I wanna be
+
+00:41:38.175 --> 00:41:41.030
+able to audit your work. So tell me
+
+00:41:41.030 --> 00:41:44.790
+the reason why you're saying, for example, the
+
+00:41:44.790 --> 00:41:48.150
+search term AI triggered this keyword, team meeting
+
+00:41:48.150 --> 00:41:51.525
+notes app. I wanna know why, Claude, you
+
+00:41:51.525 --> 00:41:53.445
+decided that this should be added as a
+
+00:41:53.445 --> 00:41:55.545
+negative keyword. So Claude actually added in reasoning.
+
+00:41:55.765 --> 00:41:57.125
+So the cool part here is I can
+
+00:41:57.125 --> 00:41:59.045
+actually audit the work, and I can steer.
+
+00:41:59.045 --> 00:42:00.165
+And I can go back in and say,
+
+00:42:00.165 --> 00:42:01.925
+like, okay, Claude. Like, I'm taking a look
+
+00:42:01.925 --> 00:42:03.365
+at rows, you know, six through 10, and
+
+00:42:03.365 --> 00:42:05.040
+they actually look kinda off. And I actually
+
+00:42:05.040 --> 00:42:06.820
+don't wanna add them as a negative keyword.
+
+00:42:06.960 --> 00:42:08.880
+Can you actually, like, fix that? And then
+
+00:42:08.880 --> 00:42:10.560
+if it becomes a recurring problem, I can
+
+00:42:10.560 --> 00:42:12.080
+then even say, like, hey, Claude. We're seeing
+
+00:42:12.080 --> 00:42:13.760
+this issue happen again and again. Can you
+
+00:42:13.760 --> 00:42:16.500
+actually go back and update the skill itself
+
+00:42:17.005 --> 00:42:18.845
+so that next time, I don't need to
+
+00:42:18.845 --> 00:42:22.785
+tell you again? So, again, this idea of
+
+00:42:22.925 --> 00:42:26.545
+pattern matching, what is something you do constantly
+
+00:42:27.165 --> 00:42:30.205
+that's maybe repetitive that you can teach Claude
+
+00:42:30.205 --> 00:42:32.380
+to do on your behalf? Turn that into
+
+00:42:32.380 --> 00:42:35.900
+a skill. If it requires external tools, wire
+
+00:42:35.900 --> 00:42:37.500
+up all the different connectors. We have so
+
+00:42:37.500 --> 00:42:39.100
+many different connectors out there that you can
+
+00:42:39.100 --> 00:42:42.140
+browse. Then the last step is just try
+
+00:42:42.140 --> 00:42:45.020
+running through some example workflows with Claude. Just
+
+00:42:45.020 --> 00:42:47.545
+try it out. See what works. You'll probably
+
+00:42:47.545 --> 00:42:49.705
+need to make some adjustments and refine it.
+
+00:42:49.705 --> 00:42:51.385
+But then once you once you get to
+
+00:42:51.385 --> 00:42:54.025
+a good spot, you can start seeing how
+
+00:42:54.025 --> 00:42:55.945
+core can be so powerful because you can
+
+00:42:55.945 --> 00:42:58.745
+start putting together these building blocks of all
+
+00:42:58.745 --> 00:43:01.225
+these different skills, all these different workflows. There,
+
+00:43:01.225 --> 00:43:03.750
+again, they're really only probably gonna be applicable
+
+00:43:03.750 --> 00:43:06.550
+to you and your role, but that's okay
+
+00:43:06.550 --> 00:43:08.630
+because the ROI for the amount of time
+
+00:43:08.630 --> 00:43:10.710
+you save for the output that you personally
+
+00:43:10.710 --> 00:43:13.030
+might have is going to be really, really,
+
+00:43:13.030 --> 00:43:17.335
+like, significant and tremendous. So, that's all the
+
+00:43:17.335 --> 00:43:19.975
+demos I have for now. I think, we
+
+00:43:19.975 --> 00:43:22.635
+have, what, fifteen minutes for q and a?
+
+00:43:25.415 --> 00:43:29.175
+Yes. Okay. Thank you so much, Austin. We
+
+00:43:29.175 --> 00:43:33.610
+have some really amazing questions. A couple of
+
+00:43:33.610 --> 00:43:37.130
+questions around this theme of, like, trust. How
+
+00:43:37.130 --> 00:43:39.930
+do you think about the outputs that coworker
+
+00:43:39.930 --> 00:43:43.130
+is giving you and trusting that information? One
+
+00:43:43.130 --> 00:43:46.385
+question in particular we got was, like, do
+
+00:43:46.785 --> 00:43:48.805
+am I going to be doing duplicative work
+
+00:43:48.865 --> 00:43:50.545
+by asking co work to do something and
+
+00:43:50.545 --> 00:43:51.825
+then I just have to go and check
+
+00:43:51.825 --> 00:43:53.665
+every every single thing? Like, how do you
+
+00:43:53.665 --> 00:43:57.550
+think about that kind of balance? So there's
+
+00:43:57.550 --> 00:43:59.710
+gonna be, so for example, if you're building
+
+00:43:59.710 --> 00:44:02.030
+something for the very first time, I would
+
+00:44:02.030 --> 00:44:04.110
+say, like, yeah, you probably wanna have a
+
+00:44:04.110 --> 00:44:06.670
+healthy degree of skepticism and you wanna validate
+
+00:44:06.670 --> 00:44:08.555
+and really double check the work. Right? So
+
+00:44:08.555 --> 00:44:10.315
+the first couple times I ran through that
+
+00:44:10.315 --> 00:44:11.675
+workflow I just showed you guys with the
+
+00:44:11.675 --> 00:44:14.235
+search terms, I was going through and, like,
+
+00:44:14.235 --> 00:44:17.775
+really double checking. Like, is this actually right?
+
+00:44:17.835 --> 00:44:19.355
+And you can see I had that reasoning
+
+00:44:19.355 --> 00:44:21.275
+column as a way for me to have
+
+00:44:21.275 --> 00:44:23.960
+some sort of, like, audit trail. So not
+
+00:44:23.960 --> 00:44:25.800
+only could I just double check whether I
+
+00:44:25.800 --> 00:44:28.780
+was right, I can also understand why Claude
+
+00:44:29.000 --> 00:44:31.720
+made certain decisions. For other ones, like the
+
+00:44:31.720 --> 00:44:34.040
+budget tracker, that was relatively easy to validate.
+
+00:44:34.040 --> 00:44:35.880
+Right? It's like you just take a look
+
+00:44:35.880 --> 00:44:38.055
+and say, like, does the number that Claude
+
+00:44:38.055 --> 00:44:40.295
+showed me here, does that match the number
+
+00:44:40.295 --> 00:44:42.055
+that I see in the ad platform? If
+
+00:44:42.055 --> 00:44:45.335
+yes, great. Maybe once in a while, I'll
+
+00:44:45.335 --> 00:44:47.255
+go back and just triple check. You know?
+
+00:44:47.255 --> 00:44:48.775
+Maybe if it's getting close again in the
+
+00:44:48.775 --> 00:44:50.855
+month, let me just validate that I'm looking
+
+00:44:50.855 --> 00:44:53.060
+at the right numbers. But, again, you should
+
+00:44:53.060 --> 00:44:55.620
+use your best judgment here to evaluate whether
+
+00:44:55.620 --> 00:44:57.540
+or not or how much you should be,
+
+00:44:57.860 --> 00:45:00.740
+auditing Claude's work. But, again, towards the beginning,
+
+00:45:00.740 --> 00:45:02.340
+when you're building out something for the first
+
+00:45:02.340 --> 00:45:06.110
+time, definitely take the time to validate. Yeah.
+
+00:45:06.250 --> 00:45:08.090
+I think the other thing that is really
+
+00:45:08.090 --> 00:45:11.575
+helpful is, like, breaking work into pieces, and
+
+00:45:11.575 --> 00:45:12.855
+this is one thing I think Claude is
+
+00:45:12.855 --> 00:45:15.015
+really amazing at. Like, instead of giving it,
+
+00:45:15.015 --> 00:45:16.855
+like, one big thing that then you feel
+
+00:45:16.855 --> 00:45:19.095
+like you have to go and validate. For
+
+00:45:19.095 --> 00:45:20.935
+example, when I'm running a launch, it's very
+
+00:45:20.935 --> 00:45:22.920
+much like, okay. How like, I'll give it
+
+00:45:22.920 --> 00:45:24.440
+the bill of materials. I'll point it at
+
+00:45:24.440 --> 00:45:25.880
+something that we've done in the past that's,
+
+00:45:25.880 --> 00:45:28.600
+like, of a similar shape, and then break
+
+00:45:28.600 --> 00:45:30.760
+it down into bite sized pieces instead of
+
+00:45:30.760 --> 00:45:32.840
+just being like, okay. Go and plan this
+
+00:45:32.840 --> 00:45:35.160
+whole entire entire launch for me. Because then
+
+00:45:35.160 --> 00:45:37.320
+you can kind of validate, iterate, and work
+
+00:45:37.320 --> 00:45:40.655
+with Claude throughout. Mhmm. Okay. The other kind
+
+00:45:40.655 --> 00:45:42.975
+of theme of questions that we're getting, Austin,
+
+00:45:42.975 --> 00:45:45.455
+is around updating skills. So I know we
+
+00:45:45.455 --> 00:45:48.095
+talked a lot about skills, and how they
+
+00:45:48.095 --> 00:45:50.335
+can kinda encode the workflows that the team
+
+00:45:50.335 --> 00:45:52.830
+is already doing. But how do you think
+
+00:45:52.830 --> 00:45:56.350
+about, the evolution of skills as you as
+
+00:45:56.350 --> 00:45:58.430
+you work with with Claude on one specific
+
+00:45:58.430 --> 00:46:03.260
+workflow? So the best part so here's my
+
+00:46:03.260 --> 00:46:06.140
+life hack for building skills for, like, the
+
+00:46:06.140 --> 00:46:08.060
+first time and how you should evolve it.
+
+00:46:08.060 --> 00:46:09.845
+So the first time you build the skill,
+
+00:46:09.845 --> 00:46:11.605
+especially if it's something that is, like, a
+
+00:46:11.605 --> 00:46:14.005
+little bit meaty, the easiest way, instead of
+
+00:46:14.005 --> 00:46:16.245
+typing it, like, dictate to Claude because you
+
+00:46:16.245 --> 00:46:18.585
+can talk way faster than you can type.
+
+00:46:18.965 --> 00:46:21.620
+So you can I mean, we have dictation
+
+00:46:21.620 --> 00:46:23.140
+built into Claude app? Like, you can do
+
+00:46:23.140 --> 00:46:24.740
+it from your phone, on the mobile app.
+
+00:46:24.740 --> 00:46:26.420
+Like, you know, I've even done things really
+
+00:46:26.420 --> 00:46:28.900
+hacky where before we had dictation and Claude,
+
+00:46:28.900 --> 00:46:30.420
+I used to start, like, a Google Meet
+
+00:46:30.420 --> 00:46:32.500
+with myself and then turn on transcription and
+
+00:46:32.500 --> 00:46:33.805
+then just talk, and and then I'll take
+
+00:46:33.805 --> 00:46:36.145
+the transcript. But, basically, what I'm saying is
+
+00:46:36.285 --> 00:46:37.805
+you can talk much faster than you can
+
+00:46:37.805 --> 00:46:39.565
+write. So, basically, just like ramble and say,
+
+00:46:39.565 --> 00:46:41.005
+like, hey, Claude. Like, I'm doing this. Like,
+
+00:46:41.005 --> 00:46:42.845
+this is how I approach reporting. Like, here's
+
+00:46:42.845 --> 00:46:45.085
+all the things to think about. Organize all
+
+00:46:45.085 --> 00:46:46.605
+of these thoughts, all of these raw thoughts,
+
+00:46:46.605 --> 00:46:48.280
+and turn it into a skill for me.
+
+00:46:48.440 --> 00:46:51.400
+And Claude has a skill built into every
+
+00:46:51.400 --> 00:46:54.040
+Claude account that literally teaches Claude how to
+
+00:46:54.040 --> 00:46:57.080
+create a skill. It's very meta. Over time,
+
+00:46:57.080 --> 00:46:59.980
+as you're working with that skill, you'll probably
+
+00:47:00.120 --> 00:47:02.325
+want to evolve it whether or not whether
+
+00:47:02.325 --> 00:47:05.445
+it's because the skill is, like, insufficient in
+
+00:47:05.445 --> 00:47:07.925
+some areas or something new has changed and
+
+00:47:07.925 --> 00:47:10.565
+you wanna add to it. You can always
+
+00:47:10.565 --> 00:47:12.325
+tell Claude at any time, like, hey. Like,
+
+00:47:12.325 --> 00:47:14.165
+we just changed the way we approach this.
+
+00:47:14.165 --> 00:47:15.365
+Like, I want you to now go back
+
+00:47:15.365 --> 00:47:17.285
+and update the skill, and Claude can actually
+
+00:47:17.285 --> 00:47:20.620
+do that. The the third piece is over
+
+00:47:20.620 --> 00:47:22.220
+time, if you're working with a skill, like,
+
+00:47:22.220 --> 00:47:24.060
+sort of repeatedly, we can also do is
+
+00:47:24.060 --> 00:47:26.540
+Claude has memory. Claude can also search through
+
+00:47:26.540 --> 00:47:28.940
+past conversations. You can start a new conversation
+
+00:47:28.940 --> 00:47:31.355
+and ask Claude, hey. Go back through all
+
+00:47:31.355 --> 00:47:33.995
+of our conversations. You know? When we use
+
+00:47:33.995 --> 00:47:35.835
+this skill to work on this specific thing,
+
+00:47:35.835 --> 00:47:38.155
+like, are there specific nuances or things that
+
+00:47:38.155 --> 00:47:39.835
+I've told you or maybe part of the
+
+00:47:39.835 --> 00:47:42.075
+conversation that, you know, we went back and
+
+00:47:42.075 --> 00:47:44.155
+forth on that we now want to pull
+
+00:47:44.155 --> 00:47:46.540
+into the skill? So this idea of skills
+
+00:47:46.540 --> 00:47:50.460
+should be sort of ever evolving, basically. Yeah.
+
+00:47:50.460 --> 00:47:52.380
+And the other thing that I think is
+
+00:47:52.380 --> 00:47:54.540
+is really helpful when thinking about just, like,
+
+00:47:54.540 --> 00:47:57.095
+all of your workflows in Claude is, like,
+
+00:47:57.255 --> 00:47:59.735
+as we mentioned, like, context is king, giving
+
+00:47:59.735 --> 00:48:01.895
+it more information, like, the better outputs that
+
+00:48:01.895 --> 00:48:04.695
+you'll get. But I also think, like, giving
+
+00:48:04.695 --> 00:48:06.615
+it the right amount of, like, hey. This
+
+00:48:06.615 --> 00:48:08.135
+is exactly what I want. So, like, even
+
+00:48:08.135 --> 00:48:10.850
+taking ten minutes to dictate be, like, a
+
+00:48:10.850 --> 00:48:13.250
+ramble of and brain dump of all of
+
+00:48:13.250 --> 00:48:15.250
+the things that that you want the output
+
+00:48:15.250 --> 00:48:17.330
+to be, I think it's just a really,
+
+00:48:17.330 --> 00:48:21.410
+really good good start. Okay. The other kind
+
+00:48:21.410 --> 00:48:24.950
+of theme of questions that we're getting, is
+
+00:48:25.170 --> 00:48:29.125
+around plugins versus skills and how do you
+
+00:48:29.125 --> 00:48:33.445
+think about invoking invoking those? How how do
+
+00:48:33.445 --> 00:48:36.815
+you think about the plugins versus skills? So
+
+00:48:36.815 --> 00:48:39.300
+plug in is you know, I'll admit, like,
+
+00:48:39.300 --> 00:48:40.340
+some of these terms are kind of confusing.
+
+00:48:40.340 --> 00:48:41.860
+You have plug in, you have connectors, you
+
+00:48:41.860 --> 00:48:44.360
+have skills. Easy way to think about this,
+
+00:48:45.300 --> 00:48:47.140
+you have skills, which we've kind of gone
+
+00:48:47.140 --> 00:48:49.300
+over at this point a couple different times.
+
+00:48:49.300 --> 00:48:52.245
+It's just instructions in a markdown file. You
+
+00:48:52.245 --> 00:48:54.885
+have connectors, which is what we just call
+
+00:48:54.885 --> 00:48:57.845
+MCPs. Model context protocol, you guys have probably
+
+00:48:57.845 --> 00:48:59.285
+heard of this heard of this, but it's
+
+00:48:59.285 --> 00:49:01.625
+how Claude and all the LLMs can basically
+
+00:49:01.845 --> 00:49:04.565
+connect with other tools in a standardized format.
+
+00:49:04.565 --> 00:49:08.080
+It's called model context protocol. Bundle those two
+
+00:49:08.080 --> 00:49:09.920
+together, you have something we call a plug
+
+00:49:09.920 --> 00:49:12.080
+in. So the reason why we have this
+
+00:49:12.080 --> 00:49:14.080
+concept of plug in is if you have
+
+00:49:14.080 --> 00:49:17.760
+specific skills that only really work if you're
+
+00:49:17.760 --> 00:49:21.215
+also connected to specific systems via MCPs, You
+
+00:49:21.215 --> 00:49:23.315
+kinda need both of them to be true
+
+00:49:23.535 --> 00:49:26.095
+instead of sharing the skill individually and then
+
+00:49:26.095 --> 00:49:27.855
+saying, like, okay. Now also go out and,
+
+00:49:27.855 --> 00:49:30.095
+like, install this connector. Well, you can bundle
+
+00:49:30.095 --> 00:49:31.935
+them together so that all you need to
+
+00:49:31.935 --> 00:49:34.015
+do is you just install the plug in
+
+00:49:34.015 --> 00:49:37.510
+itself, which comes with the connectors, and it
+
+00:49:37.510 --> 00:49:39.430
+comes with the corresponding skills. So it's like
+
+00:49:39.430 --> 00:49:45.110
+a package, basically. Okay. This one's kind of
+
+00:49:45.110 --> 00:49:48.470
+a a fun one. Austin, I think, like,
+
+00:49:48.470 --> 00:49:50.230
+a lot of people are curious. Like, there's
+
+00:49:50.230 --> 00:49:53.425
+so so much coming out, not only from
+
+00:49:53.425 --> 00:49:55.505
+Anthropic, but other places, and it's really hard
+
+00:49:55.505 --> 00:49:57.505
+to kinda stay up to date on all
+
+00:49:57.505 --> 00:49:59.985
+of the latest and greatest. How do you
+
+00:49:59.985 --> 00:50:03.745
+think about kind of testing and iterating with
+
+00:50:03.745 --> 00:50:06.225
+all of the new features and functionality coming
+
+00:50:06.225 --> 00:50:07.760
+out with Claude? Like, how, like, how do
+
+00:50:07.760 --> 00:50:09.520
+you just wrap your brain around all of
+
+00:50:09.520 --> 00:50:11.980
+the things that are happening here? Yeah. I
+
+00:50:11.980 --> 00:50:14.480
+mean, it's it's honestly a challenge. Like, even
+
+00:50:14.540 --> 00:50:17.120
+even internally, like, working in a profit, like,
+
+00:50:17.445 --> 00:50:19.365
+it's very hard to keep on top of
+
+00:50:19.365 --> 00:50:21.125
+everything you ship. Like, sometimes I find out
+
+00:50:21.125 --> 00:50:23.445
+we ship something because I see it, like,
+
+00:50:23.445 --> 00:50:25.365
+on LinkedIn or get an email about it,
+
+00:50:25.365 --> 00:50:27.925
+like, literally the rest of the world. But,
+
+00:50:27.925 --> 00:50:29.525
+like, here here's what I generally do. Like,
+
+00:50:29.525 --> 00:50:32.780
+one, like, you know, for a lot of
+
+00:50:32.780 --> 00:50:35.100
+the most important features that we launch, like,
+
+00:50:35.100 --> 00:50:36.700
+typically, we'll make a lot of noise about
+
+00:50:36.700 --> 00:50:38.620
+it. We'll make a lot of noise about
+
+00:50:38.620 --> 00:50:40.220
+something, but it's because we sent you an
+
+00:50:40.220 --> 00:50:42.780
+email about it. There's a tool tip within
+
+00:50:42.780 --> 00:50:45.420
+the product. Generally, that means we want you
+
+00:50:45.420 --> 00:50:48.025
+to try it. So you should go go
+
+00:50:48.025 --> 00:50:50.345
+out and just, like, tinker around. I think
+
+00:50:50.345 --> 00:50:53.545
+one of the biggest challenges with particularly with
+
+00:50:53.545 --> 00:50:55.865
+sort of, like, nontechnical, like, functions such as,
+
+00:50:55.865 --> 00:50:59.805
+like, marketing is the enablement story for nontechnical
+
+00:50:59.945 --> 00:51:02.430
+teams looks very different than developers. And that's
+
+00:51:02.430 --> 00:51:03.950
+one of the reasons why I think Claude
+
+00:51:03.950 --> 00:51:05.790
+Code took off so well the way it
+
+00:51:05.790 --> 00:51:09.710
+did much quicker, much earlier than just general
+
+00:51:09.710 --> 00:51:11.870
+knowledge work is because the enablement story for
+
+00:51:11.870 --> 00:51:14.270
+developers is relatively one shaped. So if you
+
+00:51:14.270 --> 00:51:15.710
+work at, like, a startup versus, like, a
+
+00:51:15.710 --> 00:51:18.245
+FAANG company versus anthropic versus wherever, if you're
+
+00:51:18.245 --> 00:51:21.205
+a developer, generally speaking, you're approaching development work
+
+00:51:21.205 --> 00:51:24.005
+kind of the same. Therefore, the enabling the
+
+00:51:24.005 --> 00:51:25.845
+story for a tool like Claude Code is,
+
+00:51:25.845 --> 00:51:28.165
+like, relatively straightforward. It's it's a little bit
+
+00:51:28.165 --> 00:51:30.505
+of an over exaggeration, but, like, generally speaking.
+
+00:51:31.260 --> 00:51:33.500
+For nontechnical teams, I'm like, I don't know
+
+00:51:33.500 --> 00:51:34.940
+how many marketers are on this call right
+
+00:51:34.940 --> 00:51:36.780
+now, but if you think about the work
+
+00:51:36.780 --> 00:51:39.260
+you do, your function is gonna look very
+
+00:51:39.260 --> 00:51:41.180
+different than the marketer who sits on a
+
+00:51:41.180 --> 00:51:43.435
+different team within your own company. If you're
+
+00:51:43.435 --> 00:51:45.435
+a growth marketer and anthropic, the way you
+
+00:51:45.435 --> 00:51:47.435
+approach growth marketing is gonna be so different
+
+00:51:47.435 --> 00:51:49.515
+than growth marketing any other company. So that
+
+00:51:49.515 --> 00:51:51.995
+means the enabling story is gonna look very
+
+00:51:51.995 --> 00:51:56.180
+different. So my best suggestion is to try
+
+00:51:56.180 --> 00:51:58.020
+to keep up with everything and to also
+
+00:51:58.020 --> 00:51:59.620
+try to figure out this enabling piece. It
+
+00:51:59.620 --> 00:52:01.780
+actually requires a decent amount of, like, hey.
+
+00:52:01.780 --> 00:52:03.460
+I need to carve out some time to
+
+00:52:03.460 --> 00:52:06.100
+just tinker and play around. So one of
+
+00:52:06.100 --> 00:52:08.100
+the big challenges that I think we are
+
+00:52:08.100 --> 00:52:10.745
+also trying to really figure out and and
+
+00:52:10.745 --> 00:52:12.905
+tackle with co work is you can do
+
+00:52:13.065 --> 00:52:14.505
+when you can do so much with co
+
+00:52:14.505 --> 00:52:16.745
+work, the question becomes, like, I actually don't
+
+00:52:16.745 --> 00:52:19.305
+know what to do. So my sort of
+
+00:52:19.305 --> 00:52:23.145
+parting advice is, you know, today, sometime, carve
+
+00:52:23.145 --> 00:52:25.360
+out some time and just sit down with
+
+00:52:25.840 --> 00:52:29.200
+cowork and try to, like, build something. And
+
+00:52:29.200 --> 00:52:30.800
+if you don't know what to do, we'll
+
+00:52:30.800 --> 00:52:32.400
+share a blog post to get some starter
+
+00:52:32.400 --> 00:52:34.500
+ideas. But something else you can do is
+
+00:52:34.720 --> 00:52:37.600
+open up chat. It can be with Claude.
+
+00:52:37.600 --> 00:52:39.840
+It can be with ChatStream, whatever chat tool
+
+00:52:39.840 --> 00:52:41.705
+of choice you have and just ask it.
+
+00:52:41.705 --> 00:52:43.885
+It's like, hey. Go through our past conversations
+
+00:52:44.025 --> 00:52:45.945
+to let me know what are some common
+
+00:52:45.945 --> 00:52:48.425
+things we work on and what might make
+
+00:52:48.425 --> 00:52:51.465
+sense to turn into a cowork workflow. And
+
+00:52:51.465 --> 00:52:53.065
+Claude will probably give you a bunch of
+
+00:52:53.065 --> 00:52:55.400
+great ideas that you can take that, try
+
+00:52:55.400 --> 00:52:56.920
+it out in co work, just sit down
+
+00:52:56.920 --> 00:52:58.360
+and spend some time with it. And the
+
+00:52:58.360 --> 00:52:59.880
+important part is start with, like, a task
+
+00:52:59.880 --> 00:53:01.800
+that, again, you know well so that you
+
+00:53:01.800 --> 00:53:04.760
+can, like, easily see very quickly whether or
+
+00:53:04.760 --> 00:53:06.520
+not, like, hey, Claude and co work did
+
+00:53:06.520 --> 00:53:07.960
+a really good job of this. Or it's
+
+00:53:07.960 --> 00:53:10.235
+like, it's like, it's not so great. Yeah.
+
+00:53:10.235 --> 00:53:12.475
+Maybe this needs more refining or, like, some
+
+00:53:12.475 --> 00:53:14.155
+tweaking, but that should give you an idea
+
+00:53:14.155 --> 00:53:17.635
+of, like, here's what I can do. Okay.
+
+00:53:18.095 --> 00:53:20.815
+I think that is great parting wisdom from
+
+00:53:20.815 --> 00:53:25.230
+Austin. Thank you all for joining. We loved
+
+00:53:25.230 --> 00:53:27.310
+all of your questions. Again, please give us
+
+00:53:27.310 --> 00:53:29.710
+feedback in the survey. You will all receive
+
+00:53:29.710 --> 00:53:32.830
+a recording of this, within the the next
+
+00:53:32.830 --> 00:53:35.295
+twenty four hours. Okay. We also will try
+
+00:53:35.295 --> 00:53:37.615
+to add some, kinda like best practices. We
+
+00:53:37.615 --> 00:53:39.135
+still are getting a lot of questions around,
+
+00:53:39.135 --> 00:53:40.815
+like, skills versus plug ins and, like, how
+
+00:53:40.815 --> 00:53:42.575
+do we share those with our team. So
+
+00:53:42.575 --> 00:53:44.575
+we'll make sure to include that in the
+
+00:53:44.575 --> 00:53:46.495
+email. The other thing that I just wanna
+
+00:53:46.495 --> 00:53:48.440
+plug is that if you really are like,
+
+00:53:48.520 --> 00:53:50.120
+how do I get started with this and
+
+00:53:50.120 --> 00:53:52.600
+you have a little bit of time, we
+
+00:53:52.600 --> 00:53:54.520
+do have a cowork one zero one course
+
+00:53:54.520 --> 00:53:56.920
+that will go through all of these different
+
+00:53:56.920 --> 00:53:59.240
+features and functionalities. And I think that it's
+
+00:53:59.240 --> 00:54:00.600
+a really good way to kind of wrap
+
+00:54:00.600 --> 00:54:02.440
+your head around all of the different things
+
+00:54:02.440 --> 00:54:05.445
+that exist within cowork. So definitely recommend checking
+
+00:54:05.445 --> 00:54:07.225
+that out. I think that that is in,
+
+00:54:07.685 --> 00:54:10.725
+our our chat, tab. But if it is
+
+00:54:10.725 --> 00:54:12.325
+not, we will also make sure to add
+
+00:54:12.325 --> 00:54:16.910
+it to the email. Thank you, everyone. Thanks,
+
+00:54:16.910 --> 00:54:17.410
+everyone.

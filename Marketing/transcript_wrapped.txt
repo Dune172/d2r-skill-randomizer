@@ -1,0 +1,298 @@
+Hi, everyone. We are so excited that you're here today. Thank you so much for joining us. We're gonna talk a little bit about how our own marketing team uses Claude Cowork. But to kick us off, we 
+wanna start with a poll. We would love to kinda understand how familiar you are with Cowork. Are you still kinda figuring out, like, what is it even? Have you played around with it a little bit, or 
+are you a cowork pro? A couple of just housekeeping notes before we get started. First is this session is being recorded. So if you feel like you've missed something or if you wanna share with a 
+teammate, it will be in your inbox within twenty four hours. The second thing is is that, we will be answering questions throughout the session. We will be holding, time at the very end to answer 
+answer questions, but definitely make sure throughout the the webinar to type in your questions, and we'll try to get to them as quickly as possible. And then the third thing is is that we love 
+feedback. We wanna, make these sessions helpful and better, so please make sure to to give us your feedback at the end end of this time. Okay. You have me, Emily Holman. I'm on the product marketing 
+team here at Anthropic. And, Austin, we're going to be showing you some workflows that our team our team runs. So, Austin, do you wanna introduce yourself? Yeah. Hey, everyone. My name is Austin. I'm 
+on the growth marketing team here at Anthropic. Been here for just a little over two years now. So my team supports sort of top of funnel acquisition across all of our products, primarily support, 
+like, the sort of prosumer knowledge worker side. So that spans across Claude AI, Cowork, as we're talking about today, Claude Code, and sort of everything in between. Alright. So looking at the 
+poll, and then we'll kinda jump into the content, it feels like we kind of have a mix. So it looks like a lot of folks have kinda played around with it. Some folks are trying to figure out kinda, 
+like, what exactly it is. We have a few pros out there, which is exciting. We'll kinda walk through what the difference is between chat and co work, some really great things with connectors and 
+skills and how you can customize Claude. But this will be a great session for you to kinda figure out, like, how you can really get started with co work. So, Austin, you wanna take it Yeah. Let's do 
+it. away? Let's jump right in. Let's see. So I wanna start off with let's do a little storytelling about how we got here, basically. So the evolution of AI at work. So back in 2023 chat. Everyone 
+loved chat. It was, you know, relatively new at the time. I believe Chat GBD came out in, I think, like, the end of, q four twenty twenty two. So chat was, like, kind of the new revolutionary product 
+at the time. It's what everyone here is probably extremely familiar with. You would ask questions. You get the answers. There's lots of, like, copy pasting back and forth. Largely, the conversation 
+is what you were after, and you were still doing a lot of the work yourself. So chat is probably or chat is how most knowledge workers get introduced to tools like Claude. You know? You basically 
+bring all of your work to Claude, whether that's uploading a file, maybe you're pasting some text, describing a challenge you're working on, and then, you know, after a little bit of conversation, 
+get an answer. So what chat is really good for at the end of the day is is chat is really good for answers. It's really good for brainstorming and for just, like, generally thinking out loud. Then in 
+2025 last year, we launched this little tool you guys may have heard of called Claude Code. So Claude Code is purpose built for developers. You can find across many different product surface areas 
+the, you know, command line interface within the terminal is probably one of the most common. But really what it's meant for at the end of the day is it's meant for those who wanna build and ship 
+software. If your work basically starts and ends with code, you're working at a GitHub, this is probably the tool for you. But Claude Code started including a lot of very useful features that we 
+actually realized was also very useful for knowledge work that you couldn't find within just regular chat. Things like concepts like sub agents, compaction. All of these tools that chat didn't have, 
+Claude Code did have. And what we started realizing is Claude Code was actually really good at not only just coding, but to use code to help orchestrate knowledge work. So here enters Cowork, which 
+is, what we're here to talk about today. This tool launched, just earlier this year, and it's it lives on the desktop app currently. So it's a little mode that you flip from chat over to Cowork. And 
+instead of bringing your work to Claude like you would with chat, you're you're you're now bringing Claude to your work. So you can point it at a, let's say, a folder on your computer. You can 
+connect it with a lot of the great apps that you are using love on a daily basis, like Google Drive, you know, your Notion, Amplitude, whatever it may be. You can connect with all these different 
+apps, and you can start delegating work to Claude. So tell Claude what you're trying to do. You wanna you wanna describe an outcome of what you're trying to do at the very end, and you can step away, 
+and you can come back to finish work. And that's one of the really key differences between chat and cowork is the fact that you're getting a deliverable, and Claude can run sort of autonomously in 
+the background, orchestrating these multi turn, long running tasks on your behalf. So this helps better illustrate, like, chat versus coworking sort of a visual manner. Right? So you see on the left 
+hand side on chat, you're effectively driving the whole process end to end. Like, you're asking a question. Claude responds to something. You asked another question. This is a constant q and a that 
+chat is known for. And then when you're done with, like, the work and you have maybe some semblance of, like, a deliverable, like, let's say it's a report, you're generally going to copy and paste 
+that out of chat into, like, somewhere else. Whether that's sending it on Slack, you're dumping, like, a word doc or maybe you're still moving the information in the output manually. Cowork allows 
+you to delegate this work. So you tell Claude, like, hey. This is what I'm trying to get the very end. Like, I'm trying to create this report. Here's all the inputs and context that, you know, you 
+need North Creek support. You provide Claude the instructions, and then at the very end, Claude will orchestrate all this work for you and then give you something that's ready to go, and it can even 
+move it across different systems for you. So that's a huge benefit here. If you think about your most common tasks, particularly when he spans across, like, multiple tools, multiple, like, file 
+types, different systems. This is when you wanna start thinking about, like, how can I actually start reaching for cowork more often as opposed to just only reaching for chat? So what changes with 
+Cowork? Context is key. So Claude can plug into all different types of work that you have, whether that's different types of files, file types, different types of tools you you you work with on a 
+daily basis. So, for marketers, you know, you might be typing the CRM with us, HubSpot, Salesforce, Slack, which we all love and kinda hate sometimes. Your docs, your Google Drive, Notion, whatever 
+it may be, providing all of this rich context to Claude is going to be extremely important because the more context Claude has, the better Claude can actually help you. Then you've heard me mention 
+this term a couple different times at this point, but it's the idea of delegation as opposed to something like a conversation. So with delegation, what you're really trying to do is you're trying to 
+hand off something to Claude, hand off a body of work that you want completed. So this could be anything related to, like, research. You know, you wanna draft something that pulls from multiple 
+different files and systems. At the end of the day, what you want is finished work. So your time goes towards, like, strategy and less so on the execution piece. Where cowork really works and really 
+shines is your judgment is usually only going to be needed at the beginning when you're giving Claude the instructions as to what you want and at the very end when you're evaluating. Everything else 
+in, like, that middle part where, like, Claude's, like, you know, running some analysis, like, moving files around, maybe, like, creating a report, all that, like, extraction, manipulation of 
+different files and information. That's, like, kind of, like, the boring part that you wanna hand off to Claude because Claude can probably do it faster than you can. Your expertise scales. So what 
+really makes cohort tick outside of providing context is you wanna be able to encode your workflows and your judgment as a skill. So skills really at the end of the day is just a markdown file. It's 
+just some plain text, really just a set of instructions. If you find yourself doing a certain task repeatedly, like, let's say you're doing reporting every single week, a huge pain. Right? Nobody 
+really wants to do the the the reporting, but it's something you have to do as part of your job. And if you're going through the same process every week of reporting, I'm pulling website metrics from 
+this system, and then I'm pulling, you know, how much we spent on performance marketing from this system. And I'm compiling it into, like, a week over week table, then I'm writing down, you know, 
+maybe a couple bullet points around highlights, lowlights. If you're repeating this process every single week, you should be able to start to pattern match what are the things that I need to look out 
+for? What are maybe some of the edge cases? What is the process that I go through? And then how do I actually just tell Claude how to do this exact same thing? Effectively teaching teaching Claude 
+the same context and the same sort of, like, instruction flow that you have so that Claude can go out and do this on your behalf with the same level of knowledge that you do. And then you can run 
+this repeatedly. And not only can you do it, you no longer have to be a sort of a gatekeeper in the room. You can share these skills across your team as well so they can run the same reporting on 
+your behalf without you being there. And the last part is shifting from reactive to proactive. With just regular chat and Claude, everything's almost like a reactive thing. It's like, hey. I need 
+something now. Therefore, let me now hop into chat, talk to Claude, try to get an answer, workshop something. With Cowork specifically, one of the coolest features is you have the luxury of 
+scheduling recurring tasks to run whenever you want. It could be daily. It can be hourly. It can be weekly, etcetera. Again, if there are things you do repeatedly, turn that into a skill, wire up all 
+your different, wire up all your different, tools and connectors, and then schedule it so that if you're running reporting every single Monday at 9AM, just run it on a schedule so that 9AM first 
+thing in the morning when you sit down and open up your laptop, your report has already been run and Claude's taking care of everything. And at that point, all you have to do is jump in, polish it a 
+little bit, and then sort of take it across the finish line. So how Claude Cowork works. Claude can operate with far more agency than just the conversation. This is very important. So you can see 
+there's a couple of different steps here as you're working with Cowork that you wanna keep in mind. One of the first things that I do right off the bat whenever I'm working with coworker is after I 
+give Claude a bunch of instructions about how to approach something, at the very end of my prompt, I always say, Claude, hey. Ask me some clarifying questions because there's always going to be a 
+couple of things that maybe you personally know very well that you forget that a tool like Claude might not know, that Claude should probably know. And you don't want Claude to make any assumptions 
+around, like, hey. Edge cases. Or if you're talking about reporting, you might mentally know that you're looking at the last seven days. But, like, for the last seven days, like, do you want that to 
+be Monday through Sunday? Does your week start a different time? You're talking about, like, you know, quarterly reporting, like, when do your quarter start? Things all of that all of that important 
+context, wanna make sure that Claude knows exactly the same as you do. Then you wanna plan and break it up into, like, tasks. So Claude's really good at these long running multi turn tasks, but 
+sometimes you wanna break it down to more digestible pieces, particularly if it's your first time working on working with coworker on a new workflow because you wanna make sure that at any moment, 
+you can jump in and start to steer a little bit. Instead of letting Claude go off and run for, like, thirty minutes and coming back and you're like, damn. You know? I I wish I had the opportunity to 
+jump in earlier on to actually steer Claude a little bit. The sort of idea of our execution, Claude works, again, works across your tools, works across your different files. You can actually use 
+Claude not only on the desktop app, but those who set it up, you can use Claude via dispatch on the mobile app. So you can actually tell Claude to run these same tasks directly from your phone, and 
+Claude would basically communicate with the desktop app and handle all of that for you even when you're not in front of your computer. This idea of verification again, being able to check the quality 
+and accuracy is extremely important and part of the student process. And then finally, the deliverables. The finished output is something that's ready to share, whether that's like a report, some 
+sort of deliverable. It could be a long message. It could be a file type. The idea is at the very end, you want something that is meaty, something that you want to share, an actual deliverable. And 
+that's what really makes Claude Cover tick. Words and stuff into you. So I touched on this a little bit, the dispatch. You can basically remote control Claude from your phone. One of the ways I 
+personally use it is, like, for example, if I'm not at my desk the other day, I I wasn't at my desk and I actually needed a file that's in my downloads folder that I couldn't get access to. So what I 
+basically did was I opened up my app, asked for it, said, hey. Can you literally pull this file from my downloads? Then I want you to send it to me via Slack so that I actually have access to it. 
+Clock and orchestrate this whole thing end to end. And, again, you don't need to be in front of your computer. Scheduled tasks, I touched upon this a little bit earlier. Again, this idea of taking 
+things that you do repeatedly and then running it on a schedule so that you no longer need to manually do this, whether it's on, like, a daily basis or a weekly basis, and it could span across both 
+work and personal. For work, it could be something as as small as, like, hey. I wanna check reporting. For For something personal, the other day, I was trying to buy a pair of Nikes. I want a new 
+pair of running shoes except the size that I wanted was out of stock. So I literally had Claude I had co work run on an hourly schedule to literally open up Chrome, go to the product page on 
+nike.com, and then let me know if it had the shoe I wanted in size nine. It's still out of stock, but I don't need to check it manually anymore. So, like, hopefully, that gives you some idea of, 
+like, what can you do with scheduled test? Cool. I will turn it back to Emily now. Austin, we have a couple of questions that I just wanna touch on before we kinda go into, like, making Claude for 
+your specific role in your team. We're getting some questions in terms of, like, how do you think about using cowork versus Claude code? So one very important thing, to know is, cowork is clawed code 
+under the hood, and I think a lot of people might actually not know that. So Cowork and clogged code are both powered by our agent SDK. If you think about the front end, one is more purpose built for 
+developers for coding because they're in the terminal. You wanna be able to see all the code, so we expose all that to you. We also expose all the commands like bash and grep. Those are all very 
+technical terms that as a developer, you wanna know. However, with Cowork, imagine us just taking that same Claude code, but we wrap it in a much more friendly and more approachable, like, UI. One 
+that you're already familiar with, which is a very familiar chat interface. Under the hood is doing the exact same thing Claude Code does. It might be writing some arbitrary code to, like, open your 
+CSV file, whatever it is to manipulate some files and move stuff in between systems, but it's gonna be much more familiar. So my sort of suggestion is if you're not familiar with Claude Code, you 
+should just reach for Cowork because it's going to be a much more familiar UI for you. Awesome. Okay. One more for you, Austin. I think, we're also getting some questions on projects versus skills. 
+How do you think about those two things? So you can use them together. So for example, for skills, one of the benefits with skills is you can easily share skills, like, across your team. So, for 
+example, your company could have a company wide skill around, like, here's how we talk in our brand tone and voice. That wouldn't be really well suited as a project because it'd be better suited as a 
+skill. Because the benefit with skills is no matter which conversation you're having, a skill can be triggered at any time. Whereas for a project specifically, unless your conversation starts within 
+the project, you can't then reference context that's in the project later on in the middle of your conversation. So let's take this for example. You could have a project that's purely around sort of, 
+like, brand tone and voice and sort of, like, how we write for our company. But if you don't start the conversation within that project, you won't be able to access any of that context. Whereas, if 
+it's a skill, doesn't matter where you have the conversation. It could be in chat. It could be in Claude code. It could be in cohort too. If you have that skill installed, Claude can invoke it at any 
+time. Okay. I'm gonna move I'm gonna move us along, but some really, really great questions. Keep them keep them coming. So Austin is like a true veteran here. He's been here for two years, and I 
+just joined three months ago. And if you've ever started at really, like, a fast moving company, you kind of all know the feeling, which is that you can feel like you are 10 steps behind where 
+everyone else is. And I think that the biggest thing is that cowork really genuinely changed the ramp for me here. I was able to really figure out, like, what launches do we need to launch? Like, 
+what's the road map? Pull together the latest Slacks. What's happening across Google Docs? All really, really quickly. But one thing that I've noticed is that cowork really, can work for any 
+knowledge worker. And so what we're gonna talk about here is how can you make cowork really work for you at your role at your company and have that really customized experience. So the first thing 
+I'm gonna dig into are connectors. So connectors really give Anthropic AI Claude the context it needs to be really useful. For marketers, that means connecting Anthropic AI Claude to systems that 
+your work already lives in. That can be your CRM, your data warehouse, your ad platforms, your docs. Because without that, it can really just feel like you're copying and pasting information into 
+Claude, and that's really not the most efficient way to to work with Claude. The beauty of our connectors in MCP is that, really, it's like this one click, to point Claude at certain things. So we 
+have MCPs with Google Drive and with HubSpot, and you can pull context from those existing systems. The way to think about it is co work without connectors is smart and can be helpful, but it's 
+oftentimes uninformed, and you'll have to continue to, drop information in there where co work with connectors is really informed and is already up to speed. The massive difference is when, you're 
+trying to draft things like a campaign brief or a launch doc. It can pull the latest from Slack's docs, pipelines, customer calls, so you can make sure that you have the latest and greatest, and 
+you're building off of the latest information, instead of really starting from from scratch or trying to dig in and find that information. The second thing, and Austin talked about this a little bit, 
+is skills. So connectors give Claude the context, and skills really tell, tell Claude how your team actually works. So a skill, think about it as, like, a reusable workflow that you can build once 
+and then you can share with your team so that everybody can run things the same way every time. The rule of thumb that I kind of use, and Austin mentioned this earlier, is that if I feel like I'm 
+doing something multiple times a week, I try to create a skill. A fun fact is when I first started working here, a lot of folks would be like, just ask Claude. Like, I'd be like, how do I do x, y, 
+and z? And the answer would be like, ask Claude. And now I think that if you take that approach, I think that Claude can really help you with a lot of these things. So if you're ever wondering, like, 
+oh, should I make this a skill or what is a skill or how do I create a skill? You can ask Claude what I do at the end of every week. I ask Claude to go, like, what are the top things that I did each 
+week or did this week? Did I do them multiple times? Anything that we can turn into a skill. For example, webinars, and creating a webinar prep. Document is one of those things, and now I just invoke 
+that skill every single time that we're thinking about building a webinar, and it does it in the same voice, the same tone every single time instead of me kind of starting from from scratch. Okay. 
+Now that we've talked about chat versus coworkers, skills, connectors, let's really dive into what all of this looks like in practice. I'm going to pass it over to Austin who's going to show you 
+three workflows. The first one is a morning briefing where Claude pulls information from all of these different, sources and then prioritizes what you should focus on as soon as you sit at your 
+computer. The second one is a search term audit, and then the third thing is a live dashboard, where Claude really keeps up to date on all of the latest metrics that are coming through. So you don't 
+have to continue to, like, repull or update the dashboard. Claude already has that for you. Okay. Austin, take it away. Alright. Let me go ahead and share my screen. Alright. So I have, the Claude 
+desktop app pulled up right here. And before I dive into some of these demos, one of the things that I just wanna share a little bit is a lot of these demos are going to be, you know, very 
+interesting, and they might be, like, very cool, but they might not actually be, like, super applicable to, like, you know, everyone who's on this webinar currently. And that's actually okay. And, 
+like, by design, a lot of, like, your best workflows in coworkers should probably honestly only be applicable to, like, yourself because that's where the highest ROI is. So instead of, like, going 
+back afterwards and saying, like, oh, let me try to copy whatever Austin is doing. I'm a tell you I'm a I'm a clue you guys in a little bit of secret. Let me tell you guys how to actually identify 
+what makes for a really good co work workflow. And then, like, during this process, hopefully, you can also pattern match some of these ingredients as well and how they might fit for your own 
+personal work. So there's basically, like, what I call, like, the five ingredients of what makes a Claude CoWork shaped task. So if you're not actually sure, like, what to delegate to Claude CoWork, 
+like, the first time you boot it up or even if you use it a couple of times, here is, like, a sort of mental checklist that I walk through that sort of helps me evaluate whether or not this is going 
+to be a good candidate to actually use for cowork versus, like, hey. Maybe chat and just handle this whole thing. Because one of the most common questions we get is when do I reach your chat and when 
+do I reach your cowork? So the five ingredients, like, to keep in mind. And a good candidate doesn't actually need to hit, like, all five. I would say, like, if you can come up with a workflow that 
+maybe touches, like, three or four out of these five, that's probably gonna be a good candidate. But the first thing you wanna think of is, do I have, like, multiple things that are going in of 
+giving Claude? This could be, like, multiple files. It could be a whole folder on my desktop. It could be maybe one file and maybe, like, two different connectors or multiple file types. It doesn't 
+really matter. It's just am I giving Claude a lot of stuff, basically? If there's only, like, one or, like, one file, like, one word doc, you know, for the most part, chat can handle that, like, 
+perfectly fine. The second thing you wanna think think about is, like, am I getting something at the end like a deliverable, like a file? Cowork can create files for you. You can create spreadsheets. 
+You can create word docs. It can push content into your Notion. It could create a PowerPoint, or it can just give you a really long sort of, like, you know, blob of text, and that's totally fine as 
+well. But the question you wanna ask yourself is, is there a deliverable at the end that you intend to do something with? The third thing is we touched upon scheduled tasks, but, like, are you going 
+to do this again? Because this concept of running a scheduled task is very powerful because the ROI starts to compound very quickly. You build a workflow once. The next time you wanna run this, you 
+can run it automatically. You don't need to build it again. You don't need to prompt it again. So that ROI starts compounding very quickly. The fourth thing to think about is, do you know what good 
+looks like? And what I mean is, are you, like, generally kind of familiar with, like, the shape of the output? And the reason why I flag this is with co work, you're investing a lot of time in having 
+Claude run sort of by itself. Sometimes Claude run for, like, twenty, thirty minutes. It kind of sucks if you have Claude run, like, thirty minutes. You come back and you're like, I have no idea if 
+this is actually good or not. So really good sort of helpful workflows are ones that you're sort of intimately familiar with, something you do repeatedly. You're very familiar what the output looks 
+like. So then within, like, the first, like, ten seconds after Claude is done running, you can take a quick glance and know, like, hey. This is right or maybe this is wrong or, like, this is, like, 
+70% of the way there, and they need to go back and do some refining. Being able to pattern match that exactly is actually gonna be very important. And then the fifth and final sort of ingredient, if 
+you will, is the middle part of when co work is running by itself is what I call, like, the boring part, and this is the part that you definitely wanna hand off to Claude. Because the part that 
+requires the human judgment and the thinking sort of lives at the beginning of the end. At the very beginning, that's when you jump in and tell Claude, like, hey. This is what I want. Here's all the 
+context. You're providing all of that rich context to Claude. And then at the very end, again, you're jumping back in and you're deciding, does this look right? What do I need to refine? What else do 
+I need to do here in order to provide Claude with maybe some more instructions in order to do better next time? Then that part in the middle where Claude's, like, extracting, compiling, you know, 
+reconciling different spreadsheets and sort of reformatting all that stuff, that's all the stuff you used to do manually previously that is probably pretty boring that Claude can do really good job 
+at and can do very quickly. So, again, those are sort of the five different tasks or sort of five different ingredients to sort of keep in mind. Afterwards, you know, I'll also share a blog post that 
+outlines this in detail so, like, you know, don't worry about taking notes or anything. But without further ado, I do wanna jump into the first, demo, which is now I call it sort of like the the 
+daily morning brief. So at Anthropic, we have information overload. I think, our president, Daniela, recently said, I think there's something like 50,000 Slack channels at Anthropic. We're very big 
+on Slack. In my role in particular, I also interface with a lot of external people, so I also use a lot of email. And one of the biggest challenges is with so many different Slack channels, so many 
+emails coming through, so many things I check on a daily basis, it was becoming very overwhelming. So I decided to see whether or not coworker could actually help me with that. So one of the things 
+that I realized again is there are certain things that I checked every morning, like, on repeat. Makes for a really great candidate for, like, a scheduled task. And I wanted to create a morning 
+brief. I wanted to understand, like, hey. What are some of the emails that came in overnight that I can ignore outright? What are some of the emails that are very important that I need to actually 
+address? What are Slack messages that I may have missed in the last day? Because I can't feasibly check all the Slack channels, that I'm that I'm currently part of. So, like, maybe some of my team 
+channels. I manage performance marketing here at Anthropic, so I always wanna keep top of mind, like, how much did we spend yesterday? Is there anything that was off? Like, I need another sort of set 
+of eyes that thought does a really good job of that. And then there's also other things like, are there any, like, you know, public facing, like, incidents that were open overnight related to our 
+product that could actually impact, like, marketing or our customers that I need that I need to be sort of aware of? All these things were were very common things that I would check every single 
+morning. So I basically created a scheduled task. And every morning at 6AM, Claude will basically run. And all I do is, again, I go in here and I basically just describe the Claude. Like, here's all 
+the things that I'm looking for. Like, here's the specific output format. I want you to talk about, you know, the TLDR, so it's very skimmable. I want you to flag the emails, group them by category. 
+I even tell Claude if it's specific emails that I really don't care about, like, you know, if I get a, email saying that, like, hey. Your invoice was paid or here's your login code for, like, TikTok. 
+Like, those are all emails that I don't personally need to review myself. I just tell Claude, like, literally just mark these as read or, like, people declining meetings or, you know, accepting 
+meetings. I don't care about that. It's all sort of noise. Just read read all those for me, mark them as read, then analyze, you know, my ad platform, Slack, etcetera. And then write up a short 
+little doc for me so that every morning, I can hop in. First thing I do when I open my laptop is I read it. So here's sort of a a fake version. So, you know, for demo purposes, like, none of the 
+stuff's real none of the stuff's actually real. So, like, you know, don't read too much into it. But, like, this is the exact format and the template of my morning brief that I run every single 
+morning. At the very top, it gives me the TLDR one to two sentences of, like, the most important things. It tells me the most important emails that actually need to address. Again, what are some of 
+the things that were auto marked as read, like a meeting decline, auth code for, like, you know, in this case, Figma. How do we paste yesterday? What do we spend? How do conversions look across all 
+of my, ad platforms? And anything else that happened on Slack overnight. And the cool thing is all of this is orchestrated via connectors. So I'm connected, through the claw desktop app directly to 
+my ad platforms, Google Ads, Meta Ads, etcetera. I'm connected to, Slack, again, via the Slack connector as well as my Gmail. So all this is connected. It runs overnight, and all I had to do is just 
+describe to Claude again in very simple language. What am I actually trying to do? What do I want you to do? And what do I find important? You encode that into a scheduled task, and it runs every 
+morning for me at 6AM. Cool. Onto the second, demo. The second one I wanna show is how I use Claude for you can call it, like, dashboarding and reporting. And, again, it's very important to kinda 
+keep in mind sort of, like, the the five ingredients I mentioned earlier because for what for many people, how they might approach things as simple as, let's say, like, budget pacing for performance 
+marketing. Or it could be, tracking the amount of sign ups, that we have on our website or, you know, tracking how many, let's see what else. How many how many sign ups from a webinar? How many 
+visits to a landing page? You might be opening up, you know, Amplitude. You might be opening up HubSpot. If you're tracking budget, you're opening up your ad platforms. What people commonly do, 
+particularly for budget tracking, is they're opening up, like, the Google Ads, their Meta Ads, Then they're downloading a CSV file maybe once a week or a couple times a week, pasting it into some 
+sort of Google Sheets where they have some, like, formatting and maybe some, like, formulas that basically tell you, here's how much you're pacing month to date. Here's what you'd need to pay in 
+order to hit the budget or whatever target. And, yeah, can't wait to see you next week when you have to redo redo this whole process again, exporting all these CSV files. And I realized that was what 
+I was doing to track budget. But, again, with Cowork, you can actually just add in your connectors. And in this case, I have this, performance marketing pacing. Again, this is illustrative, not real 
+data, but I've been connected directly to a couple of ad platforms. So in this demo, I'm connected to Google Ads. I'm connected to Facebook Ads. And what it does is because it's integrated via these 
+connectors or MCPs, it will programmatically pull all of our spend data on my behalf. Every single time I open this, the data will refresh with the latest numbers that are available via via the API, 
+basically. And with just sort of simple language, all I have to do was just describe to Claude in chat and say like, hey, Claude. I'm connected to Google Ads and Facebook Ads using these connectors. 
+I wanna basically create some sort of visualization that shows me how are we pacing relative to budget. And then I just want some sort of, like, single card metrics at the top that basically tell me 
+how much have we spent so far month to date, what's our target, variance, etcetera. And I also want you to kinda call out some of the other things, like, what's actually moving the budget? Are there 
+any anomalies we should keep in mind? And then Claude basically created this very cool live artifact for me. And live artifact basically means that the live part effectively means that because it's 
+connected via your connectors, all this data can be refreshed anytime. So as soon as I open any one of my live artifacts, this is, like, the most, recent data that Claude basically has. So, 
+effectively, this becomes my own dashboard, my own BI tool. So instead of, like, maybe working with, like, your team and saying, like, hey. I need, like, a data analyst to help, like, build me a 
+dashboard and whatever internal tool we have. If you have the connector set up, you can create your own dashboards. I can even go in and say, like, okay. Well, like, for the month of May, our budget 
+is actually, you know, gonna be, you know, 420,000. You can save the budget, and it'll update accordingly. And it has, like, all this data from, like, the previous month, so I can see, like, you 
+know, for, you know, the month of March for Google, how do we spend on a daily basis? Do we over pace, under pace? How does this vary in between channels? And, again, this is applicable not only to 
+this example of budget tracking, but it could be sort of any form of tracking and dash boarding. And if you sort of circle back to the five ingredients I mentioned earlier, a couple of things I wanna 
+keep in mind here, why was this a good co work workflow? So, like, one is, like, the first sort of ingredient I had was, are there multiple things that go in? So in the case of, like, a regular 
+maybe, tracker that you have in a Google Sheets, you have multiple CSV files that you're exporting from your ad platforms or your CRM or wherever it may be. You're then copy and pasting it to 
+something else. Again, pattern matching. There are multiple things, multiple files I'm working with. The second part of the ingredient list was, like, is there a deliverable at the end? So the 
+deliverable at the end, if I were doing this manually, is I have the Google Sheets that would track my budget for me. In this case, I'm recreating as a live artifact. The third part of the five 
+ingredients was, is there something is this something I'm going to do again? So instead of trying to export and update my Google Sheets tracker on a daily or weekly basis, I can have Claude create 
+this live artifact, and this updates on demand whenever I want. And then number four, you know what good looks like. I know what good looks like because I can easily cross reference to see, like, is 
+this budget? Does it reflect what I'm seeing in the app platform? If yes, then perfect. We're done. And the fifth part is the middle part is the boring part that you wanna hand off to Claude. I don't 
+wanna spend my time opening up, you know, three different tabs with all my ad platforms, then exporting the latest CSV file with all of my spend and campaign data, copy and pasting that, then dumping 
+it in a different sheet, then refreshing my sheet to update the table, etcetera. That's the boring part. I don't wanna spend my time doing that. Claude does a really great job with that. So you can 
+start to pattern match again. What are some of the things that make for a good cohort task? And, like, here are the reasons why I build something like this. So you can see, like, this is like a 
+performance marketing sort of budget pacing. I have a separate one, which is, like, a dashboard. Again, this is just a dashboard that includes a bunch of different ad platforms that sort of has, 
+like, our spend metrics, how many conversions that we get, how many Claude code activations, etcetera. All of this is pulled in. So instead of reconciling this myself, I just have a live artifact 
+within CoWork itself. The beauty of this as well is you can actually share this. So I can share this with anyone at the team, at the company. So long as they have the same exact connectors set up, 
+they can also recreate this dashboard in their Claude, Cowork instance, and they can view the same exact data I have. So you can start comp this starts to compound very quickly because you can start 
+building a lot of these, like, almost like bespoke, like, tools all within the desktop app using Claude Cowork that's applicable not only to yourself, but your team, your broader organization. And 
+this spans across multiple different facets of, like, marketing. Right? So I have another example here. This is, like, our sort of app store where in with in in our actual, like, sort of internal 
+version, I have a live artifact that basically analyzes all of the app reviews that are left on the app store for iOS and Google Play for the Claude app. It'll basically categorize the sentiment. It 
+will classify it. It'll let me know, like, here's how, review ratings are trending. Here's what sentiment looks like. And it'll give me, like, just a very quick snapshot. And, like, this is something 
+that, like, of course, your data analyst and your data science team could build, but, like, this is something that, like, I could do myself as well and I do it way faster. Cool. The last demo, I'll 
+sort of, like, go through a little bit quicker, which is this one's gonna be a little bit more pointed, which is it's something that I built for Google Ads specifically. And I posted this on LinkedIn 
+previously if you if you're interested in sort of reading through the specifics, but this idea of encoding your knowledge and process into a skill. So if I go into my skill, I have this Google Ads 
+plug in over here. And, again, a plug in is just a connect a plug in is just a combination of connectors, so your MCPs, and then your skills. And one of the things I wanna do is at the level of spend 
+we're operating after Google Ads, we're spending a lot of money, which means that we needed to check our search term report to figure out whether or not there are specific search terms that we needed 
+to add as a negative so that we would effectively save money. This is a way to optimize your campaigns. The typical process is I will go into Google Ads. I might export a CSV file, then I'll filter 
+the CSV file, go through line by line, row by row to figure out, does the search term is this relevant to Anthropic and Claude as a business? If the answer is yes, I'll leave it alone. If the answer 
+is no, I need to flag it, add it as a negative keyword, then I need to actually manually upload it back into Google Ads. So I decided, what if I can just encode this entire process as a skill? And, 
+again, all I did was I wanted to teach Claude the exact process that I would take if I were to do this myself. But instead of doing it myself, could I teach Claude to do it on my behalf? So the 
+beauty of skills is you're just encoding your workflow. So you can see this is all just written in sort of, like, plain text. And you can see right here that for the mind search term skill, all it 
+says is, one, I want you to load two other skills. The first one is search term methodology, which effectively just teaches clock. Here's some more context around, like, how do we actually go through 
+search terms? Like, you know, don't make it so binary where if a search term is zero conversions, it's considered bad. What we really wanted to understand is is the search term relevant to the 
+campaign? And here's a bunch of, you know, sort of other things like, oh, here's, like, a clear case of, like, this should be a negative keyword. Like, Anthropic jobs. Like, we don't wanna we don't 
+wanna spend money or clicks on that. We'll also teach it, like, for example, account conventions. Like, hey, Claude. Like, here's how to actually understand what our campaigns are named and how to 
+actually make sense of it. Like, this naming convention means that it's supporting Claude Code versus Cowork versus one of our other products. Then finally, here's the actual process I want you, 
+Claude, to take when I invoke the skill. So, one, pull the search terms, evaluate all of this. I want you to build a CSV file for me, and then I want you to add in all these specific columns. I want 
+you to present it to me in chat, and I also want you to be offer me the ability to actually exclude these search terms on my behalf. So if I were to run this skill, a complete output might look like 
+this. So I first invoke the skill and say, hey, Claude. Help me identify negative keywords in my fictitious, you know, demo campaign called meeting notes campaign. You can see immediately, Cowork 
+will load the methodology skills because, again, that was part of the workflow. It'll then go through, make the proper tool calls via the Google Ads connector, find the campaign ID, pull the search 
+term report, start to run through the analysis. But at the very end, you can see Claude basically runs through this process. It takes, like, maybe, like, I don't know, anywhere from, like, ten to 
+maybe twenty minutes depending on how many search terms Claude is looking at. Because see Claude says, I mined through your meeting notes campaign, and I found a bunch of search terms that you wanna 
+add as negative keywords. It's like, great. I also wanna validate that. So, again, part of my process was I told Claude, I want you to create a CSV file. So Claude would then actually create a CSV 
+file all within Cowork and includes all the columns that I mentioned previously with campaign, the keyword, the search term, how much we spend, etcetera. And the important part is as part of my 
+skill, I told Claude, I wanna be able to audit your work. So tell me the reason why you're saying, for example, the search term AI triggered this keyword, team meeting notes app. I wanna know why, 
+Claude, you decided that this should be added as a negative keyword. So Claude actually added in reasoning. So the cool part here is I can actually audit the work, and I can steer. And I can go back 
+in and say, like, okay, Claude. Like, I'm taking a look at rows, you know, six through 10, and they actually look kinda off. And I actually don't wanna add them as a negative keyword. Can you 
+actually, like, fix that? And then if it becomes a recurring problem, I can then even say, like, hey, Claude. We're seeing this issue happen again and again. Can you actually go back and update the 
+skill itself so that next time, I don't need to tell you again? So, again, this idea of pattern matching, what is something you do constantly that's maybe repetitive that you can teach Claude to do 
+on your behalf? Turn that into a skill. If it requires external tools, wire up all the different connectors. We have so many different connectors out there that you can browse. Then the last step is 
+just try running through some example workflows with Claude. Just try it out. See what works. You'll probably need to make some adjustments and refine it. But then once you once you get to a good 
+spot, you can start seeing how core can be so powerful because you can start putting together these building blocks of all these different skills, all these different workflows. There, again, they're 
+really only probably gonna be applicable to you and your role, but that's okay because the ROI for the amount of time you save for the output that you personally might have is going to be really, 
+really, like, significant and tremendous. So, that's all the demos I have for now. I think, we have, what, fifteen minutes for q and a? Yes. Okay. Thank you so much, Austin. We have some really 
+amazing questions. A couple of questions around this theme of, like, trust. How do you think about the outputs that coworker is giving you and trusting that information? One question in particular we 
+got was, like, do am I going to be doing duplicative work by asking co work to do something and then I just have to go and check every every single thing? Like, how do you think about that kind of 
+balance? So there's gonna be, so for example, if you're building something for the very first time, I would say, like, yeah, you probably wanna have a healthy degree of skepticism and you wanna 
+validate and really double check the work. Right? So the first couple times I ran through that workflow I just showed you guys with the search terms, I was going through and, like, really double 
+checking. Like, is this actually right? And you can see I had that reasoning column as a way for me to have some sort of, like, audit trail. So not only could I just double check whether I was right, 
+I can also understand why Claude made certain decisions. For other ones, like the budget tracker, that was relatively easy to validate. Right? It's like you just take a look and say, like, does the 
+number that Claude showed me here, does that match the number that I see in the ad platform? If yes, great. Maybe once in a while, I'll go back and just triple check. You know? Maybe if it's getting 
+close again in the month, let me just validate that I'm looking at the right numbers. But, again, you should use your best judgment here to evaluate whether or not or how much you should be, auditing 
+Claude's work. But, again, towards the beginning, when you're building out something for the first time, definitely take the time to validate. Yeah. I think the other thing that is really helpful is, 
+like, breaking work into pieces, and this is one thing I think Claude is really amazing at. Like, instead of giving it, like, one big thing that then you feel like you have to go and validate. For 
+example, when I'm running a launch, it's very much like, okay. How like, I'll give it the bill of materials. I'll point it at something that we've done in the past that's, like, of a similar shape, 
+and then break it down into bite sized pieces instead of just being like, okay. Go and plan this whole entire entire launch for me. Because then you can kind of validate, iterate, and work with 
+Claude throughout. Mhmm. Okay. The other kind of theme of questions that we're getting, Austin, is around updating skills. So I know we talked a lot about skills, and how they can kinda encode the 
+workflows that the team is already doing. But how do you think about, the evolution of skills as you as you work with with Claude on one specific workflow? So the best part so here's my life hack for 
+building skills for, like, the first time and how you should evolve it. So the first time you build the skill, especially if it's something that is, like, a little bit meaty, the easiest way, instead 
+of typing it, like, dictate to Claude because you can talk way faster than you can type. So you can I mean, we have dictation built into Claude app? Like, you can do it from your phone, on the mobile 
+app. Like, you know, I've even done things really hacky where before we had dictation and Claude, I used to start, like, a Google Meet with myself and then turn on transcription and then just talk, 
+and and then I'll take the transcript. But, basically, what I'm saying is you can talk much faster than you can write. So, basically, just like ramble and say, like, hey, Claude. Like, I'm doing 
+this. Like, this is how I approach reporting. Like, here's all the things to think about. Organize all of these thoughts, all of these raw thoughts, and turn it into a skill for me. And Claude has a 
+skill built into every Claude account that literally teaches Claude how to create a skill. It's very meta. Over time, as you're working with that skill, you'll probably want to evolve it whether or 
+not whether it's because the skill is, like, insufficient in some areas or something new has changed and you wanna add to it. You can always tell Claude at any time, like, hey. Like, we just changed 
+the way we approach this. Like, I want you to now go back and update the skill, and Claude can actually do that. The the third piece is over time, if you're working with a skill, like, sort of 
+repeatedly, we can also do is Claude has memory. Claude can also search through past conversations. You can start a new conversation and ask Claude, hey. Go back through all of our conversations. You 
+know? When we use this skill to work on this specific thing, like, are there specific nuances or things that I've told you or maybe part of the conversation that, you know, we went back and forth on 
+that we now want to pull into the skill? So this idea of skills should be sort of ever evolving, basically. Yeah. And the other thing that I think is is really helpful when thinking about just, like, 
+all of your workflows in Claude is, like, as we mentioned, like, context is king, giving it more information, like, the better outputs that you'll get. But I also think, like, giving it the right 
+amount of, like, hey. This is exactly what I want. So, like, even taking ten minutes to dictate be, like, a ramble of and brain dump of all of the things that that you want the output to be, I think 
+it's just a really, really good good start. Okay. The other kind of theme of questions that we're getting, is around plugins versus skills and how do you think about invoking invoking those? How how 
+do you think about the plugins versus skills? So plug in is you know, I'll admit, like, some of these terms are kind of confusing. You have plug in, you have connectors, you have skills. Easy way to 
+think about this, you have skills, which we've kind of gone over at this point a couple different times. It's just instructions in a markdown file. You have connectors, which is what we just call 
+MCPs. Model context protocol, you guys have probably heard of this heard of this, but it's how Claude and all the LLMs can basically connect with other tools in a standardized format. It's called 
+model context protocol. Bundle those two together, you have something we call a plug in. So the reason why we have this concept of plug in is if you have specific skills that only really work if 
+you're also connected to specific systems via MCPs, You kinda need both of them to be true instead of sharing the skill individually and then saying, like, okay. Now also go out and, like, install 
+this connector. Well, you can bundle them together so that all you need to do is you just install the plug in itself, which comes with the connectors, and it comes with the corresponding skills. So 
+it's like a package, basically. Okay. This one's kind of a a fun one. Austin, I think, like, a lot of people are curious. Like, there's so so much coming out, not only from Anthropic, but other 
+places, and it's really hard to kinda stay up to date on all of the latest and greatest. How do you think about kind of testing and iterating with all of the new features and functionality coming out 
+with Claude? Like, how, like, how do you just wrap your brain around all of the things that are happening here? Yeah. I mean, it's it's honestly a challenge. Like, even even internally, like, working 
+in a profit, like, it's very hard to keep on top of everything you ship. Like, sometimes I find out we ship something because I see it, like, on LinkedIn or get an email about it, like, literally the 
+rest of the world. But, like, here here's what I generally do. Like, one, like, you know, for a lot of the most important features that we launch, like, typically, we'll make a lot of noise about it. 
+We'll make a lot of noise about something, but it's because we sent you an email about it. There's a tool tip within the product. Generally, that means we want you to try it. So you should go go out 
+and just, like, tinker around. I think one of the biggest challenges with particularly with sort of, like, nontechnical, like, functions such as, like, marketing is the enablement story for 
+nontechnical teams looks very different than developers. And that's one of the reasons why I think Claude Code took off so well the way it did much quicker, much earlier than just general knowledge 
+work is because the enablement story for developers is relatively one shaped. So if you work at, like, a startup versus, like, a FAANG company versus anthropic versus wherever, if you're a developer, 
+generally speaking, you're approaching development work kind of the same. Therefore, the enabling the story for a tool like Claude Code is, like, relatively straightforward. It's it's a little bit of 
+an over exaggeration, but, like, generally speaking. For nontechnical teams, I'm like, I don't know how many marketers are on this call right now, but if you think about the work you do, your 
+function is gonna look very different than the marketer who sits on a different team within your own company. If you're a growth marketer and anthropic, the way you approach growth marketing is gonna 
+be so different than growth marketing any other company. So that means the enabling story is gonna look very different. So my best suggestion is to try to keep up with everything and to also try to 
+figure out this enabling piece. It actually requires a decent amount of, like, hey. I need to carve out some time to just tinker and play around. So one of the big challenges that I think we are also 
+trying to really figure out and and tackle with co work is you can do when you can do so much with co work, the question becomes, like, I actually don't know what to do. So my sort of parting advice 
+is, you know, today, sometime, carve out some time and just sit down with cowork and try to, like, build something. And if you don't know what to do, we'll share a blog post to get some starter 
+ideas. But something else you can do is open up chat. It can be with Claude. It can be with ChatStream, whatever chat tool of choice you have and just ask it. It's like, hey. Go through our past 
+conversations to let me know what are some common things we work on and what might make sense to turn into a cowork workflow. And Claude will probably give you a bunch of great ideas that you can 
+take that, try it out in co work, just sit down and spend some time with it. And the important part is start with, like, a task that, again, you know well so that you can, like, easily see very 
+quickly whether or not, like, hey, Claude and co work did a really good job of this. Or it's like, it's like, it's not so great. Yeah. Maybe this needs more refining or, like, some tweaking, but that 
+should give you an idea of, like, here's what I can do. Okay. I think that is great parting wisdom from Austin. Thank you all for joining. We loved all of your questions. Again, please give us 
+feedback in the survey. You will all receive a recording of this, within the the next twenty four hours. Okay. We also will try to add some, kinda like best practices. We still are getting a lot of 
+questions around, like, skills versus plug ins and, like, how do we share those with our team. So we'll make sure to include that in the email. The other thing that I just wanna plug is that if you 
+really are like, how do I get started with this and you have a little bit of time, we do have a cowork one zero one course that will go through all of these different features and functionalities. 
+And I think that it's a really good way to kind of wrap your head around all of the different things that exist within cowork. So definitely recommend checking that out. I think that that is in, our 
+our chat, tab. But if it is not, we will also make sure to add it to the email. Thank you, everyone. Thanks, everyone. 
