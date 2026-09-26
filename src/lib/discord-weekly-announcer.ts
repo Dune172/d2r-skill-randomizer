@@ -1,5 +1,6 @@
 /**
- * Mutation challenge Discord announcement — fires every other Monday at 09:00 LA into
+ * Mutation challenge Discord announcement — fires at 09:00 LA on each challenge's
+ * start date (monthly from October 2026) into
  * the DISCORD_WEEKLY_WEBHOOK_URL channel. Posts the challenge's theme name, the
  * active mutations with one-line descriptions, plus the gold OG card PNG attached.
  *
@@ -13,13 +14,12 @@ import { promises as fs } from 'node:fs';
 import { statePath } from './state-dir';
 import {
   getCurrentWeekNumber,
-  getWeekStart,
+  getChallengeAnnouncementTime,
 } from './challenge/week';
 import { getActiveMutations, getWeekName, type MutationDef } from './mutations/registry';
 import { renderChallengeCardPng } from './og/challengeCard';
 
-const POST_HOUR_LA = 9;
-const POST_HOUR_OFFSET_MS = POST_HOUR_LA * 60 * 60 * 1000;
+const MAX_TIMER_DELAY = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 15_000;
 // Lives in STATE_DIR (see state-dir.ts) so it survives deploys. Losing this
 // makes the announcer re-post the current week to Discord after a deploy.
@@ -122,10 +122,10 @@ export async function postWeeklyAnnouncement(weekNumber: number): Promise<boolea
   }
 }
 
-function nextFireTime(currentWeek: number, now: number): number {
-  const currentFire = getWeekStart(currentWeek).getTime() + POST_HOUR_OFFSET_MS;
+export function nextFireTime(currentWeek: number, now: number): number {
+  const currentFire = getChallengeAnnouncementTime(currentWeek).getTime();
   if (now < currentFire) return currentFire;
-  return getWeekStart(currentWeek + 1).getTime() + POST_HOUR_OFFSET_MS;
+  return getChallengeAnnouncementTime(currentWeek + 1).getTime();
 }
 
 async function fireAndReschedule(): Promise<void> {
@@ -144,8 +144,11 @@ function scheduleNext(): void {
   const now = Date.now();
   const week = getCurrentWeekNumber();
   const fireAt = nextFireTime(week, now);
-  const delay = Math.max(0, fireAt - now);
+  // A month exceeds Node's signed 32-bit timeout limit. Wake in bounded steps;
+  // an intermediate wake must never publish an early/duplicate announcement.
+  const delay = Math.min(MAX_TIMER_DELAY, Math.max(0, fireAt - now));
   scheduledTimer = setTimeout(() => {
+    if (Date.now() < fireAt) { scheduleNext(); return; }
     fireAndReschedule().catch((err) => {
       const reason = err instanceof Error ? err.message : String(err);
       console.warn(`[weekly-announcer] tick failed: ${reason}`);
@@ -157,7 +160,7 @@ function scheduleNext(): void {
   console.log(`[weekly-announcer] next post scheduled for ${fireDate} (in ${Math.round(delay / 1000)}s)`);
 }
 
-/** Boot-time entry: catch up if needed, then schedule the next Monday post. */
+/** Boot-time entry: catch up if needed, then schedule the next challenge post. */
 export function startWeeklyAnnouncer(): void {
   if (!process.env.DISCORD_WEEKLY_WEBHOOK_URL) {
     console.log('[weekly-announcer] DISCORD_WEEKLY_WEBHOOK_URL unset, scheduler disabled');
@@ -168,7 +171,7 @@ export function startWeeklyAnnouncer(): void {
       const state = await readState();
       const now = Date.now();
       const week = getCurrentWeekNumber();
-      const currentFire = getWeekStart(week).getTime() + POST_HOUR_OFFSET_MS;
+      const currentFire = getChallengeAnnouncementTime(week).getTime();
       if (now >= currentFire && state.lastAnnouncedWeek < week) {
         console.log(`[weekly-announcer] catch-up post for Week ${week}`);
         const ok = await postWeeklyAnnouncement(week);

@@ -17,6 +17,15 @@ export interface ZipContents {
   monstatsTxt?: string;             // monstats with HP/Exp scaled for players simulation
   monsterGraphicsJson?: string;     // HD asset aliases for generated enemy IDs
   enemyManifestJson?: string;       // inspectable roster and balance report (outside game data)
+  inventorySpellsJson?: string;     // experimental inventory spell catalogue and playtest notes
+  globalSkillIcons?: Map<string, Buffer>; // paths under data/, shared oskill sheets in HD/lowend/legacy
+  inventorySpellAssets?: Map<string, Buffer>; // spell-only art aliases and native inventory tint rules
+  itemGraphicsJson?: string;       // HD base item aliases for mutation shop stock
+  uniqueGraphicsJson?: string;     // HD scroll/book aliases for mutation uniques
+  cubemainTxt?: string;            // original recipes plus mutation consolidation
+  objectsTxt?: string;             // bookcase loot behavior for Forgotten Arts
+  itemStatCostTxt?: string;        // signed level-requirement offsets for spell charms
+  propertiesTxt?: string;         // cosmetic spell synergy tooltip properties
   missilesTxt?: string;            // private, owner-scaled projectiles for relocated enemies
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
   treasureClassExTxt?: string;      // treasureclassex with Blood Raven quest drop TC
@@ -76,6 +85,29 @@ export function buildZip(contents: ZipContents): Buffer {
   }
   if (contents.enemyManifestJson) {
     zip.addFile(`${m}/enemy-shuffle.json`, str(contents.enemyManifestJson));
+  }
+  if (contents.inventorySpellsJson) {
+    zip.addFile(`${m}/forgotten-arts.json`, str(contents.inventorySpellsJson));
+  }
+  if (contents.globalSkillIcons) {
+    for (const [relativePath, buffer] of contents.globalSkillIcons) {
+      zip.addFile(`${d}/data/${relativePath}`, buffer);
+    }
+  }
+  if (contents.inventorySpellAssets) {
+    for (const [relativePath, buffer] of contents.inventorySpellAssets) {
+      zip.addFile(`${d}/data/${relativePath}`, buffer);
+    }
+  }
+  for (const [relativePath, value] of [
+    ['hd/items/items.json', contents.itemGraphicsJson],
+    ['hd/items/uniques.json', contents.uniqueGraphicsJson],
+    ['global/excel/cubemain.txt', contents.cubemainTxt],
+    ['global/excel/objects.txt', contents.objectsTxt],
+    ['global/excel/itemstatcost.txt', contents.itemStatCostTxt],
+    ['global/excel/properties.txt', contents.propertiesTxt],
+  ]) {
+    if (value) zip.addFile(`${d}/data/${relativePath}`, str(value));
   }
   if (contents.missilesTxt) {
     zip.addFile(`${d}/data/global/excel/missiles.txt`, str(contents.missilesTxt));

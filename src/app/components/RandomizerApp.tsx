@@ -26,6 +26,7 @@ interface Options {
   xpDifficulties: number[];
   raceMode: boolean;
   enemyShuffle: boolean;
+  forgottenArts: boolean;
 }
 
 const defaultOptions: Options = {
@@ -41,6 +42,7 @@ const defaultOptions: Options = {
   xpDifficulties: [1],
   raceMode: true,
   enemyShuffle: false,
+  forgottenArts: false,
 };
 
 function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearchParams>): Options | null {
@@ -73,6 +75,7 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
       : [1, 2, 3],
     raceMode: p.get('raceMode') !== '0',
     enemyShuffle: p.get('enemyShuffle') === '1',
+    forgottenArts: false, // challenge-only
   };
 }
 
@@ -112,7 +115,7 @@ export default function RandomizerApp() {
     const xpDiffParam       = opts.xpMultiplier > 1 ? `&xpDifficulties=${[...opts.xpDifficulties].sort((a, b) => a - b).join(',')}` : '';
     const raceModeParam     = !opts.raceMode ? '&raceMode=0' : '';
     const enemyParam = opts.enemyShuffle ? '&enemyShuffle=1' : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}`;
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -125,7 +128,7 @@ export default function RandomizerApp() {
       const previewRes = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: seedInput }),
+        body: JSON.stringify({ seed: seedInput, forgottenArts: options.forgottenArts }),
       });
 
       if (!previewRes.ok) {
@@ -143,7 +146,7 @@ export default function RandomizerApp() {
 
       setStatus('building');
       const buildingStart = Date.now();
-      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle });
+      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts });
 
       await generateMod(buildBody, setErrorMessage);
 
@@ -203,7 +206,7 @@ export default function RandomizerApp() {
             )}
 
             <div className="pt-0.5">
-              <InstallInstructions seed={currentSeed!} raceMode={currentOptions.raceMode} />
+              <InstallInstructions seed={currentSeed!} raceMode={currentOptions.raceMode} forgottenArts={currentOptions.forgottenArts} />
             </div>
           </div>
         )}
@@ -215,7 +218,7 @@ export default function RandomizerApp() {
         )}
       </div>
 
-      {preview && !currentOptions.raceMode && (
+      {preview && !currentOptions.raceMode && !currentOptions.forgottenArts && (
         <SkillTreePreview data={preview} />
       )}
 
@@ -234,7 +237,7 @@ export default function RandomizerApp() {
       </p>
 
       <p className="text-center font-cinzel text-[11px] tracking-[0.3em] uppercase text-[#7a5818] pt-2">
-        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.301: updated September 2026
+        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.31: updated September 2026
       </p>
     </div>
   );

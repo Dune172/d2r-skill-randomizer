@@ -1,8 +1,8 @@
 /* eslint-disable @next/next/no-img-element, jsx-a11y/alt-text */
 /**
- * Shared renderer for the weekly-challenge OG card. Used by:
+ * Shared renderer for the mutation-challenge OG card. Used by:
  *   - src/app/challenge/opengraph-image.tsx (Next.js OG image route)
- *   - src/lib/discord-weekly-announcer.ts   (Monday Discord post)
+ *   - src/lib/discord-weekly-announcer.ts   (challenge launch post)
  *
  * Node runtime only — pulls fonts and webp icons off disk.
  */
@@ -103,7 +103,7 @@ export async function buildChallengeCardImageResponse(weekNumber: number): Promi
               display: 'flex',
             }}
           >
-            Week {weekNumber} · {dateRange}
+            Challenge {weekNumber} · {dateRange}
           </div>
 
           <div

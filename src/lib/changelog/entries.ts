@@ -12,6 +12,23 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.31',
+    date: 'September 2026',
+    tagline: 'Forgotten Arts: learn magic from the books you carry',
+    notes: [
+      'New experimental mutation, Forgotten Arts, exclusive to October’s challenge. Skill trees are gone and levelling gives no skill points. Your spells come from scrolls and books in your inventory instead, a nod to how magic worked in the first Diablo',
+      'A scroll takes one inventory slot and gives +1 to its spell. A book takes two and gives +3. Copies of the same spell stack, and dropping one takes its levels with it. Scrolls stored in the stash or Cube don’t count',
+      'Every character starts with a Fire Bolt scroll and a Horadric Cube. Cube three matching copies into the next tier: three scrolls make a book, three books a grimoire, three grimoires a codex. You never lose levels doing it',
+      'Spell items have no level requirement, so a strong book you find early is usable right away. Stronger spells only start dropping in later acts',
+      'Scrolls drop from monsters, chests and bookshelves. Corpsefire, Bone Ash and Griswold each drop a bonus scroll on top of their normal loot. Corpsefire still drops a Teleport staff too',
+      'The potion vendor in each act sells a random selection of spells that changes when their stock refreshes. The pool grows from 6 spells in Act I to all 35 by Act V',
+      'Magic, rare and unique gear can roll bonuses to specific spells, or charges for them. Runewords and set items are unchanged for now',
+      '35 spells to start with: elemental attacks, bone spells, curses and utility spells like Teleport. Summons, shapeshifting, channelled skills and class-specific attacks aren’t in this first version',
+      'Mutation challenges now run for a calendar month instead of two weeks. Each one starts at midnight Pacific on the 1st. Challenge 15 runs until September 30. Past challenges and leaderboards stay as they were',
+      'October’s challenge is Return to Tristram: Forgotten Arts, Molasses and Entropy on seed 21392. The skill-tree spoiler is hidden for this one, since there are no trees to spoil',
+    ],
+  },
+  {
     version: 'v0.301',
     date: 'September 2026',
     tagline: 'Skeleton Mastery and summon tooltip fixes',

@@ -35,7 +35,7 @@ export function ArchiveWeekCard({ weekNumber, entries = [], hellEntries = [] }: 
         className="w-full p-6 cursor-pointer flex flex-col items-center"
       >
         <p className="font-cinzel text-[10px] tracking-[0.4em] text-[#7a5818] uppercase mb-3">
-          Week {weekNumber} &nbsp;·&nbsp; {formatWeekDate(start)} – {formatWeekDate(end)}
+          Challenge {weekNumber} &nbsp;·&nbsp; {formatWeekDate(start)} – {formatWeekDate(end)}
         </p>
         <div className="flex items-center justify-center gap-3">
           <div className="font-cinzel font-black text-3xl md:text-4xl text-[#c8942a] glow-gold tracking-[0.12em] uppercase leading-tight">

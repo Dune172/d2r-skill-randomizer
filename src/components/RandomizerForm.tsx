@@ -20,6 +20,7 @@ interface FormState {
   xpDifficulties: number[];
   raceMode: boolean;
   enemyShuffle: boolean;
+  forgottenArts: boolean;
 }
 
 const SEASON1_PRESET: FormState = {
@@ -38,6 +39,7 @@ const SEASON1_PRESET: FormState = {
   xpDifficulties: [1],
   raceMode: true,
   enemyShuffle: true,
+  forgottenArts: false,
 };
 
 const TURBO_PRESET: FormState = {
@@ -56,6 +58,7 @@ const TURBO_PRESET: FormState = {
   xpDifficulties: [1, 2, 3],
   raceMode: false,
   enemyShuffle: false,
+  forgottenArts: false,
 };
 
 const DEFAULT_STATE: FormState = {
@@ -74,11 +77,12 @@ const DEFAULT_STATE: FormState = {
   xpDifficulties: [1],
   raceMode: true,
   enemyShuffle: false,
+  forgottenArts: false,
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -119,11 +123,11 @@ function Tip({ text, align = 'center', width = 'w-56', below = false }: { text: 
   );
 }
 
-function Checkbox({ id, checked, onChange, label, tooltip }: { id: string; checked: boolean; onChange: (v: boolean) => void; label: string; tooltip?: string }) {
+function Checkbox({ id, checked, onChange, label, tooltip, disabled = false }: { id: string; checked: boolean; onChange: (v: boolean) => void; label: string; tooltip?: string; disabled?: boolean }) {
   return (
     <label className="flex items-center gap-2.5 cursor-pointer group select-none" htmlFor={id}>
       <div className="relative flex-shrink-0">
-        <input id={id} type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="sr-only peer" />
+        <input id={id} type="checkbox" checked={checked} disabled={disabled} onChange={e => onChange(e.target.checked)} className="sr-only peer" />
         <div className={`w-5 h-5 rounded border transition-colors duration-200 flex items-center justify-center peer-focus-visible:ring-2 peer-focus-visible:ring-[#f0c040]
           ${checked ? 'bg-[#7a1010] border-[#c42020]' : 'bg-[#090203] border-[#3a1510] group-hover:border-[#5c2218]'}`}>
           {checked && (
@@ -207,6 +211,8 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [xpActs, setXpActs] = useState<number[]>(initialOptions?.xpActs ?? SEASON1_PRESET.xpActs);
   const [xpDifficulties, setXpDifficulties] = useState<number[]>(initialOptions?.xpDifficulties ?? SEASON1_PRESET.xpDifficulties);
   const [raceMode, setRaceMode] = useState(initialOptions?.raceMode ?? SEASON1_PRESET.raceMode);
+  // Forgotten Arts is challenge-only; the standard generator never enables it.
+  const forgottenArts = false;
   const [enemyShuffle, setEnemyShuffle] = useState(initialOptions?.enemyShuffle ?? SEASON1_PRESET.enemyShuffle);
   const applyPreset = (p: Preset) => {
     setPreset(p);
@@ -259,14 +265,15 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       playersEnabled: playersCount > 1,
       playersCount,
       playersActs,
-      startingItems: { teleportStaff, teleportStaffLevel, teleportStaffDropSource, teleportStaffSpeed, horadricCube },
+      startingItems: { teleportStaff: forgottenArts ? false : teleportStaff, teleportStaffLevel, teleportStaffDropSource, teleportStaffSpeed, horadricCube: forgottenArts || horadricCube },
       hirelingAura,
       disableChat,
       xpMultiplier,
       xpActs,
       xpDifficulties,
-      raceMode,
+      raceMode: forgottenArts ? false : raceMode,
       enemyShuffle,
+      forgottenArts,
     });
   };
 
@@ -388,13 +395,14 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           <div className={teleportStaff ? 'rounded border border-[#5c1818] bg-[#1a0606]/50 p-3 -m-3 w-fit justify-self-start' : ''}>
             <Checkbox
               id="teleportStaff"
-              checked={teleportStaff}
+              checked={!forgottenArts && teleportStaff}
+              disabled={forgottenArts}
               onChange={field(setTeleportStaff)}
               label="Teleport Staff"
               tooltip="Starts you with a staff that has Teleport charges. Use 'Dropped By' to set which boss drops it, and 'Req. Level' to control when it becomes usable."
             />
 
-            {teleportStaff && (
+            {teleportStaff && !forgottenArts && (
               <>
                 <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2">
                   <div className="flex items-center gap-3">
@@ -459,7 +467,8 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           <div className="flex flex-col justify-start">
             <Checkbox
               id="horadricCube"
-              checked={horadricCube}
+              checked={forgottenArts || horadricCube}
+              disabled={forgottenArts}
               onChange={field(setHoradricCube)}
               label="Start with Horadric Cube"
               tooltip="Adds a Horadric Cube to your starting inventory, giving you extra stash space from the very beginning."
@@ -488,7 +497,8 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
         <div className="h-px bg-[#3a1510]/50" />
         <Checkbox
           id="raceMode"
-          checked={raceMode}
+          checked={!forgottenArts && raceMode}
+          disabled={forgottenArts}
           onChange={field(setRaceMode)}
           label="Race Mode"
           tooltip="Includes -seed in the launch shortcut and manual args, locking the map seed so all racers see the same maps. Also hides the spoiler so the randomized skill trees stay secret."

@@ -6,7 +6,7 @@ import {
 } from '@/lib/og/challengeCard';
 
 export const revalidate = 3600;
-export const alt = 'D2R Randomizer — Weekly Challenge Seed';
+export const alt = 'D2R Randomizer — Monthly Challenge Seed';
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 

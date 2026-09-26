@@ -53,7 +53,7 @@ export default function ArchivePage() {
         {pastWeeks.length === 0 ? (
           <div className="card-ornate border border-[#3a1510] bg-[#0c0304] panel-shadow p-8 max-w-xl mx-auto text-center">
             <p className="text-[#a89060] text-sm leading-relaxed">
-              No past challenges yet — come back in two weeks.
+              No past challenges yet — come back next month.
             </p>
             <Link
               href="/challenge"

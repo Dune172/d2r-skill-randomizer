@@ -4,13 +4,13 @@
  *  - Append a new "Teleport Staff" unique entry with 20× Teleport charges (level 1)
  * Returns a new rows array (does not mutate the original).
  */
-export function applyTeleportStaffUnique(headers: string[], rows: string[][], reqLevel = 1, idMapping?: Map<number, number>, speed = true): string[][] {
+export function applyTeleportStaffUnique(headers: string[], rows: string[][], reqLevel = 1, idMapping?: Map<number, number>, speed = true, preserveBaneAsh = false): string[][] {
   const indexCol    = headers.indexOf('index');
   const disabledCol = headers.indexOf('disabled');
 
   // Disable Bane Ash (the sst unique) to avoid random selection
   const updated = rows.map(row => {
-    if (indexCol !== -1 && row[indexCol] === 'Bane Ash' && disabledCol !== -1) {
+    if (!preserveBaneAsh && indexCol !== -1 && row[indexCol] === 'Bane Ash' && disabledCol !== -1) {
       const copy = [...row];
       copy[disabledCol] = '1';
       return copy;
@@ -84,7 +84,25 @@ export function applyBloodRavenQuestDrop(
   tcHeaders: string[],
   tcRows: string[][],
   dropSource: string = 'Corpsefire',
+  preserveLoot = false,
 ): void {
+  if (preserveLoot) {
+    const monster = suRows.find(row => row[suHeaders.indexOf('Superunique')] === dropSource);
+    if (!monster) throw new Error(`Missing teleport staff drop source: ${dropSource}`);
+    for (const column of ['TC', 'TC(N)', 'TC(H)']) {
+      const tcIndex = suHeaders.indexOf(column);
+      const original = monster[tcIndex];
+      const key = `TC_AstralWayfarer_${column}`;
+      const wrapper = new Array(tcHeaders.length).fill('');
+      for (const [field, value] of Object.entries({ 'Treasure Class': key, Picks: '-2', NoDrop: '0',
+        Item1: 'Astral Wayfarer', Prob1: '1', Item2: original, Prob2: '1', '*eol': '0' })) {
+        wrapper[tcHeaders.indexOf(field)] = value;
+      }
+      tcRows.push(wrapper);
+      monster[tcIndex] = key;
+    }
+    return;
+  }
   // 1. Append TC_AstralWayfarer to treasureclassex.txt.
   // Reference the unique item by its UniqueItems index name so D2R drops
   // exactly that unique — no quality-roll flags needed.

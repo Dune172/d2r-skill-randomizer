@@ -7,7 +7,7 @@ import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { MYSTERY_ICON } from '@/lib/randomizer/mutations/mystery-box';
-import { getMutationExcludedSkills } from '@/lib/randomizer/mutations';
+import { getMutationExcludedSkills, isMutationActiveForWeek } from '@/lib/randomizer/mutations';
 import { PreviewData, SkillEntry } from '@/lib/randomizer/types';
 export async function POST(request: NextRequest) {
   try {
@@ -29,6 +29,9 @@ export async function POST(request: NextRequest) {
     const seed = (typeof seedInput === 'number' || (typeof seedInput === 'string' && !isNaN(numericSeed) && Number.isInteger(numericSeed)))
       ? Math.trunc(numericSeed)
       : seedFromString(String(seedInput));
+    if (isMutationActiveForWeek(weekNumber, 'forgotten-arts')) {
+      return NextResponse.json({ seed, masked: false, classes: [], mode: 'forgotten-arts' });
+    }
     const rng = createRNG(seed);
 
     // Load data

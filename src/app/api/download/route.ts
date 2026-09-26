@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { seedFromString } from '@/lib/randomizer/seed';
 import { getCached, makeCacheKey } from '@/lib/zip-cache';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
-import { getWeekName } from '@/lib/mutations/registry';
+import { getWeekName, getActiveMutations } from '@/lib/mutations/registry';
 import { getWeekStart, getCurrentWeekNumber } from '@/lib/challenge/week';
 import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
 
@@ -44,7 +44,15 @@ export async function GET(request: NextRequest) {
     const actsParam = searchParams.get('acts');
     const seed = isNaN(Number(seedParam)) ? seedFromString(seedParam) : Number(seedParam);
     const playersCount = Math.min(8, Math.max(1, Number(playersParam) || 1));
-    const teleportStaffLevel = Number(teleportParam) || 0;
+    const weeklyParam = searchParams.get('weekly') === '1';
+    const weekOverrideParam = searchParams.get('weekOverride');
+    const weekOverride = weekOverrideParam !== null && Number.isInteger(Number(weekOverrideParam))
+      ? Math.max(1, Math.trunc(Number(weekOverrideParam)))
+      : null;
+    const weeklyKey = weeklyParam ? (weekOverride ?? getCurrentWeekNumber()) : 0;
+    const forgottenArts = weeklyParam
+      ? getActiveMutations(weeklyKey).some(m => m.id === 'forgotten-arts') : false; // challenge-only
+    const teleportStaffLevel = forgottenArts ? 0 : Number(teleportParam) || 0;
     const playersActs = actsParam
       ? actsParam.split(',').map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
@@ -62,19 +70,13 @@ export async function GET(request: NextRequest) {
       ? xpDifficultiesParam.split(',').map(Number).filter(n => n >= 1 && n <= 3)
       : [1, 2, 3];
 
-    const weeklyParam = searchParams.get('weekly') === '1';
-    const weekOverrideParam = searchParams.get('weekOverride');
-    const weekOverride = weekOverrideParam !== null && Number.isInteger(Number(weekOverrideParam))
-      ? Math.max(1, Math.trunc(Number(weekOverrideParam)))
-      : null;
-    const weeklyKey = weeklyParam ? (weekOverride ?? getCurrentWeekNumber()) : 0;
     const teleportStaffSpeed = teleportStaffLevel > 0 && searchParams.get('staffSpeed') !== '0';
     // Weekly challenges are never Race Mode — force off (matching the identical
     // guard in /api/randomize) so the cache key resolves even if the link omits
     // raceMode=0. Outside weekly, raceMode defaults true.
-    const raceMode = weeklyParam ? false : (searchParams.get('raceMode') !== '0');
+    const raceMode = weeklyParam || forgottenArts ? false : (searchParams.get('raceMode') !== '0');
     const enemyShuffle = weeklyParam ? challengeRandomizesMonsters(weeklyKey) : searchParams.get('enemyShuffle') === '1';
-    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode, enemyShuffle);
+    const cacheKey = makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts);
     const zipBuffer = getCached(cacheKey);
 
     if (!zipBuffer) {

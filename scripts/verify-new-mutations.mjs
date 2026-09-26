@@ -90,8 +90,8 @@ console.log('\nMolasses');
   applyMolasses({ monstats });
 
   const bab = find('baboon1');
-  check('fast monster halves',
-    num(monstats.rows[bab][rI]) === Math.round(num(before[bab][rI]) * 0.5),
+  check('fast monster moves 30% slower',
+    num(monstats.rows[bab][rI]) === Math.round(num(before[bab][rI]) * 0.7),
     'baboon1 Run ' + before[bab][rI] + ' -> ' + monstats.rows[bab][rI]);
 
   const zom = find('zombie1');
@@ -281,7 +281,10 @@ console.log('\nConflict guard');
   check('every existing rotation slot is conflict-free', badSlot === null,
     badSlot === null ? WEEKLY_MUTATIONS.length + ' slots checked' : 'slot ' + badSlot + ' conflicts');
 
-  check('exclusion pairs registered', EXCLUSIVE_MUTATION_PAIRS.length === 5);
+  check('original exclusion pairs retained', [[15, 1], [15, 6], [16, 2], [18, 3], [18, 9]]
+    .every(([a, b]) => EXCLUSIVE_MUTATION_PAIRS.some(pair => pair[0] === a && pair[1] === b)));
+  check('Forgotten Arts excludes incompatible tree mutations', [12, 16]
+    .every(id => EXCLUSIVE_MUTATION_PAIRS.some(pair => pair[0] === 19 && pair[1] === id)));
 }
 
 // ── Rotation shape ────────────────────────────────────────────────────────
@@ -326,8 +329,8 @@ console.log('\nRotation');
   const hi = Math.max(...counts);
   check('every mutation appears at least twice', lo >= 2, 'least-used appears ' + lo + 'x');
   check('usage spread is 3 or less', hi - lo <= 3, 'range ' + lo + '-' + hi + ', spread ' + (hi - lo));
-  check('all 18 mutations are in the rotation', usage.size === Object.keys(MUTATIONS).length,
-    usage.size + ' of ' + Object.keys(MUTATIONS).length + ' used');
+  check('all 18 original mutations remain in the rotation', usage.size === 18,
+    usage.size + ' original mutations used; calendar events are separate');
 }
 
 console.log('\n' + (checks - failures) + '/' + checks + ' checks passed');

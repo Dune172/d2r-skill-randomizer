@@ -1,4 +1,4 @@
-export function InstallInstructions({ seed, raceMode = true }: { seed: number; raceMode?: boolean }) {
+export function InstallInstructions({ seed, raceMode = true, forgottenArts = false }: { seed: number; raceMode?: boolean; forgottenArts?: boolean }) {
   const seedUnsigned = seed >>> 0;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-[#c8a870]">
@@ -53,7 +53,9 @@ export function InstallInstructions({ seed, raceMode = true }: { seed: number; r
           </div>
         </div>
         <div className="mt-2 rounded p-2 bg-[#0a2010]/60 border border-[#2a5a2a] text-[#6abf6a]">
-          ✓ If it worked, your new character&apos;s skill tree will show randomized skills.
+          {forgottenArts
+            ? '✓ Create a new character. Your inventory should contain a Fire Bolt scroll and Horadric Cube, and skill trees should be unavailable.'
+            : '✓ If it worked, your new character’s skill tree will show randomized skills.'}
         </div>
       </div>
 
@@ -94,7 +96,9 @@ export function InstallInstructions({ seed, raceMode = true }: { seed: number; r
           </div>
         </div>
         <div className="mt-2 rounded p-2 bg-[#0a2010]/60 border border-[#2a5a2a] text-[#6abf6a]">
-          ✓ If it worked, your new character&apos;s skill tree will show randomized skills.
+          {forgottenArts
+            ? '✓ Create a new character. Your inventory should contain a Fire Bolt scroll and Horadric Cube, and skill trees should be unavailable.'
+            : '✓ If it worked, your new character’s skill tree will show randomized skills.'}
         </div>
         <div className="mt-1 rounded p-2 bg-[#080203]/60 border border-[#2a1508]/60 text-[#7a7858]">
           <span className="text-[#c8a870] font-semibold">Game Pass?</span> Use the Microsoft Store install path instead. If you&apos;re unsure where D2R is installed, search <code className="text-[#a89858]">Diablo II Resurrected</code> in File Explorer.

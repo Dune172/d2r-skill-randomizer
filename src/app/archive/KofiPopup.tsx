@@ -55,7 +55,7 @@ export function PatreonPopup() {
           Enjoying The Randomizer?
         </h2>
         <p className="text-[#a89060] text-sm leading-relaxed mb-6">
-          D2R Randomizer is a free, ad-free passion project. If you&apos;re digging the weekly challenges,
+          D2R Randomizer is a free, ad-free passion project. If you&apos;re digging the monthly challenges,
           consider supporting your randomizer-maker on Patreon. Every bit keeps the seeds rolling.
         </p>
 

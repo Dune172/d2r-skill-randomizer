@@ -23,13 +23,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: 'https://d2rrandomizer.com/challenge',
       lastModified: '2026-04-07',
-      changeFrequency: 'weekly',
+      changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: 'https://d2rrandomizer.com/archive',
       lastModified: '2026-04-30',
-      changeFrequency: 'weekly',
+      changeFrequency: 'monthly',
       priority: 0.6,
     },
     {

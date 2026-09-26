@@ -30,6 +30,5 @@
  * bump, or players keep being served the cached broken ZIP; their skill layouts
  * are unaffected.
  */
-// v55 preserves fixed Skeleton Mastery bonuses with the original one-summon
-// placement rule, fixes summon bonus names, and corrects the game data version.
-export const PIPELINE_VERSION = 55;
+// v56 changes Molasses to 30% slower movement, preserving its damage settings.
+export const PIPELINE_VERSION = 56;

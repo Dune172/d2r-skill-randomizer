@@ -35,7 +35,7 @@ for (const week of [14, 15, 16]) {
       if (week === 16) {
         assert.equal(+p.final.A2MinD, +p.balanced.A2MinD * 2, 'Molasses scales relocated attacks');
         assert.equal(+p.final.A2MaxD - +p.final.A2MinD, +p.balanced.A2MaxD - +p.balanced.A2MinD, 'Molasses preserves damage spread');
-        if (+p.balanced.Velocity > 0) assert.equal(+p.final.Velocity, Math.max(1, Math.round(+p.balanced.Velocity * 0.5)));
+        if (+p.balanced.Velocity > 0) assert.equal(+p.final.Velocity, Math.max(1, Math.round(+p.balanced.Velocity * 0.7)));
       }
     }
     const missileText = zip.getEntries().find(e => e.entryName.endsWith('/missiles.txt')).getData().toString('utf8');

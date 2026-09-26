@@ -11,8 +11,8 @@ import { SubmitRunForm } from '@/app/components/SubmitRunForm';
 import SkillTreePreview from '@/components/SkillTreePreview';
 import type { PreviewData } from '@/lib/randomizer/types';
 
-function getWeekData() {
-  const weekNumber = getCurrentWeekNumber();
+function getWeekData(override?: number) {
+  const weekNumber = override ?? getCurrentWeekNumber();
   const currentSeed = getWeekSeed(weekNumber);
   const currentStart = getWeekStart(weekNumber);
   const currentEnd = getWeekEnd(weekNumber);
@@ -109,12 +109,14 @@ function MutationCard({ mutation }: { mutation: MutationDef }) {
   );
 }
 
-export function WeekCard() {
-  const { weekNumber, currentSeed, currentStart, currentEnd } = getWeekData();
+/** `weekNumber` forces a specific challenge (used by the temporary preview route). */
+export function WeekCard({ weekNumber: forcedWeek }: { weekNumber?: number } = {}) {
+  const { weekNumber, currentSeed, currentStart, currentEnd } = getWeekData(forcedWeek);
   const mutations = getActiveMutations(weekNumber);
   const weekName = getWeekName(weekNumber);
   // Mystery Box hides skill identities — the spoiler must show "???" too.
   const mysteryActive = mutations.some(m => m.id === 'mystery-box');
+  const forgottenArts = mutations.some(m => m.id === 'forgotten-arts');
   const [generated, setGenerated] = useState(false);
   const [leaderboardKey, setLeaderboardKey] = useState(0);
   const [hellLeaderboardKey, setHellLeaderboardKey] = useState(0);
@@ -169,9 +171,9 @@ export function WeekCard() {
         </p>
         <div className="max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-x-10">
           <SettingItem label="XP Boost" value="1.5× · Acts I–II" />
-          <SettingItem label="Teleport Staff" value="Lvl 18 · Corpsefire" />
+          <SettingItem label="Starting Items" value={forgottenArts ? 'Fire Bolt scroll + Cube' : 'Lvl 18 Teleport Staff · Corpsefire'} />
           <SettingItem label="Merc Auras" value="Enabled" />
-          <SettingItem label="Prerequisites" value="Standard" />
+          <SettingItem label="Skills" value={forgottenArts ? 'Scrolls, books and equipment' : 'Standard prerequisites'} />
         </div>
       </div>
 
@@ -223,7 +225,7 @@ export function WeekCard() {
       </div>
     </div>
 
-    {preview && (
+    {preview && !forgottenArts && (
       <div className="mx-[calc(50%-50vw)] mb-8">
         <div className="max-w-7xl mx-auto px-4 text-left">
           <SkillTreePreview data={preview} />
@@ -238,7 +240,7 @@ export function WeekCard() {
             Install Instructions
           </p>
         </div>
-        <InstallInstructions seed={currentSeed} raceMode={false} />
+        <InstallInstructions seed={currentSeed} raceMode={false} forgottenArts={forgottenArts} />
       </div>
     )}
     </>

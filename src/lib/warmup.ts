@@ -116,9 +116,10 @@ export function warmStatic(): void {
 
 async function warmWeeklyChallenge(): Promise<void> {
   try {
-    const { getCurrentWeekNumber } = await import('./challenge/week');
+    const { getCurrentWeekNumber, getWeekSeed } = await import('./challenge/week');
+    const { SEASON1_OPTIONS } = await import('./challenge/options');
     const weekNumber = getCurrentWeekNumber();
-    const weeklySeed = weekNumber * 31337;
+    const weeklySeed = getWeekSeed(weekNumber);
 
     // Call the public randomize endpoint via fetch against our own server.
     // This reuses all the production code paths (rate limit, queue, cache
@@ -135,6 +136,7 @@ async function warmWeeklyChallenge(): Promise<void> {
       headers: { 'content-type': 'application/json', 'x-forwarded-for': '127.0.0.1-warmup' },
       body: JSON.stringify({
         seed: weeklySeed,
+        ...SEASON1_OPTIONS,
         weeklyChallenge: { enabled: true, weekOverride: weekNumber },
       }),
     });

@@ -4,31 +4,10 @@ import { useState } from 'react';
 import ProgressIndicator from '@/components/ProgressIndicator';
 import { generateMod } from '@/lib/generate-mod';
 import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
+import { getActiveMutations } from '@/lib/mutations/registry';
 
-// Season Beta Race preset — same settings as the randomizer's season1race preset
-export const SEASON1_OPTIONS = {
-  enablePrereqs: true,
-  playersEnabled: false,
-  playersCount: 1,
-  playersActs: [1, 2, 3, 4, 5],
-  startingItems: {
-    teleportStaff: true,
-    teleportStaffLevel: 18,
-    teleportStaffDropSource: 'Corpsefire',
-    teleportStaffSpeed: false,
-    horadricCube: false,
-  },
-  hirelingAura: true,
-  disableChat: false,
-  xpMultiplier: 1.5,
-  xpActs: [1, 2],
-  xpDifficulties: [1],
-  // The weekly challenge is full randomization, not race mode. This must match
-  // the `&raceMode=0` in downloadUrl below — otherwise /api/randomize caches the
-  // ZIP under raceMode=true while /api/download looks it up under raceMode=false,
-  // producing a cache miss (404 "Zip not found") when the download link is followed.
-  raceMode: false,
-};
+import { SEASON1_OPTIONS } from '@/lib/challenge/options';
+export { SEASON1_OPTIONS } from '@/lib/challenge/options';
 
 type GenStatus = 'idle' | 'building' | 'ready' | 'error';
 
@@ -47,11 +26,12 @@ export function ChallengeGenerator({
   const [status, setStatus] = useState<GenStatus>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const challengeWeek = weekOverride ?? weekNumber;
+  const forgottenArts = getActiveMutations(challengeWeek).some(m => m.id === 'forgotten-arts');
 
   const downloadUrl =
     `/api/download?seed=${seed}` +
     (SEASON1_OPTIONS.playersCount > 1 ? `&players=${SEASON1_OPTIONS.playersCount}&acts=${SEASON1_OPTIONS.playersActs.join(',')}` : '') +
-    `&teleportStaff=${SEASON1_OPTIONS.startingItems.teleportStaffLevel}` +
+    `&teleportStaff=${forgottenArts ? 0 : SEASON1_OPTIONS.startingItems.teleportStaffLevel}` +
     `&dropSource=${SEASON1_OPTIONS.startingItems.teleportStaffDropSource}` +
     (SEASON1_OPTIONS.startingItems.teleportStaffSpeed ? '' : '&staffSpeed=0') +
     (SEASON1_OPTIONS.startingItems.horadricCube ? '&cube=1' : '') +
@@ -73,6 +53,7 @@ export function ChallengeGenerator({
       await generateMod(JSON.stringify({
         seed,
         ...SEASON1_OPTIONS,
+        startingItems: { ...SEASON1_OPTIONS.startingItems, teleportStaff: !forgottenArts },
         weeklyChallenge: { enabled: true, weekOverride: challengeWeek },
       }), setErrorMsg);
       const elapsed = Date.now() - buildingStart;
@@ -117,6 +98,7 @@ export function ChallengeGenerator({
           Monster randomization is enabled for this challenge, with stats balanced for each area.
         </p>
       )}
+      {forgottenArts && <p className="text-center text-xs text-[#c8a870]">Start a new character with a Fire Bolt scroll and Cube. Skills come from scrolls, books and equipment.</p>}
       <ProgressIndicator status={status} message={errorMsg} />
     </div>
   );

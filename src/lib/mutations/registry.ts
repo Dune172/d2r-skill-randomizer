@@ -3,6 +3,9 @@
  * Importable by both client components (WeekData.tsx) and server route handlers.
  */
 
+import { FORGOTTEN_ARTS } from './forgotten-arts';
+import { OCTOBER_2026_CHALLENGE } from '../challenge/week';
+
 export interface MutationDef {
   /** Slug used as the image filename: public/mutations/{id}.webp */
   id: string;
@@ -15,6 +18,7 @@ export interface MutationDef {
 }
 
 export const MUTATIONS: Record<number, MutationDef> = {
+  19: FORGOTTEN_ARTS,
   1: {
     id: 'hyperdrive',
     name: 'Hyperdrive',
@@ -119,7 +123,7 @@ export const MUTATIONS: Record<number, MutationDef> = {
     name: 'Molasses',
     emoji: '🐌',
     description:
-      'Every monster moves at half speed, and every blow they land hits twice as hard. ' +
+      'Every monster moves 30% slower, and every blow they land hits twice as hard. ' +
       'Your own speed is untouched — there is room to kite, if you can make it count.',
   },
   16: {
@@ -164,7 +168,9 @@ export const MUTATIONS: Record<number, MutationDef> = {
  * Enforced by assertNoConflictingMutations(), called from applyWeeklyMutations.
  */
 export const EXCLUSIVE_MUTATION_PAIRS: ReadonlyArray<readonly [number, number]> = [
-  // Molasses halves monster speed, Hyperdrive multiplies it by 1.5 — same columns,
+  [19, 12],
+  [19, 16],
+  // Molasses multiplies monster speed by 0.7, Hyperdrive by 1.5 — same columns,
   // opposite intent, and the result depends purely on APPLY_FNS ordering.
   [15, 1],
   // Both scale the monstats damage pairs. Stacked they compound to 4x minimum
@@ -283,11 +289,18 @@ export const WEEK_NAMES: string[] = [
 
 /** Return the active MutationDefs for the given week number (1-based); 2 or 3. */
 export function getActiveMutations(weekNumber: number): MutationDef[] {
-  const ids = WEEKLY_MUTATIONS[(weekNumber - 1) % WEEKLY_MUTATIONS.length];
-  return ids.map((id) => MUTATIONS[id]);
+  return getMutationIds(weekNumber).map((id) => MUTATIONS[id]);
+}
+
+/** Authored calendar events do not rewrite the historical rotation. */
+export function getMutationIds(challenge: number): readonly number[] {
+  if (challenge === OCTOBER_2026_CHALLENGE) return [19, 15, 14];
+  if (!Number.isInteger(challenge) || challenge < 1) return [];
+  return WEEKLY_MUTATIONS[(challenge - 1) % WEEKLY_MUTATIONS.length];
 }
 
 /** Return the thematic name for the given week number (1-based). */
 export function getWeekName(weekNumber: number): string {
+  if (weekNumber === OCTOBER_2026_CHALLENGE) return 'Return to Tristram';
   return WEEK_NAMES[(weekNumber - 1) % WEEK_NAMES.length];
 }

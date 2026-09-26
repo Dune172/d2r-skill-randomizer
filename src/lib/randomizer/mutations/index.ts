@@ -2,7 +2,7 @@
  * Weekly challenge mutation orchestrator.
  * Server-only — imports file I/O via the individual mutation modules.
  */
-import { MUTATIONS, WEEKLY_MUTATIONS, getActiveMutations, assertNoConflictingMutations } from '@/lib/mutations/registry';
+import { MUTATIONS, getMutationIds, getActiveMutations, assertNoConflictingMutations } from '@/lib/mutations/registry';
 import { applyHyperdrive } from './hyperdrive';
 import { applyHeavyBurden, injectArmorProcs } from './heavy-burden';
 import { applyHollowShell } from './hollow-shell';
@@ -66,6 +66,7 @@ const APPLY_FNS: Record<number, ApplyFn> = {
   16: applyNoGuard,
   17: applyCourtOfKings,
   18: applyBandOfBrothers,
+  // Forgotten Arts (19) needs final skill IDs and art assets: the route applies it last.
 };
 
 /**
@@ -83,7 +84,7 @@ const APPLY_FNS: Record<number, ApplyFn> = {
 export function getMutationExcludedSkills(weekNumber: number): Set<string> {
   const excluded = new Set<string>();
   if (weekNumber <= 0) return excluded;
-  const ids = WEEKLY_MUTATIONS[(weekNumber - 1) % WEEKLY_MUTATIONS.length];
+  const ids = getMutationIds(weekNumber);
   for (const id of ids) {
     if (MUTATIONS[id]?.id === 'no-guard') {
       for (const name of NO_GUARD_EXCLUDED_SKILLS) excluded.add(name);
@@ -102,7 +103,7 @@ export function preApplyMagicAffixMutations(
   prefix: { headers: string[]; rows: string[][] },
   suffix: { headers: string[]; rows: string[][] },
 ): void {
-  const ids = WEEKLY_MUTATIONS[(weekNumber - 1) % WEEKLY_MUTATIONS.length];
+  const ids = getMutationIds(weekNumber);
   for (const id of ids) {
     if (MUTATIONS[id]?.id === 'heavy-burden') {
       injectArmorProcs(prefix.headers, prefix.rows);
@@ -117,13 +118,13 @@ export function preApplyMagicAffixMutations(
 
 /** True if the given mutation id is one of the active mutations for this week number. */
 export function isMutationActiveForWeek(weekNumber: number, mutationId: string): boolean {
-  const ids = WEEKLY_MUTATIONS[(weekNumber - 1) % WEEKLY_MUTATIONS.length];
+  const ids = getMutationIds(weekNumber);
   return ids.some((id) => MUTATIONS[id]?.id === mutationId);
 }
 
 /** Apply the active mutations for the given week number to the provided context. */
 export function applyWeeklyMutations(weekNumber: number, ctx: MutationContext): void {
-  const ids = WEEKLY_MUTATIONS[(weekNumber - 1) % WEEKLY_MUTATIONS.length];
+  const ids = getMutationIds(weekNumber);
   assertNoConflictingMutations(ids);
   for (const id of ids) {
     const fn = APPLY_FNS[id];

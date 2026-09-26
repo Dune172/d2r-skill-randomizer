@@ -35,6 +35,9 @@ import { buildGambleTable } from '@/lib/randomizer/mutations/house-always-wins';
 import { MYSTERY_ICON, applyMysteryStrings, hideSkillDetailLines } from '@/lib/randomizer/mutations/mystery-box';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
 import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
+import { applyForgottenArts, configureForgottenArtsShop, addSpellSynergyTooltips, AKARA_SHOP_WEIGHTS, SPELL_SHOP_ACTS, buildForgottenArtsItemGraphics, BOOK_SPELLS, FORGOTTEN_ARTS_PROGRESSION, FORGOTTEN_ARTS_EQUIPMENT, SPELL_EXPLORATION_REWARDS, EARLY_BOOK_SPELLS } from '@/lib/randomizer/mutations/forgotten-arts';
+import { buildGlobalSkillIcons } from '@/lib/sprites/global-skill-icons';
+import { buildForgottenArtsItemAssets } from '@/lib/sprites/forgotten-arts-items';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 // Concurrent requests for the same mod share one build and one rate-limit slot.
@@ -64,13 +67,22 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const seedInput = body.seed;
+    const weeklyEnabled = body.weeklyChallenge?.enabled === true;
+    const weeklyOverride: number | undefined =
+      Number.isInteger(body.weeklyChallenge?.weekOverride)
+        ? Math.max(1, Math.trunc(body.weeklyChallenge.weekOverride))
+        : undefined;
+    // Resolve once before caching/queueing so a rollover cannot mix rules.
+    const weekNumber = weeklyEnabled ? (weeklyOverride ?? getCurrentWeekNumber()) : 0;
+    const forgottenArts = weeklyEnabled
+      ? isMutationActiveForWeek(weekNumber, 'forgotten-arts') : false; // challenge-only
     const enablePrereqs = body.enablePrereqs !== false; // default true
     const playersEnabled = body.playersEnabled === true;
     const playersCount = Math.min(8, Math.max(1, Number(body.playersCount) || 1));
     const playersActs: number[] = Array.isArray(body.playersActs)
       ? (body.playersActs as unknown[]).map(Number).filter(n => n >= 1 && n <= 5)
       : [1, 2, 3, 4, 5];
-    const startingTeleportStaff = body.startingItems?.teleportStaff === true;
+    const startingTeleportStaff = !forgottenArts && body.startingItems?.teleportStaff === true;
     const teleportStaffLevel = startingTeleportStaff
       ? (Number(body.startingItems?.teleportStaffLevel) || 1)
       : 0;
@@ -86,19 +98,12 @@ export async function POST(request: NextRequest) {
     const xpDifficulties: number[] = Array.isArray(body.xpDifficulties)
       ? (body.xpDifficulties as unknown[]).map(Number).filter(n => n >= 1 && n <= 3)
       : [1, 2, 3];
-    const weeklyEnabled = body.weeklyChallenge?.enabled === true;
     // Weekly challenges are always full randomization — never Race Mode. Force it
     // off server-side so no caller (challenge page, warmup, or a hand-built link)
     // can produce a race-mode challenge regardless of the raceMode they pass.
     // Must stay in lockstep with the identical guard in /api/download so the cache
     // keys agree. Outside weekly, raceMode defaults true (matches Season preset).
-    const raceMode = weeklyEnabled ? false : (body.raceMode !== false);
-    const weeklyOverride: number | undefined =
-      Number.isInteger(body.weeklyChallenge?.weekOverride)
-        ? Math.max(1, Math.trunc(body.weeklyChallenge.weekOverride))
-        : undefined;
-    // Resolve once before caching/queueing so a rollover cannot mix rules.
-    const weekNumber = weeklyEnabled ? (weeklyOverride ?? getCurrentWeekNumber()) : 0;
+    const raceMode = weeklyEnabled || forgottenArts ? false : (body.raceMode !== false);
     const enemyShuffle = weeklyEnabled ? challengeRandomizesMonsters(weekNumber) : body.enemyShuffle === true;
     if (!seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -112,7 +117,7 @@ export async function POST(request: NextRequest) {
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
     const effectiveXpDifficulties = xpMultiplier > 1 ? xpDifficulties : [1, 2, 3];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle);
+    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts);
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
@@ -629,7 +634,7 @@ export async function POST(request: NextRequest) {
       if (row) row[hirIconCelCol] = String(cel);
     }
 
-    const skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
+    let skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
 
     // Step 11b: monstats — always included to remap skill IDs after row reordering,
     // plus optional players scaling and/or xp boost.
@@ -746,16 +751,139 @@ export async function POST(request: NextRequest) {
       tcTxt = serializeTxtFile(tcSrc.headers, tcSrc.rows);
     }
 
+    let inventorySpellsJson: string | undefined;
+    let globalSkillIcons: Map<string, Buffer> | undefined;
+    let inventorySpellAssets: Map<string, Buffer> | undefined;
+    let cubemainTxt: string | undefined;
+    let objectsTxt: string | undefined;
+    let itemStatCostTxt: string | undefined;
+    let propertiesTxt: string | undefined;
+    let itemGraphicsJson: string | undefined;
+    let uniqueGraphicsJson: string | undefined;
+    if (forgottenArts) {
+      if (!ui) throw new Error('Forgotten Arts requires uniqueitems.txt');
+      const itemtypes = loadTxtFile('itemtypes.txt');
+      const misc = loadTxtFile('misc.txt');
+      const cubemain = loadTxtFile('cubemain.txt');
+      const objects = loadTxtFile('objects.txt');
+      const itemstatcost = loadTxtFile('itemstatcost.txt');
+      const vanillaSkilldesc = loadTxtFile('skilldesc.txt');
+      const vanillaSkills = loadTxtFile('skills.txt');
+      const displayNames = new Map<string, string>();
+      const strings = new Map(loadSkillStrings().map(entry => [entry.Key, entry.enUS]));
+      const nameColumn = vanillaSkilldesc.headers.indexOf('str name');
+      const descColumn = vanillaSkills.headers.indexOf('skilldesc');
+      for (const row of vanillaSkills.rows) {
+        const desc = vanillaSkilldesc.rows.find(d => d[0] === row[descColumn]);
+        displayNames.set(row[0], strings.get(desc?.[nameColumn] ?? '') ?? row[0]);
+      }
+      const globalIcons = await buildGlobalSkillIcons(BOOK_SPELLS.map(skill => {
+        const row = vanillaSkills.rows.find(r => r[0] === skill);
+        const desc = vanillaSkilldesc.rows.find(d => d[0] === row?.[descColumn]);
+        if (!row || !desc) throw new Error(`Missing original icon data for ${skill}`);
+        return {
+          skill,
+          charclass: row[vanillaSkills.headers.indexOf('charclass')],
+          iconCel: Number(desc[vanillaSkilldesc.headers.indexOf('IconCel')]),
+        };
+      }));
+      globalSkillIcons = globalIcons.files;
+      inventorySpellAssets = buildForgottenArtsItemAssets();
+      const books = applyForgottenArts({
+        skills: skillsTxt, skilldesc: skillDescTxt, vanillaSkills, vanillaSkilldesc,
+        charstats, uniqueitems: ui, treasureclass: tcSrc, itemtypes,
+        misc, itemstatcost, cubemain, objects, superuniques: suSrc,
+        equipmentProperties: [magicPrefixTxt, magicSuffixTxt], displayNames, iconCels: globalIcons.iconCels,
+      });
+      // Append after spell uniques so existing saves retain their unique IDs.
+      // Explicit TC drops need no suppression of the original Bane Ash unique.
+      ui.rows = applyTeleportStaffUnique(ui.headers, ui.rows, 18, idMapping, false, true);
+      applyBloodRavenQuestDrop(suSrc.headers, suSrc.rows, tcSrc.headers, tcSrc.rows, 'Corpsefire', true);
+      configureForgottenArtsShop({ misc, uniqueitems: ui, cubemain }, books);
+      const properties = loadTxtFile('properties.txt');
+      const synergies = addSpellSynergyTooltips({ itemstatcost, properties, uniqueitems: ui, cubemain, vanillaSkills, displayNames }, books);
+      propertiesTxt = serializeTxtFile(properties.headers, properties.rows);
+      inventorySpellsJson = JSON.stringify({
+        mutation: 'Forgotten Arts', status: 'experimental', seed,
+        rules: [
+          'Create a new character for v7. Existing spell charms lack the saved requirement offset. All classes start with a Fire Bolt scroll and Horadric Cube.',
+          'Hover over spell items to see which available spells strengthen them. Cube an existing spell item by itself to refresh its description, keeping its spell and bonus.',
+          'Carry scroll charms for +1 or book charms for +3 to a spell. Copies stack. Casting costs mana.',
+          'Equipment can roll +1–2, +2–4 or +4–6 to an individual catalogue spell at affix levels 1–34, 35–59 or 60+. These bonuses stack with charms and also grant the spell while equipped.',
+          'Charged equipment scales with item level: 1–40 gives spell levels 1–10, 41–76 gives 11–19, and 77+ gives level 20. Difficulty is not a strict gate; boss drops and bases can overlap progression bands.',
+          'Charms have no character-level requirement. Stronger spells and books enter later loot tiers.',
+          'HD spell charms use Identify scroll/tome artwork with red accents shifted to purple. Unique titles show once without a charm subtitle. Ordinary portal and identify item artwork is unchanged.',
+          'Cube three matching +1 scrolls into a +3 book, three matching +3 books into a +9 grimoire, or three matching +9 grimoires into a +27 codex. Bought and looted scrolls of the same spell can be mixed. Total levels are preserved.',
+          'Previously purchased invisible shop scrolls can be cubed individually to repair their base code without changing the spell or skill bonus.',
+          'Potion vendors in all five acts roll fresh finite scroll stock on every normal vendor refresh. Normal pools expand by act to all 35 spells in Act V. Nightmare/Hell vendors use the full catalogue above character level 25. Common starter spells cost 7,500 base gold; Charged Bolt and Teeth cost 12,500; later spells scale by native spell tier up to 60,000, with premiums for Static Field, Corpse Explosion, Teleport and Blessed Hammer. Vendor multipliers/quest discounts still apply. Duplicates are possible.',
+          'Found or crafted spell items sell for 1,000 gold per granted skill level before vendor caps: 1,000 / 3,000 / 9,000 / 27,000. Bought scrolls resell for half their spell-specific base value before vendor caps; old retired shop variants retain their previous pricing. Normal uniques remain available alongside spell items.',
+          'Bookcases use regional chest loot. Late-area Chest C pools have a 5% spell chance per pick. Corpsefire and Bone Ash each grant a bonus early scroll on every Normal kill. Griswold grants an early scroll in every difficulty. Corpsefire also drops Astral Wayfarer in every difficulty, preserving his existing loot.',
+          'Normal Act I estimates 13–17 charm-granted levels with roughly one scroll per 90 eligible ordinary kills before equipment bonuses, including the starter, assuming 630–990 ordinary kills, three encounter rewards, one purchased level and one container level. Extra purchases, farming and luck can exceed this range.',
+          'Skill trees and point spending are disabled. Stash/Cube storage should not grant skills.',
+        ],
+        limitations: [
+          '35 spells only; class-specific attacks, channels, forms and pets are excluded.',
+          'Vanilla runeword/set skill grants are not removed because their tables are not bundled.',
+          'Casting, inventory refresh, Cube recipes, vendor stock/prices, bookcase operation and drop balance need in-game testing.',
+          'Purple inventory tint uses native runtime color rules and needs an in-game visual check; ground textures are unchanged and legacy palette colors may differ.',
+        ],
+        books,
+        synergies,
+        progression: FORGOTTEN_ARTS_PROGRESSION,
+        equipment: FORGOTTEN_ARTS_EQUIPMENT,
+        earlySpells: EARLY_BOOK_SPELLS,
+        shop: { eligibleSpells: BOOK_SPELLS, earlyWeights: AKARA_SHOP_WEIGHTS, acts: SPELL_SHOP_ACTS, unlimitedStock: false, selection: 'native weighted unique roll per scroll on every vendor refresh', normalAct1Stock: 3, duplicatesAllowed: true },
+        explorationRewards: SPELL_EXPLORATION_REWARDS,
+        icons: Object.fromEntries(globalIcons.iconCels),
+      }, null, 2);
+      const namesPath = path.join(DATA_DIR, 'local', 'strings', 'item-names.json');
+      const names = JSON.parse(fs.readFileSync(namesPath, 'utf8').replace(/^\uFEFF/, '')) as { id: number; Key: string; [locale: string]: string | number }[];
+      // IDs are global across ALL locale files. Max(item-names)+1 collides
+      // with ui.json and item-modifiers.json and displays "An Evil Force".
+      // Reserved mod range, checked against the extracted 3.3 string catalogue.
+      let nextId = 40000;
+      const locales = ['enUS', 'zhTW', 'deDE', 'esES', 'frFR', 'itIT', 'koKR', 'plPL', 'esMX', 'jaJP', 'ptBR', 'ruRU', 'zhCN'];
+      names.push({ id: 99999, Key: 'Astral Wayfarer', ...Object.fromEntries(locales.map(locale => [locale, 'Astral Wayfarer'])) });
+      for (const book of books) {
+        names.push({ id: nextId++, Key: book.key, ...Object.fromEntries(locales.map(locale => [locale, book.name])) });
+      }
+      for (const book of books.filter(b => b.source === 'drop' && b.bonus === 1)) {
+        const spell = displayNames.get(book.skill) ?? book.skill;
+        for (const [Key, text] of [[`D2RR_FA_Power_${book.skillId}`, spell], [`D2RR_FA_Charges_${book.skillId}`, `of ${spell}`]]) {
+          names.push({ id: nextId++, Key, ...Object.fromEntries(locales.map(locale => [locale, text])) });
+        }
+      }
+      for (const [index, synergy] of synergies.entries()) {
+        names.push({ id: 40400 + index, Key: synergy.key, ...Object.fromEntries(locales.map(locale => [locale, synergy.text])) });
+      }
+      itemNamesJson = '\uFEFF' + JSON.stringify(names, null, 2).replace(/\n/g, '\r\n');
+      const readGraphics = (filename: string) => JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'hd', 'items', filename), 'utf8').replace(/^\uFEFF/, ''));
+      const graphics = buildForgottenArtsItemGraphics(books, readGraphics('items.json'), readGraphics('uniques.json'));
+      itemGraphicsJson = JSON.stringify(graphics.items, null, 2);
+      uniqueGraphicsJson = JSON.stringify(graphics.uniques, null, 2);
+      cubemainTxt = serializeTxtFile(cubemain.headers, cubemain.rows);
+      objectsTxt = serializeTxtFile(objects.headers, objects.rows);
+      itemStatCostTxt = serializeTxtFile(itemstatcost.headers, itemstatcost.rows);
+      miscTxt = serializeTxtFile(misc.headers, misc.rows);
+      superuniquesTxt = serializeTxtFile(suSrc.headers, suSrc.rows);
+      itemtypesTxt = serializeTxtFile(itemtypes.headers, itemtypes.rows);
+      skillsTxtContent = serializeTxtFile(skillsTxt.headers, skillsTxt.rows);
+      skillDescTxtContent = serializeTxtFile(skillDescTxt.headers, skillDescTxt.rows);
+      charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
+      uniqueitemsTxt = serializeTxtFile(ui.headers, ui.rows);
+      tcTxt = serializeTxtFile(tcSrc.headers, tcSrc.rows);
+      magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, magicPrefixTxt.rows);
+      magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, magicSuffixTxt.rows);
+    }
+
     // Step 12: Build zip
     const modName = `seed${seed}`;
     // Race mode and the weekly challenge get isolated save folders so competitive
     // characters don't mix with casual ones. Race: seed + race class (e.g. seed123pal).
     // Weekly: the mod name — unique per challenge since the weekly seed is week-derived.
-    const savepath = raceMode
+    const savepath = weeklyEnabled ? modName : forgottenArts ? `${modName}_forgotten_arts_v7` : raceMode
       ? `${modName}${pickRaceClassCode(seed)}`
-      : weeklyEnabled
-        ? modName
-        : 'D2RRandomizer';
+      : 'D2RRandomizer';
     const formatUiJson = (obj: unknown) =>
       '\uFEFF' + JSON.stringify(obj, null, 4).replace(/\n/g, '\r\n');
     const dataVersionBuild = fs.readFileSync(path.join(DATA_DIR, 'dataversionbuild.txt'), 'utf-8').trim();
@@ -782,6 +910,15 @@ export async function POST(request: NextRequest) {
       levelsTxt,
       monsterGraphicsJson: enemies ? JSON.stringify(enemies.graphics, null, 2) : undefined,
       enemyManifestJson: enemies ? JSON.stringify(enemies.manifest, null, 2) : undefined,
+      inventorySpellsJson,
+      globalSkillIcons,
+      inventorySpellAssets,
+      cubemainTxt,
+      objectsTxt,
+      itemStatCostTxt,
+      propertiesTxt,
+      itemGraphicsJson,
+      uniqueGraphicsJson,
       missilesTxt: enemies?.manifest.projectiles.length
         ? serializeTxtFile(enemies.missiles.headers, enemies.missiles.rows) : undefined,
       hireableSprite,

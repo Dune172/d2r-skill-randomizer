@@ -5,11 +5,8 @@ import { TC_COL, monsterAct } from '../players-scaler';
  * Molasses — the world crawls, but every blow lands like a truck.
  *
  * SPEED
- * Velocity/Run are small integers (1–30, clustered 3–10), not rates, so halving
- * has coarse resolution: the 56 monsters at Velocity ≤2 (zombies and kin) floor
- * at 1 and barely change. That is fine — they already crawl. The mutation's felt
- * effect comes from the 5–15 band, where threatening monsters live and where
- * halving lands cleanly (12→6, 15→8).
+ * Velocity/Run are small integers, so the 30% reduction rounds to the nearest
+ * whole speed value (10→7, 15→11), with a minimum of 1 for moving monsters.
  *
  * The player is deliberately NOT slowed. Slowing both sides only adds travel
  * time to a mode that is ranked on completion time.
@@ -24,7 +21,7 @@ import { TC_COL, monsterAct } from '../players-scaler';
  * most. That is the mutation's identity, not a bug to balance away.
  */
 
-const SPEED_MULT = 0.5;
+const SPEED_MULT = 0.7;
 const SPEED_FLOOR = 1;   // Velocity 0 would freeze a monster in place entirely
 const DMG_MULT = 2;
 

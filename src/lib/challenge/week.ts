@@ -1,7 +1,8 @@
 /**
  * Mutation challenge calendar — anchored to midnight in the America/Los_Angeles
- * timezone. Each 14-day challenge seed flips at 00:00 LA local time every other
- * Monday, so the boundary moves with DST instead of drifting an hour twice a year.
+ * timezone. From October 2026 onward, challenges start on the first of each
+ * month. Earlier challenge IDs, starts and seeds remain stable for the archive.
+ * Challenge 15 ends September 30 to meet the new monthly boundary.
  *
  * Imported by both client and server code (browser, Node, Edge runtime), so
  * it relies only on Intl.DateTimeFormat which is available in all targets.
@@ -16,6 +17,8 @@ const BASE_MONTH_ZERO = 2; // March (0-based)
 const BASE_DAY = 9;
 
 const APPROX_WEEK_MS = 14 * 24 * 60 * 60 * 1000;
+export const FIRST_MONTHLY_CHALLENGE = 16;
+export const OCTOBER_2026_CHALLENGE = FIRST_MONTHLY_CHALLENGE;
 
 /**
  * Returns the LA timezone's UTC offset, in milliseconds, for the given moment.
@@ -49,21 +52,31 @@ function laOffsetMs(at: Date): number {
  * Calendar fields are interpreted as the LA wall clock; over- or underflow
  * (e.g., day = 35) is normalized through Date.UTC.
  */
-function laMidnight(year: number, monthZeroBased: number, day: number): Date {
-  // Use noon UTC on the target day as a reference moment to look up the LA offset
-  // (noon UTC is always within the same LA calendar date as midnight LA).
-  const reference = new Date(Date.UTC(year, monthZeroBased, day, 12, 0, 0));
-  const offset = laOffsetMs(reference);
-  // wantedUTC = laMidnight (as if UTC) - offset
-  return new Date(Date.UTC(year, monthZeroBased, day, 0, 0, 0) - offset);
+function laMidnight(year: number, monthZeroBased: number, day: number, hour = 0): Date {
+  const wallClock = Date.UTC(year, monthZeroBased, day, hour);
+  let instant = wallClock;
+  // Resolve the offset at the target local hour, including DST transition days.
+  for (let i = 0; i < 3; i++) instant = wallClock - laOffsetMs(new Date(instant));
+  return new Date(instant);
 }
 
-/** Returns the Date at the start of the given challenge period (00:00 LA on its Monday). */
+/** Returns the start of the challenge period at 00:00 Pacific. */
 export function getWeekStart(weekNumber: number): Date {
+  if (weekNumber >= FIRST_MONTHLY_CHALLENGE) {
+    return laMidnight(2026, 9 + weekNumber - FIRST_MONTHLY_CHALLENGE, 1);
+  }
   return laMidnight(BASE_YEAR, BASE_MONTH_ZERO, BASE_DAY + (weekNumber - 1) * 14);
 }
 
-/** Returns the Date 1ms before the next week starts (i.e., 23:59:59.999 LA on Sunday). */
+/** Announcement time follows the boundary date at 09:00 Pacific wall time. */
+export function getChallengeAnnouncementTime(challenge: number): Date {
+  const date = getWeekStart(challenge);
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(date);
+  const part = (type: string) => Number(parts.find(p => p.type === type)?.value);
+  return laMidnight(part('year'), part('month') - 1, part('day'), 9);
+}
+
+/** Returns the last millisecond before the next challenge starts. */
 export function getWeekEnd(weekNumber: number): Date {
   return new Date(getWeekStart(weekNumber + 1).getTime() - 1);
 }
@@ -75,6 +88,12 @@ export function getWeekSeed(weekNumber: number): number {
 
 /** Returns the current week number (1-based), clamped at 1. */
 export function getCurrentWeekNumber(now: Date = new Date()): number {
+  if (now >= getWeekStart(FIRST_MONTHLY_CHALLENGE)) {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric', month: 'numeric' }).formatToParts(now);
+    const year = Number(parts.find(p => p.type === 'year')?.value);
+    const month = Number(parts.find(p => p.type === 'month')?.value);
+    return FIRST_MONTHLY_CHALLENGE + (year - 2026) * 12 + month - 10;
+  }
   // Estimate by simple division, then walk to correct any DST-driven off-by-one.
   const baseMs = getWeekStart(1).getTime();
   let week = Math.max(1, Math.floor((now.getTime() - baseMs) / APPROX_WEEK_MS) + 1);
