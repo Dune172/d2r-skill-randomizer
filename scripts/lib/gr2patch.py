@@ -224,3 +224,74 @@ def patch(template, obj, out):
 
 if __name__ == '__main__':
     print(patch(sys.argv[1], sys.argv[2], sys.argv[3]))
+
+
+def hide_bones(src, out, bone_patterns, whole_meshes):
+    """Hide the parts of a skinned model driven by some bones, in place.
+
+    Meshes named in `whole_meshes` (prefix match) lose all their triangles;
+    every other mesh loses the triangles touching a vertex whose dominant
+    bone matches `bone_patterns`. Only index lists and counts change, so
+    skinning, skeleton, materials and the remaining geometry stay vanilla.
+    Returns {mesh name: (triangles before, after)}.
+    """
+    import re
+    g = Patcher(bytearray(open(src, 'rb').read()))
+    d = g.d
+    bone_re = re.compile('|'.join(bone_patterns))
+    typ, df, _, addr = g.field(g.root_type, g.root, 'Meshes')
+    n_meshes = struct.unpack_from('<I', d, addr)[0]
+    report = {}
+    for mi in range(n_meshes):
+        mdef, mesh = g.element(typ, df, addr, mi)
+        _, _, _, na = g.field(mdef, mesh, 'Name')
+        name = g.cstr(g.p(na))
+        t, tdf, _, a = g.field(mdef, mesh, 'PrimaryTopology')
+        tdef, topo = g.ref(t, tdf, a)
+        t, gdf, _, ga = g.field(tdef, topo, 'Groups')
+        gdef, grp = g.element(t, gdf, ga, 0)
+        _, _, _, tri_count = g.field(gdef, grp, 'TriCount')
+        _, _, _, ia = g.field(tdef, topo, 'Indices16')
+        icount, idata = struct.unpack_from('<I', d, ia)[0], g.p(ia + 4)
+        before = icount // 3
+        if struct.unpack_from('<I', d, ga)[0] != 1 or icount == 0:
+            continue
+        if any(name.startswith(w) for w in whole_meshes):
+            keep = []
+        else:
+            # Dominant bone per vertex -> hidden?
+            t, vdf, _, a = g.field(mdef, mesh, 'PrimaryVertexData')
+            vddef, vd = g.ref(t, vdf, a)
+            _, _, _, va = g.field(vddef, vd, 'Vertices')
+            vtype, vcount, vdata = g.p(va), struct.unpack_from('<I', d, va + 8)[0], g.p(va + 12)
+            stride = g.size(vtype)
+            offs = {}
+            o = 0
+            for mt, mn, mdf2, arr in g.members(vtype):
+                offs[mn] = o
+                o += {12: 1, 11: 1, 13: 1, 14: 1, 15: 2, 16: 2, 17: 2, 18: 2, 10: 4, 21: 2}[mt] * max(1, arr)
+            if 'BoneWeights' not in offs:
+                continue
+            t, bdf, _, ba = g.field(mdef, mesh, 'BoneBindings')
+            nb = struct.unpack_from('<I', d, ba)[0]
+            bone_names = []
+            for bi in range(nb):
+                bdef, bb = g.element(t, bdf, ba, bi)
+                _, _, _, bna = g.field(bdef, bb, 'BoneName')
+                bone_names.append(g.cstr(g.p(bna)))
+            hidden = []
+            for vi in range(vcount):
+                base = vdata + vi * stride
+                w = d[base + offs['BoneWeights']: base + offs['BoneWeights'] + 4]
+                ix = d[base + offs['BoneIndices']: base + offs['BoneIndices'] + 4]
+                k = max(range(4), key=lambda j: w[j])
+                hidden.append(bool(bone_re.search(bone_names[ix[k]])))
+            tris = [struct.unpack_from('<3H', d, idata + 6 * t_) for t_ in range(before)]
+            keep = [tr for tr in tris if not any(hidden[v] for v in tr)]
+        for i, tr in enumerate(keep):
+            struct.pack_into('<3H', d, idata + 6 * i, *tr)
+        struct.pack_into('<I', d, ia, len(keep) * 3)
+        struct.pack_into('<I', d, tri_count, len(keep))
+        report[name] = (before, len(keep))
+    open(out, 'wb').write(bytes(d))
+    return report

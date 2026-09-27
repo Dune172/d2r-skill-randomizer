@@ -7,6 +7,10 @@ visual and HD-only:
 - pumpkins, jack-o'-lanterns (candle flame + light) and corn stalks in all five
   towns, placed beside existing clutter near NPCs, the stash and camp props;
   no collision
+- the Pumpkin King: the Cow King's head and crown hidden (index-only edit of
+  `torso_lod0..3`, `scripts/build-autumn-cowking.mjs`) and the jack-o'-lantern
+  attached to `neck_bind_jnt` in `cowking.json` via `UnitAttachmentComponent`
+  (the mechanism weapons use), centred over the torso at 3.7×
 - Act 1 outdoors (town, wilderness, Tristram): recoloured maple, hawthorn and
   witch hazel leaves, recoloured fallen-leaf decals plus leaf clutter on grass,
   straw-tinted grass, a warm colour-grading LUT, warmer key light and fog,
@@ -45,6 +49,7 @@ Needs a CASC extraction (`scripts/extract-casc.ps1`, default
 ```
 node scripts/build-autumn-assets.mjs --d2rpp <d2rpp.exe>          # pumpkin/jack models + textures -> data/autumn/assets
 node scripts/build-autumn-foliage.mjs                             # leaf recolours -> data/autumn/foliage (gitignored)
+node scripts/build-autumn-cowking.mjs --d2rpp <d2rpp.exe>         # headless Cow King -> data/autumn/cowking
 python scripts/extract-town-anchors.py                            # NPC/stash spots -> data/autumn/town-anchors.json
 python scripts/lib/model_bounds.py <d2rpp.exe> <cache.json> <town presets...>
 node scripts/build-autumn-town-props.mjs --bounds <cache.json>    # -> data/autumn/town-props.json
@@ -60,6 +65,9 @@ node scripts/verify-autumn.mjs --src D:/D2RModding/data/data
   vanilla single-mesh prop (sackpile01) in place. Quantise positions against the
   **template's** VertexScale: rewriting VertexScale has no effect in game
   (models rendered about 6.5 times too big). Stored UV V runs top-down.
+- **Skinned models** can hide parts by bone without touching skinning
+  (`gr2patch.hide_bones`). They can't move geometry above the model's
+  quantisation range, which is why the crown was dropped rather than lifted.
 - **New model paths** are untested for loading; the pumpkin and jack-o'-lantern use
   the unused vanilla test-model slots `hd/bvt/models/{blend,glass}_sphere`.
 - **Texture overrides must keep vanilla width, height and mip count**. 512²

@@ -19,6 +19,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Every mod generated in October and November, every year, gets an autumn makeover. It’s purely visual and changes nothing about gameplay, and it’s HD only; the classic graphics mode looks the same as always',
       'Pumpkins and glowing jack-o’-lanterns in all five towns: around the Rogue Encampment bonfire, by Akara, Gheed, Charsi and the stash, and near the vendors of Lut Gholein, Kurast, the Pandemonium Fortress and Harrogath',
       'Act I outdoors turns to fall: red and orange maples, red hawthorn and golden witch hazel, fallen leaves on the grass, trees swaying in a stronger wind, and warmer, golden light',
+      'The Cow King becomes the Pumpkin King for the season, with a big glowing jack-o’-lantern where his head used to be',
       'The decorations have no collision, so they never block your path',
       'Monster randomization is now much more varied. Before, each act drew from nearly the same set of monsters every seed, just shuffled into different areas. Now every seed picks its own lineup for each act, so you’ll meet different enemies from one run to the next',
       'Challenge 15 keeps its current monsters until it ends on September 30, so runs in progress aren’t affected. The new variety starts with Challenge 16',

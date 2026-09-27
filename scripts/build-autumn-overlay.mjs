@@ -155,6 +155,51 @@ for (const biome of ['act1_outdoors', 'act1_tristram', 'act1_campfire']) {
   put(LUT.slice(5), buf);
 }
 
+// ── The Pumpkin King ─────────────────────────────────────────────────────────
+// Cow King with its head and crown hidden (build-autumn-cowking.mjs) and a
+// big jack-o'-lantern attached to neck_bind_jnt, the way weapons attach to
+// hands, so it follows every animation. The neck bone has identity bind
+// rotation (at 0, 8.989, -0.098) and the cow faces +Z, as does the jack's
+// carved face, so only offset and scale are needed: centred over the torso's
+// centreline (z 0.25, not out front where the cow's head was), sitting on the
+// shoulders with its base sunk into the neck hump (y 9.25). Playtest: the
+// head-position version looked terrifying.
+{
+  const HEAD_ITEM = 'data/hd/d2rr/autumn/pumpkin_head.json';
+  for (let lod = 0; lod <= 3; lod++)
+    put(`hd/character/enemy/cowking/torso_lod${lod}.model`, fs.readFileSync(`data/autumn/cowking/torso_lod${lod}.model`));
+  const itemEntity = (name, components) => ({ type: 'Entity', name, id: nextId++, components });
+  putJson(HEAD_ITEM.slice(5), {
+    dependencies: { particles: PARTICLES.map(p => ({ path: p })), models: [{ path: M.jack }], skeletons: [], animations: [],
+      textures: [{ path: 'data/hd/d2rr/autumn/jack_o_lantern_alb.texture' }], physics: [], json: [], variantdata: [], objecteffects: [], other: [] },
+    type: 'UnitDefinition', name: 'd2rr_pumpkin_head',
+    entities: [
+      itemEntity('root_entity', [{ type: 'UnitRootComponent', name: 'root_entity_UnitRootComponent', state_machine_filename: '',
+        doNotInheritRotation: false, rotationOverride: { x: 0, y: 0, z: 0, w: 1 }, doNotUseHDHeight: false,
+        hideAllMeshWhenInOpenedMode: false, onCreateEventName: '', animations: [] }]),
+      itemEntity('model_entity', [model('model_entity', M.jack)]),
+      itemEntity('candle_flame', [transform('candle_flame', [0, 0.2, 0]), vfx('candle_flame', PARTICLES[0])]),
+      itemEntity('candle_light', [transform('candle_light', [0, 0.35, 0]), vfx('candle_light', PARTICLES[1])]),
+    ],
+  });
+  const ck = readJson('hd/character/enemy/cowking.json');
+  ck.entities.push({ type: 'Entity', name: 'entity_d2rr_pumpkin_head', id: nextId++, components: [
+    { type: 'UnitPartComponent', name: 'entity_d2rr_pumpkin_head_UnitPart', part: 'torso', variant: 'lit' },
+    { type: 'UnitAttachmentComponent', name: 'entity_d2rr_pumpkin_head_UnitAttachment', filename: HEAD_ITEM,
+      overrideBoneName: 'neck_bind_jnt', orientTowardBoneName: '',
+      attachmentTransform: { type: 'Transform', name: 'entity_d2rr_pumpkin_head_attachmentTransform',
+        translation: { x: 0, y: 0.261, z: 0.348 }, rotation: { x: 0, y: 0, z: 0 }, scale: { x: 3.7, y: 3.7, z: 3.7 } },
+      attachmentStateMachineFilename: '', part: 'torso', variant: 'lit' },
+  ] });
+  ck.dependencies.json.push({ path: HEAD_ITEM });
+  ck.dependencies.models.push({ path: M.jack });
+  ck.dependencies.textures.push({ path: 'data/hd/d2rr/autumn/jack_o_lantern_alb.texture' });
+  ck.dependencies.particles.push(...PARTICLES.map(p => ({ path: p })));
+  putJson('hd/character/enemy/cowking.json', ck);
+  // The vanilla torso models are hashed as sources too (patch detection).
+  for (let lod = 0; lod <= 3; lod++) readVanilla(`hd/character/enemy/cowking/torso_lod${lod}.model`);
+}
+
 // ── Town presets ─────────────────────────────────────────────────────────────
 const PROPS = JSON.parse(fs.readFileSync('data/autumn/town-props.json', 'utf8'));
 for (const [presetRel, props] of Object.entries(PROPS)) {
