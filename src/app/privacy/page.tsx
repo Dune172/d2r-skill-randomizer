@@ -43,7 +43,7 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2>External services and questions</h2>
-          <p>Links to Discord, Patreon, and proof-hosting sites take you to services with their own privacy policies. Payments made through Patreon are processed by Patreon; this website does not collect payment card details.</p>
+          <p>Links to Discord, Patreon, Ko-fi, and proof-hosting sites take you to services with their own privacy policies. Payments made through Patreon or Ko-fi are processed by those services; this website does not collect payment card details.</p>
           <p>For privacy questions or to request removal of a leaderboard entry, contact the project maintainer through the <a href="https://discord.gg/y5r2sTxwS5">D2R Randomizer Discord</a>. Do not post sensitive personal information in public channels.</p>
           <p>We will update this page as the website’s data practices change.</p>
         </section>

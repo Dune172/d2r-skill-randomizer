@@ -31,6 +31,15 @@ export default function SiteFooter() {
             Patreon
           </a>
           <span className="text-[#3a1510] select-none">|</span>
+          <a
+            href="https://ko-fi.com/d2rrando"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-cinzel text-[10px] tracking-[0.3em] uppercase px-3 py-1.5 text-[#a87830] hover:text-[#c8942a] transition-colors"
+          >
+            Ko-fi
+          </a>
+          <span className="text-[#3a1510] select-none">|</span>
           <Link
             href="/changelog"
             className="font-cinzel text-[10px] tracking-[0.3em] uppercase px-3 py-1.5 text-[#a87830] hover:text-[#c8942a] transition-colors"

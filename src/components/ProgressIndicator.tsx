@@ -21,7 +21,7 @@ const BUILDING_MESSAGES = [
   'Have you considered supporting Dune on Patreon?',
   'I wonder how Dune\u2019s Patreon is doing?',
   'If you\u2019re enjoying this, Dune\u2019s Patreon would love a visit.',
-  'Fun fact: randomizers run on Patreon supporters.',
+  'Fun fact: randomizers run on coffee. Ko-fi.com/d2rrando',
   'Help support D2RR on Dune\u2019s Patreon.',
 ];
 

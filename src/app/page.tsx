@@ -121,6 +121,17 @@ const communityCards = [
     ),
   },
   {
+    href: 'https://ko-fi.com/d2rrando',
+    external: true,
+    label: 'Ko-fi',
+    desc: 'Rather tip once than subscribe? Buy the dev a coffee. Every tip helps cover hosting.',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Zm12 1h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5c0 1-1 1.5-1 2.5M12 3.5c0 1-1 1.5-1 2.5" />
+      </svg>
+    ),
+  },
+  {
     href: '/changelog',
     external: false,
     label: 'Patch Notes',
