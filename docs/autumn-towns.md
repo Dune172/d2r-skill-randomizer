@@ -16,10 +16,11 @@ visual and HD-only:
   straw-tinted grass, a warm colour-grading LUT, warmer key light and fog,
   stronger wind (screen-space drifting leaves were tried and dropped: too much)
 
-Runtime: `src/lib/autumn/season.ts` (month gate, recurs every year;
-`D2RR_AUTUMN=1|0` forces it for previews and tests), `src/lib/autumn/overlay.ts`
-(lazy loader + cache tag), `zip-builder` `autumnFiles`. It adds about 11 MB
-(compressed) per download.
+Runtime (shared with [Winter Towns](winter-towns.md)): `src/lib/seasons/season.ts`
+(month gate, recurs every year; `D2RR_SEASON=autumn|winter|off` forces a season
+for previews and tests, and the older `D2RR_AUTUMN=1|0` still works),
+`src/lib/seasons/overlay.ts` (lazy loader + cache tag), `zip-builder`
+`seasonFiles`. It adds about 11 MB (compressed) per download.
 
 ## Staying correct across years and game patches
 
@@ -34,7 +35,8 @@ of every vanilla source file it used. Safeguards:
 - **Cache:** in season the ZIP cache key includes a hash of `overlay.zip`
   (`:autumn-<hash>`, or `:autumn-off` when skipped). Rebuilding or disabling the
   overlay never serves a stale cached mod, and no `PIPELINE_VERSION` bump is needed.
-- **Verify:** `node scripts/verify-autumn.mjs` fails when the stamp is stale. With
+- **Verify:** `node scripts/verify-autumn.mjs` (an alias for
+  `verify-season.mjs --season autumn`) fails when the stamp is stale. With
   `--src <fresh extraction>` it also names every vanilla source that changed.
 
 **Before each October** (or after any D2R patch), re-extract the game files, run
@@ -50,9 +52,9 @@ Needs a CASC extraction (`scripts/extract-casc.ps1`, default
 node scripts/build-autumn-assets.mjs --d2rpp <d2rpp.exe>          # pumpkin/jack models + textures -> data/autumn/assets
 node scripts/build-autumn-foliage.mjs                             # leaf recolours -> data/autumn/foliage (gitignored)
 node scripts/build-autumn-cowking.mjs --d2rpp <d2rpp.exe>         # headless Cow King -> data/autumn/cowking
-python scripts/extract-town-anchors.py                            # NPC/stash spots -> data/autumn/town-anchors.json
+python scripts/extract-town-anchors.py                            # NPC/stash spots -> data/seasons/town-anchors.json
 python scripts/lib/model_bounds.py <d2rpp.exe> <cache.json> <town presets...>
-node scripts/build-autumn-town-props.mjs --bounds <cache.json>    # -> data/autumn/town-props.json
+node scripts/build-season-town-props.mjs --season autumn --bounds <cache.json>  # -> data/autumn/town-props.json
 node scripts/build-autumn-overlay.mjs                             # -> data/autumn/overlay.zip
 node scripts/verify-autumn.mjs --src D:/D2RModding/data/data
 ```

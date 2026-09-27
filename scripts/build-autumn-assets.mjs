@@ -16,10 +16,9 @@
 // winding, OBJ-style UVs here (row = 1 - v; gr2patch stores V top-down).
 import fs from 'fs';
 import path from 'path';
-import { execFileSync } from 'child_process';
 import { createRequire } from 'module';
-import { fileURLToPath } from 'url';
 import { buildBC3Texture } from './lib/d2r-texture.mjs';
+import { convert, DEFAULT_TEMPLATE } from './lib/model-transplant.mjs';
 
 const require = createRequire(import.meta.url);
 const sharp = require('sharp');
@@ -231,35 +230,8 @@ function paint({ carved }) {
   return rgba;
 }
 
-// ── OBJ -> .model (template transplant) ─────────────────────────────────────
-// d2rpp's OBJImport builds a bare mesh D2R won't draw (no model/skeleton/bone
-// binding, no D2R material maps, no VertexScale). Instead the mesh is written
-// into a decompressed vanilla single-mesh prop (scripts/lib/gr2patch.py), its
-// three texture slots are renamed, and d2rpp recompresses it.
-const TEMPLATE = arg('template', 'D:/D2RModding/data/data/hd/env/model/global/prop/act1/caves/act1_caves_encampment/sackpile01_lod0.model');
-const NRM = 'data/hd/env/texture/placeholder_nrm.texture';
-const ORM = 'data/hd/env/texture/placeholder_orm.texture';
-
-function convert(objFile, albedoPath, modelFile, work) {
-  const run = (...a) => {
-    try { return execFileSync(a[0], a.slice(1), { cwd: work, stdio: 'pipe' }).toString(); }
-    catch (e) { throw new Error(`${path.basename(a[0])} ${a[1]} failed: ${e.stdout}${e.stderr}`); }
-  };
-  const lib = path.join(path.dirname(fileURLToPath(import.meta.url)), 'lib');
-  run(D2RPP, 'Decompress', TEMPLATE, '-output', 'template.gr2');
-  run('python', path.join(lib, 'gr2patch.py'), 'template.gr2', objFile, 'patched.gr2');
-  // Texture slots by suffix; the vanilla order varies between models.
-  const names = run('python', path.join(lib, 'gr2dump.py'), 'template.gr2', '3')
-    .split(/\r?\n/).filter(l => /^ {6}FromFileName: '/.test(l)).map(l => l.split("'")[1]);
-  let cur = 'patched.gr2';
-  names.forEach((name, i) => {
-    const target = /_alb\.texture$/i.test(name) ? albedoPath : /_nrm\.texture$/i.test(name) ? NRM : ORM;
-    const next = `renamed${i}.gr2`;
-    run(D2RPP, 'RenameElement', cur, '-rename', `textures[${i}]`, '-newname', target, '-output', next);
-    cur = next;
-  });
-  run(D2RPP, 'Compress', cur, '-output', modelFile);
-}
+// ── OBJ -> .model (template transplant, scripts/lib/model-transplant.mjs) ────
+const TEMPLATE = arg('template', DEFAULT_TEMPLATE);
 
 async function main() {
   fs.mkdirSync(OUT, { recursive: true });
@@ -274,7 +246,7 @@ async function main() {
       const rgba = paint({ carved });
       await sharp(rgba, { raw: { width: TEX, height: TEX, channels: 4 } }).png().toFile(path.join(OUT, `${kind}_alb.png`));
       fs.writeFileSync(path.join(OUT, `${kind}_alb.texture`), buildBC3Texture(rgba, TEX, TEX));
-      if (D2RPP) convert(objName, TEXTURE_PATHS[kind], path.join(OUT, `${kind}_lod0.model`), work);
+      if (D2RPP) convert({ d2rpp: D2RPP, template: TEMPLATE, objFile: objName, albedoPath: TEXTURE_PATHS[kind], modelFile: path.join(OUT, `${kind}_lod0.model`), work });
       console.log(`${kind}: ${mesh.verts} verts, ${mesh.tris} tris${D2RPP ? ', model built' : ' (no --d2rpp: model skipped)'}`);
     }
   } finally {
