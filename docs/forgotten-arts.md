@@ -11,7 +11,7 @@ and Entropy mutations. The standard generator does not offer it.
   grant +3. These are reusable oskills, not consumed or charged casts. Mana still
   pays for casting. Multiple copies are intended to add their bonuses together.
 - Equipment can roll a specific catalogue spell: +1–2 at affix levels 1–34,
-  +2–4 at 35–59, and +4–6 at 60+. All 48 spells have prefixes on magic/rare
+  +2–4 at 35–59, and +4–6 at 60+. All 42 spells have prefixes on magic/rare
   weapons, armor, rings and amulets. Later spells first enter at their original
   spell tier. These are oskills: they add to carried copies and also grant the
   spell while equipped, even without a matching charm. Gear retains its normal
@@ -33,8 +33,9 @@ and Entropy mutations. The standard generator does not offer it.
 - Skill trees are hidden, leveling awards no skill points, and point spending is
   blocked, including points awarded by quests. Quest reward notifications may
   still appear. Character stat progression is unchanged.
-- The catalogue contains 48 spells, each with a scroll and book variant
-  (35 originally; v24 removes Bone Armor and adds 14 summons and masteries).
+- The catalogue contains 42 spells, each with a scroll and book variant
+  (35 originally; v24 removes Bone Armor, Telekinesis, Dim Vision, Terror,
+  Confuse, Attract and Weaken and adds 14 summons and masteries).
   It covers elemental attacks, bone spells, curses and utility spells. It does
   not expose every D2 class skill; class-specific attacks, traps, shadows, forms and
   channeled skills are excluded from this first implementation.
@@ -129,7 +130,7 @@ refreshes. Normal act progression expands the eligible pool:
 | II | Lysander, Drognan | 18 spells, through native tier 12 |
 | III | Alkor, Ormus | 26 spells, through native tier 18 |
 | IV | Jamella | 30 spells, through native tier 24 |
-| V | Malah | All 48 spells |
+| V | Malah | All 42 spells |
 
 Nightmare/Hell shops use the full pool above character level 25. Stock has
 three rolls below vendor item level 25 and three to five above that threshold.
@@ -422,7 +423,7 @@ fs5 shop variant. Fourteen skills join the catalogue at their native tiers:
 - Excluded: Assassin traps and sentries, Shadow Warrior/Master (which copy the
   owner's Assassin skills), Bone Wall/Prison, Druid/Amazon summons and Bind Demon.
 - Item names grew past the old string block and would have hit the tooltip
-  strings at 40400. Names now fill 40000–40999 (449 are used) and tooltip strings start at 41000. The extracted
+  strings at 40400. Names now fill 40000–40999 and tooltip strings start at 41000. The extracted
   catalogue has no IDs between 28102 and 251779.
 - Unique item indices shift with the catalogue. **Test characters created
   before v24 must be recreated**; their spell items would change identity.
@@ -430,3 +431,18 @@ fs5 shop variant. Fourteen skills join the catalogue at their native tiers:
 Needs in-game verification: passive oskills applying from carried charms,
 summoning by oskill for every class (corpse targeting, Iron Golem's item
 target), Warlock demons for non-Warlocks, and the Demonic Mastery demon cap.
+
+### Icon sheet limit (42 spells)
+
+Every catalogue spell appends two frames (normal and pressed) to the one
+shared HD skill icon sheet, `hd/global/ui/spells/submenu/skillicon.sprite`.
+Classless skills can only use that sheet: `_profilehd.json`'s
+`SkillIconFilenames` is indexed by class, and the global sheet is its last entry.
+Frames are 132×130 and the art fills the whole cell, so there is no border to crop.
+D2R cannot load a sprite wider than 16384px (D3D12's Texture2D limit; the
+widest shipped sprite is 16100px). A 48-spell build produced a 17952px sheet
+that failed to load and broke the whole skill bar in game. The 40 original
+frames are kept (monster skills reference cels up to 38), so the sheet holds
+(124 − 40) / 2 = **42 spells**. Telekinesis, Dim Vision, Terror, Confuse,
+Attract and Weaken were removed to make room for the summons.
+`buildGlobalSkillIcons` now throws if the HD sheet would exceed 16384px.

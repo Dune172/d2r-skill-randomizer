@@ -40,7 +40,8 @@ const get = (t, row, key) => row[t.headers.indexOf(key)];
 assert.equal(JSON.parse(text('modinfo.json')).savepath, 'seed21392');
 const spells = JSON.parse(text('forgotten-arts.json'));
 const spellCount = spells.shop.eligibleSpells.length;
-assert.equal(spellCount, 48);
+assert.equal(spellCount, 42);
+for (const removed of ['Telekinesis', 'Dim Vision', 'Terror', 'Confuse', 'Attract', 'Weaken']) assert.ok(!spells.shop.eligibleSpells.includes(removed));
 assert.ok(!spells.shop.eligibleSpells.includes('Bone Armor'));
 const regionalStock = spells.books.filter(b => b.source === 'shop' && b.shopAct > 1).length;
 // Drops and crafts, four fixed Akara scrolls, two fs4/fs5 variants, six fs6 rolls, regional stock.

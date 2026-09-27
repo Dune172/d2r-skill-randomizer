@@ -29,10 +29,17 @@ function spriteLayout(buffer: Buffer) {
   return { count, width, height, totalWidth };
 }
 
+// D3D12's Texture2D limit. No shipped D2R sprite exceeds it (widest: 16100px);
+// a wider skill sheet fails to load and takes the whole skill bar with it.
+export const MAX_SPRITE_WIDTH = 16384;
+
 function appendSprite(base: Buffer, additions: Buffer[]): Buffer {
   const { count, width, height, totalWidth } = spriteLayout(base);
   const newCount = count + additions.length;
   const newWidth = newCount * width;
+  if (newWidth > MAX_SPRITE_WIDTH) {
+    throw new Error(`Global skill icon sheet would be ${newWidth}px wide (${newCount} frames); D2R cannot load sprites wider than ${MAX_SPRITE_WIDTH}px`);
+  }
   const out = Buffer.alloc(40 + newWidth * height * 4);
   base.copy(out, 0, 0, 40);
   out.writeUInt32LE(newWidth, 8);
