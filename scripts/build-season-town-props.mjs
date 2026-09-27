@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// Places the Autumn Towns decorations (offline) and writes data/autumn/town-props.json.
+// Places the seasonal town decorations (offline) and writes
+// data/<season>/town-props.json.
 //
 //   python scripts/extract-town-anchors.py                 (NPC/stash spots)
 //   python scripts/lib/model_bounds.py <d2rpp> <cache> <presets...>
-//   node scripts/build-autumn-town-props.mjs --bounds <cache> [--src D:/D2RModding/data/data]
+//   node scripts/build-season-town-props.mjs --season autumn|winter --bounds <cache> [--src D:/D2RModding/data/data]
 //
 // Each group of props is anchored on an NPC spawn spot, a town object (the
 // stash) or a camp prefab, and auto-placed beside nearby ground clutter
@@ -17,15 +18,23 @@ import path from 'path';
 const args = process.argv.slice(2);
 const arg = (name, fallback) => { const i = args.indexOf(`--${name}`); return i === -1 ? fallback : args[i + 1]; };
 const SRC = arg('src', 'D:/D2RModding/data/data');
+const SEASON = arg('season', 'autumn');
 const BOUNDS = JSON.parse(fs.readFileSync(arg('bounds'), 'utf8'));
-const ANCHORS = JSON.parse(fs.readFileSync('data/autumn/town-anchors.json', 'utf8'));
-const OUT = 'data/autumn/town-props.json';
+const ANCHORS = JSON.parse(fs.readFileSync('data/seasons/town-anchors.json', 'utf8'));
+const OUT = `data/${SEASON}/town-props.json`;
 const readJson = rel => JSON.parse(fs.readFileSync(`${SRC}/${rel}`, 'utf8'));
 
 // Groups per town: [anchor, [kind, scale]...]; anchor = 'npc:<name>',
-// 'obj:<name>' or 'prefab:<file>'. Pumpkin/jack model ~0.83 wide x 0.54 tall at scale 1.
+// 'obj:<name>' or 'prefab:<file>'.
 const S = 1.2, M = 1.5, L = 1.9; // small / medium / large
-const GROUPS = {
+const SEASONS = {};
+// Pumpkin/jack model ~0.83 wide x 0.54 tall at scale 1.
+SEASONS.autumn = {
+  radius: (kind, s) => (kind.startsWith('corn') ? 0.6 : 0.45 * s),
+  // Jack-o'-lanterns face the camera (+45° from yaw 0, which faces screen
+  // down-left), with a little variety; everything else any way.
+  faces: kind => kind === 'jack',
+  groups: {
   1: [
     ['prefab:pf_town_campfire01', [['jack', 2.0], ['jack', 1.8], ['pumpkin', 2.4], ['corn', 1], ['cornMed', 1]]],
     ['npc:akara', [['pumpkin', S], ['pumpkin', 1.4], ['pumpkin', 1.0], ['jack', 1.3]]],
@@ -65,13 +74,63 @@ const GROUPS = {
     ['npc:nihlathak', [['jack', 1.4]]],
     ['obj:stash', [['jack', M]]],
   ],
+  },
 };
+// Snowman ~1.0 wide x 2.0 tall at scale 1 (a snow pile underneath is part of
+// the prop), gift pile ~1.25 x 0.85, lantern ~0.36 x 0.85 (candle inside).
+SEASONS.winter = {
+  radius: (kind, s) => ({ snowman: 0.5, gifts: 0.6, lantern: 0.2 }[kind] * s),
+  faces: kind => kind === 'snowman',
+  groups: {
+  1: [
+    ['prefab:pf_town_campfire01', [['snowman', 2.0], ['gifts', 1.3], ['lantern', 1.6], ['snowman', 1.7], ['lantern', 1.5]]],
+    ['npc:akara', [['snowman', 1.7], ['gifts', 1.1], ['lantern', 1.4]]],
+    ['npc:gheed', [['gifts', 1.2], ['snowman', 1.8], ['lantern', 1.4]]],
+    ['npc:charsi', [['snowman', 1.8], ['lantern', 1.5]]],
+    ['prefab:pf_town_wagon04', [['snowman', 1.6], ['gifts', 1.0]]],
+    ['prefab:pf_town_tent01', [['gifts', 1.2], ['lantern', 1.4]]],
+    ['obj:stash', [['gifts', 1.0]]],
+  ],
+  2: [ // Lut Gholein
+    ['npc:fara', [['snowman', 1.7], ['lantern', 1.4]]],
+    ['npc:drognan', [['gifts', 1.1], ['lantern', 1.4]]],
+    ['npc:lysander', [['snowman', 1.6], ['gifts', 1.0]]],
+    ['npc:elzix', [['snowman', 1.8], ['gifts', 1.1]]],
+    ['npc:atma', [['lantern', 1.4], ['gifts', 1.0]]],
+    ['npc:greiz', [['snowman', 1.7]]],
+    ['obj:stash', [['gifts', 1.0]]],
+  ],
+  3: [ // Kurast Docks
+    ['npc:ormus', [['lantern', 1.4], ['gifts', 1.0]]],
+    ['npc:alkor', [['snowman', 1.6], ['lantern', 1.3]]],
+    ['npc:asheara', [['snowman', 1.7], ['gifts', 1.1]]],
+    ['npc:natalya', [['gifts', 1.0], ['lantern', 1.3]]],
+    ['npc:meshif2', [['snowman', 1.8], ['gifts', 1.1], ['lantern', 1.4]]],
+    ['obj:stash', [['gifts', 1.0]]],
+  ],
+  4: [ // Pandemonium Fortress: lanterns suit the gloom
+    ['npc:jamella', [['lantern', 1.5], ['gifts', 1.1]]],
+    ['npc:halbu', [['snowman', 1.7], ['lantern', 1.4]]],
+    ['npc:tyrael2', [['lantern', 1.5]]],
+    ['obj:stash', [['gifts', 1.0]]],
+  ],
+  5: [ // Harrogath: already snowy, so snowmen feel at home
+    ['npc:malah', [['snowman', 1.8], ['gifts', 1.1], ['lantern', 1.4]]],
+    ['npc:qual-kehk', [['snowman', 2.0], ['lantern', 1.5]]],
+    ['npc:cain6', [['gifts', 1.1], ['snowman', 1.6]]],
+    ['npc:nihlathak', [['lantern', 1.4]]],
+    ['obj:stash', [['gifts', 1.0]]],
+  ],
+  },
+};
+if (!SEASONS[SEASON]) throw new Error(`unknown season ${SEASON}`);
+const GROUPS = SEASONS[SEASON].groups;
 
 const CLUTTER = /vase|sack|potato|basket|crate|bucket|jug|hay|barrel|pot\d|plank_set|chamber_pot|wood_board|log_pile|pail|jar|urn|box|cask|keg|bag|bottle|pitcher|bowl/i;
 const GROUND = /^terrain$|grass|weed|grunge|poop|pebble|decal|clearing|shrub|mud|dirt|stamp|puddle|rug|mat\d|carpet|leaves/i;
 // Extra clearance from anything that burns.
 const HOT = /fire|brazier|torch|forge|lava|candle|lantern/i;
-const radius = (kind, s) => (kind.startsWith('corn') ? 0.6 : 0.45 * s);
+const radius = SEASONS[SEASON].radius;
 
 function quatYaw(q) { return Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.y * q.y + q.x * q.x)); }
 
@@ -207,9 +266,7 @@ function place(presetRel, anchors) {
       if (!best) { console.warn(`  ${presetRel}: no spot for ${kind} at ${spec}`); continue; }
       const q = { ...best, kind, s };
       group.push(q); placed.push(q);
-      // Jack-o'-lanterns face the camera (+45° from yaw 0, which faces screen
-      // down-left), with a little variety; everything else any way.
-      const yaw = kind === 'jack' ? 45 + ((i * 37) % 30) - 15 : (i * 97) % 360;
+      const yaw = SEASONS[SEASON].faces(kind) ? 45 + ((i * 37) % 30) - 15 : (i * 97) % 360;
       out.push({ kind, x: +q.x.toFixed(2), y: +q.y.toFixed(2), z: +q.z.toFixed(2), yaw, scale: s });
       i++;
     }

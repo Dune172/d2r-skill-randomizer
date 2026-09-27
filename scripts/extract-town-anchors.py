@@ -1,5 +1,5 @@
 """Extract town NPC spawn spots and key objects from the legacy DS1 maps into
-data/autumn/town-anchors.json, in HD preset coordinates (offline tooling).
+data/seasons/town-anchors.json, in HD preset coordinates (offline tooling).
 
     python scripts/extract-town-anchors.py [D2R data root]
 
@@ -14,7 +14,7 @@ import struct
 import sys
 
 ROOT = sys.argv[1] if len(sys.argv) > 1 else 'D:/D2RModding/data/data'
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'autumn', 'town-anchors.json')
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'seasons', 'town-anchors.json')
 
 TOWNS = [  # (act, DS1 relative to global/tiles, HD preset relative to hd/env/preset)
     (1, 'act1/town/towne1', 'act1/town/towne1'),

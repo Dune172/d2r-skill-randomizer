@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.33',
+    date: 'September 2026',
+    tagline: 'Winter comes to Sanctuary',
+    notes: [
+      'Every mod generated in December and January, every year, gets a winter makeover. Like the autumn one, it’s purely visual, changes nothing about gameplay, and is HD only',
+      'Snowmen with carrot noses, top hats and striped scarves, piles of wrapped gifts and candle-lit lanterns in all five towns: around the Rogue Encampment bonfire, by Akara, Gheed, Charsi and the stash, and near the vendors of Lut Gholein, Kurast, the Pandemonium Fortress and Harrogath',
+      'Act I outdoors is snowed in: the grass is buried in snow with dry winter grass poking through, puddles freeze over, footsteps kick up snow, the trees are frosted, and the light turns cool and pale',
+      'The decorations have no collision, so they never block your path',
+    ],
+  },
+  {
     version: 'v0.32',
     date: 'September 2026',
     tagline: 'Autumn comes to Sanctuary',

@@ -38,7 +38,7 @@ import chatPanelHdRaw from '@/lib/randomizer/ui/chatpanelhd.json';
 import { applyForgottenArts, configureForgottenArtsShop, addSpellSynergyTooltips, AKARA_SHOP_WEIGHTS, SPELL_SHOP_ACTS, buildForgottenArtsItemGraphics, BOOK_SPELLS, FORGOTTEN_ARTS_PROGRESSION, FORGOTTEN_ARTS_EQUIPMENT, SPELL_EXPLORATION_REWARDS, EARLY_BOOK_SPELLS } from '@/lib/randomizer/mutations/forgotten-arts';
 import { buildGlobalSkillIcons } from '@/lib/sprites/global-skill-icons';
 import { buildForgottenArtsItemAssets } from '@/lib/sprites/forgotten-arts-items';
-import { autumnFilesForNow } from '@/lib/autumn/overlay';
+import { seasonFilesForNow } from '@/lib/seasons/overlay';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 // Concurrent requests for the same mod share one build and one rate-limit slot.
@@ -940,7 +940,7 @@ export async function POST(request: NextRequest) {
       gambleTxt,
       animDataD2: animAssets.animData,
       charCofs: animAssets.cofs,
-      autumnFiles: autumnFilesForNow(),
+      seasonFiles: seasonFilesForNow(),
     });
 
     // Cache the result (byte-bounded LRU handles eviction internally)

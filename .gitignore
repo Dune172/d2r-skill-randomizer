@@ -46,4 +46,8 @@ counter.json
 # Autumn Towns build intermediates (the shipped overlay is data/autumn/overlay.zip)
 /data/autumn/overlay/
 /data/autumn/foliage/*.texture
+# Winter Towns build intermediates (the shipped overlay is data/winter/overlay.zip)
+/data/winter/overlay/
+/data/winter/foliage/*.texture
+/data/winter/assets/*.obj
 __pycache__/
