@@ -35,7 +35,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Monster randomization is now much more varied. Before, each act drew from nearly the same set of monsters every seed, just shuffled into different areas. Now every seed picks its own lineup for each act, so you’ll meet different enemies from one run to the next',
       'Challenge 15 keeps its current monsters until it ends on September 30, so runs in progress aren’t affected. The new variety starts with Challenge 16',
       'Forgotten Arts synergies now scale with how rare the source spell is. Common Act I spells give 20% of their usual bonus per level, rising to 50% for the rarest. Scrolls, books and gear all feed synergies, so full vanilla rates made stacked Act I scrolls far too strong',
-      'Forgotten Arts now has summons: Raise Skeleton, Skeletal Mage, all four golems, Revive, and the Warlock’s Goatman, Tainted and Defiler. Skeleton Mastery, Golem Mastery, Summon Resist and Demonic Mastery come as scrolls too, so your pets can scale. Raise Skeleton replaces Bone Armor, which has been removed',
+      'Forgotten Arts now has summons: Raise Skeleton, Skeletal Mage, all four golems, Revive, and the Warlock’s Goatman, Tainted and Defiler. Skeleton Mastery, Golem Mastery, Summon Resist and Demonic Mastery come as scrolls too, so your pets can scale. Raise Skeleton replaces Bone Armor. To make room, Bone Armor, Telekinesis, Dim Vision, Terror, Confuse, Attract and Weaken have been removed',
     ],
   },
   {

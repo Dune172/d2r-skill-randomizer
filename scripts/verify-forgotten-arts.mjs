@@ -50,6 +50,8 @@ for (const suffix of ['.sprite', '.lowend.sprite']) {
   const original = fs.readFileSync(`data/sprites/global-skills/skillicon${suffix}`);
   const output = iconAssets.files.get(`hd/global/ui/spells/submenu/skillicon${suffix}`);
   assert.equal(output.readUInt32LE(20), 40 + BOOK_SPELLS.length * 2);
+  // D2R cannot load a wider sprite; a 17952px sheet broke the skill bar in game.
+  assert.ok(output.readUInt32LE(8) <= iconExports.MAX_SPRITE_WIDTH, `${suffix} sheet is ${output.readUInt32LE(8)}px wide`);
   assert.equal(output.readUInt32LE(32), output.length - 40);
   for (let i = 0; i < 40; i++) assert.deepEqual(extract(output, i).pixels, extract(original, i).pixels);
   for (const source of iconSources) for (const state of [0, 1]) {
@@ -79,6 +81,13 @@ for (const source of iconSources) {
   for (const state of [0, 1]) assert.deepEqual(dc6Frame(legacy, iconAssets.iconCels.get(source.skill) + state), dc6Frame(original, source.iconCel + state));
 }
 await assert.rejects(() => iconExports.buildGlobalSkillIcons([{ skill: 'bad', charclass: 'sor', iconCel: 999 }]), /Unsupported/);
+// One spell past the 42-spell capacity must fail generation, not ship a broken skill bar.
+const overCapacity = [...iconSources, ...['Weaken', 'Terror'].map(skill => {
+  const row = originalSkillTable.rows.find(r => r[0] === skill);
+  const desc = originalDescTable.rows.find(r => r[0] === get(originalSkillTable, row, 'skilldesc'));
+  return { skill, charclass: 'nec', iconCel: Number(get(originalDescTable, desc, 'IconCel')) };
+})];
+await assert.rejects(() => iconExports.buildGlobalSkillIcons(overCapacity.slice(0, 43)), /cannot load sprites wider than 16384px/);
 function context() {
   return {
     skills: load('skills'), skilldesc: load('skilldesc'),

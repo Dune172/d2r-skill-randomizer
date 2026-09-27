@@ -3,13 +3,15 @@ type Table = { headers: string[]; rows: string[][] };
 
 // Spells, Necromancer/Warlock summons and their masteries. No class-gated
 // attacks, channels, forms, traps or skill-copying shadows.
+// Capped at 42: every spell adds two frames to the one shared HD icon sheet,
+// and D2R cannot load a sprite wider than 16384px (40 + 42*2 frames * 132px).
 export const BOOK_SPELLS = [
   'Fire Bolt', 'Ice Bolt', 'Charged Bolt', 'Ice Blast', 'Frost Nova',
-  'Static Field', 'Telekinesis', 'Fire Ball', 'Lightning', 'Nova',
+  'Static Field', 'Fire Ball', 'Lightning', 'Nova',
   'Glacial Spike', 'Fire Wall', 'Teleport', 'Chain Lightning', 'Meteor',
   'Blizzard', 'Frozen Orb', 'Teeth', 'Corpse Explosion',
-  'Bone Spear', 'Bone Spirit', 'Poison Nova', 'Amplify Damage', 'Weaken',
-  'Dim Vision', 'Terror', 'Confuse', 'Life Tap', 'Attract', 'Decrepify',
+  'Bone Spear', 'Bone Spirit', 'Poison Nova', 'Amplify Damage',
+  'Life Tap', 'Decrepify',
   'Lower Resist', 'Holy Bolt', 'Blessed Hammer', 'Fist of the Heavens',
   'Raise Skeleton', 'Skeleton Mastery', 'Raise Skeletal Mage', 'Clay Golem',
   'Golem Mastery', 'BloodGolem', 'IronGolem', 'FireGolem', 'Summon Resist', 'Revive',
