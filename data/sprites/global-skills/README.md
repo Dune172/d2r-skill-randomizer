@@ -11,6 +11,7 @@ The runtime generator reads these bundled files; it does not need a game install
 | `soskillicon.dc6` | `data/global/ui/spells/soskillicon.dc6` |
 | `neskillicon.dc6` | `data/global/ui/spells/neskillicon.dc6` |
 | `paskillicon.dc6` | `data/global/ui/spells/paskillicon.dc6` |
+| `waskillicon.dc6` | `data/global/ui/spells/waskillicon.dc6` |
 
 Refresh from an extraction with:
 

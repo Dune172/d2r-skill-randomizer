@@ -34,4 +34,6 @@
 // v57 adds the Autumn Towns HD overlay to mods generated in October/November.
 // v58 switches monster shuffle to v4 selection (per-act rosters, weighted picks);
 // challenges before 16 keep v3 selection and regenerate identically.
-export const PIPELINE_VERSION = 58;
+// v59 scales Forgotten Arts synergies by source-spell rarity (20–50% of native)
+// and adds Necromancer/Warlock summons and masteries (Bone Armor removed).
+export const PIPELINE_VERSION = 59;

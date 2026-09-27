@@ -11,7 +11,7 @@ and Entropy mutations. The standard generator does not offer it.
   grant +3. These are reusable oskills, not consumed or charged casts. Mana still
   pays for casting. Multiple copies are intended to add their bonuses together.
 - Equipment can roll a specific catalogue spell: +1–2 at affix levels 1–34,
-  +2–4 at 35–59, and +4–6 at 60+. All 35 spells have prefixes on magic/rare
+  +2–4 at 35–59, and +4–6 at 60+. All 48 spells have prefixes on magic/rare
   weapons, armor, rings and amulets. Later spells first enter at their original
   spell tier. These are oskills: they add to carried copies and also grant the
   spell while equipped, even without a matching charm. Gear retains its normal
@@ -33,9 +33,10 @@ and Entropy mutations. The standard generator does not offer it.
 - Skill trees are hidden, leveling awards no skill points, and point spending is
   blocked, including points awarded by quests. Quest reward notifications may
   still appear. Character stat progression is unchanged.
-- The first catalogue contains 35 spells, each with a scroll and book variant.
+- The catalogue contains 48 spells, each with a scroll and book variant
+  (35 originally; v24 removes Bone Armor and adds 14 summons and masteries).
   It covers elemental attacks, bone spells, curses and utility spells. It does
-  not expose every D2 class skill; class-specific attacks, pets, forms and
+  not expose every D2 class skill; class-specific attacks, traps, shadows, forms and
   channeled skills are excluded from this first implementation.
 - All scrolls and books have **no character-level requirement**. Their spells
   are usable from character level 1. Finding a powerful charm lets you use it
@@ -52,12 +53,13 @@ and Entropy mutations. The standard generator does not offer it.
 - Drop progression is separate: `dropLevel` uses the original spell's tier,
   with books six tiers higher. Normal act pools admit tiers up to 6, 18, 24, 30
   and 36 respectively. The Normal Act I pool contains only +1 scrolls for Fire
-  Bolt, Ice Bolt, Charged Bolt, Teeth, Bone Armor and Holy Bolt. The smaller pool
+  Bolt, Ice Bolt, Charged Bolt, Teeth, Raise Skeleton and Holy Bolt. The smaller pool
   encourages repeated finds. +3 books enter the ordinary drop pools from Act II;
   consolidation can make a +3 book earlier without creating extra skill levels.
   The unique item's `lvl` also keeps stronger charms out of low-level random
   unique rolls; its `lvl req` is always zero. Skill/description formulas use
-  carried skill levels for synergies with other catalogue spells.
+  carried skill levels for synergies with other catalogue spells, at a reduced
+  rate set by the source spell's rarity (see Synergy rates below).
 - Each spell has its original normal and pressed icon. HD, low-graphics and
   legacy sheets include the same catalogue, with existing utility icons intact.
 - Spell items use Identify scroll/tome artwork with a purple inventory tint. Dedicated
@@ -127,11 +129,11 @@ refreshes. Normal act progression expands the eligible pool:
 | II | Lysander, Drognan | 18 spells, through native tier 12 |
 | III | Alkor, Ormus | 26 spells, through native tier 18 |
 | IV | Jamella | 30 spells, through native tier 24 |
-| V | Malah | All 35 spells |
+| V | Malah | All 48 spells |
 
 Nightmare/Hell shops use the full pool above character level 25. Stock has
 three rolls below vendor item level 25 and three to five above that threshold.
-Fire Bolt, Ice Bolt, Holy Bolt and Bone Armor have weight 8 each; Charged Bolt
+Fire Bolt, Ice Bolt, Holy Bolt and Raise Skeleton have weight 8 each; Charged Bolt
 and Teeth have weight 1 each. Other spells have weight 4, reduced to 2 for
 tier 24/30 spells, Static Field, Corpse Explosion, Teleport and Blessed Hammer.
 Duplicates are possible. Closing and reopening trade alone does not refresh.
@@ -192,7 +194,7 @@ its 24 original frames and pads the unused gap so both modes agree on `IconCel`.
 The HD destinations come from `_profilehd.json`'s `SkillIconFilenames`:
 `data/hd/global/ui/spells/submenu/skillicon.sprite` and its lowend variant.
 Legacy uses `data/global/ui/spells/skillicon.dc6`. Normal generator output does
-not include these replacements. The mutation cache suffix is `forgotten-arts-v23`.
+not include these replacements. The mutation cache suffix is `forgotten-arts-v24`.
 The download manifest records the Act I target and kill-count assumptions.
 The mutation also packages `cubemain.txt`, `objects.txt`, modified `misc.txt`
 and `superuniques.txt`, plus HD item aliases for every spell item. Original Cube
@@ -280,7 +282,7 @@ the Discord weekly announcer if its webhook is set. Test with
 
 ## Item fixes (v12)
 
-Spell name IDs use the reserved 40000–40499 range, verified against the extracted
+Spell name IDs use the reserved 40000–40999 range (v24; originally 40000–40499), verified against the extracted
 3.3 locale catalogue. The earlier max(item-names)+1 allocator collided with
 other locale files and could display An Evil Force, including on crafted tomes.
 All original unique row IDs and spell unique IDs are retained; the staff is
@@ -328,7 +330,7 @@ scrolls consolidates into the original tome. Drop tables remain unchanged.
 
 All spell scrolls, books, grimoires and codices have a cosmetic tooltip property
 listing **Synergies:**. These lists are derived from
-the original hard-point synergy formulas, restricted to the 35 available spells.
+the original hard-point synergy formulas, restricted to the available spells.
 Unsupported synergies such as Bone Wall/Bone Prison are omitted; a spell with
 no incoming supported synergies lists **None**.
 The lists describe relationships, not a live damage calculation. Equipped spell
@@ -341,8 +343,8 @@ bonus remain the same. As with consolidation, recreation does not preserve the
 free starter's special starting-item flag. Old invisible shop items first use
 their existing conversion recipe and can then be refreshed if necessary.
 
-The mutation appends 35 cosmetic stats (IDs 368–402), corresponding properties
-to the original extracted properties.txt, and strings 40400–40434. Existing
+The mutation appends one cosmetic stat per spell (IDs from 368), corresponding properties
+to the original extracted properties.txt, and strings from 41000 (40400 before v24). Existing
 stat/property/unique indices are preserved. Cosmetic stats add no item value or
 gameplay effect. All 261 variants have a refresh recipe. Automated checks cover
 relationships, bundled strings, recipes and unchanged gameplay properties;
@@ -350,3 +352,81 @@ v22 reverses the stored lines for the native bottom-to-top renderer, placing
 **Synergies:** above the spell list, and removes the outgoing list.
 Existing v21 tooltip properties use the corrected strings after restarting;
 no additional Cube refresh is needed.
+
+## Synergy rates (v24)
+
+Carried levels stack without a cap, and the common Act I scrolls are the easiest
+to pile up. At full vanilla rates, 30 Fire Bolt levels gave Fire Ball +420%.
+Each catalogue synergy now keeps only part of its native per-level bonus. The
+share depends on the **source** spell's rarity tier, which is its original
+required level and the same tier that gates drop and shop pools:
+
+| Source tier | Keeps | Catalogue synergy sources |
+| --- | --- | --- |
+| 1 | 20% | Fire Bolt, Ice Bolt, Charged Bolt, Teeth |
+| 6 | 26% | Frost Nova, Ice Blast, Static Field |
+| 12 | 32% | Fire Ball, Lightning, Nova |
+| 18 | 38% | Chain Lightning, Glacial Spike, Bone Spear |
+| 24 | 44% | Blizzard, Meteor |
+| 30 | 50% | Frozen Orb, Bone Spirit, Fist of the Heavens |
+
+Examples: Fire Bolt → Fire Ball is 2.8% per level (was 14%), so 30 levels give
++84%. Meteor → Fire Ball is 6.2%, Fire Ball → Fire Bolt is 5.12%, and Fist of
+the Heavens → Holy Bolt is 25%.
+
+Formulas weight each term before dividing once by 100, for example
+`((skill('Fire Bolt'.lvl)*20+skill('Meteor'.lvl)*44)*par8)/100`, so integer
+calc math keeps fractional rates. The rates also apply to freeze-length and
+radius synergies (Glacial Spike → Ice Blast, Blizzard → Glacial Spike).
+Non-catalogue sources stay on hard points, which are always zero in this mode.
+The rates are `FORGOTTEN_ARTS_SYNERGY_KEEP` in the mutation module. An
+unrecognised formula shape throws rather than shipping at full rate.
+
+Skill tooltips round the per-level percentage to the nearest whole number
+(Fire Bolt → Fire Ball shows +3%). Very weak links can display +0% while
+still applying their fractional bonus, for example Ice Bolt → Frozen Orb at
+0.4% per level. The item **Synergies:** lists are unchanged, since they name
+relationships, not rates.
+
+## Summons and masteries (v24)
+
+Bone Armor is gone. Raise Skeleton replaces it in the Act I starter pool,
+Akara's weighted stock (weight 8), the 7,500 gold starter price and the old
+fs5 shop variant. Fourteen skills join the catalogue at their native tiers:
+
+| Tier | Summons | Masteries (passive) |
+| --- | --- | --- |
+| 1 | Raise Skeleton, Summon Goatman | Skeleton Mastery, Demonic Mastery |
+| 6 | Clay Golem | |
+| 12 | Raise Skeletal Mage, Summon Tainted | Golem Mastery |
+| 18 | Blood Golem, Summon Defiler | |
+| 24 | Iron Golem | Summon Resist |
+| 30 | Fire Golem, Revive | |
+
+- Masteries are ordinary scrolls and gear bonuses that apply while carried or
+  equipped. They never appear as charges: charged suffixes and unique charge
+  re-rolls skip passive skills. Masteries keep their native formulas at full
+  strength, since they are the pets' own scaling rather than synergies.
+- Golem cross-synergies (`skill('FireGolem'.blvl)*skill('FireGolem'.par8)`)
+  are weighted by source rarity like every other synergy, as are their tooltips.
+- A reference without a per-level coefficient is a level use, not a synergy,
+  and counts whole carried levels. The only ones are Demonic Mastery's demon
+  cap (5 levels allow two demons, 10 allow three) and the Defiler's damage bonus.
+- Pets attack with their own classless skill rows (Skeletal Mage missiles,
+  Goatman/Tainted/Defiler attacks, Health Link). The tree shuffle rewrites
+  those rows' synergy references alongside the summon, so they are restored
+  from vanilla too. Class skills a pet borrows (Fire Golem's Holy Fire, the
+  Tainted's Blood Boil) are left alone. Blood Boil stays at level 0.
+- Warlock icons come from the class's HD artwork and the extracted legacy
+  `waskillicon.dc6`.
+- Excluded: Assassin traps and sentries, Shadow Warrior/Master (which copy the
+  owner's Assassin skills), Bone Wall/Prison, Druid/Amazon summons and Bind Demon.
+- Item names grew past the old string block and would have hit the tooltip
+  strings at 40400. Names now fill 40000–40999 (449 are used) and tooltip strings start at 41000. The extracted
+  catalogue has no IDs between 28102 and 251779.
+- Unique item indices shift with the catalogue. **Test characters created
+  before v24 must be recreated**; their spell items would change identity.
+
+Needs in-game verification: passive oskills applying from carried charms,
+summoning by oskill for every class (corpse targeting, Iron Golem's item
+target), Warlock demons for non-Warlocks, and the Demonic Mastery demon cap.

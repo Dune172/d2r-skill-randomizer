@@ -39,7 +39,12 @@ const table = raw => {
 const get = (t, row, key) => row[t.headers.indexOf(key)];
 assert.equal(JSON.parse(text('modinfo.json')).savepath, 'seed21392');
 const spells = JSON.parse(text('forgotten-arts.json'));
-assert.equal(spells.books.length, 261);
+const spellCount = spells.shop.eligibleSpells.length;
+assert.equal(spellCount, 48);
+assert.ok(!spells.shop.eligibleSpells.includes('Bone Armor'));
+const regionalStock = spells.books.filter(b => b.source === 'shop' && b.shopAct > 1).length;
+// Drops and crafts, four fixed Akara scrolls, two fs4/fs5 variants, six fs6 rolls, regional stock.
+assert.equal(spells.books.length, spellCount * 4 + 4 + 2 + 6 + regionalStock);
 const chars = table(text('charstats.txt'));
 for (const row of chars.rows.filter(r => get(chars, r, 'class') && get(chars, r, 'class') !== 'Expansion')) {
   assert.equal(+get(chars, row, 'SkillsPerLevel'), 0);
@@ -80,13 +85,12 @@ for (const [index, original] of originalUniques.rows.entries()) {
     assert.equal(get(uniques, uniques.rows[index], field), get(originalUniques, original, field), `${original[0]} ${field}`);
   }
 }
-assert.equal(uniques.rows[originalUniques.rows.length + 144][0], 'Astral Wayfarer', 'append staff after existing spell IDs');
+assert.equal(uniques.rows[originalUniques.rows.length + spellCount * 4 + 4][0], 'Astral Wayfarer', 'append staff after existing spell IDs');
 const shopMisc = table(text('misc.txt'));
-assert.equal(spells.shop.eligibleSpells.length, 35);
 assert.equal(spells.shop.unlimitedStock, false);
 assert.equal(spells.shop.duplicatesAllowed, true);
 assert.ok(spells.shop.selection.includes('every vendor refresh'));
-assert.equal(spells.books.filter(b => b.shopWeight).length, 115);
+assert.equal(spells.books.filter(b => b.shopWeight).length, 6 + regionalStock);
 for (const spell of spells.books.filter(b => b.source === 'shop')) {
   const base = shopMisc.rows.find(r => get(shopMisc, r, 'code') === spell.code);
   const pool = spells.shop.acts.find(p => p.act === spell.shopAct);
@@ -99,7 +103,7 @@ const otherStringIds = new Set(['skills', 'item-modifiers'].flatMap(file => JSON
 for (const spell of spells.books) {
   const name = names.find(n => n.Key === spell.key);
   assert.equal(name.enUS, spell.name);
-  assert.ok(name.id >= 40000 && name.id < 40500);
+  assert.ok(name.id >= 40000 && name.id < 41000);
   assert.ok(!otherStringIds.has(name.id), `${spell.key} string ID collision`);
   const item = uniques.rows.find(r => r[0] === spell.key);
   const baseCost = spell.source === 'shop' ? 7500 : spell.bonus === 1 ? 2000 : 6000;
@@ -109,11 +113,11 @@ assert.equal(new Set(names.map(n => n.id)).size, names.length, 'unique string ID
 const tooltipStats = table(text('itemstatcost.txt'));
 const tooltipProperties = table(text('properties.txt'));
 const tooltipRecipes = table(text('cubemain.txt'));
-assert.equal(spells.synergies.length, 35);
+assert.equal(spells.synergies.length, spellCount);
 for (const synergy of spells.synergies) {
   const name = names.find(n => n.Key === synergy.key);
   assert.equal(name.enUS, synergy.text);
-  assert.ok(name.id >= 40400 && name.id < 40435 && !otherStringIds.has(name.id));
+  assert.ok(name.id >= 41000 && name.id < 41000 + spellCount && !otherStringIds.has(name.id));
   const property = tooltipProperties.rows.find(r => r[0] === synergy.property);
   assert.equal(get(tooltipProperties, property, 'stat1'), synergy.stat);
   const stat = tooltipStats.rows.find(r => r[0] === synergy.stat);

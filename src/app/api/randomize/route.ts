@@ -816,14 +816,15 @@ export async function POST(request: NextRequest) {
           'HD spell charms use Identify scroll/tome artwork with red accents shifted to purple. Unique titles show once without a charm subtitle. Ordinary portal and identify item artwork is unchanged.',
           'Cube three matching +1 scrolls into a +3 book, three matching +3 books into a +9 grimoire, or three matching +9 grimoires into a +27 codex. Bought and looted scrolls of the same spell can be mixed. Total levels are preserved.',
           'Previously purchased invisible shop scrolls can be cubed individually to repair their base code without changing the spell or skill bonus.',
-          'Potion vendors in all five acts roll fresh finite scroll stock on every normal vendor refresh. Normal pools expand by act to all 35 spells in Act V. Nightmare/Hell vendors use the full catalogue above character level 25. Common starter spells cost 7,500 base gold; Charged Bolt and Teeth cost 12,500; later spells scale by native spell tier up to 60,000, with premiums for Static Field, Corpse Explosion, Teleport and Blessed Hammer. Vendor multipliers/quest discounts still apply. Duplicates are possible.',
+          `Potion vendors in all five acts roll fresh finite scroll stock on every normal vendor refresh. Normal pools expand by act to all ${BOOK_SPELLS.length} spells in Act V. Nightmare/Hell vendors use the full catalogue above character level 25. Common starter spells cost 7,500 base gold; Charged Bolt and Teeth cost 12,500; later spells scale by native spell tier up to 60,000, with premiums for Static Field, Corpse Explosion, Teleport and Blessed Hammer. Vendor multipliers/quest discounts still apply. Duplicates are possible.`,
           'Found or crafted spell items sell for 1,000 gold per granted skill level before vendor caps: 1,000 / 3,000 / 9,000 / 27,000. Bought scrolls resell for half their spell-specific base value before vendor caps; old retired shop variants retain their previous pricing. Normal uniques remain available alongside spell items.',
           'Bookcases use regional chest loot. Late-area Chest C pools have a 5% spell chance per pick. Corpsefire and Bone Ash each grant a bonus early scroll on every Normal kill. Griswold grants an early scroll in every difficulty. Corpsefire also drops Astral Wayfarer in every difficulty, preserving his existing loot.',
           'Normal Act I estimates 13–17 charm-granted levels with roughly one scroll per 90 eligible ordinary kills before equipment bonuses, including the starter, assuming 630–990 ordinary kills, three encounter rewards, one purchased level and one container level. Extra purchases, farming and luck can exceed this range.',
+          'Summon scrolls raise skeletons, mages, golems, revives and Warlock demons. Mastery scrolls (Skeleton, Golem, Summon Resist, Demonic) are passive: carry them to strengthen pets. Masteries never roll as charges.',
           'Skill trees and point spending are disabled. Stash/Cube storage should not grant skills.',
         ],
         limitations: [
-          '35 spells only; class-specific attacks, channels, forms and pets are excluded.',
+          `${BOOK_SPELLS.length} spells: elemental, bone, curse and utility spells plus Necromancer and Warlock summons and their masteries. Class-specific attacks, channels, forms, traps and shadow warriors are excluded.`,
           'Vanilla runeword/set skill grants are not removed because their tables are not bundled.',
           'Casting, inventory refresh, Cube recipes, vendor stock/prices, bookcase operation and drop balance need in-game testing.',
           'Purple inventory tint uses native runtime color rules and needs an in-game visual check; ground textures are unchanged and legacy palette colors may differ.',
@@ -854,8 +855,11 @@ export async function POST(request: NextRequest) {
           names.push({ id: nextId++, Key, ...Object.fromEntries(locales.map(locale => [locale, text])) });
         }
       }
+      // Item names fill 40000–40999. The extracted catalogue has no IDs between
+      // 28102 and 251779, so tooltip strings take their own block above it.
+      if (nextId > 41000) throw new Error(`Forgotten Arts: item names overflow their string ID block (${nextId})`);
       for (const [index, synergy] of synergies.entries()) {
-        names.push({ id: 40400 + index, Key: synergy.key, ...Object.fromEntries(locales.map(locale => [locale, synergy.text])) });
+        names.push({ id: 41000 + index, Key: synergy.key, ...Object.fromEntries(locales.map(locale => [locale, synergy.text])) });
       }
       itemNamesJson = '\uFEFF' + JSON.stringify(names, null, 2).replace(/\n/g, '\r\n');
       const readGraphics = (filename: string) => JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'hd', 'items', filename), 'utf8').replace(/^\uFEFF/, ''));

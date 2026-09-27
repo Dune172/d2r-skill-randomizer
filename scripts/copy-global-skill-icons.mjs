@@ -10,7 +10,7 @@ const out = path.resolve('data/sprites/global-skills');
 const files = [
   ['hd/global/ui/spells/submenu/skillicon.sprite', 'skillicon.sprite'],
   ['hd/global/ui/spells/submenu/skillicon.lowend.sprite', 'skillicon.lowend.sprite'],
-  ...['', 'so', 'ne', 'pa'].map(prefix => [`global/ui/spells/${prefix}skillicon.dc6`, `${prefix}skillicon.dc6`]),
+  ...['', 'so', 'ne', 'pa', 'wa'].map(prefix => [`global/ui/spells/${prefix}skillicon.dc6`, `${prefix}skillicon.dc6`]),
 ];
 for (const [source] of files) {
   if (!fs.existsSync(path.join(root, source))) throw new Error(`Missing ${source}`);

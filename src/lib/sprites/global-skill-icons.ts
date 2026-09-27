@@ -12,6 +12,7 @@ const SOURCE_CLASSES: Record<string, { folder: string; prefix: string }> = {
   sor: { folder: 'Sorceress', prefix: 'so' },
   nec: { folder: 'Necro', prefix: 'ne' },
   pal: { folder: 'Paladin', prefix: 'pa' },
+  war: { folder: 'Warlock', prefix: 'wa' },
 };
 const ROOT = path.join(process.cwd(), 'data', 'sprites');
 

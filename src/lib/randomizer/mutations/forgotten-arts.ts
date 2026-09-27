@@ -1,22 +1,26 @@
 /** Inventory spellbooks. Applied after skill-ID remapping, never before it. */
 type Table = { headers: string[]; rows: string[][] };
 
-// Spell-only first release. No class-gated attacks, channels, forms or pets.
+// Spells, Necromancer/Warlock summons and their masteries. No class-gated
+// attacks, channels, forms, traps or skill-copying shadows.
 export const BOOK_SPELLS = [
   'Fire Bolt', 'Ice Bolt', 'Charged Bolt', 'Ice Blast', 'Frost Nova',
   'Static Field', 'Telekinesis', 'Fire Ball', 'Lightning', 'Nova',
   'Glacial Spike', 'Fire Wall', 'Teleport', 'Chain Lightning', 'Meteor',
-  'Blizzard', 'Frozen Orb', 'Teeth', 'Bone Armor', 'Corpse Explosion',
+  'Blizzard', 'Frozen Orb', 'Teeth', 'Corpse Explosion',
   'Bone Spear', 'Bone Spirit', 'Poison Nova', 'Amplify Damage', 'Weaken',
   'Dim Vision', 'Terror', 'Confuse', 'Life Tap', 'Attract', 'Decrepify',
   'Lower Resist', 'Holy Bolt', 'Blessed Hammer', 'Fist of the Heavens',
+  'Raise Skeleton', 'Skeleton Mastery', 'Raise Skeletal Mage', 'Clay Golem',
+  'Golem Mastery', 'BloodGolem', 'IronGolem', 'FireGolem', 'Summon Resist', 'Revive',
+  'Summon Goatman', 'Summon Tainted', 'Summon Defiler', 'Demonic Mastery',
 ] as const;
 
-export const EARLY_BOOK_SPELLS = ['Fire Bolt', 'Ice Bolt', 'Charged Bolt', 'Teeth', 'Bone Armor', 'Holy Bolt'] as const;
+export const EARLY_BOOK_SPELLS = ['Fire Bolt', 'Ice Bolt', 'Charged Bolt', 'Teeth', 'Raise Skeleton', 'Holy Bolt'] as const;
 export const AKARA_SPELLS = ['Fire Bolt', 'Ice Bolt', 'Charged Bolt', 'Holy Bolt'] as const;
 export const AKARA_SHOP_WEIGHTS = {
   'Fire Bolt': 8, 'Ice Bolt': 8, 'Charged Bolt': 1,
-  'Teeth': 1, 'Bone Armor': 8, 'Holy Bolt': 8,
+  'Teeth': 1, 'Raise Skeleton': 8, 'Holy Bolt': 8,
 } as const;
 export const SPELL_SHOP_ACTS = [
   { act: 1, code: 'fs6', vendors: ['Akara'], maxSpellTier: 6 },
@@ -27,7 +31,7 @@ export const SPELL_SHOP_ACTS = [
 ] as const;
 
 export function spellShopPrice(skill: string, tier: number): number {
-  if (['Fire Bolt', 'Ice Bolt', 'Holy Bolt', 'Bone Armor'].includes(skill)) return 7500;
+  if (['Fire Bolt', 'Ice Bolt', 'Holy Bolt', 'Raise Skeleton'].includes(skill)) return 7500;
   if (['Charged Bolt', 'Teeth'].includes(skill)) return 12500;
   const price = tier <= 1 ? 7500 : tier <= 6 ? 12500 : tier <= 12 ? 20000
     : tier <= 18 ? 30000 : tier <= 24 ? 45000 : 60000;
@@ -61,6 +65,13 @@ export const FORGOTTEN_ARTS_PROGRESSION = {
     assumedContainerSkillLevels: 1,
   },
 } as const;
+
+// Carried levels stack without a cap and common scrolls are plentiful, so a
+// synergy keeps only this percentage of its native per-level rate, set by the
+// source spell's rarity tier (its original required level).
+export const FORGOTTEN_ARTS_SYNERGY_KEEP: Readonly<Record<number, number>> = {
+  1: 20, 6: 26, 12: 32, 18: 38, 24: 44, 30: 50,
+};
 
 export interface ForgottenArtsContext {
   skills: Table;
@@ -152,6 +163,22 @@ function set(table: Table, row: string[], column: string, value: string) {
   if (index < 0) throw new Error(`Forgotten Arts: missing column ${column}`);
   row[index] = value;
 }
+/** Rarity tier of a catalogue spell: its original required level. */
+function spellTier(vanillaSkills: Table, name: string) {
+  const row = vanillaSkills.rows.find(r => r[0] === name);
+  if (!row) throw new Error(`Forgotten Arts: missing original spell ${name}`);
+  return Number(get(vanillaSkills, row, 'reqlevel')) || 1;
+}
+export function synergyKeep(vanillaSkills: Table, name: string) {
+  const keep = FORGOTTEN_ARTS_SYNERGY_KEEP[spellTier(vanillaSkills, name)];
+  if (keep === undefined) throw new Error(`Forgotten Arts: no synergy rate for ${name}'s tier`);
+  return keep;
+}
+/** Masteries work while carried or equipped; charges could never cast them. */
+export function isPassiveSpell(vanillaSkills: Table, name: string) {
+  const row = vanillaSkills.rows.find(r => r[0] === name);
+  return !!row && get(vanillaSkills, row, 'passive') === '1';
+}
 function append(table: Table, values: Record<string, string>) {
   const row = new Array<string>(table.headers.length).fill('');
   for (const [column, value] of Object.entries(values)) set(table, row, column, value);
@@ -164,14 +191,14 @@ function addSpellEquipment(ctx: ForgottenArtsContext) {
   const [prefixes, suffixes] = ctx.equipmentProperties;
   if (!prefixes || !suffixes) throw new Error('Forgotten Arts: missing equipment affix tables');
   const ids = new Map(BOOK_SPELLS.map(name => [name, ctx.skills.rows.findIndex(r => r[0] === name)]));
-  const originalTier = (name: string) => Number(get(ctx.vanillaSkills,
-    ctx.vanillaSkills.rows.find(r => r[0] === name)!, 'reqlevel')) || 1;
+  const originalTier = (name: string) => spellTier(ctx.vanillaSkills, name);
   const grantCodes = new Set(['skill', 'oskill', 'skilltab', 'skilltab-war',
     'ama', 'sor', 'nec', 'pal', 'bar', 'dru', 'ass', 'war', 'randclassskill', 'skill-rand']);
-  const selectSpell = (param: string, salt: number, tier: number) => {
+  const selectSpell = (param: string, salt: number, tier: number, charged: boolean) => {
+    const castable = (name: string) => !charged || !isPassiveSpell(ctx.vanillaSkills, name);
     const referenced = /^\d+$/.test(param) ? ctx.skills.rows[Number(param)]?.[0] : param;
-    if (ids.has(referenced as typeof BOOK_SPELLS[number])) return referenced as typeof BOOK_SPELLS[number];
-    const eligible = BOOK_SPELLS.filter(name => originalTier(name) <= Math.max(1, tier));
+    if (ids.has(referenced as typeof BOOK_SPELLS[number]) && castable(referenced!)) return referenced as typeof BOOK_SPELLS[number];
+    const eligible = BOOK_SPELLS.filter(name => originalTier(name) <= Math.max(1, tier) && castable(name));
     return eligible[salt % eligible.length];
   };
   // Unique equipment keeps its other properties. Dead class/tree bonuses
@@ -182,7 +209,7 @@ function addSpellEquipment(ctx: ForgottenArtsContext) {
       const code = get(ctx.uniqueitems, row, `prop${slot}`);
       if (!grantCodes.has(code) && code !== 'charged') continue;
       const param = get(ctx.uniqueitems, row, `par${slot}`);
-      const name = selectSpell(code === 'skill' || code === 'oskill' || code === 'charged' ? param : '', rowIndex + slot, tier);
+      const name = selectSpell(code === 'skill' || code === 'oskill' || code === 'charged' ? param : '', rowIndex + slot, tier, code === 'charged');
       set(ctx.uniqueitems, row, `par${slot}`, String(ids.get(name)));
       if (code === 'charged') {
         // Native PropertyFunc19: (ilvl - reqlevel) / 4 + 1, capped at maxlvl.
@@ -218,6 +245,7 @@ function addSpellEquipment(ctx: ForgottenArtsContext) {
         mod1code: 'oskill', mod1param: String(id), mod1min: String(band.min), mod1max: String(band.max),
       });
     }
+    if (isPassiveSpell(ctx.vanillaSkills, name)) continue;
     append(suffixes, {
       ...common, Name: `D2RR_FA_Charges_${id}`, group: String(group + 1),
       level: String(tier), levelreq: String(Math.max(1, Math.floor(tier * 0.75))),
@@ -360,7 +388,7 @@ export function configureForgottenArtsShop(
 ): void {
   const template = books.find(b => b.source === 'shop')!;
   const templateBase = ctx.misc.rows.find(r => get(ctx.misc, r, 'code') === template.code)!;
-  for (const [i, skill] of ['Teeth', 'Bone Armor'].entries()) {
+  for (const [i, skill] of ['Teeth', 'Raise Skeleton'].entries()) {
     const scroll = books.find(b => b.skill === skill && b.source === 'drop' && b.bonus === 1)!;
     const tome = books.find(b => b.skill === skill && b.source === 'drop' && b.bonus === 3)!;
     const code = `fs${i + 4}`, key = `${scroll.key}_Akara`;
@@ -580,6 +608,61 @@ function addExplorationRewards(ctx: ForgottenArtsContext) {
   }
 }
 
+/**
+ * Point a restored spell's synergies at carried levels, weighted by each
+ * source's rarity. Terms are weighted before a single /100 so integer calc
+ * math keeps fractional per-level rates. Non-catalogue sources stay on hard
+ * points, which are always zero here.
+ *
+ * A reference with no per-level coefficient is a level use, not a percentage
+ * synergy: Demonic Mastery's pet-count thresholds and the Defiler's bonus
+ * damage levels count whole carried levels.
+ */
+function scaleSpellSynergies(
+  ctx: Pick<ForgottenArtsContext, 'skills' | 'skilldesc' | 'vanillaSkills' | 'vanillaSkilldesc'>,
+  row: string[], desc?: string[],
+) {
+  const spells = new Set<string>(BOOK_SPELLS);
+  const sources = new Set<string>();
+  // `* par7` (Glacial Spike's Blizzard radius) or `*skill('FireGolem'.par8)` (golems).
+  const reference = /skill\('([^']+)'\.blvl\)(\s*\*\s*(?:par\d+|skill\('[^']+'\.par\d+\)))?/g;
+  for (const [table, cells] of [[ctx.skills, row], [ctx.skilldesc, desc ?? []]] as const) {
+    for (let i = 0; i < cells.length; i++) {
+      const synergyColumn = table === ctx.skills && table.headers[i].endsWith('SymPerCalc');
+      let weightedColumn = false;
+      const next = cells[i].replace(reference, (match, name: string, multiplier?: string) => {
+        if (!spells.has(name)) return match;
+        if (!synergyColumn && !multiplier) return `skill('${name}'.lvl)`;
+        sources.add(name);
+        const term = `skill('${name}'.lvl)*${synergyKeep(ctx.vanillaSkills, name)}${multiplier ?? ''}`;
+        if (synergyColumn) weightedColumn = true;
+        return synergyColumn ? term : `${term} / 100`;
+      });
+      cells[i] = weightedColumn ? `(${next})/100` : next;
+    }
+  }
+  if (!desc) return;
+
+  // Tooltip "+X% per level" lines name the source by its skill name string.
+  const spellByString = new Map<string, string>();
+  for (const name of spells) {
+    const descName = get(ctx.vanillaSkills, ctx.vanillaSkills.rows.find(r => r[0] === name)!, 'skilldesc');
+    const originalDesc = ctx.vanillaSkilldesc.rows.find(r => r[0] === descName);
+    if (originalDesc) spellByString.set(get(ctx.vanillaSkilldesc, originalDesc, 'str name'), name);
+  }
+  for (const [i, header] of ctx.skilldesc.headers.entries()) {
+    const slot = /^dsc3textb(\d+)$/.exec(header)?.[1];
+    const source = spellByString.get(desc[i]);
+    // Skip the "Receives Bonuses From" header, which names the spell itself.
+    if (!slot || !source || source === row[0]) continue;
+    const calc = get(ctx.skilldesc, desc, `dsc3calca${slot}`);
+    if (!/^(?:par\d+|skill\('[^']+'\.par\d+\))$/.test(calc)) continue;
+    if (!sources.has(source)) throw new Error(`Forgotten Arts: ${row[0]} tooltip lists ${source} without a matching synergy`);
+    // Rounded to the nearest whole percent; the damage formula keeps the fraction.
+    set(ctx.skilldesc, desc, `dsc3calca${slot}`, `(${calc}*${synergyKeep(ctx.vanillaSkills, source)}+50)/100`);
+  }
+}
+
 export function applyForgottenArts(ctx: ForgottenArtsContext): SpellBook[] {
   const { skills, skilldesc, charstats, uniqueitems, treasureclass } = ctx;
   if (uniqueitems.rows.some(row => row[0].startsWith('D2RR_FA_'))) {
@@ -607,11 +690,19 @@ export function applyForgottenArts(ctx: ForgottenArtsContext): SpellBook[] {
     const originalDesc = ctx.vanillaSkilldesc.rows.find(r => r[0] === descName);
     if (!desc || !originalDesc) throw new Error(`Forgotten Arts: missing description ${descName}`);
     desc.splice(0, desc.length, ...originalDesc);
-    for (const cells of [row, desc]) {
-      for (let i = 0; i < cells.length; i++) {
-        cells[i] = cells[i].replace(/skill\('([^']+)'\.blvl\)/g,
-          (match, name: string) => spells.has(name) ? `skill('${name}'.lvl)` : match);
-      }
+    scaleSpellSynergies(ctx, row, desc);
+    // Pets attack with their own classless skill rows, which the tree shuffle
+    // rewrites alongside the summon. Restore those too, so a skeleton mage's
+    // bolt never scales off an unrelated carried spell. Class skills a pet
+    // borrows (Fire Golem's Holy Fire, the Tainted's Blood Boil) stay put.
+    for (let n = 1; n <= 6; n++) {
+      const pet = get(skills, row, `sumskill${n}`);
+      const originalPet = originals.get(pet);
+      if (!pet || pet === row[0] || !originalPet || get(ctx.vanillaSkills, originalPet, 'charclass')) continue;
+      const petRow = skills.rows.find(r => r[0] === pet);
+      if (!petRow) throw new Error(`Forgotten Arts: missing pet skill ${pet}`);
+      petRow.splice(0, petRow.length, ...originalPet);
+      scaleSpellSynergies(ctx, petRow);
     }
   }
 
@@ -683,13 +774,13 @@ export function applyForgottenArts(ctx: ForgottenArtsContext): SpellBook[] {
   for (const name of BOOK_SPELLS) {
     const row = available.get(name)!;
     const skillId = skills.rows.indexOf(row); // physical row, not the stale *Id
-    const spellTier = Number(get(ctx.vanillaSkills, originals.get(name)!, 'reqlevel')) || 1;
+    const tier = spellTier(ctx.vanillaSkills, name);
     for (const [kind, code, bonus, extraLevel, graphic] of [
       ['Scroll', 'cm1', 1, 0, 'invrsc'],
       ['Book', 'cm2', 3, 6, 'invrbk'],
     ] as const) {
       const key = `D2RR_FA_${skillId}_${kind}`;
-      const dropLevel = spellTier + extraLevel;
+      const dropLevel = tier + extraLevel;
       const displayName = `${kind} of ${ctx.displayNames.get(name) ?? name}`;
       append(uniqueitems, {
         index: key, version: '100', disabled: '0', spawnable: '1', rarity: '1',

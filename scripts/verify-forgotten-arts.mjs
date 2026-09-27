@@ -45,11 +45,11 @@ const extract = (buffer, cel) => {
     40 + (y * totalWidth + cel * width) * 4, 40 + (y * totalWidth + (cel + 1) * width) * 4);
   return { pixels, width, height };
 };
-const folders = { sor: 'Sorceress', nec: 'Necro', pal: 'Paladin' };
+const folders = { sor: 'Sorceress', nec: 'Necro', pal: 'Paladin', war: 'Warlock' };
 for (const suffix of ['.sprite', '.lowend.sprite']) {
   const original = fs.readFileSync(`data/sprites/global-skills/skillicon${suffix}`);
   const output = iconAssets.files.get(`hd/global/ui/spells/submenu/skillicon${suffix}`);
-  assert.equal(output.readUInt32LE(20), 110);
+  assert.equal(output.readUInt32LE(20), 40 + BOOK_SPELLS.length * 2);
   assert.equal(output.readUInt32LE(32), output.length - 40);
   for (let i = 0; i < 40; i++) assert.deepEqual(extract(output, i).pixels, extract(original, i).pixels);
   for (const source of iconSources) for (const state of [0, 1]) {
@@ -71,9 +71,9 @@ const dc6Frame = (buffer, cel) => {
 };
 const legacy = iconAssets.files.get('global/ui/spells/skillicon.dc6');
 const originalLegacy = fs.readFileSync('data/sprites/global-skills/skillicon.dc6');
-assert.equal(legacy.readUInt32LE(20), 110);
+assert.equal(legacy.readUInt32LE(20), 40 + BOOK_SPELLS.length * 2);
 for (let i = 0; i < 24; i++) assert.deepEqual(dc6Frame(legacy, i), dc6Frame(originalLegacy, i));
-const iconPrefixes = { sor: 'so', nec: 'ne', pal: 'pa' };
+const iconPrefixes = { sor: 'so', nec: 'ne', pal: 'pa', war: 'wa' };
 for (const source of iconSources) {
   const original = fs.readFileSync(`data/sprites/global-skills/${iconPrefixes[source.charclass]}skillicon.dc6`);
   for (const state of [0, 1]) assert.deepEqual(dc6Frame(legacy, iconAssets.iconCels.get(source.skill) + state), dc6Frame(original, source.iconCel + state));
@@ -104,7 +104,15 @@ const [prefixes, suffixes] = ctx.equipmentProperties;
 const powerRows = prefixes.rows.filter(r => r[0].startsWith('D2RR_FA_Power_'));
 const chargeRows = suffixes.rows.filter(r => r[0].startsWith('D2RR_FA_Charges_'));
 assert.equal(powerRows.length, BOOK_SPELLS.length * 3);
-assert.equal(chargeRows.length, BOOK_SPELLS.length);
+// Passive masteries apply while carried; a charge could never cast them.
+const passives = BOOK_SPELLS.filter(name => exports.isPassiveSpell(ctx.vanillaSkills, name));
+assert.deepEqual([...passives].sort(), ['Demonic Mastery', 'Golem Mastery', 'Skeleton Mastery', 'Summon Resist']);
+assert.equal(chargeRows.length, BOOK_SPELLS.length - passives.length);
+for (const row of chargeRows) assert.ok(!passives.includes(ctx.skills.rows[Number(get(suffixes, row, 'mod1param'))][0]));
+for (const row of ctx.uniqueitems.rows) for (let slot = 1; slot <= 12; slot++) {
+  if (get(ctx.uniqueitems, row, `prop${slot}`) !== 'charged') continue;
+  assert.ok(!passives.includes(ctx.skills.rows[Number(get(ctx.uniqueitems, row, `par${slot}`))]?.[0]), `${row[0]} charges a passive`);
+}
 for (const table of [prefixes, suffixes]) for (const row of table.rows.filter(r => r[0].startsWith('D2RR_FA_'))) {
   const skill = ctx.skills.rows[Number(get(table, row, 'mod1param'))];
   assert.ok(BOOK_SPELLS.includes(skill[0]));
@@ -172,7 +180,103 @@ assert.equal(books.filter(b => b.source === 'shop').length, 4);
 assert.equal(new Set(books.map(b => b.key)).size, books.length);
 assert.equal(books.find(b => b.skill === 'Fire Bolt').skillId, iceIndex);
 const fireBolt = ctx.skills.rows.find(r => r[0] === 'Fire Bolt');
-assert.ok(get(ctx.skills, fireBolt, 'EDmgSymPerCalc').includes("skill('Fire Ball'.lvl)"));
+assert.equal(get(ctx.skills, fireBolt, 'EDmgSymPerCalc'), "((skill('Fire Ball'.lvl)*32+skill('Meteor'.lvl)*44)*par8)/100");
+// Synergies keep 20-50% of their native rate by source rarity, weighted before one integer /100.
+const { synergyKeep, FORGOTTEN_ARTS_SYNERGY_KEEP } = exports;
+assert.deepEqual(Object.values(FORGOTTEN_ARTS_SYNERGY_KEEP), [20, 26, 32, 38, 44, 50]);
+assert.equal(synergyKeep(ctx.vanillaSkills, 'Fire Bolt'), 20);
+assert.equal(synergyKeep(ctx.vanillaSkills, 'Frozen Orb'), 50);
+const skillRow = name => ctx.skills.rows.find(r => r[0] === name);
+const descRow = name => ctx.skilldesc.rows.find(r => r[0] === get(ctx.skills, skillRow(name), 'skilldesc'));
+const plainLevelUses = new Set();
+for (const name of BOOK_SPELLS) {
+  for (const [table, row, vanillaTable] of [[ctx.skills, skillRow(name), originalSkillTable], [ctx.skilldesc, descRow(name), originalDescTable]]) {
+    const vanilla = vanillaTable.rows.find(r => r[0] === row[0]);
+    for (const [i, cell] of row.entries()) {
+      const header = table.headers[i];
+      for (const [, source, weight] of cell.matchAll(/skill\('([^']+)'\.lvl\)\*(\d+)/g)) {
+        assert.equal(Number(weight), synergyKeep(ctx.vanillaSkills, source), `${name} ${header} weights ${source}`);
+      }
+      if (/\.lvl\)\*\d/.test(cell)) {
+        assert.ok(header.endsWith('SymPerCalc') ? cell.endsWith(')/100') : cell.includes(' / 100'), `${name} ${header} divides once`);
+      }
+      // Only coefficient-free references to catalogue spells may stay unweighted.
+      const original = vanillaTable === originalSkillTable ? vanilla[originalSkillTable.headers.indexOf(header)] : vanilla[i];
+      for (const [, source, multiplier] of (original ?? '').matchAll(/skill\('([^']+)'\.blvl\)(\s*\*\s*(?:par\d+|skill\('[^']+'\.par\d+\)))?/g)) {
+        if (!BOOK_SPELLS.includes(source)) continue;
+        if (multiplier || header.endsWith('SymPerCalc')) assert.ok(cell.includes(`skill('${source}'.lvl)*`), `${name} ${header} weights ${source}`);
+        else plainLevelUses.add(`${name} <- ${source}`);
+      }
+      for (const [, source] of cell.matchAll(/skill\('([^']+)'\.blvl\)/g)) assert.ok(!BOOK_SPELLS.includes(source));
+    }
+  }
+}
+assert.deepEqual([...plainLevelUses].sort(), ['Summon Defiler', 'Summon Goatman', 'Summon Tainted'].map(n => `${n} <- Demonic Mastery`));
+// Evaluate the rewritten formulas with D2's left-to-right integer arithmetic.
+const evalCalc = (expr, vars) => {
+  const js = expr.replace(/skill\('([^']+)'\.lvl\)/g, (_, n) => String(vars[n] ?? 0))
+    .replace(/skill\('[^']+'\.blvl\)/g, '0').replace(/\b(par\d+|ln\d+)\b/g, v => String(vars[v]));
+  // Every division in these formulas truncates; wrap each "/ n" operand chain in Math.trunc.
+  const tokens = js.match(/\d+|[()+*/-]/g);
+  let pos = 0;
+  const expr0 = () => { let v = term(); while (tokens[pos] === '+' || tokens[pos] === '-') { const op = tokens[pos++]; const r = term(); v = op === '+' ? v + r : v - r; } return v; };
+  const term = () => { let v = atom(); while (tokens[pos] === '*' || tokens[pos] === '/') { const op = tokens[pos++]; const r = atom(); v = op === '*' ? v * r : Math.trunc(v / r); } return v; };
+  const atom = () => { if (tokens[pos] === '(') { pos++; const v = expr0(); pos++; return v; } return Number(tokens[pos++]); };
+  return expr0();
+};
+const fireBallSkill = skillRow('Fire Ball');
+assert.equal(evalCalc(get(ctx.skills, fireBallSkill, 'EDmgSymPerCalc'), { 'Fire Bolt': 30, par8: 14 }), 84);
+assert.equal(evalCalc(get(ctx.skills, fireBallSkill, 'EDmgSymPerCalc'), { 'Fire Bolt': 10, Meteor: 5, par8: 14 }), 58);
+assert.equal(evalCalc(get(ctx.skills, fireBolt, 'EDmgSymPerCalc'), { 'Fire Ball': 30, par8: 16 }), 153);
+assert.equal(evalCalc(get(ctx.skills, skillRow('Holy Bolt'), 'EDmgSymPerCalc'), { 'Fist of the Heavens': 4, par8: 50 }), 100);
+const glacial = skillRow('Glacial Spike');
+assert.equal(get(ctx.skills, glacial, 'auralencalc'), "ln34 * (100 + skill('Blizzard'.lvl)*44 * par7 / 100) / 100");
+assert.equal(get(ctx.skilldesc, descRow('Glacial Spike'), 'desccalca2'), "ln34 * (100 + skill('Blizzard'.lvl)*44 * par7 / 100) / 100");
+assert.equal(evalCalc(get(ctx.skills, glacial, 'auralencalc'), { Blizzard: 10, par7: 3, ln34: 1000 }), 1130);
+// Tooltip per-level lines show the rounded rate; the header and non-catalogue sources stay native.
+const fireBallDesc = descRow('Fire Ball');
+assert.equal(get(ctx.skilldesc, fireBallDesc, 'dsc3calca1'), '2');
+assert.equal(get(ctx.skilldesc, fireBallDesc, 'dsc3calca2'), '(par8*20+50)/100');
+assert.equal(get(ctx.skilldesc, fireBallDesc, 'dsc3calca3'), '(par8*44+50)/100');
+assert.equal(evalCalc(get(ctx.skilldesc, fireBallDesc, 'dsc3calca2'), { par8: 14 }), 3);
+assert.equal(get(ctx.skilldesc, descRow('Ice Blast'), 'dsc3calca3'), '(par7*38+50)/100');
+const holyBoltDesc = descRow('Holy Bolt');
+for (const slot of [1, 2, 3, 4, 5]) {
+  const textb = get(ctx.skilldesc, holyBoltDesc, `dsc3textb${slot}`);
+  const calc = get(ctx.skilldesc, holyBoltDesc, `dsc3calca${slot}`);
+  const original = get(originalDescTable, originalDescTable.rows.find(r => r[0] === holyBoltDesc[0]), `dsc3calca${slot}`);
+  if (textb === 'skillname121') assert.equal(calc, `(${original}*50+50)/100`);
+  else assert.equal(calc, original, `Holy Bolt dsc3calca${slot} (${textb}) unchanged`);
+}
+// Golems weight each other's `*skill('X'.par8)` synergies like any other source.
+assert.equal(get(ctx.skills, skillRow('Clay Golem'), 'passivecalc3'),
+  "par2 * (lvl - 1) + (skill('FireGolem'.lvl)*50*skill('FireGolem'.par8) / 100)");
+assert.equal(get(ctx.skills, skillRow('IronGolem'), 'passivecalc2'),
+  "skill('Golem Mastery'.ln56)+skill('Clay Golem'.lvl)*26*skill('Clay Golem'.par8) / 100");
+assert.equal(evalCalc(get(ctx.skills, skillRow('IronGolem'), 'passivecalc2').replace("skill('Golem Mastery'.ln56)", '0')
+  .replace("skill('Clay Golem'.par8)", 'par8'), { 'Clay Golem': 10, par8: 20 }), 52);
+assert.equal(get(ctx.skilldesc, descRow('FireGolem'), 'dsc3calca4'), "(skill('Clay Golem'.par8)*26+50)/100");
+// Level uses count whole carried levels: stacked Demonic Mastery raises the demon cap.
+for (const demon of ['Summon Goatman', 'Summon Tainted', 'Summon Defiler']) {
+  assert.equal(get(ctx.skills, skillRow(demon), 'petmax'),
+    "(skill('Demonic Mastery'.lvl)>=10)?3:((skill('Demonic Mastery'.lvl)>=5)?2:1)");
+}
+assert.equal(get(ctx.skills, skillRow('Summon Defiler'), 'passivecalc2'), "par2*((lvl - 1) + (skill('Demonic Mastery'.lvl))");
+// Masteries keep their native references; they are the pets' own scaling, not synergies.
+assert.equal(get(ctx.skills, skillRow('Raise Skeleton'), 'aurastatcalc2'), "(lvl+skill('Skeleton Mastery'.lvl))*par4");
+// Pet attack rows return to vanilla even when the tree shuffle rewrote them.
+{
+  const shuffled = context();
+  const petRow = shuffled.skills.rows.find(r => r[0] === 'Tainted Fire Ball');
+  set(shuffled.skills, petRow, 'EDmgSymPerCalc', "skill('Fire Ball'.lvl)*par8");
+  applyForgottenArts(shuffled);
+  assert.equal(get(shuffled.skills, petRow, 'EDmgSymPerCalc').trim(), "skill('Blood Boil'.blvl)*par8");
+  assert.deepEqual(petRow, originalSkillTable.rows.find(r => r[0] === 'Tainted Fire Ball'));
+  // A class skill a pet borrows is not restored or claimed by the catalogue.
+  assert.equal(get(shuffled.skills, shuffled.skills.rows.find(r => r[0] === 'Holy Fire'), 'charclass'), 'pal');
+}
+const fireWall = skillRow('Fire Wall');
+assert.equal(get(ctx.skills, fireWall, 'EDmgSymPerCalc'), get(originalSkillTable, originalSkillTable.rows.find(r => r[0] === 'Fire Wall'), 'EDmgSymPerCalc'));
 for (const book of books) {
   const row = ctx.uniqueitems.rows.find(r => r[0] === book.key);
   assert.equal(get(ctx.uniqueitems, row, 'prop1'), 'oskill');
@@ -311,10 +415,10 @@ for (let act = 1; act <= 5; act++) {
   previousTier = tier;
 }
 assert.ok([...reachableBooks('D2RR_FA_Act 1 Good')].every(b => b.bonus === 1), 'early loot contains only scrolls');
-assert.deepEqual([...reachableBooks('D2RR_FA_Act 1 Good')].map(b => b.skill).sort(), ['Fire Bolt', 'Ice Bolt', 'Charged Bolt', 'Teeth', 'Bone Armor', 'Holy Bolt'].sort());
+assert.deepEqual([...reachableBooks('D2RR_FA_Act 1 Good')].map(b => b.skill).sort(), ['Fire Bolt', 'Ice Bolt', 'Charged Bolt', 'Teeth', 'Raise Skeleton', 'Holy Bolt'].sort());
 assert.ok([...reachableBooks('D2RR_FA_Act 2 Good')].some(b => b.bonus === 3), 'books unlock later');
-assert.equal(reachableBooks('D2RR_FA_Act 1 (N) Good').size, 70);
-assert.equal(reachableBooks('D2RR_FA_Act 1 (H) Good').size, 70);
+assert.equal(reachableBooks('D2RR_FA_Act 1 (N) Good').size, BOOK_SPELLS.length * 2);
+assert.equal(reachableBooks('D2RR_FA_Act 1 (H) Good').size, BOOK_SPELLS.length * 2);
 
 // Resolve the actual generated drop graph, including its pre-existing Good
 // branch. Do not mistake the added branch alone for the final per-kill rate.
@@ -359,8 +463,9 @@ const addedRecipes = ctx.cubemain.rows.slice(vanillaRecipes.rows.length);
 const repairRecipes = addedRecipes.filter(r => get(ctx.cubemain, r, 'numinputs') === '1');
 assert.equal(repairRecipes.length, 4);
 const recipes = addedRecipes.filter(r => get(ctx.cubemain, r, 'numinputs') === '3');
-assert.equal(addedRecipes.length, 121);
-assert.equal(recipes.length, 117);
+// Per spell: scroll->book->grimoire->codex, plus 3 mixed recipes for each of the four Akara spells.
+assert.equal(addedRecipes.length, BOOK_SPELLS.length * 3 + 12 + 4);
+assert.equal(recipes.length, BOOK_SPELLS.length * 3 + 12);
 const bookMap = new Map(books.map(b => [b.key, b]));
 function ingredients(row) {
   return Array.from({ length: 7 }, (_, i) => get(ctx.cubemain, row, `input ${i + 1}`))
@@ -570,8 +675,8 @@ for (const row of withCube.charstats.rows.filter(r => get(withCube.charstats, r,
 }
 console.log(`Forgotten Arts verified: ${BOOK_SPELLS.length} spell icons in HD/lowend/legacy, preserved utility artwork, ${books.length} unrestricted charms, ${classes.length} starters, progressively stronger loot tiers.`);
 console.log('Act I balance verified: 1/90 ordinary kills plus starter, three encounters, one purchase and one container level averages 13 / 15 / 17 levels at 630 / 810 / 990 kills. Existing item odds preserved.');
-console.log('Verified 117 lossless recipes, four Akara spells, starting Cubes, two bookcases, 15 chest pools, three encounter rewards and explicit HD item art.');
-console.log('Verified 105 specific-spell equipment prefixes, 35 charged suffixes, charge-level boundaries through 20, unique equipment grants, and preserved unrelated modifiers.');
+console.log(`Verified ${recipes.length} lossless recipes, four Akara spells, starting Cubes, two bookcases, 15 chest pools, three encounter rewards and explicit HD item art.`);
+console.log(`Verified ${powerRows.length} specific-spell equipment prefixes, ${chargeRows.length} charged suffixes (no passives), charge-level boundaries through 20, unique equipment grants, and preserved unrelated modifiers.`);
 
 // Native vendor generation rolls unique variants from one shared shop-only base.
 const shopCtx = structuredClone(ctx), shopBooks = structuredClone(books);
@@ -580,9 +685,12 @@ const lootBeforeShop = JSON.stringify(shopCtx.treasureclass);
 exports.configureForgottenArtsShop(shopCtx, shopBooks);
 assert.deepEqual(shopCtx.uniqueitems.rows.slice(0, oldUniques.length), oldUniques);
 assert.equal(JSON.stringify(shopCtx.treasureclass), lootBeforeShop, 'shop rarity cannot change drops');
-assert.equal(shopBooks.length, 261);
+const regionalStock = exports.SPELL_SHOP_ACTS.filter(p => p.act > 1).reduce((sum, p) =>
+  sum + books.filter(b => b.source === 'drop' && b.bonus === 1 && b.dropLevel <= p.maxSpellTier).length, 0);
+// Drops and crafts, four fixed Akara scrolls, two fs4/fs5 variants, six fs6 rolls, regional stock.
+assert.equal(shopBooks.length, BOOK_SPELLS.length * 4 + 4 + 2 + 6 + regionalStock);
 const stock = shopBooks.filter(b => b.shopWeight);
-assert.equal(stock.length, 115);
+assert.equal(stock.length, 6 + regionalStock);
 assert.equal(new Set(stock.map(b => b.code)).size, 5, 'one shared native roll base per act');
 let totalShopWeight = 0;
 for (const b of shopBooks.filter(b => b.source === 'shop')) {
@@ -646,11 +754,11 @@ const uniquesBefore = structuredClone(tooltipCtx.uniqueitems.rows);
 const propertiesBefore = structuredClone(tooltipCtx.properties.rows);
 const recipesBefore = tooltipCtx.cubemain.rows.length;
 const synergies = exports.addSpellSynergyTooltips(tooltipCtx, shopBooks);
-assert.equal(synergies.length, 35);
+assert.equal(synergies.length, BOOK_SPELLS.length);
 const fireBall = synergies.find(s => s.skill === 'Fire Ball');
 assert.deepEqual(Array.from(fireBall.strengthenedBy), ['Fire Bolt', 'Meteor']);
 assert.equal(fireBall.text, 'Meteor\nFire Bolt\nSynergies:');
-assert.equal(synergies.find(s => s.skill === 'Bone Armor').text, 'None\nSynergies:');
+assert.equal(synergies.find(s => s.skill === 'Teleport').text, 'None\nSynergies:');
 assert.deepEqual(Array.from(synergies.find(s => s.skill === 'Bone Spear').strengthenedBy), ['Teeth', 'Bone Spirit']);
 assert.ok(!synergies.some(s => /Bone Wall|Bone Prison/.test(s.text)));
 assert.deepEqual(tooltipCtx.itemstatcost.rows.slice(0, statsBefore.length), statsBefore);
@@ -673,7 +781,7 @@ for (const [i, row] of tooltipCtx.uniqueitems.rows.entries()) {
   assert.equal(get(tooltipCtx.cubemain, recipe, 'output'), item.key);
   assert.equal(get(tooltipCtx.cubemain, recipe, 'numinputs'), '1');
 }
-console.log('Verified 35 cosmetic synergy descriptions, all item variants, unchanged gameplay properties, and exact-item refresh recipes.');
+console.log(`Verified ${synergies.length} cosmetic synergy descriptions, all item variants, unchanged gameplay properties, and exact-item refresh recipes.`);
 
 if (process.argv.includes('--preview')) {
   const high = iconAssets.files.get('hd/global/ui/spells/submenu/skillicon.sprite');
