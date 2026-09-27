@@ -18,7 +18,7 @@ Use manual AdSense display units with Auto ads disabled. Start with three placem
 
 No interstitials, sticky ads, or ads inside generation/download controls. No ad units on the privacy page, archive, or changelog. The shared script remains available site-wide when enabled, including for Google's privacy messaging. Auto ads are controlled in the AdSense dashboard, so leaving them off is necessary to preserve this placement policy.
 
-Start with this light ad load and evaluate actual revenue and usability before adding placements. The mod stays free, and the existing Patreon links remain available.
+Start with this light ad load and evaluate actual revenue and usability before adding placements. The mod stays free, and the existing Ko-fi links remain available.
 
 ## What changed from the supplied plan
 
