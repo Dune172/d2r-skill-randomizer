@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export function InstallInstructions({ seed, raceMode = true, forgottenArts = false }: { seed: number; raceMode?: boolean; forgottenArts?: boolean }) {
   const seedUnsigned = seed >>> 0;
   return (
@@ -103,6 +105,13 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
         <div className="mt-1 rounded p-2 bg-[#080203]/60 border border-[#2a1508]/60 text-[#7a7858]">
           <span className="text-[#c8a870] font-semibold">Game Pass?</span> Use the Microsoft Store install path instead. If you&apos;re unsure where D2R is installed, search <code className="text-[#a89858]">Diablo II Resurrected</code> in File Explorer.
         </div>
+      </div>
+
+      <div className="md:col-span-2 rounded p-3 bg-[#080203]/40 border border-[#2a1508]/60">
+        <span className="text-[#c8942a] font-semibold">Playing with friends?</span>{' '}
+        Share this ZIP and follow the{' '}
+        <Link href="/multiplayer" className="text-[#c8942a] underline underline-offset-4 hover:text-[#e0ac4a]">multiplayer guide</Link>
+        {' '}to set up D2RLoader. Everyone needs the same seed, mods, and plugins.
       </div>
     </div>
   );

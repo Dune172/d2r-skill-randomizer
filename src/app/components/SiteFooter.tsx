@@ -23,15 +23,6 @@ export default function SiteFooter() {
           </a>
           <span className="text-[#3a1510] select-none">|</span>
           <a
-            href="https://patreon.com/D2RR?utm_medium=unknown&utm_source=join_link&utm_campaign=creatorshare_creator&utm_content=copyLink"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-cinzel text-[10px] tracking-[0.3em] uppercase px-3 py-1.5 text-[#a87830] hover:text-[#c8942a] transition-colors"
-          >
-            Patreon
-          </a>
-          <span className="text-[#3a1510] select-none">|</span>
-          <a
             href="https://ko-fi.com/d2rrando"
             target="_blank"
             rel="noopener noreferrer"
@@ -39,6 +30,13 @@ export default function SiteFooter() {
           >
             Ko-fi
           </a>
+          <span className="text-[#3a1510] select-none">|</span>
+          <Link
+            href="/multiplayer"
+            className="font-cinzel text-[10px] tracking-[0.3em] uppercase px-3 py-1.5 text-[#a87830] hover:text-[#c8942a] transition-colors"
+          >
+            Multiplayer
+          </Link>
           <span className="text-[#3a1510] select-none">|</span>
           <Link
             href="/changelog"
@@ -62,7 +60,7 @@ export default function SiteFooter() {
             <span className="text-[#a87830]">not affiliated with, endorsed, sponsored, or approved by Blizzard Entertainment</span>.
           </p>
           <p className="text-[#7a5818]/80 text-[11px] leading-relaxed">
-            Use at your own risk. This mod is provided as-is for offline, single-player use only.{' '}
+            Use at your own risk. This mod is provided as-is for offline play only: single-player, or TCP/IP with offline characters.{' '}
             <span className="text-[#a87830]">Never use with Battle.net online characters.</span>
           </p>
         </div>
