@@ -45,6 +45,10 @@ const MISSILE_COLS = ['MissA1', 'MissA2', 'MissS1', 'MissS2', 'MissS3', 'MissS4'
 // Fixed encounters and special areas are deliberately outside the first roster.
 const PROTECTED_AREAS = new Set([0, 1, 37, 39, 40, 73, 75, 102, 103, 108, 109, 110, 120, 131, 132]);
 const MAX_CLONES = 512;
+// v4 selection: each act benches a seeded subset of donor families so the roster
+// itself varies, and foreign families are favoured rather than required.
+const ROSTER_SHARE = 0.5;
+const FOREIGN_WEIGHT = 3;
 const DAMAGE_ELEMENTS = new Set(['fire', 'ltng', 'cold', 'mag', 'rand', 'pois']);
 const n = (v: string | undefined) => Number(v) || 0;
 const records = (t: EnemyTable): Monster[] => t.rows.map(r =>
@@ -143,6 +147,9 @@ export function randomizeEnemies(
   missilesTable: EnemyTable,
   graphics: Record<string, string>,
   summonIds: ReadonlySet<string> = new Set(),
+  // v3 round-robin exhausted every act's donor pool, so each act showed the same
+  // families every seed. Kept only to reproduce already-published challenges.
+  legacySelection = false,
 ): EnemyShuffleResult {
   for (const [table, required] of [[monstats, ['Id', '*hcIdx', 'BaseId', 'MonStatsEx', 'Level', 'A1MaxD']],
     [levels, ['Id', 'Act', 'MonDen', 'mon1', 'nmon1', 'umon1']],
@@ -176,14 +183,16 @@ export function randomizeEnemies(
     if (!familyOrigins.has(m.BaseId)) familyOrigins.set(m.BaseId, new Set());
     familyOrigins.get(m.BaseId)!.add(act);
   }
-  const rng = createRNG(seedFromString(`enemies:v3:${seed | 0}`));
-  const familyOrder = rng.shuffle(Object.keys(FAMILIES).sort());
+  const rng = createRNG(seedFromString(`enemies:${legacySelection ? 'v3' : 'v4'}:${seed | 0}`));
+  const familyOrder = legacySelection ? rng.shuffle(Object.keys(FAMILIES).sort()) : [];
+  const rosters = new Map(legacySelection ? [] : [1, 2, 3, 4, 5].map(act =>
+    [act, new Set(Object.keys(FAMILIES).sort().filter(() => rng.next() < ROSTER_SHARE))]));
   const choices = new Map<string, string>();
   const reuse = new Map<string, number>();
   const clones = new Map<string, string>();
   const destinationActs = new Map<string, number>();
   const resultGraphics = { ...graphics };
-  const manifest: EnemyManifest = { version: 5, seed, status: 'experimental; requires in-game validation', replacements: [], skipped: [], profiles: [], projectiles: [] };
+  const manifest: EnemyManifest = { version: legacySelection ? 5 : 6, seed, status: 'experimental; requires in-game validation', replacements: [], skipped: [], profiles: [], projectiles: [] };
   const outputMissiles: EnemyTable = { headers: [...missilesTable.headers], rows: missilesTable.rows.map(r => [...r]) };
   const projectileClones = new Map<string, string>();
   const isolateProjectile = (original: string): string => {
@@ -246,15 +255,27 @@ export function randomizeEnemies(
         n(extended.get(d.MonStatsEx)!.SizeX) <= n(shape.SizeX) && n(extended.get(d.MonStatsEx)!.SizeY) <= n(shape.SizeY));
       // Prefer an entirely foreign family; fall back to a foreign variant of a
       // different family when the small first roster cannot provide one.
-      const foreign = compatible.filter(d => !familyOrigins.get(d.BaseId)?.has(act));
-      const pool = foreign.length ? foreign : compatible;
+      const isForeign = (family: string) => !familyOrigins.get(family)?.has(act);
+      const foreign = compatible.filter(d => isForeign(d.BaseId));
+      const rostered = compatible.filter(d => rosters.get(act)?.has(d.BaseId));
+      // A roster with a single fitting family would let it swallow the whole act.
+      const pool = legacySelection ? (foreign.length ? foreign : compatible) :
+        new Set(rostered.map(d => d.BaseId)).size >= 2 ? rostered : compatible;
       if (!pool.length) { skip('no-compatible-cross-act-family'); continue; }
       const choiceKey = `${act}:${target.BaseId}:${shape.SizeX}:${shape.SizeY}`;
       let chosenFamily = choices.get(choiceKey);
       if (!chosenFamily || !pool.some(d => d.BaseId === chosenFamily)) {
-        const families = familyOrder.filter(f => pool.some(d => d.BaseId === f));
-        families.sort((a, b) => (reuse.get(`${act}:${a}`) ?? 0) - (reuse.get(`${act}:${b}`) ?? 0));
-        chosenFamily = families[0];
+        if (legacySelection) {
+          const families = familyOrder.filter(f => pool.some(d => d.BaseId === f));
+          families.sort((a, b) => (reuse.get(`${act}:${a}`) ?? 0) - (reuse.get(`${act}:${b}`) ?? 0));
+          chosenFamily = families[0];
+        } else {
+          // Weighted draw: reuse within the act is discouraged, not forbidden.
+          const families = [...new Set(pool.map(d => d.BaseId))].sort();
+          const weights = families.map(f => (isForeign(f) ? FOREIGN_WEIGHT : 1) / (1 + (reuse.get(`${act}:${f}`) ?? 0)) ** 2);
+          let roll = rng.next() * weights.reduce((a, b) => a + b, 0);
+          chosenFamily = families.find((_, i) => (roll -= weights[i]) < 0) ?? families[families.length - 1];
+        }
         choices.set(choiceKey, chosenFamily);
         reuse.set(`${act}:${chosenFamily}`, (reuse.get(`${act}:${chosenFamily}`) ?? 0) + 1);
       }

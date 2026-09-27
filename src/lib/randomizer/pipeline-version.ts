@@ -32,4 +32,6 @@
  */
 // v56 changes Molasses to 30% slower movement, preserving its damage settings.
 // v57 adds the Autumn Towns HD overlay to mods generated in October/November.
-export const PIPELINE_VERSION = 57;
+// v58 switches monster shuffle to v4 selection (per-act rosters, weighted picks);
+// challenges before 16 keep v3 selection and regenerate identically.
+export const PIPELINE_VERSION = 58;

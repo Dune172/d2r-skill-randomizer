@@ -15,7 +15,7 @@ import { assignPrerequisites } from '@/lib/randomizer/prereq-assigner';
 import { buildAllTreeSprites } from '@/lib/sprites/tree-stitcher';
 import { buildAllIconSprites, buildHireableSprite } from '@/lib/sprites/icon-assembler';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
-import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
+import { challengeRandomizesMonsters, challengeUsesLegacyMonsterSelection } from '@/lib/challenge/rules';
 import { buildZip } from '@/lib/zip-builder';
 import { loadPatchedAnimAssets } from '@/lib/anim/anim-assets';
 import { getZipCache, getZipCacheStats, hasCached, setCached, makeCacheKey } from '@/lib/zip-cache';
@@ -648,7 +648,7 @@ export async function POST(request: NextRequest) {
     const enemies = enemyShuffle && levelsSrc ? randomizeEnemies(
       seed, monstatsSrc, levelsSrc, loadTxtFile('monstats2.txt'), loadTxtFile('missiles.txt'),
       JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'hd', 'character', 'monsters.json'), 'utf8')),
-      summonIds,
+      summonIds, weeklyEnabled && challengeUsesLegacyMonsterSelection(weekNumber),
     ) : null;
     // Remap Skill1–8 numeric IDs to match the new row positions in skills.txt
     let scaledMonRows = remapMonstatsSkillIds(monstatsSrc.headers, monstatsSrc.rows, idMapping);

@@ -20,6 +20,8 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Pumpkins and glowing jack-o’-lanterns in all five towns: around the Rogue Encampment bonfire, by Akara, Gheed, Charsi and the stash, and near the vendors of Lut Gholein, Kurast, the Pandemonium Fortress and Harrogath',
       'Act I outdoors turns to fall: red and orange maples, red hawthorn and golden witch hazel, fallen leaves on the grass, trees swaying in a stronger wind, and warmer, golden light',
       'The decorations have no collision, so they never block your path',
+      'Monster randomization is now much more varied. Before, each act drew from nearly the same set of monsters every seed, just shuffled into different areas. Now every seed picks its own lineup for each act, so you’ll meet different enemies from one run to the next',
+      'Challenge 15 keeps its current monsters until it ends on September 30, so runs in progress aren’t affected. The new variety starts with Challenge 16',
     ],
   },
   {
