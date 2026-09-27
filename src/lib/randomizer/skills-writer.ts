@@ -90,6 +90,17 @@ const BARB_SEQNUM_SKILLS = new Set(['Leap', 'Leap Attack']);
 // so fall these back to SC when shuffled off the Sorceress.
 const SQ_SEQUENCE_TUNED_SKILLS = new Set(['Lightning', 'Chain Lightning']);
 
+// The engine's S3 action lock is Druid-only: the server's mode-change gate
+// (D2Game PlrModes, D2MOO sub_6FC81890) returns "interruptible" for
+// PLRMODE_SPECIAL3 whenever dwClassId != PCLASS_DRUID. On any other host the
+// next attack input cancels the bite before its trigger frame, so the client
+// re-casts every frame and drains mana (10 per Rabies) until the server
+// resyncs it — the "mana drops then bounces back" bug. Rabies and Hunger are
+// the only S3 form attacks; A1 is locked class-agnostically and both forms
+// ship A1 clips with an attack trigger (40A1HTH / TGA1HTH), the same mode
+// Feral Rage, Maul and Fire Claws already use in form.
+const S3_LOCK_CLASS: ClassCode = 'dru';
+
 function pickBestAnim(
   skill: SkillEntry,
   originalAnim: string,
@@ -252,6 +263,13 @@ export function writeSkillsRows(
           if (seqinputIdx >= 0) row[seqinputIdx] = '';
         }
       }
+    }
+
+    // Form attacks keep their vanilla anim above, except S3 off the Druid,
+    // where the engine never locks the action (see S3_LOCK_CLASS).
+    if (isFormOnly && placement.targetClass !== S3_LOCK_CLASS && animIdx >= 0 && row[animIdx] === 'S3') {
+      row[animIdx] = 'A1';
+      if (seqtransIdx >= 0) row[seqtransIdx] = 'A1';
     }
 
     // Update reqlevel to match the assigned row

@@ -36,4 +36,6 @@
 // challenges before 16 keep v3 selection and regenerate identically.
 // v59 scales Forgotten Arts synergies by source-spell rarity (20–50% of native)
 // and adds Necromancer/Warlock summons and masteries (Bone Armor removed).
-export const PIPELINE_VERSION = 59;
+// v60 casts Rabies/Hunger with A1 instead of S3 on non-Druid shapeshift hosts
+// (the engine only locks the S3 action for Druids).
+export const PIPELINE_VERSION = 60;

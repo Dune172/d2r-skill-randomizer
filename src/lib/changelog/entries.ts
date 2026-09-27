@@ -12,6 +12,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.331',
+    date: 'September 2026',
+    tagline: 'Rabies and Hunger fixed on non-Druid shapeshifters',
+    notes: [
+      'Fixed Rabies and Hunger when Werewolf or Werebear lands on a class other than the Druid. Your next attack could cut the bite short, so it rarely landed, and your mana dropped sharply before bouncing back to the right amount',
+      'The game only holds that bite animation to the end for Druids, so on every other class these attacks now use the form’s normal attack animation and always finish',
+    ],
+  },
+  {
     version: 'v0.32',
     date: 'September 2026',
     tagline: 'Autumn comes to Sanctuary',

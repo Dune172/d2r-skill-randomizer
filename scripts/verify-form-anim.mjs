@@ -5,7 +5,9 @@
  *
  * For each seed: for every COIN_FLIP_DROP skill that survived (restrict=2), compare
  * anim/seqtrans/seqnum/seqinput against vanilla skills.txt. They must be byte-identical
- * regardless of host class.
+ * regardless of host class, with one exception: S3 attacks (Rabies, Hunger) on a
+ * non-Druid host must be A1/A1, because the engine only locks the S3 action for
+ * Druids (see S3_LOCK_CLASS in skills-writer.ts).
  *
  * Run with: node scripts/verify-form-anim.mjs [seed1 seed2 ...]
  *   (dev server must already be running: `npm run dev`)
@@ -14,7 +16,7 @@ import AdmZip from 'adm-zip';
 import fs from 'fs';
 import path from 'path';
 
-const BASE = 'http://localhost:3000';
+const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
 const SEEDS = process.argv.slice(2).map(Number).filter(Boolean);
 if (SEEDS.length === 0) {
   // A broad sweep — we want some seeds where the form skills land on non-Druid
@@ -56,11 +58,11 @@ async function generateZip(seed) {
   const rand = await fetch(`${BASE}/api/randomize`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-forwarded-for': fakeIp },
-    body: JSON.stringify({ seed }),
+    body: JSON.stringify({ seed, raceMode: false }),
   });
   if (!rand.ok) throw new Error(`randomize ${seed}: ${rand.status} ${await rand.text()}`);
 
-  const dl = await fetch(`${BASE}/api/download?seed=${seed}`, {
+  const dl = await fetch(`${BASE}/api/download?seed=${seed}&raceMode=0`, {
     headers: { 'x-forwarded-for': fakeIp },
   });
   if (!dl.ok) throw new Error(`download ${seed}: ${dl.status} ${await dl.text()}`);
@@ -148,9 +150,14 @@ function isSubstitute(snap, vanillaSnap) {
       const isNonDruid = snap.charclass !== 'dru';
       if (isNonDruid) totalNonDruidKept++;
 
+      const expected = { ...v };
+      if (isNonDruid && v.anim === 'S3') {
+        expected.anim = 'A1';
+        expected.seqtrans = 'A1';
+      }
       const mismatches = [];
       for (const c of COLS_TO_CHECK) {
-        if (snap[c] !== v[c]) mismatches.push(`${c}: ${JSON.stringify(v[c])} → ${JSON.stringify(snap[c])}`);
+        if (snap[c] !== expected[c]) mismatches.push(`${c}: expected ${JSON.stringify(expected[c])}, got ${JSON.stringify(snap[c])}`);
       }
       if (mismatches.length) {
         console.log(`  ${name.padEnd(12)} [${snap.charclass}] ** FAIL ** ${mismatches.join(', ')}`);
