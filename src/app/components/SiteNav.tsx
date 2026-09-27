@@ -12,6 +12,7 @@ const navLinks = [
 const communityLinks = [
   { href: 'https://discord.gg/y5r2sTxwS5', label: 'Discord Community', external: true },
   { href: 'https://ko-fi.com/d2rrando', label: 'Support on Ko-fi', external: true },
+  { href: '/multiplayer', label: 'Multiplayer Guide', external: false },
   { href: '/changelog', label: 'Patch Notes', external: false },
 ];
 

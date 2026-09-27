@@ -33,6 +33,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.6,
     },
     {
+      url: 'https://d2rrandomizer.com/multiplayer',
+      lastModified: '2026-09-27',
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
       url: 'https://d2rrandomizer.com/changelog',
       lastModified: '2026-04-07',
       changeFrequency: 'weekly',
