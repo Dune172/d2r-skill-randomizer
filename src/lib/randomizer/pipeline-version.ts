@@ -38,4 +38,6 @@
 // and adds Necromancer/Warlock summons and masteries (Bone Armor removed).
 // v60 casts Rabies/Hunger with A1 instead of S3 on non-Druid shapeshift hosts
 // (the engine only locks the S3 action for Druids).
-export const PIPELINE_VERSION = 60;
+// v61 ships controllerskillsettings.json remapped to the shuffled skills.txt rows,
+// so gamepad skill behavior follows each skill instead of its old row.
+export const PIPELINE_VERSION = 61;

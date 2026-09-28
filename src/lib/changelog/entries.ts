@@ -12,6 +12,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.332',
+    date: 'September 2026',
+    tagline: 'Controller fix — shuffled skills work on any button',
+    notes: [
+      'Controller players can now bind any shuffled skill and have it work. The game decides how each skill behaves on a gamepad (whether it’s a toggle, needs a corpse, targets the ground, and so on) by the skill’s old slot, not the skill itself, so a skill that moved could inherit the wrong behavior. For example, Fire Ball landing where an aura used to be turned into a toggle and the button did nothing',
+      'Every mod now tells the game where each skill moved, so gamepad behavior follows the skill. Keyboard and mouse play is unchanged',
+    ],
+  },
+  {
     version: 'v0.331',
     date: 'September 2026',
     tagline: 'Rabies and Hunger fixed on non-Druid shapeshifters',

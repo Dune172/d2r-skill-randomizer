@@ -10,6 +10,7 @@ import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
 import { applyRaceMode, pickRaceClassCode } from '@/lib/randomizer/race-mode';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
 import { writeSkillsRows, reorderSkillsRows } from '@/lib/randomizer/skills-writer';
+import { buildControllerSkillSettings } from '@/lib/randomizer/controller-skills-writer';
 import { writeSkillDescRows } from '@/lib/randomizer/skilldesc-writer';
 import { assignPrerequisites } from '@/lib/randomizer/prereq-assigner';
 import { buildAllTreeSprites } from '@/lib/sprites/tree-stitcher';
@@ -352,8 +353,12 @@ export async function POST(request: NextRequest) {
 
     // Reorder skills.txt rows into contiguous class blocks (fixes StaffMod pool lookup).
     // Must run after writeSkillsRows has updated all column values (charclass, reqlevel, etc.).
+    const vanillaRowNames = skillsTxt.rows.map(r => r[0]);
     const { reorderedRows, idMapping } = reorderSkillsRows(skillsTxt.rows, placements);
     skillsTxt.rows = reorderedRows;
+
+    // Controller behavior is keyed by skills.txt row — move it with the skills.
+    const controllerSkillSettingsJson = buildControllerSkillSettings(vanillaRowNames, idMapping, substitutes);
 
     writeSkillDescRows(skillDescTxt.headers, skillDescTxt.rows, placements, descSynergyUpdates);
 
@@ -902,6 +907,7 @@ export async function POST(request: NextRequest) {
       skillDescTxt: skillDescTxtContent,
       treeSprites,
       controllerTreeSprites,
+      controllerSkillSettingsJson,
       iconSprites,
       skillStringsJson,
       charstatsTxt,

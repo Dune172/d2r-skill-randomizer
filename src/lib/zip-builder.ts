@@ -10,6 +10,7 @@ export interface ZipContents {
   skillDescTxt: string;
   treeSprites: Map<string, Buffer>; // filename → sprite buffer
   controllerTreeSprites?: Map<string, Buffer>; // controller-mode tree sprites (different dimensions, different output path)
+  controllerSkillSettingsJson?: string; // gamepad per-skill behavior, remapped to the shuffled skills.txt rows
   iconSprites: Map<string, Buffer>; // filename → sprite buffer
   skillStringsJson?: string;        // skills string table (always included)
   charstatsTxt?: string;            // charstats with randomised StartSkill per class
@@ -72,6 +73,7 @@ const PREFIX_TO_FOLDER: Record<string, string> = {
  *   {modName}/{modName}.mpq/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.sprite
  *   {modName}/{modName}.mpq/data/hd/global/ui/spells/skill_trees/{prefix}skilltree.lowend.sprite
  *   {modName}/{modName}.mpq/data/hd/global/ui/controller/panel/spells/v2/{prefix}skilltree.sprite
+ *   {modName}/{modName}.mpq/data/hd/global/excel/controllerskillsettings.json
  *   {modName}/{modName}.mpq/data/global/ui/spells/{classname}/{prefix}skillicon.sprite
  */
 export function buildZip(contents: ZipContents): Buffer {
@@ -247,6 +249,11 @@ export function buildZip(contents: ZipContents): Buffer {
     for (const [filename, buf] of contents.controllerTreeSprites.entries()) {
       zip.addFile(`${d}/data/hd/global/ui/controller/panel/spells/v2/${filename}`, buf);
     }
+  }
+
+  // Gamepad skill behavior is keyed by skills.txt row, so it ships remapped to the shuffle.
+  if (contents.controllerSkillSettingsJson) {
+    zip.addFile(`${d}/data/hd/global/excel/controllerskillsettings.json`, str(contents.controllerSkillSettingsJson));
   }
 
   // Add hireable sprite to both non-hd and hd paths
