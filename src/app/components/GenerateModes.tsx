@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import RandomizerApp from './RandomizerApp';
 import BuilderApp from './BuilderApp';
 import type { BuilderCatalog } from '@/lib/builder/catalog';
@@ -18,16 +17,18 @@ type Mode = 'seed' | 'builder';
  * you switch back.
  */
 export default function GenerateModes({ catalog }: { catalog: BuilderCatalog }) {
-  const searchParams = useSearchParams();
-  const [mode, setMode] = useState<Mode>(() =>
-    searchParams.get('mode') === 'builder' || searchParams.has('b') ? 'builder' : 'seed');
+  const [mode, setMode] = useState<Mode>('seed');
   const savedQuery = useRef<Record<Mode, string>>({ seed: '', builder: '?mode=builder' });
 
-  // An opened link belongs to the mode it was made in. First load only;
-  // afterwards switchTo keeps the saved queries current.
-  const initialMode = useRef(mode);
+  // An opened link belongs to the mode it was made in. Read after mount, not in
+  // the state initializer: the page is prerendered without its query string, and
+  // hydration keeps the prerendered `hidden` attributes rather than re-rendering
+  // them, so an initializer-chosen mode would show the wrong tab in production.
   useEffect(() => {
-    savedQuery.current[initialMode.current] = window.location.search || savedQuery.current[initialMode.current];
+    const params = new URLSearchParams(window.location.search);
+    const opened: Mode = params.get('mode') === 'builder' || params.has('b') ? 'builder' : 'seed';
+    savedQuery.current[opened] = window.location.search || savedQuery.current[opened];
+    setMode(opened);
   }, []);
 
   const switchTo = (next: Mode) => {
