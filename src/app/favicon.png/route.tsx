@@ -1,8 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { OG_FONTS } from '@/lib/og/fonts';
 
-export const contentType = 'image/png';
-
 const BG = '#060203';
 const BORDER = '#7a1f0a';
 const GOLD = '#c8942a';
