@@ -7,11 +7,13 @@
  * now sits in its row, not the vanilla skill that used to.
  *
  * Drives the running Next.js dev server. Run with:
- *   node scripts/verify-controller-skills.mjs [--base http://localhost:3000] [--baseline <dir>] [--save <dir>]
+ *   node scripts/verify-controller-skills.mjs [--base http://localhost:3000] [--baseline <dir>] [--save <dir>] [--build <code>]...
  *
  * --baseline <dir> compares every other zip entry byte-for-byte against <case>.zip files
  * generated before the change (keyboard/mouse output must be unchanged).
  * --save <dir> writes each generated zip as <case>.zip.
+ * --build <code> (repeatable) also checks a /builder share code, whose substitutes can
+ * sit on a class other than the dropped skill's own.
  *
  * Checks per zip:
  *   1. The JSON is present; ids are unique and equal the vanilla id set.
@@ -41,6 +43,9 @@ const CASES = [
   { name: 'race404', body: { seed: 404 }, query: 'seed=404' },
   // Challenge 16 runs Forgotten Arts.
   { name: 'fa16', body: { seed: 505, weeklyChallenge: { enabled: true, weekOverride: 16 } }, query: 'seed=505&weekly=1&weekOverride=16' },
+  ...process.argv.flatMap((a, i) => (a === '--build' ? [process.argv[i + 1]] : [])).map((code, i) => ({
+    name: `build${i}`, body: { classBuild: code }, query: `build=${code}`,
+  })),
 ];
 
 function parseTxt(txt) {

@@ -5,8 +5,9 @@ import fs from 'fs';
 import path from 'path';
 import { createRNG, seedFromString } from '@/lib/randomizer/seed';
 import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings } from '@/lib/data-loader';
-import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
-import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
+import { groupByClass } from '@/lib/randomizer/skill-placer';
+import { runPlacement } from '@/lib/randomizer/placement-step';
+import { BuildRequestError, resolveClassBuild } from '@/lib/builder/class-build-server';
 import { applyRaceMode, getHirelingSkillNames, pickRaceClassCode, RACE_LOCKED_REQLEVEL } from '@/lib/randomizer/race-mode';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
 import { writeSkillsRows, reorderSkillsRows } from '@/lib/randomizer/skills-writer';
@@ -19,7 +20,7 @@ import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { challengeRandomizesMonsters, challengeUsesLegacyMonsterSelection } from '@/lib/challenge/rules';
 import { buildZip } from '@/lib/zip-builder';
 import { loadPatchedAnimAssets } from '@/lib/anim/anim-assets';
-import { getZipCache, getZipCacheStats, hasCached, setCached, makeCacheKey } from '@/lib/zip-cache';
+import { getZipCache, getZipCacheStats, hasCached, setCached, makeCacheKey, withBuildSegment } from '@/lib/zip-cache';
 import { incrementCount } from '@/lib/counter';
 import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
@@ -69,7 +70,18 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const seedInput = body.seed;
-    const weeklyEnabled = body.weeklyChallenge?.enabled === true;
+    // A hand-built class from the Class Builder. Its share code carries the seed for the
+    // other seven classes; challenge rules and Race Mode never apply to it.
+    let classBuild: ReturnType<typeof resolveClassBuild> | null = null;
+    if (body.classBuild != null) {
+      try {
+        classBuild = resolveClassBuild(body.classBuild);
+      } catch (e) {
+        if (e instanceof BuildRequestError) return NextResponse.json({ error: e.message }, { status: 400 });
+        throw e;
+      }
+    }
+    const weeklyEnabled = !classBuild && body.weeklyChallenge?.enabled === true;
     const weeklyOverride: number | undefined =
       Number.isInteger(body.weeklyChallenge?.weekOverride)
         ? Math.max(1, Math.trunc(body.weeklyChallenge.weekOverride))
@@ -105,32 +117,38 @@ export async function POST(request: NextRequest) {
     // can produce a race-mode challenge regardless of the raceMode they pass.
     // Must stay in lockstep with the identical guard in /api/download so the cache
     // keys agree. Outside weekly, raceMode defaults true (matches Season preset).
-    const raceMode = weeklyEnabled || forgottenArts ? false : (body.raceMode !== false);
+    // A hand-built class would be erased by Race Mode's Prayer filler, so it is
+    // forced off for builds too — mirrored in /api/download.
+    const raceMode = classBuild || weeklyEnabled || forgottenArts ? false : (body.raceMode !== false);
     const enemyShuffle = weeklyEnabled ? challengeRandomizesMonsters(weekNumber) : body.enemyShuffle === true;
-    if (!seedInput && seedInput !== 0) {
+    if (!classBuild && !seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
     }
 
     const numericSeed = Number(seedInput);
-    const seed = (typeof seedInput === 'number' || (typeof seedInput === 'string' && !isNaN(numericSeed) && Number.isInteger(numericSeed)))
+    const seed = classBuild ? classBuild.seed : (typeof seedInput === 'number' || (typeof seedInput === 'string' && !isNaN(numericSeed) && Number.isInteger(numericSeed)))
       ? Math.trunc(numericSeed)
       : seedFromString(String(seedInput));
     const effectivePlayers = playersEnabled ? playersCount : 1;
     const effectiveActs = effectivePlayers > 1 ? playersActs : [1, 2, 3, 4, 5];
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
     const effectiveXpDifficulties = xpMultiplier > 1 ? xpDifficulties : [1, 2, 3];
-    const cacheKey = makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts);
+    const cacheKey = withBuildSegment(
+      makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts),
+      classBuild?.code,
+    );
+    const ready = { seed, status: 'ready', ...(classBuild ? { build: classBuild.code, modName: classBuild.modName } : {}) };
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
     if (hasCached(cacheKey)) {
-      return NextResponse.json({ seed, status: 'ready' });
+      return NextResponse.json(ready);
     }
 
     const pending = pendingBuilds.get(cacheKey);
     if (pending) {
       await pending;
-      return NextResponse.json({ seed, status: 'ready' });
+      return NextResponse.json(ready);
     }
 
     const ip = getClientIp(request);
@@ -173,12 +191,15 @@ export async function POST(request: NextRequest) {
     const skillDescTxt = loadTxtFile('skilldesc.txt');
 
     // Step 5-6: Randomize trees and place skills
-    const treeAssignments = randomizeTrees(rng, treePages);
     // Mutation pre-hook: No Guard pulls every defense-granting skill out of the
     // shuffle pool before placement, so their tree slots get substitutes instead.
-    const mutationExcludedSkills = getMutationExcludedSkills(weekNumber);
-    const placed = placeSkills(rng, skills, treeAssignments,
-      mutationExcludedSkills.size > 0 ? { excludeSkills: mutationExcludedSkills } : undefined);
+    const placed = runPlacement(rng, {
+      treePages,
+      skills,
+      excludeSkills: getMutationExcludedSkills(weekNumber),
+      build: classBuild ?? undefined,
+    });
+    const treeAssignments = placed.treeAssignments;
     const droppedSkillNames = placed.droppedSkillNames;
     let placements = placed.placements;
     let substitutes = placed.substitutes;
@@ -912,7 +933,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 12: Build zip
-    const modName = `seed${seed}`;
+    const modName = classBuild ? classBuild.modName : `seed${seed}`;
     // Race mode and the weekly challenge get isolated save folders so competitive
     // characters don't mix with casual ones. Race: seed + race class (e.g. seed123pal).
     // Weekly: the mod name — unique per challenge since the weekly seed is week-derived.
@@ -986,7 +1007,7 @@ export async function POST(request: NextRequest) {
       pendingBuilds.delete(cacheKey);
     }
 
-    return NextResponse.json({ seed, status: 'ready' });
+    return NextResponse.json(ready);
   } catch (error) {
     // Log the full error server-side for debugging; return a generic message
     // to the client so stack traces and internal paths don't leak.

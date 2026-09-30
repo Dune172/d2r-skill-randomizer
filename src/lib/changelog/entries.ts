@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.334',
+    date: 'September 2026',
+    tagline: 'Class Builder: design your own class, and let the rest randomize',
+    notes: [
+      'New Class Builder tab on the Generate page. Pick a class, choose a layout for each of its three tabs from any of the 24 vanilla skill trees, and place any skill from any class wherever you want it',
+      'The other seven classes are randomized from the skills you left out, just like a normal seed. Reroll them as often as you like and preview them before you build',
+      'Skills that only work on their own class, such as Assassin claw skills or Barbarian Whirlwind, can only go on that class. Leave them out and they are replaced by a stand-in on another class, as in a normal seed',
+      'Every build has a short share link that carries the whole tree and your game options, so friends can download the exact same mod',
+    ],
+  },
+  {
     version: 'v0.333',
     date: 'September 2026',
     tagline: 'Race Mode mercenaries keep their skills, and item procs no longer roll auras',

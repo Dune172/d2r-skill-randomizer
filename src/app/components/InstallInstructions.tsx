@@ -1,7 +1,9 @@
 import Link from 'next/link';
 
-export function InstallInstructions({ seed, raceMode = true, forgottenArts = false }: { seed: number; raceMode?: boolean; forgottenArts?: boolean }) {
+export function InstallInstructions({ seed, raceMode = true, forgottenArts = false, modName }: { seed: number; raceMode?: boolean; forgottenArts?: boolean; modName?: string }) {
   const seedUnsigned = seed >>> 0;
+  // Class Builder mods are named by their build, not their seed.
+  const mod = modName ?? `seed${seed}`;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-[#c8a870]">
       {/* Battle.net column */}
@@ -25,11 +27,11 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">3</span>
             <div>
               Copy the extracted folder (e.g.{' '}
-              <code className="text-[#a89858]">seed{seed}\</code>
+              <code className="text-[#a89858]">{mod}\</code>
               ) into the{' '}
               <code className="text-[#a89858]">mods\</code>
               {' '}folder.
-              <div className="mt-1 text-[#7a7858] italic">The folder name matches your seed number — this is normal.</div>
+              <div className="mt-1 text-[#7a7858] italic">{modName ? 'The folder name identifies your build' : 'The folder name matches your seed number'} — this is normal.</div>
             </div>
           </div>
         </div>
@@ -49,7 +51,7 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">4b</span>
               <div>
                 <span className="text-[#c8a870]">Manual</span> — In Battle.net, go to D2R → <em>Settings</em> → <em>Game Settings</em> → <em>Additional Command Line Arguments</em> and add:
-                <code className="block text-[#a89858] break-all mt-0.5">-mod seed{seed} -txt{raceMode ? ` -seed ${seedUnsigned}` : ''}</code>
+                <code className="block text-[#a89858] break-all mt-0.5">-mod {mod} -txt{raceMode ? ` -seed ${seedUnsigned}` : ''}</code>
               </div>
             </div>
           </div>
@@ -82,18 +84,18 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">3</span>
             <div>
               Copy the extracted folder (e.g.{' '}
-              <code className="text-[#a89858]">seed{seed}/</code>
+              <code className="text-[#a89858]">{mod}/</code>
               ) into the{' '}
               <code className="text-[#a89858]">mods/</code>
               {' '}folder.
-              <div className="mt-1 text-[#7a7858] italic">The folder name matches your seed number — this is normal.</div>
+              <div className="mt-1 text-[#7a7858] italic">{modName ? 'The folder name identifies your build' : 'The folder name matches your seed number'} — this is normal.</div>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">4</span>
             <div>
               In Steam, right-click D2R → <em>Properties</em> → <em>General</em> → <em>Launch Options</em> and add:
-              <code className="block text-[#a89858] break-all mt-0.5">-mod seed{seed} -txt{raceMode ? ` -seed ${seedUnsigned}` : ''}</code>
+              <code className="block text-[#a89858] break-all mt-0.5">-mod {mod} -txt{raceMode ? ` -seed ${seedUnsigned}` : ''}</code>
             </div>
           </div>
         </div>

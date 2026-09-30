@@ -3,8 +3,9 @@ import { createRNG, seedFromString } from '@/lib/randomizer/seed';
 
 export const maxDuration = 30;
 import { loadTreeGrid, loadSkills, loadSkillDescs, loadSkillStrings } from '@/lib/data-loader';
-import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
-import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
+import { groupByClass } from '@/lib/randomizer/skill-placer';
+import { runPlacement } from '@/lib/randomizer/placement-step';
+import { BuildRequestError, resolveClassBuild } from '@/lib/builder/class-build-server';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { MYSTERY_ICON } from '@/lib/randomizer/mutations/mystery-box';
 import { getMutationExcludedSkills, isMutationActiveForWeek } from '@/lib/randomizer/mutations';
@@ -19,14 +20,24 @@ export async function POST(request: NextRequest) {
     // No Guard removes defense skills from the shuffle pool, which changes every
     // downstream placement. The spoiler must run the same exclusions or it shows
     // a tree the generated mod will not contain.
-    const weekNumber = Number.isInteger(body.weekNumber) ? Number(body.weekNumber) : 0;
+    // A Class Builder share code: its seed randomizes the other seven classes.
+    let classBuild: ReturnType<typeof resolveClassBuild> | null = null;
+    if (body.classBuild != null) {
+      try {
+        classBuild = resolveClassBuild(body.classBuild);
+      } catch (e) {
+        if (e instanceof BuildRequestError) return NextResponse.json({ error: e.message }, { status: 400 });
+        throw e;
+      }
+    }
+    const weekNumber = !classBuild && Number.isInteger(body.weekNumber) ? Number(body.weekNumber) : 0;
 
-    if (!seedInput && seedInput !== 0) {
+    if (!classBuild && !seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
     }
 
     const numericSeed = Number(seedInput);
-    const seed = (typeof seedInput === 'number' || (typeof seedInput === 'string' && !isNaN(numericSeed) && Number.isInteger(numericSeed)))
+    const seed = classBuild ? classBuild.seed : (typeof seedInput === 'number' || (typeof seedInput === 'string' && !isNaN(numericSeed) && Number.isInteger(numericSeed)))
       ? Math.trunc(numericSeed)
       : seedFromString(String(seedInput));
     if (isMutationActiveForWeek(weekNumber, 'forgotten-arts')) {
@@ -39,10 +50,12 @@ export async function POST(request: NextRequest) {
     const skills = loadSkills();
 
     // Randomize
-    const treeAssignments = randomizeTrees(rng, treePages);
-    const excludeSkills = getMutationExcludedSkills(weekNumber);
-    const { placements, substitutes } = placeSkills(rng, skills, treeAssignments,
-      excludeSkills.size > 0 ? { excludeSkills } : undefined);
+    const { treeAssignments, placements, substitutes } = runPlacement(rng, {
+      treePages,
+      skills,
+      excludeSkills: getMutationExcludedSkills(weekNumber),
+      build: classBuild ?? undefined,
+    });
     const placementsByClass = groupByClass(placements);
 
     // Resolve in-game (player-facing) display data: skill → skilldesc → str name /

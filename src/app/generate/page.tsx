@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import RandomizerApp from '@/app/components/RandomizerApp';
+import GenerateModes from '@/app/components/GenerateModes';
+import { loadBuilderCatalog } from '@/lib/builder/catalog';
 
 export const dynamic = 'force-static';
 
@@ -32,12 +33,15 @@ export default function GeneratePage() {
         </h1>
         <p className="text-[#a89060]/80 text-sm leading-relaxed max-w-xl mx-auto">
           Enter any seed number — or leave it blank for a random one. The same seed always produces
-          the same skill tree shuffle, so you can share seeds with friends for a shared run.
+          the same skill tree shuffle, so you can share seeds with friends for a shared run. Or open
+          the Class Builder to design your own class and let the rest randomize.
         </p>
       </div>
 
+      {/* The Class Builder's skill catalog is rendered into this static page, so
+          neither mode makes an API request on page view. */}
       <Suspense>
-        <RandomizerApp />
+        <GenerateModes catalog={loadBuilderCatalog()} />
       </Suspense>
     </main>
   );

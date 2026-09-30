@@ -1,5 +1,11 @@
-/** Shared by both generators. Keep the same seed/options across bounded retries. */
-export async function generateMod(body: string, onWaiting: (message: string) => void): Promise<void> {
+/**
+ * Shared by the generators and the Class Builder. Keep the same seed/options across
+ * bounded retries. Resolves with the route's JSON (seed, and for builds the mod name).
+ */
+export async function generateMod(
+  body: string,
+  onWaiting: (message: string) => void,
+): Promise<Record<string, unknown> | null> {
   const maxAttempts = 3;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     onWaiting('');
@@ -8,7 +14,7 @@ export async function generateMod(body: string, onWaiting: (message: string) => 
       headers: { 'Content-Type': 'application/json' },
       body,
     });
-    if (response.ok) return;
+    if (response.ok) return response.json().catch(() => null);
 
     // Hosting/CDN errors can be HTML; preserve the HTTP error instead of
     // replacing it with an unhelpful JSON parsing exception.
@@ -36,4 +42,6 @@ export async function generateMod(body: string, onWaiting: (message: string) => 
       : retryable ? `Server ${response.status === 429 ? 'request limit reached' : 'is busy'} (HTTP ${response.status}). Please try again in ${delay}s.`
       : `Generation failed (HTTP ${response.status}). Please try again.`);
   }
+  // Unreachable: the last attempt either returns or throws.
+  throw new Error('Generation failed. Please try again.');
 }

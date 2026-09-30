@@ -80,8 +80,30 @@ function extractTreeFrame(
 }
 
 /**
+ * First row of page artwork in each tree frame. Everything above it is the tab
+ * strip (baked into every frame, with that frame's own tab drawn as selected)
+ * plus chrome that is identical across all of a class's frames.
+ *
+ * Measured from the source sprites: rows above the cut never differ between
+ * source classes of the same strip style, and the rows between the strip and
+ * the artwork are identical across a class's three frames, so any cut in that
+ * gap is seamless. Controller lowend has no gap — row 62 carries both the last
+ * strip row and the first art row — so it keeps the art row.
+ */
+const TAB_STRIP_ROWS: Record<TreeVariant, { full: number; lowend: number }> = {
+  mkb: { full: 113, lowend: 57 },
+  controller: { full: 129, lowend: 62 },
+};
+
+/**
  * Build a skill tree sprite for a class by combining 3 tree page frames
  * from potentially different source classes.
+ *
+ * A page can sit on any tab (the Class Builder allows it). Because the tab
+ * strip is part of the page's frame, a tree-3 page on tab 1 would show tab 3
+ * as selected; in that case the strip is taken from the same source class's
+ * frame for the tab it actually sits on. Pages on their own tab — every seed —
+ * are passed through untouched.
  */
 export function stitchTreeSprite(
   trees: TreePage[],
@@ -92,11 +114,17 @@ export function stitchTreeSprite(
   let maxHeight = 0;
   let frameWidth = 0;
 
-  // Extract frames for each tree (tab 0 = tree index 1, tab 1 = tree index 2, tab 2 = tree index 3).
+  // Extract frames for each tab in order (tab 0 first).
   // All source frames within one variant share frameWidth (e.g. PC = 895, controller = 1259);
   // we never mix variants in a single stitch, so the width assumption holds.
-  for (const tree of trees) {
+  for (let tab = 0; tab < trees.length; tab++) {
+    const tree = trees[tab];
     const frame = extractTreeFrame(tree.classCode, tree.treeIndex, lowend, variant);
+    if (tree.treeIndex !== tab + 1) {
+      const strip = extractTreeFrame(tree.classCode, tab + 1, lowend, variant);
+      const rows = TAB_STRIP_ROWS[variant][lowend ? 'lowend' : 'full'];
+      strip.data.copy(frame.data, 0, 0, rows * frame.width * 4);
+    }
     frames.push(frame);
     maxHeight = Math.max(maxHeight, frame.height);
     frameWidth = frame.width;
