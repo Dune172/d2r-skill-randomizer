@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.333',
+    date: 'September 2026',
+    tagline: 'Race Mode mercenaries keep their skills, and item procs no longer roll auras',
+    notes: [
+      'Race Mode mercenaries keep their own skills again. Turning the seven unused classes into Prayer was also turning every mercenary skill into Prayer, so your Rogue, Desert Mercenary, Iron Wolf or Barbarian had nothing but Prayer',
+      'Mercenary skills that land on an unused class in Race Mode show up there with a required level of 100, so those classes stay unplayable',
+      'Items no longer roll a chance to cast an aura or passive skill, which did nothing when it triggered. Any item proc that would have landed on one now casts a castable skill of a similar level instead',
+    ],
+  },
+  {
     version: 'v0.332',
     date: 'September 2026',
     tagline: 'Controller fix — shuffled skills work on any button',

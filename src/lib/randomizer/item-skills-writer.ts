@@ -84,6 +84,49 @@ function buildPlacementIndices(placements: SkillPlacement[]) {
   return { byPos, byClassRowCol, byClassRow, byClass };
 }
 
+// Proc target pools: every eligible proc target (isProcTarget — castable minus
+// summons / poor-proc skills), plus a per-class subset for class-restricted items.
+function buildProcPools(placements: SkillPlacement[], byClass: Map<string, SkillPlacement[]>) {
+  const all = placements.filter(p => isProcTarget(p.skill));
+  const perClass = new Map<string, SkillPlacement[]>();
+  for (const [cls, ps] of byClass) perClass.set(cls, ps.filter(p => isProcTarget(p.skill)));
+  return { all, perClass };
+}
+
+// Resolve a VANILLA proc param. Identity-remapped via idMapping so the original
+// D2R assignment survives the row reorder — unless that row no longer casts
+// anything: a substitute keeps the vanilla row's identity but carries foreign
+// mechanics, and when those are an aura or passive (every Race Mode Prayer
+// filler row, or a substitute sourced from one) the item would roll "N% chance
+// to cast <aura>", which silently does nothing. Those re-roll to a proc target
+// on the same tree row (similar power), in the restricted class when there is
+// one. `rerollRng` is separate from the injected-proc RNG so re-rolls never
+// shift which skills injected procs get. The param is a row index (affixes) or
+// a skill name (most uniques); a re-roll answers in the same form.
+function resolveVanillaProcParam(
+  par: string,
+  classRestriction: string | undefined,
+  byId: Map<number, SkillPlacement>,
+  byName: Map<string, SkillPlacement>,
+  pools: { all: SkillPlacement[]; perClass: Map<string, SkillPlacement[]> },
+  idMapping: Map<number, number> | undefined,
+  rerollRng: SeededRNG | undefined,
+): string {
+  const numId = parseInt(par.trim(), 10);
+  const byNumber = !isNaN(numId);
+  const src = byNumber ? byId.get(numId) : byName.get(par.trim());
+  if (!src || isCastableTarget(src.skill)) return remapRowIndexParam(par, idMapping);
+
+  let pool = (classRestriction && pools.perClass.get(classRestriction)) || [];
+  if (pool.length === 0) pool = pools.all;
+  if (pool.length === 0) return remapRowIndexParam(par, idMapping);
+  const sameRow = pool.filter(p => p.row === src.row);
+  if (sameRow.length > 0) pool = sameRow;
+  const chosen = rerollRng ? pool[rerollRng.randInt(0, pool.length - 1)] : pool[0];
+  if (!byNumber) return chosen.skill.skill;
+  return String(idMapping?.get(chosen.skill.id) ?? chosen.skill.id);
+}
+
 /**
  * Static map of D2R base item codes → class restriction.
  *
@@ -145,10 +188,12 @@ export function remapUniqueItemSkills(
   rows: string[][],
   placements: SkillPlacement[],
   idMapping: Map<number, number> | undefined,
+  rerollRng?: SeededRNG,
 ): string[][] {
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
   const byId = new Map<number, SkillPlacement>(placements.map(p => [p.skill.id, p]));
   const { byPos, byClassRowCol, byClassRow, byClass } = buildPlacementIndices(placements);
+  const procPools = buildProcPools(placements, byClass);
 
   const codeCol = headers.indexOf('code');
   if (codeCol === -1) return rows;
@@ -170,9 +215,10 @@ export function remapUniqueItemSkills(
       if (!par?.trim()) continue;
 
       // Procs (CTC family + charged): identity-remap the vanilla skill via
-      // idMapping so the original D2R proc assignment is preserved.
+      // idMapping so the original D2R proc assignment is preserved (re-rolled
+      // if that row became an aura/passive — see resolveVanillaProcParam).
       if (PROC_CODES.has(prop)) {
-        updated[parCol] = remapRowIndexParam(par, idMapping);
+        updated[parCol] = resolveVanillaProcParam(par, classRestriction, byId, byName, procPools, idMapping, rerollRng);
         continue;
       }
 
@@ -247,24 +293,21 @@ export function remapClassItemSkills(
   placements: SkillPlacement[],
   idMapping: Map<number, number> | undefined,
   procRng?: SeededRNG,
+  rerollRng?: SeededRNG,
 ): string[][] {
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
   const byId = new Map<number, SkillPlacement>(placements.map(p => [p.skill.id, p]));
   const { byPos, byClassRowCol, byClassRow, byClass } = buildPlacementIndices(placements);
 
-  // Proc pools for INJECTED_PROC_PARAM resolution: all eligible proc targets,
-  // plus a per-class subset for class-restricted affixes. Built once per call.
-  // Uses isProcTarget (castable minus summons / poor-proc skills), NOT the
-  // broader isCastableTarget used by the `+N to skill` granter path below.
-  const allCastable = placements.filter(p => isProcTarget(p.skill));
-  const castableByClass = new Map<string, SkillPlacement[]>();
-  for (const [cls, ps] of byClass) {
-    castableByClass.set(cls, ps.filter(p => isProcTarget(p.skill)));
-  }
+  // Proc pools for INJECTED_PROC_PARAM resolution and vanilla-proc re-rolls.
+  // Uses isProcTarget, NOT the broader isCastableTarget used by the
+  // `+N to skill` granter path below.
+  const procPools = buildProcPools(placements, byClass);
+  const allCastable = procPools.all;
 
   // Resolve a sentinel-injected proc to a random castable skill's final row index.
   const pickInjectedProcParam = (classRestriction: string | undefined): string => {
-    let pool = classRestriction ? castableByClass.get(classRestriction) : allCastable;
+    let pool = classRestriction ? procPools.perClass.get(classRestriction) : allCastable;
     if (!pool || pool.length === 0) pool = allCastable;
     if (pool.length === 0) return '0';
     const chosen = procRng ? pool[procRng.randInt(0, pool.length - 1)] : pool[0];
@@ -289,11 +332,12 @@ export function remapClassItemSkills(
 
       // Procs (CTC family + charged). Mutation-injected procs carry the sentinel
       // param and get a random castable skill; vanilla procs identity-remap via
-      // idMapping so the original D2R proc assignment is preserved.
+      // idMapping so the original D2R proc assignment is preserved (re-rolled if
+      // that row became an aura/passive — see resolveVanillaProcParam).
       if (PROC_CODES.has(code)) {
         updated[paramCol] = param.trim() === INJECTED_PROC_PARAM
           ? pickInjectedProcParam(classRestriction)
-          : remapRowIndexParam(param, idMapping);
+          : resolveVanillaProcParam(param, classRestriction || undefined, byId, byName, procPools, idMapping, rerollRng);
         continue;
       }
 

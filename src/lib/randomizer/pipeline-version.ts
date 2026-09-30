@@ -40,4 +40,6 @@
 // (the engine only locks the S3 action for Druids).
 // v61 ships controllerskillsettings.json remapped to the shuffled skills.txt rows,
 // so gamepad skill behavior follows each skill instead of its old row.
-export const PIPELINE_VERSION = 61;
+// v62 keeps mercenary skills out of Race Mode's Prayer filler (locked on filler
+// classes instead) and re-rolls vanilla item procs whose row became an aura/passive.
+export const PIPELINE_VERSION = 62;

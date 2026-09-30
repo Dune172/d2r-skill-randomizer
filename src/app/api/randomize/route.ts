@@ -7,7 +7,7 @@ import { createRNG, seedFromString } from '@/lib/randomizer/seed';
 import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings } from '@/lib/data-loader';
 import { randomizeTrees } from '@/lib/randomizer/tree-randomizer';
 import { placeSkills, groupByClass } from '@/lib/randomizer/skill-placer';
-import { applyRaceMode, pickRaceClassCode } from '@/lib/randomizer/race-mode';
+import { applyRaceMode, getHirelingSkillNames, pickRaceClassCode, RACE_LOCKED_REQLEVEL } from '@/lib/randomizer/race-mode';
 import { updateSkillsSynergies, updateSkillDescSynergies } from '@/lib/randomizer/synergy-updater';
 import { writeSkillsRows, reorderSkillsRows } from '@/lib/randomizer/skills-writer';
 import { buildControllerSkillSettings } from '@/lib/randomizer/controller-skills-writer';
@@ -185,9 +185,15 @@ export async function POST(request: NextRequest) {
 
     // Race Mode: keep one seed-chosen class as the real randomized tree; replace every
     // other class's 30 slots with Prayer filler. Runs after placeSkills (does not consume
-    // the main RNG) so the race class's shuffle stays reproducible.
+    // the main RNG) so the race class's shuffle stays reproducible. Mercenary skills keep
+    // their rows (hireling.txt names them) and are locked on filler classes below.
+    let raceFillerSkills = new Set<string>();
+    let raceLockedSkills = new Set<string>();
     if (raceMode) {
-      ({ placements, substitutes } = applyRaceMode(seed, placements, substitutes, skills));
+      const vanillaHireling = loadTxtFile('hireling.txt');
+      const mercSkills = getHirelingSkillNames(vanillaHireling.headers, vanillaHireling.rows);
+      ({ placements, substitutes, fillerSkills: raceFillerSkills, lockedSkills: raceLockedSkills } =
+        applyRaceMode(seed, placements, substitutes, skills, mercSkills));
     }
     const placementsByClass = groupByClass(placements);
 
@@ -351,6 +357,17 @@ export async function POST(request: NextRequest) {
     // Step 8: Write modified txt files
     writeSkillsRows(skillsTxt.headers, skillsTxt.rows, placements, prereqAssignments);
 
+    // Race Mode: a merc skill left on a filler class keeps its real mechanics, so make it
+    // unlearnable there. Mercs ignore reqlevel and still cast it.
+    if (raceLockedSkills.size > 0) {
+      const reqlevelIdx = skillsTxt.headers.indexOf('reqlevel');
+      if (reqlevelIdx !== -1) {
+        for (const row of skillsTxt.rows) {
+          if (raceLockedSkills.has(row[0])) row[reqlevelIdx] = RACE_LOCKED_REQLEVEL;
+        }
+      }
+    }
+
     // Reorder skills.txt rows into contiguous class blocks (fixes StaffMod pool lookup).
     // Must run after writeSkillsRows has updated all column values (charclass, reqlevel, etc.).
     const vanillaRowNames = skillsTxt.rows.map(r => r[0]);
@@ -371,8 +388,13 @@ export async function POST(request: NextRequest) {
     let hirelingTxtFile: ReturnType<typeof loadTxtFile> | null = null;
     if (hirelingAura) {
       hirelingTxtFile = loadTxtFile('hireling.txt');
+      // Race Mode filler rows are Prayer clones posing as paladin auras — keep them out
+      // of the merc aura pool so mercs roll real auras.
+      const hirelingPlacements = raceFillerSkills.size > 0
+        ? placements.filter(p => !raceFillerSkills.has(p.skill.skill))
+        : placements;
       assignedHirelingSkills = writeHirelingRows(hirelingTxtFile.headers, hirelingTxtFile.rows,
-        placements, rng, { aura: hirelingAura, skills: false });
+        hirelingPlacements, rng, { aura: hirelingAura, skills: false });
 
       // Also collect vanilla attack skills (Mode ∈ {4,7,14}) so they get correct
       // HireableIconCel values in the hireable sprite. Without this, all attack
@@ -401,8 +423,11 @@ export async function POST(request: NextRequest) {
     // Dedicated sub-RNG (derived from, but independent of, the main seed) so
     // injected-proc skill selection doesn't disturb the main pipeline's RNG order.
     const procRng = createRNG(seed ^ 0x50524f43); // 'PROC'
-    magicPrefixTxt.rows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping, procRng);
-    magicSuffixTxt.rows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping, procRng);
+    // Separate stream for re-rolling vanilla procs whose row became an aura/passive,
+    // so those re-rolls never shift the injected-proc picks above.
+    const procRerollRng = createRNG(seed ^ 0x5245524f); // 'RERO'
+    magicPrefixTxt.rows = remapClassItemSkills(magicPrefixTxt.headers, magicPrefixTxt.rows, placements, idMapping, procRng, procRerollRng);
+    magicSuffixTxt.rows = remapClassItemSkills(magicSuffixTxt.headers, magicSuffixTxt.rows, placements, idMapping, procRng, procRerollRng);
     let magicPrefixContent = serializeTxtFile(magicPrefixTxt.headers, magicPrefixTxt.rows);
     let magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, magicSuffixTxt.rows);
 
@@ -575,7 +600,7 @@ export async function POST(request: NextRequest) {
       const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
       ui = fs.existsSync(uiPath) ? loadTxtFile('uniqueitems.txt') : null;
       if (ui) {
-        ui.rows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping);
+        ui.rows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping, procRerollRng);
         if (startingTeleportStaff) {
           ui.rows = applyTeleportStaffUnique(ui.headers, ui.rows, teleportStaffLevel, idMapping, teleportStaffSpeed);
         }
