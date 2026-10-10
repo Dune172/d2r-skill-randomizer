@@ -53,6 +53,7 @@ import { seasonFilesForNow } from '@/lib/seasons/overlay';
 import { openActsSavepath, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 import { buildOpenActsFiles, runOpenActsShuffle } from '@/lib/randomizer/open-acts/generate';
 import type { OpenActsShuffle } from '@/lib/randomizer/open-acts/fill';
+import { ApModeOptions, ApManifest, ApTables, applyApCharstats, applyApSkills, applyApTables, buildApManifest } from '@/lib/randomizer/ap-mode';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -90,12 +91,19 @@ export interface GenerateModOptions {
   mutationIds: readonly number[];
   /** The player's picks only (empty for a challenge): the savepath suffix and mutations.json. */
   customMutations: readonly number[];
+  /**
+   * Presence switches on Archipelago mode. Every AP effect is gated on this being set,
+   * so every other mod is byte-for-byte unaffected.
+   */
+  ap?: ApModeOptions;
 }
 
 export interface GenerateModResult {
   zip: Buffer;
   modName: string;
   savepath: string;
+  /** Present only in Archipelago mode: what the companion client needs to know about this mod. */
+  manifest?: ApManifest;
 }
 
 export async function generateMod(seed: number, opts: GenerateModOptions): Promise<GenerateModResult> {
@@ -123,7 +131,15 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     openActs,
     mutationIds,
     customMutations,
+    ap,
   } = opts;
+
+  // AP mode rebuilds itemstatcost, misc and cubemain from the vanilla files, which would
+  // silently undo any feature that also edits them. The AP route never asks for these.
+  if (ap && (weeklyEnabled || forgottenArts || classBuild || raceMode || mutationIds.length
+    || openActs.acts.length || openActs.shuffle)) {
+    throw new Error('Archipelago mode cannot be combined with challenges, mutations, Open Acts, Race Mode or a Class Builder build');
+  }
 
   const rng = createRNG(seed);
 
@@ -340,6 +356,10 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   const vanillaRowNames = skillsTxt.rows.map(r => r[0]);
   const { reorderedRows, idMapping } = reorderSkillsRows(skillsTxt.rows, placements);
   skillsTxt.rows = reorderedRows;
+
+  // Archipelago: a point can go anywhere, so no class skill may be gated by level or
+  // prerequisite. After writeSkillsRows so it overrides whatever that wrote.
+  if (ap) applyApSkills(skillsTxt.headers, skillsTxt.rows);
 
   // Controller behavior is keyed by skills.txt row — move it with the skills.
   const controllerSkillSettingsJson = buildControllerSkillSettings(vanillaRowNames, idMapping, substitutes);
@@ -575,6 +595,9 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     if (startingHoradricCube) {
       applyHoradricCube(charstats.headers, charstats.rows);
     }
+
+    // Archipelago: after the StartSkill pick above, which would hand out a free skill.
+    if (ap) applyApCharstats(charstats.headers, charstats.rows);
 
     charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
   }
@@ -897,7 +920,8 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   // Open Acts starters are built for one seed, so they get a folder of their own too.
   // Picked mutations add a suffix (e.g. D2RRandomizer_m1-5-7) so mutated characters
   // stay apart from unmutated ones.
-  const savepath = weeklyEnabled ? modName : forgottenArts ? `${modName}_forgotten_arts_v7`
+  // An Archipelago slot gets its own folder too, so its character is never mixed with others.
+  const savepath = ap ? ap.savepath : weeklyEnabled ? modName : forgottenArts ? `${modName}_forgotten_arts_v7`
     : (openActs.acts.length ? openActsSavepath(modName, raceMode ? pickRaceClassCode(seed) : null)
       : raceMode ? `${modName}${pickRaceClassCode(seed)}`
       : 'D2RRandomizer') + mutationSavepathSuffix(customMutations);
@@ -906,6 +930,29 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     startWithCube: startingHoradricCube, raceClassCode: raceMode ? pickRaceClassCode(seed) : null,
     charstats, skills: skillsTxt,
   });
+  // Archipelago: the custom stats, the Sigil and its recipes. Challenges, Forgotten Arts,
+  // mutations and Open Acts are all refused with AP mode (see the top of generateMod),
+  // so each table can start from the vanilla file.
+  let apTables: ApTables | undefined;
+  if (ap) {
+    const itemstatcost = loadTxtFile('itemstatcost.txt');
+    const misc = loadTxtFile('misc.txt');
+    const cubemain = loadTxtFile('cubemain.txt');
+    const itemNames = JSON.parse(
+      fs.readFileSync(path.join(DATA_DIR, 'local', 'strings', 'item-names.json'), 'utf8').replace(/^\uFEFF/, ''),
+    );
+    apTables = applyApTables({ ap, itemstatcost, misc, cubemain, charstats, itemNames });
+    itemStatCostTxt = serializeTxtFile(itemstatcost.headers, itemstatcost.rows);
+    miscTxt = serializeTxtFile(misc.headers, misc.rows);
+    cubemainTxt = serializeTxtFile(cubemain.headers, cubemain.rows);
+    charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
+    itemNamesJson = '\uFEFF' + JSON.stringify(itemNames, null, 2).replace(/\n/g, '\r\n');
+  }
+
+  // Shipped inside the zip, so the mod and the manifest describing it cannot drift apart.
+  const manifest = ap && apTables
+    ? buildApManifest({ seed, modName, ap, placements, skillsRows: skillsTxt.rows, tables: apTables })
+    : undefined;
   const formatUiJson = (obj: unknown) =>
     '\uFEFF' + JSON.stringify(obj, null, 4).replace(/\n/g, '\r\n');
   const dataVersionBuild = fs.readFileSync(path.join(DATA_DIR, 'dataversionbuild.txt'), 'utf-8').trim();
@@ -958,7 +1005,8 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     gambleTxt,
     animDataD2: animAssets.animData,
     charCofs: animAssets.cofs,
-    seasonFiles: seasonFilesForNow(),
+    // A multiworld can outlast a season. Its mod must not change when the month does.
+    seasonFiles: ap ? undefined : seasonFilesForNow(),
     questsJson: openActsFiles.questsJson,
     openActsSpoilerJson: openActsFiles.spoilerJson,
     starterSaves: openActsFiles.starterSaves,
@@ -966,7 +1014,8 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     mutationsJson: customMutations.length
       ? JSON.stringify({ mutations: customMutations.map(id => ({ id, name: MUTATIONS[id].name })) }, null, 2)
       : undefined,
+    apManifestJson: manifest ? JSON.stringify(manifest, null, 2) : undefined,
   });
 
-  return { zip: zipBuffer, modName, savepath };
+  return { zip: zipBuffer, modName, savepath, manifest };
 }
