@@ -17,7 +17,7 @@ func testManifest(t *testing.T) *manifest.Manifest {
 	for i := 0; i < 30; i++ {
 		slots = append(slots, manifest.Slot{SlotID: fmt.Sprintf("pal:S%02d", i), SkillID: 100 + i, SkillName: fmt.Sprintf("Skill%d", i)})
 	}
-	raw, _ := json.Marshal(map[string]any{"contractVersion": 3, "pipelineVersion": 1, "seed": 1234, "modName": "seed1234", "savepath": "ap_1234_pal", "characterClass": "pal", "classes": map[string]any{"pal": map[string]any{"slots": slots}}, "tables": map[string]any{"stats": map[string]any{"keys": 368, "mail": 369}, "mailIdle": 1, "mailAttuned": 128, "baseAttributes": 85, "mail": []map[string]any{{"offer": 2, "item": "r01", "name": "El Rune"}}}})
+	raw, _ := json.Marshal(map[string]any{"contractVersion": 3, "pipelineVersion": 1, "seed": 1234, "modName": "seed1234", "savepath": "ap_1234_pal", "characterClass": "pal", "classes": map[string]any{"pal": map[string]any{"slots": slots}}, "tables": map[string]any{"stats": map[string]any{"keys": 368, "mail": 369}, "mailIdle": 1, "mailAttuned": 256, "baseAttributes": 85, "mail": []map[string]any{{"offer": 2, "item": "r01", "name": "El Rune"}}}})
 	m, e := manifest.Parse(raw)
 	if e != nil {
 		t.Fatal(e)

@@ -36,12 +36,15 @@
  *    waiting, the client sets `ap_mail` to that item's offer code, and exactly one
  *    recipe (the Sigil alone, `ap_mail` == offer) produces the item.
  *
- *    The client cannot see the Cube, so the recipe itself makes delivery exactly-once:
- *      at most once  - it returns the OTHER Sigil. There are two, and an offer's recipe
- *                      for one produces the other, so the same offer cannot fire twice.
+ *    The client cannot see the Cube, so the recipes themselves make delivery exactly-once:
+ *      at most once  - there are two Sigils, and every item has a separate offer code
+ *                      for each. A recipe takes one Sigil and returns the OTHER, so once
+ *                      it has fired, the offer on the stat no longer matches the Sigil
+ *                      in the player's hands and cannot fire again.
  *      at least once - it also returns a Receipt. Using the Receipt adds one to
  *                      `ap_mail`, which the client can see: offer + 1 means delivered.
- *    Offers are even and their acknowledgements odd, so the two never collide.
+ *    The client knows which Sigil the player holds by counting deliveries, and offers
+ *    the next item under that Sigil's code. Offers are even, acknowledgements odd.
  *
  * Both custom stats hold their value PLUS ONE, so they are never zero: the game drops
  * zero-valued stats from a character, and the client can only write an entry that exists.
@@ -90,7 +93,7 @@ const MAIL_IDLE = 1;
  * acknowledgement, so a Draught drunk while an item is waiting reads as "re-attuned",
  * never as that item's acknowledgement.
  */
-const MAIL_ATTUNED = 128;
+const MAIL_ATTUNED = 256;
 
 const RUNE_NAMES = [
   'El', 'Eld', 'Tir', 'Nef', 'Eth', 'Ith', 'Tal', 'Ral', 'Ort', 'Thul', 'Amn', 'Sol',
@@ -107,6 +110,8 @@ const MAILBOX_ITEMS = RUNE_NAMES.map((name, i) => ({
 export interface ApMailItem {
   /** What the client writes into the mail stat to offer this item. Even; offer + 1 acknowledges it. */
   offer: number;
+  /** Which Sigil (index into `sigils`) the recipe for this offer takes. It returns the other. */
+  sigil: number;
   /** misc.txt item code the recipe produces. */
   item: string;
   name: string;
@@ -250,21 +255,22 @@ export function applyApTables(args: {
   const baseAttributes = ['str', 'dex', 'int', 'vit']
     .reduce((sum, name) => sum + Number(classRow[column(charstats, name)]), 0);
 
-  const mail: ApMailItem[] = MAILBOX_ITEMS.map((entry, i) => ({ offer: 2 * (i + 1), ...entry }));
+  // Two offers per item, one for each Sigil: 2, 4, 6, ... with the acknowledgements between.
+  const mail: ApMailItem[] = MAILBOX_ITEMS.flatMap((entry, i) =>
+    SIGIL_CODES.map((_, sigil) => ({ offer: 2 * (i * SIGIL_CODES.length + sigil + 1), sigil, ...entry })));
   if (mail[mail.length - 1].offer + 1 >= MAIL_ATTUNED) throw new Error('apMode: mail offers reach the attunement value');
   const playerBaseStatEquals = '10';
   const playerBaseStatAtMost = '8';
   const playerBaseStatAtLeast = '7';
-  const otherSigil = (code: string) => (code === SIGIL_CODES[0] ? SIGIL_CODES[1] : SIGIL_CODES[0]);
   for (const entry of mail) {
-    for (const sigil of SIGIL_CODES) {
-      appendRow(cubemain, {
-        description: `Archipelago mail: ${entry.name} (${sigil})`, enabled: '1', version: '100',
-        op: playerBaseStatEquals, param: String(stats.mail), value: String(entry.offer),
-        numinputs: '1', 'input 1': sigil,
-        output: entry.item, 'output b': otherSigil(sigil), 'output c': RECEIPT_CODE, '*eol': '0',
-      });
-    }
+    const taken = SIGIL_CODES[entry.sigil];
+    const returned = SIGIL_CODES[1 - entry.sigil];
+    appendRow(cubemain, {
+      description: `Archipelago mail: ${entry.name} (${taken})`, enabled: '1', version: '100',
+      op: playerBaseStatEquals, param: String(stats.mail), value: String(entry.offer),
+      numinputs: '1', 'input 1': taken,
+      output: entry.item, 'output b': returned, 'output c': RECEIPT_CODE, '*eol': '0',
+    });
   }
   // With nothing waiting, a Sigil brews another Draught: the way back if a stat entry is
   // ever lost. Listed after the mail, and it keeps the Sigil it was given.

@@ -64,6 +64,10 @@ type Session struct {
 	// and full resyncs because the counts are rebuilt identically.
 	Applied map[string]int `json:"applied,omitempty"`
 
+	// Set by -mail-flip to correct the client's belief about which Sigil the player
+	// holds, should the two ever disagree.
+	MailFlipped bool `json:"mailFlipped,omitempty"`
+
 	// Highest ReceivedItems index applied. The server resends from 0 to resync.
 	LastReceivedIndex int `json:"lastReceivedIndex"`
 
@@ -295,6 +299,7 @@ func (s *Session) Bind(seed string, team, slot int64) error {
 	s.Character = loaded.Character
 	s.CheckedLocations, s.ItemCounts, s.Applied = loaded.CheckedLocations, loaded.ItemCounts, loaded.Applied
 	s.LastReceivedIndex, s.GoalReported = loaded.LastReceivedIndex, loaded.GoalReported
+	s.MailFlipped = loaded.MailFlipped
 	return nil
 }
 
@@ -386,4 +391,39 @@ func clientUUID(dir, fallback string) string {
 		_ = os.WriteFile(path, []byte(id), 0o600)
 	}
 	return id
+}
+
+// AppliedTotal is how many one-shot items, across the given ids, have been carried out.
+func (s *Session) AppliedTotal(items ...int64) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	total := 0
+	for _, id := range items {
+		total += s.Applied[itemKey(id)]
+	}
+	return total
+}
+
+// MailSigil is which Sigil (0 or 1) the player holds: the first to begin with, swapped
+// by every delivery, and swapped once more if the player has corrected it.
+func (s *Session) MailSigil(mailItems ...int64) int {
+	sigil := s.AppliedTotal(mailItems...) % 2
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.MailFlipped {
+		return 1 - sigil
+	}
+	return sigil
+}
+
+// FlipMail records that the player holds the other Sigil from the one the client assumed.
+func (s *Session) FlipMail() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.MailFlipped = !s.MailFlipped
+	if err := s.saveLocked(); err != nil {
+		s.MailFlipped = !s.MailFlipped
+		return err
+	}
+	return nil
 }
