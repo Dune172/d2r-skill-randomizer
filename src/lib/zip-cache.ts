@@ -301,6 +301,29 @@ export function getCached(key: string): Buffer | undefined {
 }
 
 /**
+ * Disk-only variants, for zips that are downloaded once or twice and never again
+ * (an Archipelago slot's mod). They skip the memory tier in both directions, so a room
+ * full of one-off 50 MB zips cannot push hot public seeds out of memory.
+ */
+export function setCachedOnDisk(key: string, buf: Buffer): void {
+  ensureBooted();
+  writeToDisk(key, buf);
+}
+
+export function getCachedFromDisk(key: string): Buffer | undefined {
+  ensureBooted();
+  const entry = getDiskIndex().get(key);
+  if (!entry) return undefined;
+  try {
+    const loaded = fs.readFileSync(zipPath(entry.hash));
+    touchDisk(key);
+    return loaded;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Update disk LRU ordering without rewriting the zip. Sidecar write is
  * best-effort; failure only affects eviction ordering, not correctness.
  */
@@ -360,4 +383,12 @@ export function makeCacheKey(
  */
 export function withBuildSegment(key: string, buildCode?: string): string {
   return buildCode ? `${key}:b${buildCode}` : key;
+}
+
+/**
+ * Key an Archipelago mod: appends the slot's identity to the options key, the same way
+ * and for the same reason as withBuildSegment.
+ */
+export function withApSegment(key: string, apKey: string): string {
+  return `${key}:ap:${apKey}`;
 }

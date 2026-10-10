@@ -48,6 +48,7 @@ import { applyForgottenArts, configureForgottenArtsShop, addSpellSynergyTooltips
 import { buildGlobalSkillIcons } from '@/lib/sprites/global-skill-icons';
 import { buildForgottenArtsItemAssets } from '@/lib/sprites/forgotten-arts-items';
 import { seasonFilesForNow } from '@/lib/seasons/overlay';
+import { ApModeOptions, ApManifest, ApTables, applyApCharstats, applyApSkills, applyApTables, buildApManifest } from '@/lib/randomizer/ap-mode';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -79,12 +80,19 @@ export interface GenerateModOptions {
   xpDifficulties: number[];
   raceMode: boolean;
   enemyShuffle: boolean;
+  /**
+   * Presence switches on Archipelago mode. Every AP effect is gated on this being set,
+   * so every other mod is byte-for-byte unaffected.
+   */
+  ap?: ApModeOptions;
 }
 
 export interface GenerateModResult {
   zip: Buffer;
   modName: string;
   savepath: string;
+  /** Present only in Archipelago mode: what the companion client needs to know about this mod. */
+  manifest?: ApManifest;
 }
 
 export async function generateMod(seed: number, opts: GenerateModOptions): Promise<GenerateModResult> {
@@ -109,6 +117,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     xpDifficulties,
     raceMode,
     enemyShuffle,
+    ap,
   } = opts;
 
   const rng = createRNG(seed);
@@ -326,6 +335,10 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   const vanillaRowNames = skillsTxt.rows.map(r => r[0]);
   const { reorderedRows, idMapping } = reorderSkillsRows(skillsTxt.rows, placements);
   skillsTxt.rows = reorderedRows;
+
+  // Archipelago: a point can go anywhere, so no class skill may be gated by level or
+  // prerequisite. After writeSkillsRows so it overrides whatever that wrote.
+  if (ap) applyApSkills(skillsTxt.headers, skillsTxt.rows);
 
   // Controller behavior is keyed by skills.txt row — move it with the skills.
   const controllerSkillSettingsJson = buildControllerSkillSettings(vanillaRowNames, idMapping, substitutes);
@@ -563,6 +576,9 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     if (startingHoradricCube) {
       applyHoradricCube(charstats.headers, charstats.rows);
     }
+
+    // Archipelago: after the StartSkill pick above, which would hand out a free skill.
+    if (ap) applyApCharstats(charstats.headers, charstats.rows);
 
     charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
   }
@@ -869,9 +885,32 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   // Race mode and the weekly challenge get isolated save folders so competitive
   // characters don't mix with casual ones. Race: seed + race class (e.g. seed123pal).
   // Weekly: the mod name — unique per challenge since the weekly seed is week-derived.
-  const savepath = weeklyEnabled ? modName : forgottenArts ? `${modName}_forgotten_arts_v7` : raceMode
+  // An Archipelago slot gets its own folder too, so its character is never mixed with others.
+  const savepath = ap ? ap.savepath : weeklyEnabled ? modName : forgottenArts ? `${modName}_forgotten_arts_v7` : raceMode
     ? `${modName}${pickRaceClassCode(seed)}`
     : 'D2RRandomizer';
+  // Archipelago: the custom stats, the Sigil and its recipes. Weekly challenges and
+  // Forgotten Arts are both off in AP mode, so each table starts from the vanilla file.
+  let apTables: ApTables | undefined;
+  if (ap) {
+    const itemstatcost = loadTxtFile('itemstatcost.txt');
+    const misc = loadTxtFile('misc.txt');
+    const cubemain = loadTxtFile('cubemain.txt');
+    const itemNames = JSON.parse(
+      fs.readFileSync(path.join(DATA_DIR, 'local', 'strings', 'item-names.json'), 'utf8').replace(/^\uFEFF/, ''),
+    );
+    apTables = applyApTables({ ap, itemstatcost, misc, cubemain, charstats, itemNames });
+    itemStatCostTxt = serializeTxtFile(itemstatcost.headers, itemstatcost.rows);
+    miscTxt = serializeTxtFile(misc.headers, misc.rows);
+    cubemainTxt = serializeTxtFile(cubemain.headers, cubemain.rows);
+    charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
+    itemNamesJson = '\uFEFF' + JSON.stringify(itemNames, null, 2).replace(/\n/g, '\r\n');
+  }
+
+  // Shipped inside the zip, so the mod and the manifest describing it cannot drift apart.
+  const manifest = ap && apTables
+    ? buildApManifest({ seed, modName, ap, placements, skillsRows: skillsTxt.rows, tables: apTables })
+    : undefined;
   const formatUiJson = (obj: unknown) =>
     '\uFEFF' + JSON.stringify(obj, null, 4).replace(/\n/g, '\r\n');
   const dataVersionBuild = fs.readFileSync(path.join(DATA_DIR, 'dataversionbuild.txt'), 'utf-8').trim();
@@ -924,8 +963,10 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     gambleTxt,
     animDataD2: animAssets.animData,
     charCofs: animAssets.cofs,
-    seasonFiles: seasonFilesForNow(),
+    // A multiworld can outlast a season. Its mod must not change when the month does.
+    seasonFiles: ap ? undefined : seasonFilesForNow(),
+    apManifestJson: manifest ? JSON.stringify(manifest, null, 2) : undefined,
   });
 
-  return { zip: zipBuffer, modName, savepath };
+  return { zip: zipBuffer, modName, savepath, manifest };
 }
