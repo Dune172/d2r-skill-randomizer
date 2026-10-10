@@ -18,7 +18,8 @@
  *   same tree as the seed  Archipelago seed N plays the tree public seed N shows
  *   custom stats           ap_keys and ap_mail exist, are saved, and survive at zero
  *   Sigil and Draught      every class starts with both; the Draught creates the stats
- *   mailbox recipes        one per deliverable, each keyed to its own mail code
+ *   mailbox recipes        two per deliverable (one per Sigil), each returning the OTHER
+ *                          Sigil and a Receipt, so an offer is delivered exactly once
  *   key gates              only when asked for, and then on both quest recipes
  *
  * Non-class rows (monster/superunique, empty charclass) are deliberately NOT checked:
@@ -208,19 +209,28 @@ async function verifyCase(c) {
   const misc = parseTsv(read('global/excel/misc.txt') ?? '');
   const miscRow = code => misc.rows.find(r => r[misc.headers.indexOf('code')] === code);
   const miscCell = (row, name) => row?.[misc.headers.indexOf(name)];
-  const draught = miscRow(tables.attunement);
-  check(failures, draught !== undefined && miscRow(tables.sigil) !== undefined, 'Sigil or Draught missing from misc.txt');
-  const created = [1, 2, 3].map(n => miscCell(draught, `stat${n}`));
-  for (const name of ['ap_keys', 'ap_mail', 'newskills']) {
-    check(failures, created.includes(name), `the Draught does not create ${name}`);
+  const statsOf = code => [1, 2, 3].map(n => miscCell(miscRow(code), `stat${n}`)).filter(Boolean);
+  const sigils = tables.sigils ?? [];
+  check(failures, sigils.length === 2 && sigils[0] !== sigils[1], 'the mailbox needs two different Sigils');
+  for (const code of [...sigils, tables.attunement, tables.receipt]) {
+    const row = miscRow(code);
+    check(failures, row !== undefined, `${code} missing from misc.txt`);
+    // A Sigil that right-click-converts into a potion would destroy the mailbox.
+    check(failures, miscCell(row, 'Transmogrify') === '0' && miscCell(row, 'spawnable') === '0',
+      `${code} still transmutes itself or spawns`);
   }
+  for (const name of ['ap_keys', 'ap_mail', 'newskills']) {
+    check(failures, statsOf(tables.attunement).includes(name), `the Draught does not create ${name}`);
+  }
+  check(failures, statsOf(tables.receipt).join() === 'ap_mail', 'the Receipt must add to ap_mail and nothing else');
+  check(failures, miscCell(miscRow(tables.receipt), 'calc1') === '1', 'the Receipt must add exactly one');
 
   if (csRaw) {
     const cs = parseTsv(csRaw);
     for (const row of cs.rows) {
       if (!row[0] || row[0] === 'Expansion') continue;
       const items = Array.from({ length: 10 }, (_, i) => row[cs.headers.indexOf(`item${i + 1}`)]);
-      for (const code of [tables.sigil, tables.attunement, 'box']) {
+      for (const code of [sigils[0], tables.attunement, 'box']) {
         check(failures, items.includes(code), `${row[0]} does not start with ${code}`);
       }
     }
@@ -228,24 +238,43 @@ async function verifyCase(c) {
 
   const cube = parseTsv(read('global/excel/cubemain.txt') ?? '');
   const cubeCell = (row, name) => row[cube.headers.indexOf(name)];
-  const sigilRecipes = cube.rows.filter(r => cubeCell(r, 'input 1') === tables.sigil && cubeCell(r, 'numinputs') === '1');
-  check(failures, sigilRecipes.length === (tables.mail?.length ?? 0) + 1,
-    `${sigilRecipes.length} Sigil recipes for ${tables.mail?.length} deliverables plus the Draught`);
-  const codes = new Set();
+  const mailStat = String(tables.stats?.mail);
+  const offers = new Set();
   for (const m of tables.mail ?? []) {
-    check(failures, m.code > tables.mailIdle && !codes.has(m.code), `mail code ${m.code} is idle or duplicated`);
-    codes.add(m.code);
-    const recipe = sigilRecipes.filter(r => cubeCell(r, 'output') === m.item);
-    check(failures, recipe.length === 1 && cubeCell(recipe[0], 'op') === '10'
-      && cubeCell(recipe[0], 'param') === String(tables.stats.mail)
-      && cubeCell(recipe[0], 'value') === String(m.code)
-      && cubeCell(recipe[0], 'output b') === tables.sigil,
-      `mail recipe for ${m.item} is missing or mis-keyed`);
+    // Offers even, acknowledgements odd, everything below what a Draught adds.
+    check(failures, m.offer % 2 === 0 && m.offer > tables.mailIdle && m.offer + 1 < tables.mailAttuned && !offers.has(m.offer),
+      `mail offer ${m.offer} for ${m.item} is out of range or duplicated`);
+    offers.add(m.offer);
+    for (const [from, to] of [[sigils[0], sigils[1]], [sigils[1], sigils[0]]]) {
+      const recipe = cube.rows.filter(r => cubeCell(r, 'input 1') === from && cubeCell(r, 'numinputs') === '1'
+        && cubeCell(r, 'value') === String(m.offer));
+      check(failures, recipe.length === 1 && cubeCell(recipe[0], 'op') === '10'
+        && cubeCell(recipe[0], 'param') === mailStat
+        && cubeCell(recipe[0], 'output') === m.item
+        // The OTHER Sigil comes back, so this offer cannot be transmuted twice.
+        && cubeCell(recipe[0], 'output b') === to
+        && cubeCell(recipe[0], 'output c') === tables.receipt,
+        `mail recipe for ${m.item} from ${from} is missing or mis-keyed`);
+    }
   }
-  // The Draught recipe must come last: recipes are tried in file order.
-  const last = sigilRecipes[sigilRecipes.length - 1];
-  check(failures, last && cubeCell(last, 'output') === tables.attunement && cubeCell(last, 'op') === '8'
-    && cubeCell(last, 'value') === String(tables.mailIdle), 'the Draught recipe is not the last Sigil recipe');
+  for (const sigil of sigils) {
+    const recipes = cube.rows.filter(r => cubeCell(r, 'input 1') === sigil && cubeCell(r, 'numinputs') === '1');
+    check(failures, recipes.length === (tables.mail?.length ?? 0) + 1,
+      `${recipes.length} recipes take ${sigil} alone, expected one per deliverable plus the Draught`);
+    // Recipes are tried in file order, so the Draught must be the last one for its Sigil.
+    const last = recipes[recipes.length - 1];
+    check(failures, last && cubeCell(last, 'output') === tables.attunement && cubeCell(last, 'op') === '8'
+      && cubeCell(last, 'value') === String(tables.mailIdle) && cubeCell(last, 'output b') === sigil,
+      `the Draught recipe for ${sigil} is missing, mis-keyed or not last`);
+  }
+
+  const baseRow = csRaw && parseTsv(csRaw);
+  if (baseRow) {
+    const className = { ama: 'Amazon', sor: 'Sorceress', nec: 'Necromancer', pal: 'Paladin', bar: 'Barbarian', dru: 'Druid', ass: 'Assassin', war: 'Warlock' }[c.characterClass];
+    const row = baseRow.rows.find(r => r[0] === className);
+    const sum = ['str', 'dex', 'int', 'vit'].reduce((n, k) => n + Number(row[baseRow.headers.indexOf(k)]), 0);
+    check(failures, tables.baseAttributes === sum, `baseAttributes ${tables.baseAttributes} != ${sum}`);
+  }
 
   const wantGates = c.options?.keyItems === true;
   check(failures, (tables.keyGates !== undefined) === wantGates, `keyGates ${wantGates ? 'missing' : 'present but not requested'}`);
