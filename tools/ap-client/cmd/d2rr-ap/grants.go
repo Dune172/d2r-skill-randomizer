@@ -119,10 +119,25 @@ func (a *app) applyMail(player uintptr) {
 	if len(box.Entries) == 0 {
 		return
 	}
+	// Every rune appears twice in the table, once per Sigil.
+	runes := make([]int64, len(ids.RuneNames))
 	owed := 0
-	for _, e := range box.Entries {
-		owed += a.session.Pending(e.ItemID)
+	for i := range runes {
+		runes[i] = ids.RuneIDBase + int64(i)
+		owed += a.session.Pending(runes[i])
 	}
+	a.mu.Lock()
+	flip := a.flipMail
+	a.flipMail = false
+	a.mu.Unlock()
+	if flip {
+		if err := a.session.FlipMail(); err != nil {
+			logf("recording -mail-flip failed: %v", err)
+		} else {
+			logf("mailbox: now offering runes for the other Archipelago Sigil")
+		}
+	}
+	sigil := a.session.MailSigil(runes...)
 
 	mailStat := stat.ID(a.man.Tables.Stats.Mail)
 	value, exists, err := a.gc.BaseStat(player, mailStat)
@@ -136,7 +151,7 @@ func (a *app) applyMail(player uintptr) {
 		return
 	}
 
-	step := box.Step(value, current, a.session.Pending)
+	step := box.Step(value, current, sigil, a.session.Pending)
 	if step.Write != 0 {
 		if _, err := a.gc.SetBaseStat(player, mailStat, step.Write); err != nil {
 			a.note("mail", "updating the mailbox: "+err.Error())
@@ -161,7 +176,8 @@ func (a *app) applyMail(player uintptr) {
 	for _, e := range box.Entries {
 		if e.Offer == step.Offer {
 			a.note("mail", fmt.Sprintf("mailbox: %s is waiting (%d rune(s) owed). Put the Archipelago Sigil alone in "+
-				"the Horadric Cube and transmute, then right-click the Archipelago Receipt", e.Name, owed))
+				"the Horadric Cube and transmute, then right-click the Archipelago Receipt. "+
+				"(If the Cube refuses, restart the client with -mail-flip.)", e.Name, owed))
 		}
 	}
 }
@@ -328,7 +344,7 @@ func mailboxFor(tables manifest.Tables) grants.Mailbox {
 	for _, m := range tables.Mail {
 		if index, ok := codes[m.Item]; ok {
 			box.Entries = append(box.Entries, grants.MailEntry{
-				Offer: m.Offer, ItemID: ids.RuneIDBase + int64(index), Name: m.Name,
+				Offer: m.Offer, Sigil: m.Sigil, ItemID: ids.RuneIDBase + int64(index), Name: m.Name,
 			})
 		}
 	}

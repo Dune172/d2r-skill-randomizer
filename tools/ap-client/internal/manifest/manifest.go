@@ -48,6 +48,8 @@ type MailItem struct {
 	// Offer is what the client writes into the mail stat to put the item up. Offers are
 	// even; the game answers with Offer+1 when the player uses the Receipt.
 	Offer uint32 `json:"offer"`
+	// Sigil is which of the two Sigils the recipe for this offer takes.
+	Sigil int    `json:"sigil"`
 	Item  string `json:"item"`
 	Name  string `json:"name"`
 }
@@ -150,7 +152,7 @@ func validateTables(t *Tables) error {
 	}
 	seen := map[uint32]bool{}
 	for _, m := range t.Mail {
-		if m.Offer < 2 || m.Offer%2 != 0 || m.Offer+1 >= t.MailAttuned || seen[m.Offer] || m.Item == "" {
+		if m.Offer < 2 || m.Offer%2 != 0 || m.Offer+1 >= t.MailAttuned || seen[m.Offer] || m.Item == "" || m.Sigil < 0 || m.Sigil > 1 {
 			return fmt.Errorf("manifest mail offer %d for %q is invalid", m.Offer, m.Item)
 		}
 		seen[m.Offer] = true

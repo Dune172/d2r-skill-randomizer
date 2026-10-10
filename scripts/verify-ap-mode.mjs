@@ -18,8 +18,9 @@
  *   same tree as the seed  Archipelago seed N plays the tree public seed N shows
  *   custom stats           ap_keys and ap_mail exist, are saved, and survive at zero
  *   Sigil and Draught      every class starts with both; the Draught creates the stats
- *   mailbox recipes        two per deliverable (one per Sigil), each returning the OTHER
- *                          Sigil and a Receipt, so an offer is delivered exactly once
+ *   mailbox recipes        each deliverable has its own offer code per Sigil; the one
+ *                          recipe alive for an offer returns the OTHER Sigil and a
+ *                          Receipt, so an offer is delivered exactly once
  *   key gates              only when asked for, and then on both quest recipes
  *
  * Non-class rows (monster/superunique, empty charclass) are deliberately NOT checked:
@@ -240,26 +241,30 @@ async function verifyCase(c) {
   const cubeCell = (row, name) => row[cube.headers.indexOf(name)];
   const mailStat = String(tables.stats?.mail);
   const offers = new Set();
+  const perItem = new Map();
   for (const m of tables.mail ?? []) {
     // Offers even, acknowledgements odd, everything below what a Draught adds.
     check(failures, m.offer % 2 === 0 && m.offer > tables.mailIdle && m.offer + 1 < tables.mailAttuned && !offers.has(m.offer),
       `mail offer ${m.offer} for ${m.item} is out of range or duplicated`);
     offers.add(m.offer);
-    for (const [from, to] of [[sigils[0], sigils[1]], [sigils[1], sigils[0]]]) {
-      const recipe = cube.rows.filter(r => cubeCell(r, 'input 1') === from && cubeCell(r, 'numinputs') === '1'
-        && cubeCell(r, 'value') === String(m.offer));
-      check(failures, recipe.length === 1 && cubeCell(recipe[0], 'op') === '10'
-        && cubeCell(recipe[0], 'param') === mailStat
-        && cubeCell(recipe[0], 'output') === m.item
-        // The OTHER Sigil comes back, so this offer cannot be transmuted twice.
-        && cubeCell(recipe[0], 'output b') === to
-        && cubeCell(recipe[0], 'output c') === tables.receipt,
-        `mail recipe for ${m.item} from ${from} is missing or mis-keyed`);
-    }
+    perItem.set(m.item, [...(perItem.get(m.item) ?? []), m.sigil]);
+    // Exactly one recipe is alive for an offer, it takes that offer's Sigil, and it
+    // hands back the OTHER one, so the offer cannot be transmuted twice.
+    const recipe = cube.rows.filter(r => cubeCell(r, 'param') === mailStat && cubeCell(r, 'op') === '10'
+      && cubeCell(r, 'value') === String(m.offer));
+    check(failures, recipe.length === 1
+      && cubeCell(recipe[0], 'numinputs') === '1' && cubeCell(recipe[0], 'input 1') === sigils[m.sigil]
+      && cubeCell(recipe[0], 'output') === m.item
+      && cubeCell(recipe[0], 'output b') === sigils[1 - m.sigil]
+      && cubeCell(recipe[0], 'output c') === tables.receipt,
+      `mail recipe for ${m.item} under offer ${m.offer} is missing or mis-keyed`);
+  }
+  for (const [item, held] of perItem) {
+    check(failures, held.slice().sort().join() === '0,1', `${item} is not offered once for each Sigil`);
   }
   for (const sigil of sigils) {
     const recipes = cube.rows.filter(r => cubeCell(r, 'input 1') === sigil && cubeCell(r, 'numinputs') === '1');
-    check(failures, recipes.length === (tables.mail?.length ?? 0) + 1,
+    check(failures, recipes.length === perItem.size + 1,
       `${recipes.length} recipes take ${sigil} alone, expected one per deliverable plus the Draught`);
     // Recipes are tried in file order, so the Draught must be the last one for its Sigil.
     const last = recipes[recipes.length - 1];
