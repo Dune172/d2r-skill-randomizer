@@ -33,13 +33,21 @@
  *    Progressive Horadric Keys the Cube refuses, so Duriel and Mephisto stay shut.
  *
  *  - The mailbox. The character starts with an Archipelago Sigil. When an item is
- *    waiting, the client sets `ap_mail` to that item's code, and exactly one recipe
- *    (Sigil alone, `ap_mail` == code) produces the item and hands the Sigil back.
+ *    waiting, the client sets `ap_mail` to that item's offer code, and exactly one
+ *    recipe (the Sigil alone, `ap_mail` == offer) produces the item.
+ *
+ *    The client cannot see the Cube, so the recipe itself makes delivery exactly-once:
+ *      at most once  - it returns the OTHER Sigil. There are two, and an offer's recipe
+ *                      for one produces the other, so the same offer cannot fire twice.
+ *      at least once - it also returns a Receipt. Using the Receipt adds one to
+ *                      `ap_mail`, which the client can see: offer + 1 means delivered.
+ *    Offers are even and their acknowledgements odd, so the two never collide.
  *
  * Both custom stats hold their value PLUS ONE, so they are never zero: the game drops
  * zero-valued stats from a character, and the client can only write an entry that exists.
  */
 import { SkillPlacement, ClassCode } from './types';
+import { CLASS_DEFS } from './config';
 import { PIPELINE_VERSION } from './pipeline-version';
 
 /**
@@ -62,12 +70,27 @@ export interface ApModeOptions {
 
 type Table = { headers: string[]; rows: string[][] };
 
-/** Unused vanilla items repurposed here: both already have inventory and HD art. */
-const SIGIL_CODE = 'hrt';       // "Heart", a monster part that never drops
-const ATTUNEMENT_CODE = 'elx';  // "Elixir", a potion that never drops or sells
+const CLASS_NAMES = Object.fromEntries(CLASS_DEFS.map(d => [d.code, d.name])) as Record<ClassCode, string>;
+
+/**
+ * Unused vanilla items repurposed here. All four already have inventory and HD art, and
+ * none of them drops or is sold in the unmodded game.
+ */
+const SIGIL_CODES = ['hrt', 'sol'] as const; // "Heart" and "Soul", monster parts
+const ATTUNEMENT_CODE = 'elx';               // "Elixir"
+const RECEIPT_CODE = 'hrb';                  // "Herb"
 
 /** Keys needed before each quest recipe opens. Progressive, in the order the game needs them. */
 export const AP_KEY_GATES = { horadricStaff: 2, khalimsWill: 5 } as const;
+
+/** The mail stat's value when nothing is waiting. */
+const MAIL_IDLE = 1;
+/**
+ * What a Draught of Attunement adds to the mail stat. Far above every offer and
+ * acknowledgement, so a Draught drunk while an item is waiting reads as "re-attuned",
+ * never as that item's acknowledgement.
+ */
+const MAIL_ATTUNED = 128;
 
 const RUNE_NAMES = [
   'El', 'Eld', 'Tir', 'Nef', 'Eth', 'Ith', 'Tal', 'Ral', 'Ort', 'Thul', 'Amn', 'Sol',
@@ -75,15 +98,15 @@ const RUNE_NAMES = [
   'Gul', 'Vex', 'Ohm', 'Lo', 'Sur', 'Ber', 'Jah', 'Cham', 'Zod',
 ];
 
-/** Everything deliverable through the mailbox. A code's position here is its identity. */
+/** Everything deliverable through the mailbox. A position here is the item's identity. */
 const MAILBOX_ITEMS = RUNE_NAMES.map((name, i) => ({
   item: `r${String(i + 1).padStart(2, '0')}`,
   name: `${name} Rune`,
 }));
 
 export interface ApMailItem {
-  /** What the client writes into the mail stat to offer this item (already plus one). */
-  code: number;
+  /** What the client writes into the mail stat to offer this item. Even; offer + 1 acknowledges it. */
+  offer: number;
   /** misc.txt item code the recipe produces. */
   item: string;
   name: string;
@@ -91,15 +114,18 @@ export interface ApMailItem {
 
 /** What applyApTables added to the mod, for the manifest. */
 export interface ApTables {
-  /** itemstatcost.txt ids of the custom stats. Both store their value plus one. */
+  /** itemstatcost.txt ids of the custom stats. `keys` stores the key count plus one. */
   stats: { keys: number; mail: number };
-  sigil: string;
+  sigils: string[];
   attunement: string;
-  /** The mail stat's value when nothing is waiting. */
+  receipt: string;
   mailIdle: number;
+  mailAttuned: number;
   mail: ApMailItem[];
   /** Present only when the quest recipes are locked. */
   keyGates?: { horadricStaff: number; khalimsWill: number };
+  /** The class's starting strength + dexterity + energy + vitality, for counting spent stat points. */
+  baseAttributes: number;
 }
 
 export interface ApSlot {
@@ -151,7 +177,7 @@ function findRow(table: Table, key: string, value: string): string[] {
 }
 
 /**
- * Add the custom stats, the Sigil and its recipes, and optionally the key gates.
+ * Add the custom stats, the Sigils and their recipes, and optionally the key gates.
  *
  * Mutates every table passed in. `itemNames` is the parsed item-names.json.
  */
@@ -166,9 +192,9 @@ export function applyApTables(args: {
   const { ap, itemstatcost, misc, cubemain, charstats, itemNames } = args;
 
   // The game drops a stat from the character when it reaches zero unless told to keep
-  // it. The client writes the point pools constantly, and an entry that vanishes every
-  // time the last point is spent cannot be written until the next level-up recreates it.
-  for (const name of ['statpts', 'newskills']) {
+  // it. The client writes these pools constantly, and an entry that vanishes every time
+  // the last point is spent cannot be written until something recreates it.
+  for (const name of ['statpts', 'newskills', 'gold']) {
     setCells(itemstatcost, findRow(itemstatcost, 'Stat', name), { keepzero: '1' });
   }
 
@@ -177,33 +203,40 @@ export function applyApTables(args: {
   for (const [name, id] of [['ap_keys', stats.keys], ['ap_mail', stats.mail]] as const) {
     if (itemstatcost.rows.some(r => r[0] === name)) throw new Error(`apMode: stat ${name} already exists`);
     appendRow(itemstatcost, {
-      Stat: name, '*ID': String(id), 'Send Bits': '8', Saved: '1', CSvSigned: '0', CSvBits: '8',
+      Stat: name, '*ID': String(id), 'Send Bits': '9', Saved: '1', CSvSigned: '0', CSvBits: '9',
       keepzero: '1', '*eol': '0',
     });
   }
 
-  // Using the potion creates the stat entries the client writes. It adds one to each, and
-  // the client then holds them at the values it wants, so using it twice is harmless.
-  setCells(misc, findRow(misc, 'code', ATTUNEMENT_CODE), {
-    pSpell: '8', spawnable: '0', cost: '0',
-    stat1: 'ap_keys', calc1: '1', stat2: 'ap_mail', calc2: '1', stat3: 'newskills', calc3: '1',
-  });
-  setCells(misc, findRow(misc, 'code', SIGIL_CODE), { spawnable: '0', cost: '0', spelldesc: '', spelldescstr: '' });
-
-  const rename = (key: string, text: string) => {
-    const entry = itemNames.find(e => e.Key === key);
-    if (!entry) throw new Error(`apMode: no item name ${key}`);
+  const repurpose = (code: string, name: string, cells: Record<string, string>) => {
+    setCells(misc, findRow(misc, 'code', code), {
+      // Never from a shop or a drop, worthless to a vendor, and no vanilla right-click
+      // behaviour: monster parts would otherwise transmute themselves into a potion.
+      spawnable: '0', cost: '0', Transmogrify: '0', TMogType: 'xxx',
+      spelldesc: '', spelldescstr: '', state: '', len: '',
+      stat1: '', calc1: '', stat2: '', calc2: '', stat3: '', calc3: '',
+      ...cells,
+    });
+    const entry = itemNames.find(e => e.Key === code);
+    if (!entry) throw new Error(`apMode: no item name ${code}`);
     for (const field of Object.keys(entry)) {
-      if (field !== 'id' && field !== 'Key') entry[field] = text;
+      if (field !== 'id' && field !== 'Key') entry[field] = name;
     }
   };
-  rename(SIGIL_CODE, 'Archipelago Sigil');
-  rename(ATTUNEMENT_CODE, 'Draught of Attunement');
+  // Player spell 8 adds each calc to its stat, permanently. That is how a stat entry the
+  // client can write comes to exist, and how the Receipt signals a delivery.
+  const addsToStats = { useable: '1', pSpell: '8' };
+  for (const code of SIGIL_CODES) repurpose(code, 'Archipelago Sigil', { useable: '0', pSpell: '-1' });
+  repurpose(ATTUNEMENT_CODE, 'Draught of Attunement', {
+    ...addsToStats,
+    stat1: 'ap_keys', calc1: '1', stat2: 'ap_mail', calc2: String(MAIL_ATTUNED), stat3: 'newskills', calc3: '1',
+  });
+  repurpose(RECEIPT_CODE, 'Archipelago Receipt', { ...addsToStats, stat1: 'ap_mail', calc1: '1' });
 
-  // Every class starts with the Sigil and one Draught.
+  // Every class starts with a Sigil and one Draught.
   for (const row of charstats.rows) {
     if (!row[0] || row[0] === 'Expansion') continue;
-    for (const code of [SIGIL_CODE, ATTUNEMENT_CODE]) {
+    for (const code of [SIGIL_CODES[0], ATTUNEMENT_CODE]) {
       const slot = Array.from({ length: 10 }, (_, i) => i + 1)
         .find(n => ['', '0'].includes(row[column(charstats, `item${n}`)]));
       if (!slot) throw new Error(`apMode: ${row[0]} has no free starting-item slot for ${code}`);
@@ -212,28 +245,36 @@ export function applyApTables(args: {
       });
     }
   }
+  const classRow = charstats.rows.find(r => r[0] === CLASS_NAMES[ap.characterClass]);
+  if (!classRow) throw new Error(`apMode: no charstats row for ${ap.characterClass}`);
+  const baseAttributes = ['str', 'dex', 'int', 'vit']
+    .reduce((sum, name) => sum + Number(classRow[column(charstats, name)]), 0);
 
-  // The mailbox: one recipe per deliverable, each alive only while the mail stat names
-  // it. Codes start at 2 because the stat idles at 1.
-  const mailIdle = 1;
-  const mail: ApMailItem[] = MAILBOX_ITEMS.map((entry, i) => ({ code: mailIdle + 1 + i, ...entry }));
+  const mail: ApMailItem[] = MAILBOX_ITEMS.map((entry, i) => ({ offer: 2 * (i + 1), ...entry }));
+  if (mail[mail.length - 1].offer + 1 >= MAIL_ATTUNED) throw new Error('apMode: mail offers reach the attunement value');
   const playerBaseStatEquals = '10';
   const playerBaseStatAtMost = '8';
   const playerBaseStatAtLeast = '7';
+  const otherSigil = (code: string) => (code === SIGIL_CODES[0] ? SIGIL_CODES[1] : SIGIL_CODES[0]);
   for (const entry of mail) {
+    for (const sigil of SIGIL_CODES) {
+      appendRow(cubemain, {
+        description: `Archipelago mail: ${entry.name} (${sigil})`, enabled: '1', version: '100',
+        op: playerBaseStatEquals, param: String(stats.mail), value: String(entry.offer),
+        numinputs: '1', 'input 1': sigil,
+        output: entry.item, 'output b': otherSigil(sigil), 'output c': RECEIPT_CODE, '*eol': '0',
+      });
+    }
+  }
+  // With nothing waiting, a Sigil brews another Draught: the way back if a stat entry is
+  // ever lost. Listed after the mail, and it keeps the Sigil it was given.
+  for (const sigil of SIGIL_CODES) {
     appendRow(cubemain, {
-      description: `Archipelago mail: ${entry.name}`, enabled: '1', version: '100',
-      op: playerBaseStatEquals, param: String(stats.mail), value: String(entry.code),
-      numinputs: '1', 'input 1': SIGIL_CODE, output: entry.item, 'output b': SIGIL_CODE, '*eol': '0',
+      description: `Archipelago: brew a Draught of Attunement (${sigil})`, enabled: '1', version: '100',
+      op: playerBaseStatAtMost, param: String(stats.mail), value: String(MAIL_IDLE),
+      numinputs: '1', 'input 1': sigil, output: ATTUNEMENT_CODE, 'output b': sigil, '*eol': '0',
     });
   }
-  // With nothing waiting, the Sigil brews another Draught: the way back if a stat entry
-  // is ever lost. Listed after the mail so a waiting item always wins.
-  appendRow(cubemain, {
-    description: 'Archipelago: brew a Draught of Attunement', enabled: '1', version: '100',
-    op: playerBaseStatAtMost, param: String(stats.mail), value: String(mailIdle),
-    numinputs: '1', 'input 1': SIGIL_CODE, output: ATTUNEMENT_CODE, 'output b': SIGIL_CODE, '*eol': '0',
-  });
 
   let keyGates: ApTables['keyGates'];
   if (ap.keyItems) {
@@ -247,7 +288,10 @@ export function applyApTables(args: {
     gate('qf2', keyGates.khalimsWill);   // Khalim's Flail + Eye + Heart + Brain
   }
 
-  return { stats, sigil: SIGIL_CODE, attunement: ATTUNEMENT_CODE, mailIdle, mail, keyGates };
+  return {
+    stats, sigils: [...SIGIL_CODES], attunement: ATTUNEMENT_CODE, receipt: RECEIPT_CODE,
+    mailIdle: MAIL_IDLE, mailAttuned: MAIL_ATTUNED, mail, keyGates, baseAttributes,
+  };
 }
 
 /** charstats.txt: levelling keeps creating the skill-point stat; no class starts with a skill. */
