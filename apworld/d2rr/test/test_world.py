@@ -9,10 +9,10 @@ class TestDefaults(D2RRTestBase):
         unfilled = [loc for loc in self.multiworld.get_locations(self.player) if loc.address is not None]
         self.assertEqual(len(self.multiworld.itempool), len(unfilled))
 
-    def test_goal_needs_baal(self) -> None:
+    def test_goal_is_out_of_reach_until_the_points_are_found(self) -> None:
         self.assertBeatable(False)
-        self.collect_all_but([rules.boss_event_name(ids.BAAL_ACT, 0)])
-        self.assertBeatable(False)
+        self.collect_all_but([])
+        self.assertBeatable(True)
 
 
 class TestSkillPointGates(D2RRTestBase):
