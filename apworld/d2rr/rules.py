@@ -21,9 +21,8 @@ if TYPE_CHECKING:
 # The share of the skill point pool logic expects a character to hold on reaching the
 # goal boss. Requirements rise evenly, act by act, from nothing in Act I to this.
 #
-# A vanilla character arrives at an act boss with about one point per level, so "most of
-# what exists by then" is the honest bar; these stay well under it so that the acts
-# before a gate always hold more points than the gate asks for.
+# Kept well under the whole pool, so the acts before a gate always hold more points than
+# the gate asks for and the fill is never squeezed.
 GOAL_SHARE = {
     0: 0.25,   # relaxed
     1: 0.40,   # standard
