@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "d2rr-cold",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/dev-cold-cache.mjs"],
+      "port": 3210
     }
   ]
 }
