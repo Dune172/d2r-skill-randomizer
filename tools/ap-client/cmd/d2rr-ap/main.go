@@ -57,6 +57,7 @@ func main() {
 		statusFile = flag.String("status-file", "", "write a diagnostic JSON status snapshot to this path")
 		dryRun     = flag.Bool("dry-run", false, "do everything except write to the game")
 		mailFlip   = flag.Bool("mail-flip", false, "the Cube refuses a waiting rune: offer it for the other Archipelago Sigil instead")
+		mailSkip   = flag.Bool("mail-skip", false, "the Receipt for the waiting rune was lost: record that rune as collected")
 		diff       = flag.Int("difficulty", -1,
 			"current difficulty for live checks: 0 normal, 1 nightmare, 2 hell; -1 uses calibrated memory or unambiguous saves")
 	)
@@ -110,6 +111,7 @@ func main() {
 		goalDifficulty:     -1,
 		goalAct:            len(ids.GoalQuestIndex) - 1,
 		flipMail:           *mailFlip,
+		skipMail:           *mailSkip,
 		difficultyOverride: *diff,
 		baseURL:            *baseURL,
 		modOut:             *modOut,
@@ -238,8 +240,13 @@ type app struct {
 	// (0 when idle or not yet known).
 	mailbox   grants.Mailbox
 	mailOffer uint32
-	// -mail-flip was given and has not been recorded yet.
+	// -mail-flip / -mail-skip were given and have not been carried out yet.
 	flipMail bool
+	skipMail bool
+
+	// Test seams: a character made of a map, and a death that goes nowhere.
+	fakeGame  gameView
+	sendDeath func(ctx context.Context, cause string) error
 
 	// A Skill Lock Trap withholds unspent skill points until this time.
 	skillLockUntil time.Time

@@ -20,6 +20,24 @@ const (
 	killGrace = 3 * time.Second
 )
 
+// gameView is the part of the running game the grant code reads and writes. The real one
+// is *game.Client; tests substitute a character made of a map.
+type gameView interface {
+	BaseStat(unit uintptr, id stat.ID) (uint32, bool, error)
+	SetBaseStat(unit uintptr, id stat.ID, value uint32) (bool, error)
+	SpentStatPoints(player uintptr, classBase int) (int, error)
+	Apply(player uintptr, effect game.TrapEffect) (bool, error)
+	IsDead(player uintptr) (bool, error)
+	Progress() (game.Progress, bool)
+}
+
+func (a *app) view() gameView {
+	if a.fakeGame != nil {
+		return a.fakeGame
+	}
+	return a.gc
+}
+
 // applyGrants gives the character everything beyond skill points: pooled stat points,
 // Horadric Keys, runes through the mailbox, gold, traps, and DeathLink.
 //
@@ -42,11 +60,11 @@ func (a *app) applyGrants(ctx context.Context, player uintptr) {
 	a.applyKeys(player, stat.ID(man.Tables.Stats.Keys))
 	a.applyMail(player)
 
-	prog, ok := a.gc.Progress()
+	prog, ok := a.view().Progress()
 	if !ok {
 		return
 	}
-	dead, err := a.gc.IsDead(player)
+	dead, err := a.view().IsDead(player)
 	if err != nil {
 		return
 	}
@@ -66,7 +84,7 @@ func (a *app) applyGrants(ctx context.Context, player uintptr) {
 // applyStatPoints holds unspent attribute points at (sent by Archipelago) - (spent).
 func (a *app) applyStatPoints(player uintptr, classBase int) {
 	sent := a.session.Count(ids.StatPointsItemID) * ids.StatPointsPerItem
-	spent, err := a.gc.SpentStatPoints(player, classBase)
+	spent, err := a.view().SpentStatPoints(player, classBase)
 	if err != nil {
 		a.note("stat", "stat point accounting paused: "+err.Error())
 		return
@@ -75,7 +93,7 @@ func (a *app) applyStatPoints(player uintptr, classBase int) {
 	if want < 0 {
 		want = 0
 	}
-	existed, err := a.gc.SetBaseStat(player, stat.StatPoints, uint32(want))
+	existed, err := a.view().SetBaseStat(player, stat.StatPoints, uint32(want))
 	switch {
 	case err != nil:
 		a.note("stat", "setting stat points: "+err.Error())
@@ -92,7 +110,7 @@ func (a *app) applyKeys(player uintptr, keyStat stat.ID) {
 	if keys == 0 && !a.keyItems {
 		return
 	}
-	existed, err := a.gc.SetBaseStat(player, keyStat, uint32(keys+1))
+	existed, err := a.view().SetBaseStat(player, keyStat, uint32(keys+1))
 	switch {
 	case err != nil:
 		a.note("keys", "setting Horadric Keys: "+err.Error())
@@ -140,7 +158,7 @@ func (a *app) applyMail(player uintptr) {
 	sigil := a.session.MailSigil(runes...)
 
 	mailStat := stat.ID(a.man.Tables.Stats.Mail)
-	value, exists, err := a.gc.BaseStat(player, mailStat)
+	value, exists, err := a.view().BaseStat(player, mailStat)
 	if err != nil {
 		return
 	}
@@ -151,9 +169,34 @@ func (a *app) applyMail(player uintptr) {
 		return
 	}
 
+	// -mail-skip: the Receipt for the rune on offer is gone, so nothing will ever
+	// acknowledge it. Record it as collected; the Sigil was swapped when it was taken.
+	a.mu.Lock()
+	skip := a.skipMail
+	a.skipMail = false
+	a.mu.Unlock()
+	if skip {
+		offered := current
+		if offered == 0 {
+			offered = value
+		}
+		skipped := false
+		for _, e := range box.Entries {
+			if e.Offer == offered && e.Sigil == sigil && a.session.Pending(e.ItemID) > 0 {
+				if err := a.session.MarkApplied(e.ItemID, 1); err == nil {
+					logf("mailbox: %s recorded as collected (-mail-skip)", e.Name)
+					current, sigil, skipped = 0, 1-sigil, true
+				}
+			}
+		}
+		if !skipped {
+			logf("mailbox: -mail-skip found no rune on offer; nothing was changed")
+		}
+	}
+
 	step := box.Step(value, current, sigil, a.session.Pending)
 	if step.Write != 0 {
-		if _, err := a.gc.SetBaseStat(player, mailStat, step.Write); err != nil {
+		if _, err := a.view().SetBaseStat(player, mailStat, step.Write); err != nil {
 			a.note("mail", "updating the mailbox: "+err.Error())
 			return
 		}
@@ -177,7 +220,7 @@ func (a *app) applyMail(player uintptr) {
 		if e.Offer == step.Offer {
 			a.note("mail", fmt.Sprintf("mailbox: %s is waiting (%d rune(s) owed). Put the Archipelago Sigil alone in "+
 				"the Horadric Cube and transmute, then right-click the Archipelago Receipt. "+
-				"(If the Cube refuses, restart the client with -mail-flip.)", e.Name, owed))
+				"(Cube refuses: restart with -mail-flip. Receipt lost: restart with -mail-skip.)", e.Name, owed))
 		}
 	}
 }
@@ -187,7 +230,7 @@ func (a *app) applyGold(player uintptr, level int) {
 	if a.session.Pending(ids.GoldItemID) == 0 {
 		return
 	}
-	current, exists, err := a.gc.BaseStat(player, stat.Gold)
+	current, exists, err := a.view().BaseStat(player, stat.Gold)
 	if err != nil {
 		return
 	}
@@ -196,7 +239,7 @@ func (a *app) applyGold(player uintptr, level int) {
 		return
 	}
 	next := game.GoldAfter(current, level)
-	if _, err := a.gc.SetBaseStat(player, stat.Gold, next); err != nil {
+	if _, err := a.view().SetBaseStat(player, stat.Gold, next); err != nil {
 		return
 	}
 	if err := a.session.MarkApplied(ids.GoldItemID, 1); err == nil {
@@ -223,7 +266,7 @@ func (a *app) applyTraps(player uintptr) {
 				ids.TrapBrushWithDeath: game.BrushWithDeath,
 				ids.TrapGoldTax:        game.GoldTax,
 			}[ids.Trap(index)]
-			if _, err := a.gc.Apply(player, effect); err != nil {
+			if _, err := a.view().Apply(player, effect); err != nil {
 				return // try again next poll
 			}
 		}
@@ -249,7 +292,11 @@ func (a *app) reportDeath(ctx context.Context, dead bool) {
 		return
 	}
 	cause := fmt.Sprintf("%s died in Sanctuary", a.conn.Slot)
-	if err := a.conn.SendDeath(ctx, cause); err != nil {
+	send := a.conn.SendDeath
+	if a.sendDeath != nil {
+		send = a.sendDeath
+	}
+	if err := send(ctx, cause); err != nil {
 		logf("DeathLink: could not send the death (%v)", err)
 		return
 	}
@@ -273,13 +320,13 @@ func (a *app) applyIncomingDeath(player uintptr) {
 	}
 
 	if unsupported {
-		if _, err := a.gc.Apply(player, game.BrushWithDeath); err == nil {
+		if _, err := a.view().Apply(player, game.BrushWithDeath); err == nil {
 			a.finishDeath("DeathLink: applied as a Brush with Death")
 		}
 		return
 	}
 	if since.IsZero() {
-		if _, err := a.gc.Apply(player, game.Kill); err != nil {
+		if _, err := a.view().Apply(player, game.Kill); err != nil {
 			return
 		}
 		a.mu.Lock()
