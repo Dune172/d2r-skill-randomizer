@@ -49,6 +49,7 @@ export interface ZipContents {
   animDataD2?: Buffer;              // animdata.d2 with Warlock A1/A2 records synced to their COFs
   charCofs?: Map<string, Buffer>;   // zip path under data/ → COF with injected trigger frame (must match animDataD2)
   seasonFiles?: Map<string, Buffer>; // seasonal HD overlay, paths under data/ (src/lib/seasons)
+  apManifestJson?: string;          // Archipelago mode: what the companion client reads about this mod
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -124,6 +125,11 @@ export function buildZip(contents: ZipContents): Buffer {
   // Cache the complete download, including its seed/mode-specific launcher.
   zip.addFile(`D2R Randomizer ${contents.seed}.lnk`,
     createD2RShortcut(m, contents.seed >>> 0, contents.raceMode));
+
+  // Beside the .mpq folder, not inside it: it is for the companion client, not the game.
+  if (contents.apManifestJson) {
+    zip.addFile(`${m}/d2rr-ap-manifest.json`, str(contents.apManifestJson));
+  }
 
   // Add modinfo.json
   const modinfo = JSON.stringify({ name: m, savepath: contents.savepath ?? 'D2RRandomizer' });
