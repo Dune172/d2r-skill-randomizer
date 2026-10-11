@@ -13,7 +13,7 @@ scripts/verify-ap-ids.mjs diffs the two implementations.
 
 import hashlib
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from BaseClasses import Item, ItemClassification, Location, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
@@ -44,6 +44,7 @@ class D2RRWeb(WebWorld):
     theme = "dirt"
     option_groups = OPTION_GROUPS
     options_presets = OPTION_PRESETS
+    bug_report_page = "https://github.com/Dune172/d2r-skill-randomizer/issues"
     tutorials = [Tutorial(
         "Multiworld Setup Guide",
         "A guide to playing D2R Randomizer with Archipelago.",
@@ -54,8 +55,8 @@ class D2RRWeb(WebWorld):
     )]
 
 
-def _location_groups() -> Dict[str, set]:
-    groups: Dict[str, set] = {name: set() for name in ids.DIFFICULTY_NAMES + ids.ACT_NAMES}
+def _location_groups() -> dict[str, set]:
+    groups: dict[str, set] = {name: set() for name in ids.DIFFICULTY_NAMES + ids.ACT_NAMES}
     groups.update({"Quests": set(), "Waypoints": set(), "Areas": set(), "Level Milestones": set()})
     for d in range(ids.DIFFICULTIES):
         for act, count in enumerate(ids.QUESTS_PER_ACT):
@@ -104,7 +105,7 @@ class D2RRWorld(World):
         self.goal_difficulty = 0
         self.goal_act = ids.BAAL_ACT
         # Counts for every kind of item, fitted to the locations that exist.
-        self.pool: Dict[str, int] = {"skill_points": 110}
+        self.pool: dict[str, int] = {"skill_points": 110}
 
     def generate_early(self) -> None:
         self.class_code = ids.CLASSES[self.options.character_class.value]
@@ -127,7 +128,7 @@ class D2RRWorld(World):
             rune_percentage=self.options.rune_percentage.value,
         )
 
-    def _active_location_names(self) -> List[str]:
+    def _active_location_names(self) -> list[str]:
         return ids.active_location_names(
             self.goal_difficulty,
             bool(self.options.include_waypoints),
@@ -138,7 +139,7 @@ class D2RRWorld(World):
 
     # ------------------------------------------------------------------ regions
 
-    def _region_name(self, difficulty: int, act: int, gate: Optional[str] = None) -> str:
+    def _region_name(self, difficulty: int, act: int, gate: str | None = None) -> str:
         if gate == ids.TAL_RASHA:
             return f"{ids.DIFFICULTY_NAMES[difficulty]} Tal Rasha's Chamber"
         if gate == ids.DURANCE:
@@ -153,7 +154,7 @@ class D2RRWorld(World):
                   -> Act IV -> Act V -> (next difficulty's Act I)
         """
         active = set(self._active_location_names())
-        regions: Dict[str, Region] = {}
+        regions: dict[str, Region] = {}
 
         def region(name: str) -> Region:
             if name not in regions:
@@ -161,7 +162,7 @@ class D2RRWorld(World):
                 self.multiworld.regions.append(regions[name])
             return regions[name]
 
-        def place(region_name: str, name: str, location_id: Optional[int]) -> None:
+        def place(region_name: str, name: str, location_id: int | None) -> None:
             if name in active:
                 target = region(region_name)
                 target.locations.append(D2RRLocation(self.player, name, location_id, target))
@@ -241,7 +242,7 @@ class D2RRWorld(World):
         for _ in range(pool["starting_skill_points"]):
             self.multiworld.push_precollected(self.create_item(ids.SKILL_POINT_ITEM))
 
-        names: List[str] = (
+        names: list[str] = (
             [ids.SKILL_POINT_ITEM] * pool["placed_skill_points"]
             + [ids.HORADRIC_KEY_ITEM] * pool["keys"]
             + [ids.STAT_POINTS_ITEM] * pool["stat_bundles"]
@@ -255,7 +256,7 @@ class D2RRWorld(World):
     def set_rules(self) -> None:
         rules.set_completion(self)
 
-    def fill_slot_data(self) -> Dict[str, Any]:
+    def fill_slot_data(self) -> dict[str, Any]:
         """Everything the companion client needs to fetch the right mod and run the slot."""
         return {
             "contract_version": SLOT_CONTRACT_VERSION,

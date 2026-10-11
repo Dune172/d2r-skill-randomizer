@@ -1,8 +1,8 @@
 """Print the apworld's id tables as JSON, for the Go/Python cross-check.
 
-Standalone on purpose: it imports only ids.py, so it runs without Archipelago installed.
+Loads only ids.py (see _load.py), so it runs without Archipelago installed.
 
-    python apworld/d2rr/iddump.py
+    python apworld/dev/iddump.py
 """
 
 import json
@@ -11,7 +11,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import ids  # noqa: E402
+from _load import load_ids  # noqa: E402
+
+ids = load_ids()
 
 
 def main() -> None:
