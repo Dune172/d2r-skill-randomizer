@@ -1,0 +1,4 @@
+# gofmt and the generated-table check both compare bytes, so these stay LF on every
+# platform, including a Windows checkout with autocrlf on.
+*.go text eol=lf
+apworld/** text eol=lf

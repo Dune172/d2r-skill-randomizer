@@ -24,7 +24,7 @@ import fs from 'fs';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const goDir = path.join(repoRoot, 'tools', 'ap-client');
-const pyFile = path.join(repoRoot, 'apworld', 'd2rr', 'iddump.py');
+const pyFile = path.join(repoRoot, 'apworld', 'dev', 'iddump.py');
 
 function run(cmd, args, opts = {}) {
   try {

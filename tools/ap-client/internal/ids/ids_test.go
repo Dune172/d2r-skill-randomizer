@@ -136,17 +136,17 @@ func TestLocationCounts(t *testing.T) {
 	if got := WaypointsTotal(); got != 117 {
 		t.Errorf("WaypointsTotal() = %d, want 117 (39 waypoints x 3 difficulties)", got)
 	}
-	if got := Areas(); got != 137 {
-		t.Errorf("Areas() = %d, want 137", got)
+	if got := Areas(); got != 131 {
+		t.Errorf("Areas() = %d, want 131", got)
 	}
-	if got := AreasTotal(); got != 411 {
-		t.Errorf("AreasTotal() = %d, want 411 (137 areas x 3 difficulties)", got)
+	if got := AreasTotal(); got != 393 {
+		t.Errorf("AreasTotal() = %d, want 393 (131 areas x 3 difficulties)", got)
 	}
 	if got := LevelsTotal(); got != 98 {
 		t.Errorf("LevelsTotal() = %d, want 98 (clvl 2..99)", got)
 	}
-	if got := LocationsTotal(); got != 81+117+411+98 {
-		t.Errorf("LocationsTotal() = %d, want 707", got)
+	if got := LocationsTotal(); got != 81+117+393+98 {
+		t.Errorf("LocationsTotal() = %d, want 689", got)
 	}
 }
 
@@ -163,7 +163,7 @@ func TestGroupBoundariesAreFrozen(t *testing.T) {
 		{"first quest", func() (int64, bool) { return QuestLocationID(0, 0, 0) }, LocationBase + 0},
 		{"first waypoint", func() (int64, bool) { return WaypointLocationID(0, 0) }, LocationBase + 81},
 		{"first area", func() (int64, bool) { return AreaLocationID(0, 0) }, LocationBase + 198},
-		{"first level", func() (int64, bool) { return LevelLocationID(LevelMin) }, LocationBase + 609},
+		{"first level", func() (int64, bool) { return LevelLocationID(LevelMin) }, LocationBase + 591},
 	} {
 		got, ok := c.got()
 		if !ok {

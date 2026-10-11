@@ -9,16 +9,11 @@ IDS ARE IMMUTABLE once a multiworld exists. Changing one silently re-keys every 
 room, so the orderings below are written out explicitly instead of being derived from
 anything that could later be reordered. Add at the end; never renumber.
 
-Deliberately free of Archipelago imports so it runs standalone for the cross-check and
-for test_tables.py.
+Deliberately free of Archipelago imports, so apworld/dev can load it without Archipelago
+for the cross-check and the table tests.
 """
 
-from typing import Dict, List, Optional, Tuple
-
-try:  # as part of the apworld package
-    from .areas import AREA_ACTS, AREA_LABELS, AREA_LEVEL_IDS
-except ImportError:  # executed standalone, which the cross-check and tests rely on
-    from areas import AREA_ACTS, AREA_LABELS, AREA_LEVEL_IDS  # type: ignore[no-redef]
+from .areas import AREA_ACTS, AREA_LABELS, AREA_LEVEL_IDS
 
 ITEM_BASE = 5_720_000
 LOCATION_BASE = 5_721_000
@@ -26,10 +21,10 @@ LOCATION_BASE = 5_721_000
 DIFFICULTIES = 3
 ACTS = 5
 WAYPOINTS = 39
-AREAS = len(AREA_LEVEL_IDS)  # 137
+AREAS = len(AREA_LEVEL_IDS)  # 131
 
 # D2RR class codes, in CLASS_DEFS order. Warlock is a full D2RR class.
-CLASSES: List[str] = ["ama", "sor", "nec", "pal", "bar", "dru", "ass", "war"]
+CLASSES: list[str] = ["ama", "sor", "nec", "pal", "bar", "dru", "ass", "war"]
 
 DIFFICULTY_NAMES = ["Normal", "Nightmare", "Hell"]
 ACT_NAMES = ["Act I", "Act II", "Act III", "Act IV", "Act V"]
@@ -65,7 +60,7 @@ GOLD_ITEM = "Gold"
 GOLD_ID = ITEM_BASE + 2004
 
 # Traps. Each one only changes a value the character already has.
-TRAP_ITEMS: List[str] = [
+TRAP_ITEMS: list[str] = [
     "Mana Burn Trap",         # mana to zero
     "Exhaustion Trap",        # stamina to zero
     "Brush with Death Trap",  # life to one
@@ -75,7 +70,7 @@ TRAP_ITEMS: List[str] = [
 TRAP_ID_BASE = ITEM_BASE + 2010
 
 # Runes, delivered through the Archipelago Sigil in the Horadric Cube.
-RUNE_NAMES: List[str] = [
+RUNE_NAMES: list[str] = [
     "El", "Eld", "Tir", "Nef", "Eth", "Ith", "Tal", "Ral", "Ort", "Thul", "Amn", "Sol",
     "Shael", "Dol", "Hel", "Io", "Lum", "Ko", "Fal", "Lem", "Pul", "Um", "Mal", "Ist",
     "Gul", "Vex", "Ohm", "Lo", "Sur", "Ber", "Jah", "Cham", "Zod",
@@ -101,17 +96,17 @@ def rune_item_name(index: int) -> str:
     return f"{RUNE_NAMES[index]} Rune"
 
 
-def rune_item_id(index: int) -> Optional[int]:
+def rune_item_id(index: int) -> int | None:
     return RUNE_ID_BASE + index if 0 <= index < len(RUNE_NAMES) else None
 
 
-def trap_item_id(index: int) -> Optional[int]:
+def trap_item_id(index: int) -> int | None:
     return TRAP_ID_BASE + index if 0 <= index < len(TRAP_ITEMS) else None
 
 
-def all_item_names() -> Dict[str, int]:
+def all_item_names() -> dict[str, int]:
     """Every item name -> id, identical for every slot whatever its options."""
-    out: Dict[str, int] = {
+    out: dict[str, int] = {
         SKILL_POINT_ITEM: SKILL_POINT_ID,
         TRAINING_FRAGMENT_ITEM: TRAINING_FRAGMENT_ID,
         STAT_POINTS_ITEM: STAT_POINTS_ID,
@@ -130,14 +125,14 @@ def all_item_names() -> Dict[str, int]:
 # ---------------------------------------------------------------------------------------
 
 # The act boss whose death completes the slot, by act, and the quest that records it.
-GOAL_BOSSES: List[str] = ["Andariel", "Duriel", "Mephisto", "Diablo", "Baal"]
-GOAL_QUEST_INDEX: List[int] = [5, 5, 5, 1, 5]
+GOAL_BOSSES: list[str] = ["Andariel", "Duriel", "Mephisto", "Diablo", "Baal"]
+GOAL_QUEST_INDEX: list[int] = [5, 5, 5, 1, 5]
 BAAL_ACT = 4
 
 # Roughly the character level on leaving each act, per difficulty. A level milestone
 # beyond the goal's figure is not a location: it is somebody else's item stranded behind
 # a grind the player would never otherwise do.
-LEVEL_CAPS: List[List[int]] = [
+LEVEL_CAPS: list[list[int]] = [
     [12, 18, 24, 27, 30],
     [38, 43, 48, 51, 55],
     [62, 66, 70, 72, 75],
@@ -173,9 +168,9 @@ def keys_in_pool(key_items: bool, goal_difficulty: int, goal_act: int = BAAL_ACT
 # ---------------------------------------------------------------------------------------
 
 # Act IV has 3 quests, the rest 6: 27 per difficulty.
-QUESTS_PER_ACT: List[int] = [6, 6, 6, 3, 6]
+QUESTS_PER_ACT: list[int] = [6, 6, 6, 3, 6]
 
-QUEST_NAMES: List[List[str]] = [
+QUEST_NAMES: list[list[str]] = [
     ["Den of Evil", "Sisters' Burial Grounds", "Tools of the Trade",
      "The Search for Cain", "The Forgotten Tower", "Sisters to the Slaughter"],
     ["Radament's Lair", "The Horadric Staff", "Tainted Sun",
@@ -188,7 +183,7 @@ QUEST_NAMES: List[List[str]] = [
 ]
 
 # Waypoint display names, in the game's waypoint order.
-WAYPOINT_NAMES: List[str] = [
+WAYPOINT_NAMES: list[str] = [
     # Act I (0-8)
     "Rogue Encampment", "Cold Plains", "Stony Field", "Dark Wood", "Black Marsh",
     "Outer Cloister", "Jail Level 1", "Inner Cloister", "Catacombs Level 2",
@@ -208,7 +203,7 @@ WAYPOINT_NAMES: List[str] = [
 ]
 
 # Which waypoint indices belong to which act. Act IV has only 3 waypoints.
-WAYPOINT_ACT_BOUNDS: List[Tuple[int, int]] = [(0, 9), (9, 18), (18, 27), (27, 30), (30, 39)]
+WAYPOINT_ACT_BOUNDS: list[tuple[int, int]] = [(0, 9), (9, 18), (18, 27), (27, 30), (30, 39)]
 
 
 def waypoints_for_act(act: int) -> range:
@@ -228,7 +223,7 @@ def area_act(index: int) -> int:
     return AREA_ACTS[index]
 
 
-def area_index_for_level_id(level_id: int) -> Optional[int]:
+def area_index_for_level_id(level_id: int) -> int | None:
     """Map a levels.txt Id, which is what D2R reports as the player's area, to a table index."""
     try:
         return AREA_LEVEL_IDS.index(level_id)
@@ -247,7 +242,7 @@ def waypoints_total() -> int:
 
 
 def areas_total() -> int:
-    """411: 137 areas across 3 difficulties."""
+    """393: 131 areas across 3 difficulties."""
     return DIFFICULTIES * AREAS
 
 
@@ -257,12 +252,12 @@ def levels_total() -> int:
 
 
 def locations_total() -> int:
-    """707: 81 quests + 117 waypoints + 411 areas + 98 level milestones, laid out in
+    """689: 81 quests + 117 waypoints + 393 areas + 98 level milestones, laid out in
     that order, each group appended after the last."""
     return quests_total() + waypoints_total() + areas_total() + levels_total()
 
 
-def _quest_seq(difficulty: int, act: int, index: int) -> Optional[int]:
+def _quest_seq(difficulty: int, act: int, index: int) -> int | None:
     """Flat position: difficulty, then act, then index within the act."""
     if not 0 <= difficulty < DIFFICULTIES or not 0 <= act < len(QUESTS_PER_ACT):
         return None
@@ -271,24 +266,24 @@ def _quest_seq(difficulty: int, act: int, index: int) -> Optional[int]:
     return difficulty * sum(QUESTS_PER_ACT) + sum(QUESTS_PER_ACT[:act]) + index
 
 
-def quest_location_id(difficulty: int, act: int, index: int) -> Optional[int]:
+def quest_location_id(difficulty: int, act: int, index: int) -> int | None:
     seq = _quest_seq(difficulty, act, index)
     return None if seq is None else LOCATION_BASE + seq
 
 
-def waypoint_location_id(difficulty: int, index: int) -> Optional[int]:
+def waypoint_location_id(difficulty: int, index: int) -> int | None:
     if not 0 <= difficulty < DIFFICULTIES or not 0 <= index < WAYPOINTS:
         return None
     return LOCATION_BASE + quests_total() + difficulty * WAYPOINTS + index
 
 
-def area_location_id(difficulty: int, index: int) -> Optional[int]:
+def area_location_id(difficulty: int, index: int) -> int | None:
     if not 0 <= difficulty < DIFFICULTIES or not 0 <= index < AREAS:
         return None
     return LOCATION_BASE + quests_total() + waypoints_total() + difficulty * AREAS + index
 
 
-def level_location_id(clvl: int) -> Optional[int]:
+def level_location_id(clvl: int) -> int | None:
     if not LEVEL_MIN <= clvl <= LEVEL_MAX:
         return None
     base = quests_total() + waypoints_total() + areas_total()
@@ -312,9 +307,9 @@ def level_location_name(clvl: int) -> str:
     return f"Level {clvl}"
 
 
-def all_location_names() -> Dict[str, int]:
+def all_location_names() -> dict[str, int]:
     """Every location name -> id. Complete and identical for every slot of this game."""
-    out: Dict[str, int] = {}
+    out: dict[str, int] = {}
     for d in range(DIFFICULTIES):
         for act, count in enumerate(QUESTS_PER_ACT):
             for i in range(count):
@@ -347,21 +342,21 @@ _GATED_AREAS = {
 }
 
 
-def quest_gate(act: int, index: int) -> Optional[str]:
+def quest_gate(act: int, index: int) -> str | None:
     """Which gated sub-region a quest sits in, or None for the act itself."""
     return _GATED_QUESTS.get((act, index))
 
 
-def waypoint_gate(index: int) -> Optional[str]:
+def waypoint_gate(index: int) -> str | None:
     return _GATED_WAYPOINTS.get(index)
 
 
-def area_gate(index: int) -> Optional[str]:
+def area_gate(index: int) -> str | None:
     return _GATED_AREAS.get(index)
 
 
 def level_milestone_region(clvl: int, goal_difficulty: int,
-                           goal_act: int = BAAL_ACT) -> Optional[Tuple[int, int]]:
+                           goal_act: int = BAAL_ACT) -> tuple[int, int] | None:
     """Which (difficulty, act) a level milestone hangs off.
 
     Character level is global, so nothing about the game forces a milestone into a
@@ -380,13 +375,13 @@ def level_milestone_region(clvl: int, goal_difficulty: int,
 
 def active_location_names(goal_difficulty: int, include_waypoints: bool = True,
                           include_areas: bool = True, include_levels: bool = True,
-                          goal_act: int = BAAL_ACT) -> List[str]:
+                          goal_act: int = BAAL_ACT) -> list[str]:
     """Location names for a slot with this goal.
 
     Anything past the goal is excluded: it would be unreachable, and Archipelago treats
     an unreachable location as a generation failure.
     """
-    out: List[str] = []
+    out: list[str] = []
     for d in range(goal_difficulty + 1):
         acts = acts_in(d, goal_difficulty, goal_act)
         for act in range(acts):
@@ -411,7 +406,7 @@ def active_location_names(goal_difficulty: int, include_waypoints: bool = True,
 
 def resolve_pool(locations: int, *, skill_points: int, starting_skill_points: int = 0,
                  keys: int = 0, stat_bundles: int = 0, trap_percentage: int = 0,
-                 rune_percentage: int = 0) -> Dict[str, int]:
+                 rune_percentage: int = 0) -> dict[str, int]:
     """Fit the item pool to the locations that exist, exactly.
 
     Archipelago requires one item per location. Asking for more than fits would surface

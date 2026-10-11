@@ -1,11 +1,11 @@
 """Standalone tests for the apworld's pure tables and pool sizing.
 
-Runs WITHOUT Archipelago installed, by importing only ids.py. That matters: the failures
+Runs WITHOUT Archipelago installed, by loading only ids.py (see _load.py). That matters: the failures
 these catch (more items than locations, waypoint ranges that skip or double an index,
 locations past the goal) all surface inside Archipelago's fill as an opaque generation
 error, long after the actual mistake.
 
-    python apworld/d2rr/test_tables.py
+    python apworld/dev/test_tables.py
 """
 
 import itertools
@@ -15,7 +15,9 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import ids  # noqa: E402
+from _load import load_ids  # noqa: E402
+
+ids = load_ids()
 
 GOALS = [(d, act) for d in range(ids.DIFFICULTIES) for act in range(ids.ACTS)]
 CHECK_GROUPS = list(itertools.product([False, True], repeat=3))
@@ -36,8 +38,8 @@ class TestIdsAreFrozen(unittest.TestCase):
         self.assertEqual(ids.quest_location_id(0, 0, 0), base + 0)
         self.assertEqual(ids.waypoint_location_id(0, 0), base + 81)
         self.assertEqual(ids.area_location_id(0, 0), base + 198)
-        self.assertEqual(ids.level_location_id(ids.LEVEL_MIN), base + 609)
-        self.assertEqual(ids.locations_total(), 707)
+        self.assertEqual(ids.level_location_id(ids.LEVEL_MIN), base + 591)
+        self.assertEqual(ids.locations_total(), 689)
 
     def test_item_ids_have_not_moved(self):
         items = ids.all_item_names()
@@ -77,6 +79,21 @@ class TestWaypointsAndAreas(unittest.TestCase):
     def test_every_quest_and_waypoint_has_a_name(self):
         self.assertEqual([len(q) for q in ids.QUEST_NAMES], ids.QUESTS_PER_ACT)
         self.assertEqual(len(ids.WAYPOINT_NAMES), ids.WAYPOINTS)
+
+    def test_no_area_a_run_cannot_reach_is_a_location(self):
+        # The cow level opens after Baal; the Pandemonium event and the Colossal Summit
+        # are endgame. A check there would strand whatever was placed on it.
+        self.assertFalse({39, 133, 134, 135, 136, 137} & set(ids.AREA_LEVEL_IDS))
+        self.assertEqual(ids.AREAS, 131)
+        for label in ("Moo Moo Farm", "Pandemonium Run 1", "ColossalSummit"):
+            self.assertNotIn(label, ids.AREA_LABELS)
+
+    def test_areas_are_named_as_the_game_shows_them(self):
+        for shown in ("Frigid Highlands", "Halls of Pain", "Kurast Docks", "Chaos Sanctuary",
+                      "Tal Rasha's Tomb 7", "Abaddon", "Lut Gholein Sewers Level 1"):
+            self.assertIn(shown, ids.AREA_LABELS)
+        for internal in ("Rigid Highlands", "Hell1", "Kurast Docktown", "Tristram (38)"):
+            self.assertNotIn(internal, ids.AREA_LABELS)
 
     def test_area_tables_agree(self):
         self.assertEqual(len(ids.AREA_LABELS), ids.AREAS)

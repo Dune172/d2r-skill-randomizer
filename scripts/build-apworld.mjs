@@ -11,7 +11,7 @@
  * A wrong layout usually shows up as the game simply not appearing in the launcher,
  * with no error, so this script asserts the structure after writing it.
  *
- * Development-only files (the id dumper and the tests) are left out.
+ * The world's tests are left out; the standalone dev tools live in apworld/dev.
  *
  *   node scripts/build-apworld.mjs             # dist/d2rr.apworld
  *   node scripts/build-apworld.mjs --public    # also public/archipelago/d2rr.apworld, for the site
@@ -29,8 +29,8 @@ const AP_DIR = process.env.ARCHIPELAGO_DIR || 'C:\\ProgramData\\Archipelago';
 // The APContainer packaging scheme this layout follows (Archipelago worlds/Files.py).
 const CONTAINER_VERSION = 7;
 
-// Kept in the repo for the cross-checks and tests, but not shipped.
-const EXCLUDE = [/^iddump\.py$/, /^test_tables\.py$/, /^test\//];
+// Run from an Archipelago source checkout, not by players.
+const EXCLUDE = [/^test\//];
 
 function collect(dir, rel = '') {
   const out = [];

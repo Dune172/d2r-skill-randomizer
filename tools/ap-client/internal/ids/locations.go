@@ -25,13 +25,13 @@ var LevelCaps = [][]int{
 	{62, 66, 70, 72, 75},
 }
 
-// Areas is how many distinct areas levels.txt defines (137).
+// Areas is how many areas carry a check (131).
 func Areas() int { return len(AreaLevelIDs) }
 
 // WaypointsTotal is 117: 39 waypoints across 3 difficulties.
 func WaypointsTotal() int { return Difficulties * Waypoints }
 
-// AreasTotal is 411: 137 areas across 3 difficulties.
+// AreasTotal is 393: 131 areas across 3 difficulties.
 func AreasTotal() int { return Difficulties * Areas() }
 
 // LevelsTotal is 98: character levels 2 through 99.

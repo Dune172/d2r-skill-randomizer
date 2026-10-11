@@ -4,7 +4,7 @@
 
 Every class below also inherits WorldTestBase's generic checks: that everything is
 reachable with every item, that something is reachable with none, and that the world
-fills. test_tables.py beside this folder covers the tables without needing Archipelago.
+fills. apworld/dev/test_tables.py covers the tables without needing Archipelago.
 """
 
 from test.bases import WorldTestBase

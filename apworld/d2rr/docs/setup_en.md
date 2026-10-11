@@ -77,7 +77,8 @@ Hell, and restart it with the right number if you go back to an easier difficult
   in the Horadric Cube and transmute. Take the rune, then right-click the
   **Archipelago Receipt** that came with it. The next rune is offered after that. Keep
   the Receipt until you have used it: it is what tells the client the rune arrived. If
-  the Cube refuses a waiting rune, restart the client with `-mail-flip`.
+  the Cube refuses a waiting rune, restart the client with `-mail-flip`; if you lost a
+  Receipt, restart it with `-mail-skip`.
 - If the client says a stat is missing, right-click the **Draught of Attunement** you
   started with. Transmuting the Sigil alone brews another whenever no rune is waiting.
 
