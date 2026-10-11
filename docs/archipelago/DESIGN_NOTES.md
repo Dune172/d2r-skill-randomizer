@@ -74,12 +74,17 @@ These are what `PLAYTEST.md` exists to settle.
   and returns the other, so it cannot fire twice. A Receipt whose use the client can see
   (stat + 1) is the acknowledgement. The client tracks which Sigil is held by counting
   deliveries. The state machine is `internal/grants/mail.go` and is tested exhaustively.
+  `-mail-flip` corrects the client's idea of which Sigil is held, and `-mail-skip`
+  records a rune whose Receipt was lost.
 - **No seasonal overlay in AP mods**, and the zip is cached on disk only: a room's mod
   must not change with the month, and one-off 47 MB zips must not evict public seeds.
 - **The room decides which locations exist.** The client sends a check only if the
   server listed that location for the slot, which covers short goals and disabled check
   groups without the client re-deriving them.
 - **No Monster Shrine trap.** It needs the game's own code to run. Traps are stat writes.
+- **Only areas a run passes through are checks.** The cow level (open only after Baal),
+  the Pandemonium event and the Colossal Summit are left out: an item placed there would
+  be stranded. Areas are named as the game shows them, not as `levels.txt` does.
 
 ## Known limits
 
