@@ -177,6 +177,33 @@ The `MutationContext` exposes parsed rows for every game data file (`monstats`, 
 
 ---
 
+## Archipelago (preview)
+
+D2R Randomizer can be played in an [Archipelago](https://archipelago.gg/) multiworld: levelling
+grants no skill points, and each point is an item found somewhere across everyone's games.
+
+| Part | Where | What it is |
+|---|---|---|
+| World | `apworld/d2rr/` | Items, locations, logic and options for Archipelago's generator, packaged as `d2rr.apworld` |
+| Client | `tools/ap-client/` | A Go program that reads checks from the game and save file and grants what the room sends |
+| Mod | `src/lib/randomizer/ap-mode.ts`, `POST /api/archipelago/mod` | The mod an Archipelago slot plays |
+| Page | `/archipelago` | Setup guide and options builder (unlisted until release) |
+
+It is a **preview**: generation and the room connection are tested against a real Archipelago
+server, but nothing has been confirmed inside the game yet. Start with
+[`docs/archipelago/PLAYTEST.md`](docs/archipelago/PLAYTEST.md); the design and its open
+questions are in [`docs/archipelago/DESIGN_NOTES.md`](docs/archipelago/DESIGN_NOTES.md), and
+cutting a release is in [`docs/archipelago/RELEASING.md`](docs/archipelago/RELEASING.md).
+
+```bash
+npm run ap:test    # tables, id and option cross-checks, client unit tests
+npm run ap:build   # dist/archipelago-release: apworld, client, options template
+```
+
+Report problems in [issues](https://github.com/Dune172/d2r-skill-randomizer/issues).
+
+---
+
 ## Versioning and determinism
 
 The randomization pipeline includes a `PIPELINE_VERSION` integer ([`src/lib/randomizer/pipeline-version.ts`](src/lib/randomizer/pipeline-version.ts)). **Any change that would cause the same seed to produce different output must increment this version.** This prevents saved seeds from silently breaking for existing users.

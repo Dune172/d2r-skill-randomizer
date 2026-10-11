@@ -1,0 +1,133 @@
+name: Archipelago
+
+# Tests the Archipelago world and its companion client, and publishes them together.
+#
+# The world is tested the way Archipelago tests its own: copied into a checkout of
+# Archipelago and run under its test suite, on every Python version Archipelago supports.
+# The client only builds for Windows, like the game.
+#
+# Pushing a tag named archipelago-v<version> publishes a GitHub release holding the
+# apworld, the client and an options template from one build, because a mismatched pair
+# is refused when the client connects.
+
+on:
+  push:
+    branches: [main]
+    tags: ["archipelago-v*"]
+    paths:
+      - "apworld/**"
+      - "tools/ap-client/**"
+      - "scripts/*ap*"
+      - "src/lib/archipelago/**"
+      - "src/lib/randomizer/ap-mode.ts"
+      - ".github/workflows/archipelago.yml"
+  pull_request:
+    paths:
+      - "apworld/**"
+      - "tools/ap-client/**"
+      - "scripts/*ap*"
+      - "src/lib/archipelago/**"
+      - "src/lib/randomizer/ap-mode.ts"
+      - ".github/workflows/archipelago.yml"
+
+env:
+  ARCHIPELAGO_VERSION: "0.6.7"
+
+jobs:
+  world:
+    name: World on Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: ArchipelagoMW/Archipelago
+          ref: ${{ env.ARCHIPELAGO_VERSION }}
+          path: archipelago
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Table tests (no Archipelago needed)
+        run: python apworld/dev/test_tables.py
+      - name: Install what Archipelago's test suite imports
+        run: >
+          pip install colorama websockets PyYAML jellyfish jinja2 schema bsdiff4 platformdirs
+          certifi orjson typing_extensions pathspec pytest pytest-subtests
+      - name: Archipelago's world tests
+        run: |
+          cp -r apworld/d2rr archipelago/worlds/d2rr
+          cd archipelago
+          python -m pytest worlds/d2rr -q
+
+  client:
+    name: Client
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: tools/ap-client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/ap-client/go.mod
+          cache: false
+      - run: go vet ./...
+      - run: go test ./...
+      - name: Formatting
+        shell: bash
+        run: test -z "$(gofmt -l cmd internal)"
+
+  agreement:
+    name: World, client and page agree
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/ap-client/go.mod
+          cache: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Item and location ids (Go and Python)
+        run: node scripts/verify-ap-ids.mjs
+      - name: Options (page and apworld)
+        run: node scripts/verify-ap-options.mjs
+      - name: Area tables match levels.txt
+        run: node scripts/gen-ap-areas.mjs --check
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/archipelago-v')
+    needs: [world, client, agreement]
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/ap-client/go.mod
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/build-ap-release.mjs
+      - name: Publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$GITHUB_REF_NAME" dist/archipelago-release/*
+          --title "D2R Randomizer for Archipelago ${GITHUB_REF_NAME#archipelago-v}"
+          --notes-file docs/archipelago/RELEASE_NOTES.md
+          --prerelease
