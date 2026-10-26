@@ -75,6 +75,13 @@ export default function ChallengePage() {
           A new challenge seed drops on the first of each month. Everyone plays the same randomized Diablo 2 Resurrected
           experience — same seed, same settings, same starting point.
         </p>
+        <p className="text-[#a89060] text-sm leading-relaxed max-w-lg mx-auto -mt-6 mb-10">
+          New to a mutation? The{' '}
+          <Link href="/mutations" className="text-[#c8942a] underline underline-offset-4 hover:text-[#e0ac4a]">
+            mutations guide
+          </Link>{' '}
+          explains every one, with strategy tips.
+        </p>
       </section>
 
       <AdUnit placement="challenge" />
