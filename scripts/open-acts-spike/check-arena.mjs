@@ -46,7 +46,7 @@ const report = (id, what, status, evidence) => results.push({ id, what, status, 
     const nm = act1.some(e => e.maxLevel >= 30);
     const tabs = s.ev.filter(e => e.ev === 'wptab').map(e => e.tab);
     const a2 = tabs.some(t => t.includes('Lut Gholein'));
-    const a3 = tabs.some(t => t.includes('Kurast Docks'));
+    const a3 = tabs.some(t => t.includes('Kurast Dock')); // d2go calls it "Kurast Docktown"
     report('S2', 'Nmtest in Nightmare shows Act II and III waypoint tabs', nm && a2 && a3 ? 'PASS' : nm ? 'FAIL' : 'NOT RUN',
       `nightmare=${nm} (max Act I monster level ${Math.max(0, ...act1.map(e => e.maxLevel))}), Act II tab=${a2}, Act III tab=${a3}`);
   }

@@ -36,6 +36,13 @@ A generator option where **Acts I–III are open from the start** and the **key 
 
 ### Next steps, in order
 1. **Run the in-game session** (see "Testing" below). Grades S1, S2, D1–D3, H1–H4, R1–R4, Q1, L1, L2.
+   - **In-town checks done 2026-10-26** (D2R 3.3.93847). The user wants in-game testing kept to simple checks inside towns, so nothing outside town was played.
+     - S1 PASS: Spiketest loads at level 1 and its Normal waypoint panel shows tabs I–III.
+     - S2: Nmtest in Nightmare ("Difficulty: Nightmare" on screen) shows tabs I–III, and waypoint travel to Lut Gholein and Kurast Docks works. The grader's monster-level half was not run (it needs leaving town).
+     - Q1 PASS: after Akara gives Den of Evil, its quest-log text ends "HINT: Khalim's Eye is somewhere in Act I." Akara's shop opens and lists normally.
+     - L1 FAIL: Smart App Control blocked the shortcut, so Lnktest was copied by hand (the grader's PASS only checks that the file exists). L2 PASS: Lnktest loads.
+     - D1–D3, H1–H4, R1–R4: not run.
+     - The arena mod triggers a "data version mismatch" prompt on launch (Continue works); it ships no `DataVersionBuild.txt`, unlike generated mods.
 2. **Apply the decision gates in PLAN.md Phase 0:**
    - Boss drops fail (D1–D3) → set `bossLocations: false`. The fill already supports it, and Tristram stays as the gate.
    - Nightmare tabs fail (S2) → raise with the user.
