@@ -119,6 +119,20 @@ export interface OpenActsOptions {
   startWithCube: boolean;
   /** Boss locations are used (off if the in-game spike shows TC quest drops fail). */
   bossLocations: boolean;
+  /**
+   * Acts open from the start (the starter save sets their act-access flags). Act I is
+   * always open. A closed Act II is still reached by killing Andariel, who needs nothing,
+   * but a closed Act III is only reached through Duriel, so it inherits the Duriel gate.
+   * Defaults to [2, 3], the original all-open design.
+   */
+  openActs?: Act[];
+}
+
+/** Whether `owned` lets the player reach `loc`: its own gate, plus Act III's access when that act starts closed. */
+export function canReach(loc: PoolLocation, owned: ReadonlySet<ItemCode>, opts: OpenActsOptions): boolean {
+  if (!gateOpen(loc.gate, owned)) return false;
+  const open = opts.openActs ?? [2, 3];
+  return loc.act !== 3 || open.includes(3) || gateOpen('duriel', owned);
 }
 
 export function keyItems(opts: OpenActsOptions): ItemCode[] {

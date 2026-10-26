@@ -25,8 +25,9 @@ const WAYPOINT_MARKER = 701;
 const NAME_OFFSET = 299;
 const NAME_BYTES = 16;
 const ACT_DONE = 0x2001; // reward granted + primary goal done, as Warriv/Meshif write it
-const ACT_DONE_WORDS = [7, 15];
-const TOWN_WAYPOINT_BITS = [0, 9, 18];
+/** Per act that can start open: the quest word that grants access and its town waypoint bit. */
+const ACT_ACCESS = { 2: { word: 7, waypoint: 9 }, 3: { word: 15, waypoint: 18 } } as const;
+const ROGUE_ENCAMPMENT_WAYPOINT = 0;
 const SKILL_SLOTS = 30;
 
 export interface StarterSaveOptions {
@@ -34,6 +35,11 @@ export interface StarterSaveOptions {
   name: string;
   /** Index 0..29 of the seed's starting skill in the class's block, or null for none. */
   startSkillSlot: number | null;
+  /**
+   * Acts to open, in every difficulty. Defaults to [2, 3], the combination tested in game.
+   * Act III is only offered together with Act II (Open Acts options enforce it).
+   */
+  openActs?: (2 | 3)[];
 }
 
 export function isValidCharacterName(name: string): boolean {
@@ -75,14 +81,18 @@ export function patchStarterSave(template: Uint8Array, opts: StarterSaveOptions)
   buf.fill(0, NAME_OFFSET, NAME_OFFSET + NAME_BYTES);
   buf.write(opts.name, NAME_OFFSET, 'latin1');
 
+  const acts = opts.openActs ?? [2, 3];
   for (let d = 0; d < 3; d++) {
     const quests = QUEST_MARKER + 10 + d * 96;
-    for (const w of ACT_DONE_WORDS) {
-      if (buf.readUInt16LE(quests + w * 2) === 0) buf.writeUInt16LE(ACT_DONE, quests + w * 2);
-    }
     const wp = WAYPOINT_MARKER + 8 + d * 24;
     if (buf[wp] !== 2 || buf[wp + 1] !== 1) throw new Error(`starter save: waypoint block ${d} header`);
-    for (const bit of TOWN_WAYPOINT_BITS) buf[wp + 2 + (bit >> 3)] |= 1 << (bit & 7);
+    const bits: number[] = [ROGUE_ENCAMPMENT_WAYPOINT];
+    for (const act of acts) {
+      const { word, waypoint } = ACT_ACCESS[act];
+      if (buf.readUInt16LE(quests + word * 2) === 0) buf.writeUInt16LE(ACT_DONE, quests + word * 2);
+      bits.push(waypoint);
+    }
+    for (const bit of bits) buf[wp + 2 + (bit >> 3)] |= 1 << (bit & 7);
   }
 
   const skills = skillSection(buf);

@@ -47,7 +47,10 @@ const combos = [
   { startWithCube: false, bossLocations: false },
   { startWithCube: true, bossLocations: false },
 ];
-for (const opts of combos) {
+// The same four with Act III closed (shuffle with only Act II open) and with every act
+// closed (shuffle only, any ordinary character). A closed Act III is reached through Duriel.
+const actCombos = [...combos, ...[[2], []].flatMap(openActs => combos.map(c => ({ ...c, openActs })))];
+for (const opts of actCombos) {
   const locs = new Map(pool.activeLocations(opts).map(l => [l.id, l]));
   const freq = {};
   let maxTries = 0, totalTries = 0, gatedSeeds = 0;
@@ -73,6 +76,14 @@ for (const opts of combos) {
     if (r.objectHandlers.get('Malus') === 12) fail(`seed ${seed}: Malus got 12`);
     if (!opts.bossLocations && r.bossDrops.length) fail(`seed ${seed}: boss drops with bosses off`);
     if (r.bossDrops.some(b => b.item === 'bks')) fail(`seed ${seed}: Inifuss scroll on a boss`);
+    if (opts.openActs && !opts.openActs.includes(3)) {
+      // Act III opens only after Duriel, so nothing Duriel needs may sit there: the Cube and
+      // Staff, and the Inifuss scroll when one of them is behind Tristram.
+      const where = k => locs.get([...r.placements].find(([, item]) => item === k)?.[0]);
+      const needed = ['box', 'msf'].filter(k => where(k));
+      if (needed.some(k => where(k).gate === 'tristram')) needed.push('bks');
+      for (const k of needed) if (where(k).act === 3) fail(`seed ${seed} ${JSON.stringify(opts)}: ${k} in closed Act III`);
+    }
     if (r.manifest.some(m => m.key && locs.get(m.location).gate !== 'none')) gatedSeeds++;
     const maxSphere = Math.max(...r.manifest.filter(m => m.key).map(m => m.sphere));
     depth[maxSphere] = (depth[maxSphere] ?? 0) + 1;

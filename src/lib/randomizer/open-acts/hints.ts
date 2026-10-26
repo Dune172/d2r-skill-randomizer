@@ -52,6 +52,24 @@ export function hintStrings(manifest: ManifestEntry[]): Record<string, string> {
 }
 
 /**
+ * Quest-log text for a shuffle played without hints. The vanilla lines name the vanilla
+ * spots, which would now be wrong, so they say only what to look for.
+ */
+export function neutralStrings(startWithCube: boolean): Record<string, string> {
+  return {
+    qstsa1q41: 'Search for the Scroll of Inifuss. Its hiding place is unknown.',
+    qstsa2q22: [
+      startWithCube ? null : 'Find the Horadric Cube.',
+      'Find the Staff of Kings.',
+      'Search the Claw Viper Temple for the Amulet.',
+    ].filter(Boolean).join(' '),
+    qstsa3q21: "Find Khalim's relics. Their hiding places are unknown.",
+    qstsa3q22: "Khalim's Brain lies hidden somewhere.",
+    qstsa3q24: "Khalim's Heart lies hidden somewhere.",
+  };
+}
+
+/**
  * Write the hints into the game's quests.json entries, in every locale. Other languages
  * get the English hint: a hint in English beats a vanilla line that names the wrong place.
  */

@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.336',
+    date: 'October 2026',
+    tagline: 'Open Acts: shuffle the quest items across Acts I–III and start with acts already open',
+    notes: [
+      'New Open Acts options (experimental) on the Generate page',
+      'Shuffle quest items: the Scroll of Inifuss, the Horadric Cube, the Staff of Kings and Khalim\'s Eye, Brain and Heart move to new spots across Acts I–III. Every seed is checked to be finishable, so work out which act to visit next',
+      'Bosses can carry quest items too, dropping them on every kill. Optional quest-log hints say which act each item is in, and an optional spoiler file lists every exact spot',
+      'Start with acts open: the download includes level-1 starter characters with the Act II (and Act III) waypoint and quest tabs already unlocked in every difficulty. Copy them into your save folder; the install steps show where',
+    ],
+  },
+  {
     version: 'v0.335',
     date: 'October 2026',
     tagline: 'New guides: install, FAQ and mutations, plus About, Contact and Terms pages',

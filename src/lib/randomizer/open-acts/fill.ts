@@ -1,6 +1,6 @@
 import { createRNG, type SeededRNG } from '../seed';
 import {
-  ITEMS, PLAIN_CHEST_HANDLER, activeLocations, canHost, fillerItems, gateOpen, goalReached, keyItems,
+  ITEMS, PLAIN_CHEST_HANDLER, activeLocations, canHost, canReach, fillerItems, gateOpen, goalReached, keyItems,
   type Act, type HostModes, type ItemCode, type LocationId, type ObjectLocation, type OpenActsOptions,
   type PoolLocation,
 } from './pool';
@@ -38,13 +38,19 @@ interface Sweep {
   spheres: LocationId[][];
 }
 
-/** Collect everything reachable, sphere by sphere: items found in one sphere open gates in the next. */
-export function sweep(locs: PoolLocation[], placed: ReadonlyMap<LocationId, ItemCode>, start: Iterable<ItemCode>): Sweep {
+/**
+ * Collect everything reachable, sphere by sphere: items found in one sphere open gates in the
+ * next. `opts` decides which acts start open; without it all three do.
+ */
+export function sweep(
+  locs: PoolLocation[], placed: ReadonlyMap<LocationId, ItemCode>, start: Iterable<ItemCode>,
+  opts: OpenActsOptions = { startWithCube: false, bossLocations: true },
+): Sweep {
   const owned = new Set(start);
   const visited = new Set<LocationId>();
   const spheres: LocationId[][] = [];
   for (;;) {
-    const sphere = locs.filter(l => !visited.has(l.id) && gateOpen(l.gate, owned)).map(l => l.id);
+    const sphere = locs.filter(l => !visited.has(l.id) && canReach(l, owned, opts)).map(l => l.id);
     if (!sphere.length) break;
     for (const id of sphere) visited.add(id);
     spheres.push(sphere);
@@ -81,7 +87,7 @@ function attempt(rng: SeededRNG, opts: OpenActsOptions, modes: HostModes): Map<L
   // Assumed fill: place each key where it is reachable while holding every key not yet placed.
   for (let i = 0; i < keys.length; i++) {
     const item = ITEMS[keys[i]];
-    const { spheres } = sweep(locs, placed, [...start, ...keys.slice(i + 1)]);
+    const { spheres } = sweep(locs, placed, [...start, ...keys.slice(i + 1)], opts);
     const reach = new Set(spheres.flat());
     const candidates = locs.filter(l => reach.has(l.id) && !placed.has(l.id) && canHost(l, item, modes));
     if (!candidates.length) return null;
@@ -113,7 +119,7 @@ export function interesting(placed: ReadonlyMap<LocationId, ItemCode>, opts: Ope
   // is behind a gate, e.g. Tristram -> Staff of Kings -> Duriel -> Khalim's Heart), so the
   // seed has a real order to discover. Without bosses, Tristram is the only gate.
   if (opts.bossLocations) {
-    const { spheres } = sweep(activeLocations(opts), placed, opts.startWithCube ? ['box'] : []);
+    const { spheres } = sweep(activeLocations(opts), placed, opts.startWithCube ? ['box'] : [], opts);
     let deepest = -1;
     spheres.forEach((ids, n) => {
       if (ids.some(id => { const item = placed.get(id); return item !== undefined && ITEMS[item].key; })) deepest = n;
@@ -125,7 +131,7 @@ export function interesting(placed: ReadonlyMap<LocationId, ItemCode>, opts: Ope
 
 /** The shuffle can be finished: Duriel and Mephisto are both reachable from the start. */
 export function beatable(placed: ReadonlyMap<LocationId, ItemCode>, opts: OpenActsOptions): boolean {
-  const { owned } = sweep(activeLocations(opts), placed, opts.startWithCube ? ['box'] : []);
+  const { owned } = sweep(activeLocations(opts), placed, opts.startWithCube ? ['box'] : [], opts);
   return gateOpen('duriel', owned) && goalReached(owned) && keyItems(opts).every(k => owned.has(k));
 }
 
@@ -155,7 +161,7 @@ export function shuffleOpenActs(seed: number, opts: OpenActsOptions, modes: Host
       else if (item) bossDrops.push({ location: loc, item });
     }
 
-    const { spheres } = sweep(locs, placed, opts.startWithCube ? ['box'] : []);
+    const { spheres } = sweep(locs, placed, opts.startWithCube ? ['box'] : [], opts);
     const sphereOf = new Map<LocationId, number>();
     spheres.forEach((ids, n) => ids.forEach(id => sphereOf.set(id, n)));
     const manifest: ManifestEntry[] = locs

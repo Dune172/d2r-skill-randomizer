@@ -1,9 +1,15 @@
 import Link from 'next/link';
+import { pickRaceClassIndex } from '@/lib/classes';
+import { CLASS_DEFS } from '@/lib/randomizer/config';
+import { openActsSavepath } from '@/lib/randomizer/open-acts/options';
 
-export function InstallInstructions({ seed, raceMode = true, forgottenArts = false, modName }: { seed: number; raceMode?: boolean; forgottenArts?: boolean; modName?: string }) {
+export function InstallInstructions({ seed, raceMode = true, forgottenArts = false, modName, openActs = [] }: { seed: number; raceMode?: boolean; forgottenArts?: boolean; modName?: string; openActs?: number[] }) {
   const seedUnsigned = seed >>> 0;
   // Class Builder mods are named by their build, not their seed.
   const mod = modName ?? `seed${seed}`;
+  const starterFolder = openActs.length
+    ? openActsSavepath(mod, raceMode ? CLASS_DEFS[pickRaceClassIndex(seed)].code : null)
+    : null;
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-[#c8a870]">
       {/* Battle.net column */}
@@ -108,6 +114,18 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
           <span className="text-[#c8a870] font-semibold">Game Pass?</span> Use the Microsoft Store install path instead. If you&apos;re unsure where D2R is installed, search <code className="text-[#a89858]">Diablo II Resurrected</code> in File Explorer.
         </div>
       </div>
+
+      {starterFolder && (
+        <div className="md:col-span-2 rounded p-3 bg-[#080203]/40 border border-[#5c1818] space-y-1">
+          <p>
+            <span className="text-[#c8942a] font-semibold">Open Acts starter characters:</span>{' '}
+            the ZIP&apos;s <code className="text-[#a89858]">{mod}\starter-saves\</code> folder has level-1 characters with
+            {openActs.includes(3) ? ' Acts II and III' : ' Act II'} already open. Copy the <code className="text-[#a89858]">.d2s</code> files to:
+          </p>
+          <code className="block text-[#a89858] break-all">%USERPROFILE%\Saved Games\Diablo II Resurrected\mods\{starterFolder}\</code>
+          <p className="text-[#7a7858]">Create that folder if it isn&apos;t there yet (launching the mod once also creates it). Characters you create yourself start with only Act I open.</p>
+        </div>
+      )}
 
       <div className="md:col-span-2 rounded p-3 bg-[#080203]/40 border border-[#2a1508]/60">
         <span className="text-[#c8942a] font-semibold">Playing with friends?</span>{' '}

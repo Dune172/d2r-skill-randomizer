@@ -10,6 +10,7 @@ import { pickRaceClassName } from '@/lib/classes';
 import type { PreviewData } from '@/lib/randomizer/types';
 import { generateMod } from '@/lib/generate-mod';
 import AdUnit from './AdUnit';
+import { DEFAULT_OPEN_ACTS, openActsFromParams, openActsToParams, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
 
@@ -27,6 +28,7 @@ interface Options {
   raceMode: boolean;
   enemyShuffle: boolean;
   forgottenArts: boolean;
+  openActs: OpenActsSettings;
 }
 
 const defaultOptions: Options = {
@@ -43,6 +45,7 @@ const defaultOptions: Options = {
   raceMode: true,
   enemyShuffle: false,
   forgottenArts: false,
+  openActs: DEFAULT_OPEN_ACTS,
 };
 
 function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearchParams>): Options | null {
@@ -76,6 +79,8 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
     raceMode: p.get('raceMode') !== '0',
     enemyShuffle: p.get('enemyShuffle') === '1',
     forgottenArts: false, // challenge-only
+    // Absent on links from before Open Acts, which then stays off.
+    openActs: openActsFromParams(name => p.get(name)),
   };
 }
 
@@ -115,7 +120,7 @@ export default function RandomizerApp() {
     const xpDiffParam       = opts.xpMultiplier > 1 ? `&xpDifficulties=${[...opts.xpDifficulties].sort((a, b) => a - b).join(',')}` : '';
     const raceModeParam     = !opts.raceMode ? '&raceMode=0' : '';
     const enemyParam = opts.enemyShuffle ? '&enemyShuffle=1' : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}`;
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}${openActsToParams(opts.openActs)}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -146,7 +151,7 @@ export default function RandomizerApp() {
 
       setStatus('building');
       const buildingStart = Date.now();
-      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts });
+      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts, openActs: options.openActs });
 
       await generateMod(buildBody, setErrorMessage);
 
@@ -206,7 +211,7 @@ export default function RandomizerApp() {
             )}
 
             <div className="pt-0.5">
-              <InstallInstructions seed={currentSeed!} raceMode={currentOptions.raceMode} forgottenArts={currentOptions.forgottenArts} />
+              <InstallInstructions seed={currentSeed!} raceMode={currentOptions.raceMode} forgottenArts={currentOptions.forgottenArts} openActs={currentOptions.openActs.acts} />
             </div>
           </div>
         )}
@@ -237,7 +242,7 @@ export default function RandomizerApp() {
       </p>
 
       <p className="text-center font-cinzel text-[11px] tracking-[0.3em] uppercase text-[#7a5818] pt-2">
-        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.335: updated October 2026
+        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.336: updated October 2026
       </p>
     </div>
   );

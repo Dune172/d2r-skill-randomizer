@@ -31,8 +31,8 @@ A generator option where **Acts I–III are open from the start** and the **key 
 | Arena test mod, test saves, memory watcher, grader | Built. Pipeline tested end to end, **session not yet played** |
 | Watcher on D2R 3.3 (3.3.93847) | **Fixed 2026-10-26**, see below. Not yet committed |
 | Launcher shortcut (L1) | **Blocked by Smart App Control** on a Windows 11 PC (2026-10-26): "blocked an app with a dangerous file extension". Decision gate L1 applies |
-| Template characters (16: 8 classes × with/without Cube) | Not made |
-| Generator wiring, ZIP, launcher, UI, changelog | Not started |
+| Template characters (16: 8 classes × with/without Cube) | **Made 2026-10-26** in `data/starter-saves/` (built by `build-templates.mjs`); all 16 pass `patchStarterSave` |
+| Generator wiring, ZIP, UI, changelog | **Built 2026-10-26** with toggles (see Next steps 4); verified offline and on generated ZIPs, not yet played |
 
 ### Next steps, in order
 1. **Run the in-game session** (see "Testing" below). Grades S1, S2, D1–D3, H1–H4, R1–R4, Q1, L1, L2.
@@ -41,17 +41,22 @@ A generator option where **Acts I–III are open from the start** and the **key 
      - S2: Nmtest in Nightmare ("Difficulty: Nightmare" on screen) shows tabs I–III, and waypoint travel to Lut Gholein and Kurast Docks works. The grader's monster-level half was not run (it needs leaving town).
      - Q1 PASS: after Akara gives Den of Evil, its quest-log text ends "HINT: Khalim's Eye is somewhere in Act I." Akara's shop opens and lists normally.
      - L1 FAIL: Smart App Control blocked the shortcut, so Lnktest was copied by hand (the grader's PASS only checks that the file exists). L2 PASS: Lnktest loads.
-     - D1–D3, H1–H4, R1–R4: not run.
+     - Arena run (played by the user, same day): **D1–D3 PASS** (Eye, Brain and Leg dropped on all 11 kills and were picked up), **H1 PASS** (Staff of Kings from an outdoor chest; later chests gave normal loot once it was held, as designed). H2–H4 and R1–R4 were not played; the user judged the mechanism proven and chose to skip them.
      - The arena mod triggers a "data version mismatch" prompt on launch (Continue works); it ships no `DataVersionBuild.txt`, unlike generated mods.
 2. **Apply the decision gates in PLAN.md Phase 0:**
    - Boss drops fail (D1–D3) → set `bossLocations: false`. The fill already supports it, and Tristram stays as the gate.
    - Nightmare tabs fail (S2) → raise with the user.
    - Launcher flagged (L1) → no auto-copy; ship a README instead.
-3. **Phase 1:** generate two template mods (vanilla data, `StartSkill` cleared; one with the Cube via `applyHoradricCube`). The user makes one level-1 character per class in each. Commit them as `data/starter-saves/<class>[-cube].d2s`.
-4. **Phase 2 wiring** (PLAN.md lists the files):
-   - `apply.ts`: objects.txt `OperateFn`, the boss TC wrappers (generalize the `preserveLoot` branch of `applyBloodRavenQuestDrop` in `src/lib/randomizer/starting-items.ts`), and the hint strings into `quests.json`.
-   - The `openActs` option through `route.ts`, `download/route.ts` and `makeCacheKey` (suffix `:open-acts-v1`, both routes).
-   - Savepath `${modName}_openacts`, starter saves in the ZIP, a launcher `.lnk` that runs `cmd /c` copy-if-missing, the UI checkbox, the changelog.
+3. **Phase 1 (done 2026-10-26):** `scripts/open-acts-spike/build-templates.mjs` builds `d2rr_tpl` and `d2rr_tpl_cube` (vanilla data, `StartSkill` cleared; the Cube added as `applyHoradricCube` does). One level-1 character per class was made in each (Reign of the Warlock, softcore) and saved as `data/starter-saves/<class>[-cube].d2s`, lowercase class names (`amazon.d2s`, `amazon-cube.d2s`, …). All are v105, level 1, no skill points, valid checksums; each Cube save is 17 bytes larger. Character names in the templates are the class names; `patchStarterSave` replaces them.
+   - Driving character creation with computer use: an always-on-top Claude panel covers the right third of the screen (where **Create New** sits) and is masked out of screenshots. Sliding the D2R window 460 px left with `SetWindowPos` uncovered it.
+4. **Phase 2 wiring (built 2026-10-26, not yet played in game):**
+   - **Options** (`open-acts/options.ts`, shared by the form, share links and both routes): `shuffle` (quest items), `bosses`, `hints`, `spoiler` (the last three only with the shuffle; default on) and `acts` = `[]`, `[2]` or `[2, 3]` (Act III requires Act II; the user chose II/III only, not IV/V). Share params `shuffleQuests=1`, `questBosses=0`, `questHints=0`, `questSpoiler=0`, `openActs=2,3`. Off = cache key and ZIP unchanged; on appends `:open-acts-v1:<flags>:a<acts>` after `makeCacheKey`. Disabled for challenges, Forgotten Arts and Class Builder mods.
+   - **Closed acts:** `canReach` in `pool.ts` gives Act III locations the Duriel gate when Act III starts closed, so "shuffle only" works with any new character. `verify-open-acts-fill.mjs` covers 12 combinations.
+   - **Generation:** `generate.ts` runs the shuffle after enemy shuffle (step 11c2) and `apply.ts` writes objects.txt handlers and boss TC wrappers (arena pattern, `Picks -2`, real TCs only). At ZIP time it builds quests.json (hints, or `neutralStrings` when hints are off), `quest-shuffle.json`, and the starter saves (all eight classes, or the race class; `-cube` templates with start-with-cube), patched with this seed's StartSkill slot and only the chosen acts' flags.
+   - **Install:** no auto-copy launcher (Smart App Control blocked it). Saves ship in `<mod>/starter-saves/` with a README; the site's install steps show the folder (`<mod>[raceclass]_openacts`).
+   - **UI:** an "Open Acts" section in `RandomizerForm.tsx` (checkboxes plus II/III pills); changelog v0.336.
+   - **Checks:** `node scripts/verify-open-acts.mjs [url] [seed]` against a dev server (off vs three settings: only expected files change, monstats/superuniques only on boss rows, TC append-only, hints/spoiler/saves/savepath right). `verify-cached-download.mjs` now loads the real options module; its other failures (`withBuildSegment`, `getActiveMutations`, `isMutationActiveForWeek` mocks) predate this work.
+   - **Still to do:** play one generated seed in game (start from a starter save, follow the hints to Mephisto); a short section on `/guide/install`.
 
 ## Proven in game (D2R 3.x, save v105)
 - **Data edits cannot open act tabs.** Spike variants A–C, 2026-09-29:

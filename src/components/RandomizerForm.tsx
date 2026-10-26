@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { DEFAULT_OPEN_ACTS, normalizeOpenActs, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 
 type Preset = 'custom' | 'season1race' | 'turbo';
 
@@ -21,6 +22,7 @@ interface FormState {
   raceMode: boolean;
   enemyShuffle: boolean;
   forgottenArts: boolean;
+  openActs: OpenActsSettings;
 }
 
 const SEASON1_PRESET: FormState = {
@@ -40,6 +42,7 @@ const SEASON1_PRESET: FormState = {
   raceMode: true,
   enemyShuffle: true,
   forgottenArts: false,
+  openActs: DEFAULT_OPEN_ACTS,
 };
 
 const TURBO_PRESET: FormState = {
@@ -59,6 +62,7 @@ const TURBO_PRESET: FormState = {
   raceMode: false,
   enemyShuffle: false,
   forgottenArts: false,
+  openActs: DEFAULT_OPEN_ACTS,
 };
 
 const DEFAULT_STATE: FormState = {
@@ -78,11 +82,12 @@ const DEFAULT_STATE: FormState = {
   raceMode: true,
   enemyShuffle: false,
   forgottenArts: false,
+  openActs: DEFAULT_OPEN_ACTS,
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -214,6 +219,16 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   // Forgotten Arts is challenge-only; the standard generator never enables it.
   const forgottenArts = false;
   const [enemyShuffle, setEnemyShuffle] = useState(initialOptions?.enemyShuffle ?? SEASON1_PRESET.enemyShuffle);
+  const [openActs, setOpenActs] = useState<OpenActsSettings>(initialOptions?.openActs ?? SEASON1_PRESET.openActs);
+  const updateOpenActs = (patch: Partial<OpenActsSettings>) => {
+    setPreset('custom');
+    setOpenActs(prev => normalizeOpenActs({ ...prev, ...patch }));
+  };
+  // Act III starts open only together with Act II, so the pills behave as a ladder.
+  const toggleOpenAct = (act: number) => {
+    const has = openActs.acts.includes(act as 2 | 3);
+    updateOpenActs({ acts: act === 2 ? (has ? [] : [2]) : (has ? [2] : [2, 3]) });
+  };
   const applyPreset = (p: Preset) => {
     setPreset(p);
     const src = p === 'season1race' ? SEASON1_PRESET : p === 'turbo' ? TURBO_PRESET : null;
@@ -233,6 +248,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setXpDifficulties(src.xpDifficulties);
       setRaceMode(src.raceMode);
       setEnemyShuffle(src.enemyShuffle);
+      setOpenActs(src.openActs);
     }
   };
 
@@ -274,6 +290,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       raceMode: forgottenArts ? false : raceMode,
       enemyShuffle,
       forgottenArts,
+      openActs,
     });
   };
 
@@ -473,6 +490,58 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               label="Start with Horadric Cube"
               tooltip="Adds a Horadric Cube to your starting inventory, giving you extra stash space from the very beginning."
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Open Acts section */}
+      <div className="space-y-3 pt-1 pb-2">
+        <SectionDivider label="Open Acts" />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          {/* Left: quest-item shuffle */}
+          <div className="flex flex-col justify-start gap-3">
+            <Checkbox
+              id="shuffleQuests"
+              checked={openActs.shuffle}
+              onChange={v => updateOpenActs({ shuffle: v })}
+              label="Shuffle quest items (experimental)"
+              tooltip="Moves the Scroll of Inifuss, the Horadric Cube, the Staff of Kings and Khalim's Eye, Brain and Heart to new spots across Acts I–III. Every seed is checked to be beatable. Works with any new character, or with open acts below."
+            />
+            {openActs.shuffle && (
+              <div className="ml-1 pl-3 border-l-2 border-[#7a1010]/60 flex flex-col gap-2">
+                <Checkbox
+                  id="questBosses"
+                  checked={openActs.bosses}
+                  onChange={v => updateOpenActs({ bosses: v })}
+                  label="Bosses can hold quest items"
+                  tooltip="Blood Raven, Andariel, Griswold, Radament, the Summoner, Duriel, Battlemaid Sarina and Icehawk Riftwing can carry a quest item. It drops on every kill, so a lost item can be farmed again."
+                />
+                <Checkbox
+                  id="questHints"
+                  checked={openActs.hints}
+                  onChange={v => updateOpenActs({ hints: v })}
+                  label="Quest-log hints"
+                  tooltip="The quest log says which act each item is in, e.g. “Khalim's Eye is somewhere in Act I.” Turn off to search with no hints."
+                />
+                <Checkbox
+                  id="questSpoiler"
+                  checked={openActs.spoiler}
+                  onChange={v => updateOpenActs({ spoiler: v })}
+                  label="Spoiler file"
+                  tooltip="Adds quest-shuffle.json to the mod folder, listing the exact spot of every item."
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Right: acts open from the start */}
+          <div className="flex flex-col justify-start">
+            <span className="text-sm text-[#c8a870] flex items-center">
+              Start with acts open
+              <Tip text="Ships level-1 starter characters whose waypoint and quest tabs for these acts are already open, in every difficulty. Copy them into your save folder (the install steps show where). Act III needs Act II." />
+            </span>
+            <ActPillRow acts={[2, 3]} selected={openActs.acts} onToggle={toggleOpenAct} />
           </div>
         </div>
       </div>

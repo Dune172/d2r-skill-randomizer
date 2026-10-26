@@ -6,6 +6,7 @@ import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit
 import { getWeekName, getActiveMutations } from '@/lib/mutations/registry';
 import { getWeekStart, getCurrentWeekNumber } from '@/lib/challenge/week';
 import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
+import { DEFAULT_OPEN_ACTS, openActsCacheSegment, openActsFromParams } from '@/lib/randomizer/open-acts/options';
 
 function slugifyChallenge(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
@@ -90,8 +91,12 @@ export async function GET(request: NextRequest) {
     // raceMode=0. Outside weekly, raceMode defaults true.
     const raceMode = classBuild || weeklyParam || forgottenArts ? false : (searchParams.get('raceMode') !== '0');
     const enemyShuffle = weeklyParam ? challengeRandomizesMonsters(weeklyKey) : searchParams.get('enemyShuffle') === '1';
+    // Same guard as /api/randomize: no Open Acts for challenges or Class Builder mods.
+    const openActs = classBuild || weeklyParam || forgottenArts
+      ? DEFAULT_OPEN_ACTS : openActsFromParams(name => searchParams.get(name));
     const cacheKey = withBuildSegment(
-      makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts),
+      makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
+        + openActsCacheSegment(openActs),
       classBuild?.code,
     );
     const zipBuffer = getCached(cacheKey);
