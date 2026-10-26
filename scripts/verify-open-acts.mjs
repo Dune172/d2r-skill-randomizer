@@ -117,7 +117,7 @@ for (const v of variants) {
     const den = q.find(e => e.Key === 'qstsa1q11').enUS;
     const eye = q.find(e => e.Key === 'qstsa3q21').enUS;
     if (v.hints && !/Act I/.test(eye)) fail(`${label}: no act hint in "${eye}"`);
-    if (!v.hints && (/Act I/.test(eye) || /relics are scattered/.test(den))) fail(`${label}: hints off but "${eye}"`);
+    if (!v.hints && (/Act I/.test(eye) || /Relics:/.test(den))) fail(`${label}: hints off but "${eye}"`);
   }
   if (shuffle && v.spoiler) {
     const s = JSON.parse(on.get(`${m}/quest-shuffle.json`).toString());

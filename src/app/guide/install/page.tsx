@@ -163,6 +163,27 @@ export default function InstallGuidePage() {
           you&apos;ll see a Teleport staff or Cube in your inventory.
         </p>
 
+        <h2>Open Acts: installing the starter characters</h2>
+        <p>
+          If you picked <strong>Start with acts open</strong>, the mod folder in your ZIP has a{' '}
+          <code>starter-saves</code> folder with level-1 characters (just your race class in Race Mode).
+          Their Act II, or Act II and III, waypoint and quest tabs are already open in every difficulty.
+          Characters you create yourself start with only Act I open.
+        </p>
+        <p>
+          Copy the <code>.d2s</code> files into the mod&apos;s own save folder:{' '}
+          <code>%USERPROFILE%\Saved Games\Diablo II Resurrected\mods\seed12345_openacts\</code>. In Race Mode
+          the folder name also has your class, e.g. <code>seed12345nec_openacts</code>. The generator&apos;s
+          install steps and the <code>README.txt</code> next to the saves give the exact name. Create the
+          folder if it doesn&apos;t exist, or launch the mod once and it appears. Then pick the character from
+          the list. The starters are built for one seed, so don&apos;t use them with another.
+        </p>
+        <p>
+          With <strong>Shuffle quest items</strong>, the quest items are in new places across Acts I–III.
+          The quest log hints at the act each one is in, and if you kept the spoiler file,{' '}
+          <code>quest-shuffle.json</code> in the mod folder lists every exact spot.
+        </p>
+
         <h2>Switching seeds and uninstalling</h2>
         <p>
           To play a different seed, copy its folder into <code>mods</code> next to the old one and change

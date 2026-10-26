@@ -7,7 +7,12 @@ import type { ItemCode } from './pool';
  *
  * Act III's Khalim quest only shows once the player enters the Great Marsh, so the Den of
  * Evil line (visible from the start) also carries a summary of every hint.
+ *
+ * Quest-log text has no line breaks and stays under HINT_MAX_LENGTH characters, like the
+ * vanilla lines (longest 173), so it fits above the Play Quest Dialogue button.
  */
+
+export const HINT_MAX_LENGTH = 175;
 
 const ACT_NAMES = { 1: 'Act I', 2: 'Act II', 3: 'Act III' } as const;
 
@@ -29,15 +34,17 @@ export function hintStrings(manifest: ManifestEntry[]): Record<string, string> {
   const cube = at('box');
   const out: Record<string, string> = {};
 
+  // One line, short enough for the quest log: it ignores line breaks (shown as '*'), and
+  // text past about 175 characters runs under the Play Quest Dialogue button (seen in game).
   const summary = [
-    `Scroll of Inifuss: ${at('bks')}`,
-    cube ? `Horadric Cube: ${cube}` : null,
-    `Staff of Kings: ${at('msf')}`,
-    `Khalim's Eye: ${at('qey')}`,
-    `Khalim's Brain: ${at('qbr')}`,
-    `Khalim's Heart: ${at('qhr')}`,
-  ].filter(Boolean).join('\n');
-  out.qstsa1q11 = `Look for the Den in the wilderness outside the Rogues' Camp.\n\nOpen Acts - the relics are scattered:\n${summary}`;
+    `Scroll ${at('bks')}`,
+    cube ? `Cube ${cube}` : null,
+    `Staff ${at('msf')}`,
+    `Eye ${at('qey')}`,
+    `Brain ${at('qbr')}`,
+    `Heart ${at('qhr')}`,
+  ].filter(Boolean).join(', ');
+  out.qstsa1q11 = `Look for the Den in the wilderness outside the Rogues' Camp. Relics: ${summary}.`;
 
   out.qstsa1q41 = `Search for the Scroll of Inifuss. It lies somewhere in ${at('bks')}.`;
   out.qstsa2q22 = [

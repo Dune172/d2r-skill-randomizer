@@ -56,7 +56,11 @@ A generator option where **Acts I–III are open from the start** and the **key 
    - **Install:** no auto-copy launcher (Smart App Control blocked it). Saves ship in `<mod>/starter-saves/` with a README; the site's install steps show the folder (`<mod>[raceclass]_openacts`).
    - **UI:** an "Open Acts" section in `RandomizerForm.tsx` (checkboxes plus II/III pills); changelog v0.336.
    - **Checks:** `node scripts/verify-open-acts.mjs [url] [seed]` against a dev server (off vs three settings: only expected files change, monstats/superuniques only on boss rows, TC append-only, hints/spoiler/saves/savepath right). `verify-cached-download.mjs` now loads the real options module; its other failures (`withBuildSegment`, `getActiveMutations`, `isMutationActiveForWeek` mocks) predate this work.
-   - **Still to do:** play one generated seed in game (start from a starter save, follow the hints to Mephisto); a short section on `/guide/install`.
+   - **Generated seed in game (2026-10-26, in town only):** seed 20261026 (shuffle on, Acts II/III), installed as a player would. All 8 starters list and load with no data-version prompt; the Barbarian has 1 point in the seed's StartSkill (Ice Bolt, skill row 127, read from memory with `d2rr-ap probe`); the waypoint panel shows tabs I–III with Lut Gholein and Kurast Docks active; after Akara, the Den of Evil line shows the summary and every act matches `quest-shuffle.json`.
+     - The first summary used line breaks and ran long: the quest log ignores `\n` (a blank line showed as `*`) and text past ~175 characters runs under the Play Quest Dialogue button. Hints are now single lines under `HINT_MAX_LENGTH` (175), checked by `verify-open-acts-fill.mjs`, and the fixed line was confirmed in game.
+     - The ZIP cache is on disk and keyed by options, so a change to Open Acts output needs a new `:open-acts-vN` tag in `openActsCacheSegment` once v1 ZIPs exist in production (dev caches can be cleared by hand).
+   - `/guide/install` has an "Open Acts: installing the starter characters" section. `npm run build` passes.
+   - **Still to do:** play a generated seed past town (Tristram → Duriel → Mephisto) following the hints; H2–H4 were never played.
 
 ## Proven in game (D2R 3.x, save v105)
 - **Data edits cannot open act tabs.** Spike variants A–C, 2026-09-29:

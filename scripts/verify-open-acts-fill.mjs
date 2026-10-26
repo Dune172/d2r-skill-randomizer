@@ -153,9 +153,17 @@ if (fs.existsSync(bak) && fs.existsSync(spike)) {
   const actOf = code => actName[sample.manifest.find(m => m.item === code).act];
   if (!h.qstsa2q22.includes(`Staff of Kings is somewhere in ${actOf('msf')}.`)) fail('staff hint wrong');
   if (!h.qstsa3q21.includes(actOf('qey') + '.')) fail('eye hint wrong');
-  if (!h.qstsa1q11.includes(`Khalim's Heart: ${actOf('qhr')}`)) fail('summary wrong');
+  if (!h.qstsa1q11.includes(`Heart ${actOf('qhr')}`)) fail('summary wrong');
   const noCube = hints.hintStrings(fill.shuffleOpenActs(1234, combos[1], modes).manifest);
   if (/Cube/.test(noCube.qstsa2q22)) fail('cube hint shown though the character starts with it');
+  // The quest log shows no line breaks and has room for about 175 characters (seen in game).
+  for (const opts of actCombos) for (let seed = 1; seed <= 200; seed++) {
+    const all = { ...hints.hintStrings(fill.shuffleOpenActs(seed, opts, modes).manifest), ...hints.neutralStrings(opts.startWithCube) };
+    for (const [key, text] of Object.entries(all)) {
+      if (/\n/.test(text)) fail(`hint ${key} has a line break`);
+      if (text.length > hints.HINT_MAX_LENGTH) fail(`hint ${key} is ${text.length} characters: ${text}`);
+    }
+  }
   if (questsPath && fs.existsSync(questsPath)) {
     const entries = JSON.parse(fs.readFileSync(questsPath, 'utf8').replace(/^﻿/, ''));
     hints.applyHints(entries, h);
