@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
@@ -10,7 +11,7 @@ export default function PrivacyPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="font-cinzel text-balance text-3xl font-bold text-[#c8942a]">Privacy Policy</h1>
-      <p className="mt-3 text-sm text-[#a89060]">Last updated: September 22, 2026</p>
+      <p className="mt-3 text-sm text-[#a89060]">Last updated: October 26, 2026</p>
       <div className="mt-8 space-y-8 text-pretty text-sm leading-relaxed text-[#e8d5a0] [&_h2]:mb-3 [&_h2]:text-balance [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-[#c8942a] [&_a]:underline [&_a]:underline-offset-4 [&_p+p]:mt-3">
         <section>
           <h2>About this site</h2>
@@ -44,7 +45,7 @@ export default function PrivacyPage() {
         <section>
           <h2>External services and questions</h2>
           <p>Links to Discord, Ko-fi, and proof-hosting sites take you to services with their own privacy policies. Payments made through Ko-fi are processed by Ko-fi and its payment providers; this website does not collect payment card details.</p>
-          <p>For privacy questions or to request removal of a leaderboard entry, contact the project maintainer through the <a href="https://discord.gg/y5r2sTxwS5">D2R Randomizer Discord</a>. Do not post sensitive personal information in public channels.</p>
+          <p>For privacy questions or to request removal of a leaderboard entry, email <a href="mailto:contact@d2rrandomizer.com">contact@d2rrandomizer.com</a>. You can also reach the project maintainer through the <a href="https://discord.gg/y5r2sTxwS5">D2R Randomizer Discord</a>, but do not post sensitive personal information in public channels. Other ways to get in touch are listed on the <Link href="/contact">contact page</Link>.</p>
           <p>We will update this page as the website’s data practices change.</p>
         </section>
       </div>

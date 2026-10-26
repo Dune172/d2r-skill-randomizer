@@ -12,6 +12,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.335',
+    date: 'October 2026',
+    tagline: 'New guides: install, FAQ and mutations, plus About, Contact and Terms pages',
+    notes: [
+      'New install guide that walks through Battle.net, Steam and Game Pass setups, launch options, switching seeds, uninstalling and troubleshooting',
+      'New FAQ page covering safety, seeds, Race Mode, the Class Builder, challenges, leaderboards and multiplayer',
+      'New mutations guide: every challenge mutation explained, with strategy tips and the challenges that featured it',
+      'New About, Contact and Terms of Use pages. You can now reach us by email at contact@d2rrandomizer.com as well as on Discord',
+      'The Generate page now explains how the generator, Race Mode and the Class Builder work, and links to the guides',
+      'New Guides menu in the site header, and the Ko-fi request on the archive page no longer pops up over the page',
+    ],
+  },
+  {
     version: 'v0.334',
     date: 'September 2026',
     tagline: 'Class Builder: design your own class, and let the rest randomize',

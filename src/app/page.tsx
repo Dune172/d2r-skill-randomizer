@@ -97,6 +97,13 @@ const features = [
   },
 ];
 
+const guides = [
+  { href: '/guide/install', label: 'Install Guide', desc: 'Install a mod on Battle.net, Steam or Game Pass, check it loaded, and fix common problems.' },
+  { href: '/mutations', label: 'Mutations Guide', desc: 'What every challenge mutation does, with strategy tips for each one.' },
+  { href: '/multiplayer', label: 'Multiplayer Guide', desc: 'Play a seed with friends over TCP/IP using D2RLoader.' },
+  { href: '/about', label: 'About the Project', desc: 'Who makes D2R Randomizer, how the shuffle works, and how the site is funded.' },
+];
+
 const communityCards = [
   {
     href: 'https://discord.gg/y5r2sTxwS5',
@@ -255,6 +262,27 @@ export default function Home() {
               <p className="font-semibold text-[#e8d5a0] text-sm mb-1">{item.name}</p>
               <p className="text-[#a89060]/80 text-sm leading-relaxed">{item.acceptedAnswer.text}</p>
             </div>
+          ))}
+        </div>
+        <p className="mt-6 text-sm">
+          <Link href="/faq" className="text-[#c8942a] underline underline-offset-4 hover:text-[#e0ac4a]">
+            See all questions
+          </Link>
+        </p>
+
+        <h2 className="font-cinzel font-bold text-[#c8942a] tracking-[0.1em] uppercase text-lg mt-14 mb-6">
+          Guides
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {guides.map((g) => (
+            <Link
+              key={g.href}
+              href={g.href}
+              className="border border-[#3a1510] bg-[#0c0304] p-4 panel-shadow feature-card transition-colors"
+            >
+              <p className="font-cinzel font-bold text-[#e8c87a] text-sm tracking-[0.06em] mb-1">{g.label}</p>
+              <p className="text-[#a89060]/70 text-xs leading-relaxed">{g.desc}</p>
+            </Link>
           ))}
         </div>
       </section>

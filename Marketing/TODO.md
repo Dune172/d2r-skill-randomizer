@@ -17,7 +17,7 @@ Work from `Marketing/distribution/targets.md` + `listing-drafts.md` (copy is pre
 - [ ] **D2R-Modding Discord** (~24k members): join via the invite in targets.md, read the rules, post the showcase message (draft d) in their mod-showcase channel.
 - [ ] **ModDB** D2R section: create the listing with draft (c).
 - [ ] Optional second tier: Phrozen Keep forum, diablo2.io, PureDiablo — check each one's self-promo rules on posting day.
-- [ ] **Investigate the failing GitHub deployment integration** (red ✗ on commits, ~376 failed deployments — predates this work; probably a dead Vercel hook worth removing).
+- [ ] **Disconnect the Vercel GitHub App** (red ✗ "Vercel" check on every commit and PR). It's the old `testingd2r` Vercel project; the site deploys on Hostinger. Remove the repo from the Vercel app on GitHub (Settings → Applications → Vercel → Configure), or delete the project in Vercel. Diagnosed 2026-10-26.
 
 ## This weekend — first automated cycle (supervise it)
 

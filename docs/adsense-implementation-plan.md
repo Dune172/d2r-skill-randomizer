@@ -6,6 +6,25 @@ Publisher ID: `ca-pub-3935204626299309`. Verification and `/ads.txt` were deploy
 
 All three ad unit IDs are configured: homepage `1283727238`; Mutation Challenge `3545174476`; after mod generation `1395407878`. These public IDs are defaults with environment overrides; an explicitly blank override disables that placement. This configuration release keeps ad serving disabled. Activation requires setting `NEXT_PUBLIC_ADSENSE_ENABLED=true` at build time and deploying a new build after approval and consent setup.
 
+## October 2026 rejection and re-submission
+
+Google rejected the first review in October 2026 for **Low value content** (thin content: "provide substantial unique value", "ongoing curation", "genuine user interest"). The integration itself was not the problem. Google's crawler saw a tool page with about 80 words of static text: install steps only rendered after a generation, and there were no About, Contact or Terms pages.
+
+v0.335 adds crawlable, original pages and trust signals:
+
+- `/guide/install`, `/faq` and `/mutations` (guides), plus `/about`, `/contact` and `/terms`. They all use `src/app/components/ContentPage.tsx`, which shows a visible "Last updated" date. They use `revalidate = 3600`, not `force-static`.
+- A server-rendered "How the generator works" section on `/generate`, a Guides section on the home page, and a Guides menu in the header. Footer links to every trust page.
+- `contact@d2rrandomizer.com` on Contact, About, Terms and Privacy. The mailbox or forwarding must exist before deploy.
+- The archive's Ko-fi modal (which also said "ad-free") is now an inline card. The temporary `/challenge/preview-october` page was removed. A `not-found.tsx` page was added, and sitemap dates were updated.
+
+Before re-requesting review:
+
+1. Deploy, purge the Cloudflare cache, and confirm each new page loads with its text in the HTML (`curl` the URL with `?cb=<random>`).
+2. In Search Console, submit `/sitemap.xml` and request indexing for the new pages. Wait until they show as indexed.
+3. Wait two to four weeks so the pages are indexed and receive some traffic. Link the guides from Reddit and Discord. Then request review again in AdSense.
+
+Keep `NEXT_PUBLIC_ADSENSE_ENABLED=false` until approval. The new content pages carry no ad units.
+
 ## Launch approach
 
 Use manual AdSense display units with Auto ads disabled. Start with three placements, at most one per page:
@@ -16,7 +35,7 @@ Use manual AdSense display units with Auto ads disabled. Start with three placem
 | `/challenge` | After the main challenge section, before How It Works | `NEXT_PUBLIC_ADSENSE_SLOT_CHALLENGE` |
 | `/generate` | After the form, installation instructions, and any skill preview; only after generation succeeds | `NEXT_PUBLIC_ADSENSE_SLOT_GENERATE` |
 
-No interstitials, sticky ads, or ads inside generation/download controls. No ad units on the privacy page, archive, or changelog. The shared script remains available site-wide when enabled, including for Google's privacy messaging. Auto ads are controlled in the AdSense dashboard, so leaving them off is necessary to preserve this placement policy.
+No interstitials, sticky ads, or ads inside generation/download controls. No ad units on the privacy page, archive, changelog, or the guide and trust pages (`/guide/install`, `/faq`, `/mutations`, `/about`, `/contact`, `/terms`) until after approval. The shared script remains available site-wide when enabled, including for Google's privacy messaging. Auto ads are controlled in the AdSense dashboard, so leaving them off is necessary to preserve this placement policy.
 
 Start with this light ad load and evaluate actual revenue and usability before adding placements. The mod stays free, and the existing Ko-fi links remain available.
 

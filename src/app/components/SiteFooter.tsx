@@ -1,5 +1,15 @@
 import Link from 'next/link';
 
+const infoLinks = [
+  { href: '/about', label: 'About' },
+  { href: '/guide/install', label: 'Install Guide' },
+  { href: '/faq', label: 'FAQ' },
+  { href: '/mutations', label: 'Mutations' },
+  { href: '/contact', label: 'Contact' },
+  { href: '/terms', label: 'Terms' },
+  { href: '/privacy', label: 'Privacy Policy' },
+];
+
 export default function SiteFooter() {
   return (
     <footer className="mt-auto bg-[#060203]">
@@ -44,13 +54,19 @@ export default function SiteFooter() {
           >
             Patch Notes
           </Link>
-          <span className="text-[#3a1510] select-none">|</span>
-          <Link
-            href="/privacy"
-            className="px-3 py-1.5 text-xs text-[#a89060] hover:text-[#c8942a]"
-          >
-            Privacy Policy
-          </Link>
+        </nav>
+
+        {/* Site info row */}
+        <nav aria-label="Site information" className="flex items-center justify-center gap-x-1 gap-y-1 flex-wrap mb-6 -mt-3">
+          {infoLinks.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="px-3 py-1.5 text-xs text-[#a89060] hover:text-[#c8942a] transition-colors"
+            >
+              {label}
+            </Link>
+          ))}
         </nav>
 
         {/* Disclaimer block */}

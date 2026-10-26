@@ -9,27 +9,77 @@ const navLinks = [
   { href: '/challenge', label: 'Mutation Challenge' },
 ];
 
-const communityLinks = [
-  { href: 'https://discord.gg/y5r2sTxwS5', label: 'Discord Community', external: true },
-  { href: 'https://ko-fi.com/d2rrando', label: 'Support on Ko-fi', external: true },
+type MenuLink = { href: string; label: string; external: boolean };
+
+const guideLinks: MenuLink[] = [
+  { href: '/guide/install', label: 'Install Guide', external: false },
+  { href: '/faq', label: 'FAQ', external: false },
+  { href: '/mutations', label: 'Mutations Guide', external: false },
   { href: '/multiplayer', label: 'Multiplayer Guide', external: false },
-  { href: '/changelog', label: 'Patch Notes', external: false },
 ];
 
-export default function SiteNav() {
-  const pathname = usePathname();
-  const [communityOpen, setCommunityOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+const communityLinks: MenuLink[] = [
+  { href: 'https://discord.gg/y5r2sTxwS5', label: 'Discord Community', external: true },
+  { href: 'https://ko-fi.com/d2rrando', label: 'Support on Ko-fi', external: true },
+  { href: '/changelog', label: 'Patch Notes', external: false },
+  { href: '/about', label: 'About', external: false },
+];
+
+const itemClass =
+  'block px-4 py-2.5 font-cinzel text-[10px] tracking-[0.25em] uppercase text-[#a87830] hover:text-[#c8942a] hover:bg-[#1a0a06] transition-colors';
+
+function NavDropdown({ label, links }: { label: string; links: MenuLink[] }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setCommunityOpen(false);
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen(o => !o)}
+        className="font-cinzel text-[11px] tracking-[0.2em] md:tracking-[0.3em] uppercase px-2 md:px-3 py-1.5 text-[#a87830] hover:text-[#c8942a] transition-colors flex items-center gap-1"
+      >
+        {label}
+        <span className="text-[10px]">{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div className="absolute top-full right-0 mt-1 w-52 bg-[#0e0506] border border-[#3a1510] shadow-lg z-50">
+          {links.map(({ href, label, external }) => (
+            external ? (
+              <a
+                key={href}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpen(false)}
+                className={itemClass}
+              >
+                {label}
+              </a>
+            ) : (
+              <Link key={href} href={href} onClick={() => setOpen(false)} className={itemClass}>
+                {label}
+              </Link>
+            )
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function SiteNav() {
+  const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-50 bg-[#060203]/95 backdrop-blur-sm">
@@ -63,44 +113,8 @@ export default function SiteNav() {
 
           <span className="text-[#3a1510] px-1 select-none">|</span>
 
-          {/* Community dropdown */}
-          <div ref={dropdownRef} className="relative">
-            <button
-              onClick={() => setCommunityOpen(o => !o)}
-              className="font-cinzel text-[11px] tracking-[0.2em] md:tracking-[0.3em] uppercase px-2 md:px-3 py-1.5 text-[#a87830] hover:text-[#c8942a] transition-colors flex items-center gap-1"
-            >
-              Community
-              <span className="text-[10px]">{communityOpen ? '▲' : '▼'}</span>
-            </button>
-
-            {communityOpen && (
-              <div className="absolute top-full right-0 mt-1 w-52 bg-[#0e0506] border border-[#3a1510] shadow-lg z-50">
-                {communityLinks.map(({ href, label, external }) => (
-                  external ? (
-                    <a
-                      key={href}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setCommunityOpen(false)}
-                      className="block px-4 py-2.5 font-cinzel text-[10px] tracking-[0.25em] uppercase text-[#a87830] hover:text-[#c8942a] hover:bg-[#1a0a06] transition-colors"
-                    >
-                      {label}
-                    </a>
-                  ) : (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={() => setCommunityOpen(false)}
-                      className="block px-4 py-2.5 font-cinzel text-[10px] tracking-[0.25em] uppercase text-[#a87830] hover:text-[#c8942a] hover:bg-[#1a0a06] transition-colors"
-                    >
-                      {label}
-                    </Link>
-                  )
-                ))}
-              </div>
-            )}
-          </div>
+          <NavDropdown label="Guides" links={guideLinks} />
+          <NavDropdown label="Community" links={communityLinks} />
         </nav>
       </div>
 
