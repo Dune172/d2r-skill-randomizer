@@ -179,6 +179,13 @@ export default function InstallGuidePage() {
           the list. The starters are built for one seed, so don&apos;t use them with another.
         </p>
         <p>
+          <strong>Play one of the starter characters.</strong> A character you create in game starts with only
+          Act I open. When quest items are shuffled too, the shuffle counts on the open acts, so such a character
+          will usually get stuck before Duriel. To play with a character you make yourself, generate the seed
+          with <strong>Shuffle quest items</strong> on and no acts selected: that shuffle works with any new
+          character.
+        </p>
+        <p>
           With <strong>Shuffle quest items</strong>, the quest items are in new places across Acts I–III.
           The quest log hints at the act each one is in, and if you kept the spoiler file,{' '}
           <code>quest-shuffle.json</code> in the mod folder lists every exact spot.

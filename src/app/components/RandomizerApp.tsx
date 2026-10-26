@@ -80,7 +80,7 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
     enemyShuffle: p.get('enemyShuffle') === '1',
     forgottenArts: false, // challenge-only
     // Absent on links from before Open Acts, which then stays off.
-    openActs: openActsFromParams(name => p.get(name)),
+    openActs: openActsFromParams(name => p.get(name), p.get('raceMode') !== '0'),
   };
 }
 
@@ -120,7 +120,7 @@ export default function RandomizerApp() {
     const xpDiffParam       = opts.xpMultiplier > 1 ? `&xpDifficulties=${[...opts.xpDifficulties].sort((a, b) => a - b).join(',')}` : '';
     const raceModeParam     = !opts.raceMode ? '&raceMode=0' : '';
     const enemyParam = opts.enemyShuffle ? '&enemyShuffle=1' : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}${openActsToParams(opts.openActs)}`;
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}${openActsToParams(opts.openActs, opts.raceMode)}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {

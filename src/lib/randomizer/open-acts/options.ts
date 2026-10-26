@@ -6,7 +6,8 @@
  *            around Acts I–III; works with or without open acts
  *   bosses   bosses can hold quest items            (only with shuffle; default on)
  *   hints    quest-log hints name each item's act   (only with shuffle; default on)
- *   spoiler  ship quest-shuffle.json with every spot (only with shuffle; default on)
+ *   spoiler  ship quest-shuffle.json with every spot (only with shuffle; default on,
+ *            but off in Race Mode, which keeps spoilers hidden)
  *   acts     acts open from the start via starter characters: [], [2] or [2, 3]
  *
  * Off (no shuffle, no acts) the generator output is byte-identical to before, and the
@@ -27,12 +28,18 @@ export const DEFAULT_OPEN_ACTS: OpenActsSettings = {
   shuffle: false, bosses: true, hints: true, spoiler: true, acts: [],
 };
 
+/** The spoiler file is on by default, except in Race Mode. */
+export function defaultSpoiler(raceMode: boolean): boolean {
+  return !raceMode;
+}
+
 /**
  * Clean up untrusted input. Act III needs Act II (the starter save's act flags were
  * proven in that combination), and the shuffle-only flags reset to their defaults when
- * there is no shuffle, so equal settings always produce equal cache keys.
+ * there is no shuffle, so equal settings always produce equal cache keys. A spoiler
+ * choice that isn't given falls back to defaultSpoiler(raceMode).
  */
-export function normalizeOpenActs(raw: unknown): OpenActsSettings {
+export function normalizeOpenActs(raw: unknown, raceMode = false): OpenActsSettings {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const picked = Array.isArray(r.acts) ? r.acts.map(Number) : [];
   const acts: OpenAct[] = picked.includes(3) ? [2, 3] : picked.includes(2) ? [2] : [];
@@ -41,7 +48,7 @@ export function normalizeOpenActs(raw: unknown): OpenActsSettings {
     shuffle,
     bosses: shuffle ? r.bosses !== false : true,
     hints: shuffle ? r.hints !== false : true,
-    spoiler: shuffle ? r.spoiler !== false : true,
+    spoiler: shuffle && typeof r.spoiler === 'boolean' ? r.spoiler : defaultSpoiler(raceMode),
     acts,
   };
 }
@@ -66,25 +73,26 @@ export function openActsCacheSegment(s: OpenActsSettings): string {
 }
 
 /** Share-link params, written only when they differ from the defaults. */
-export function openActsToParams(s: OpenActsSettings): string {
+export function openActsToParams(s: OpenActsSettings, raceMode = false): string {
   let q = '';
   if (s.shuffle) {
     q += '&shuffleQuests=1';
     if (!s.bosses) q += '&questBosses=0';
     if (!s.hints) q += '&questHints=0';
-    if (!s.spoiler) q += '&questSpoiler=0';
+    if (s.spoiler !== defaultSpoiler(raceMode)) q += `&questSpoiler=${s.spoiler ? 1 : 0}`;
   }
   if (s.acts.length) q += `&openActs=${s.acts.join(',')}`;
   return q;
 }
 
 /** Inverse of openActsToParams. Links without the params get the defaults (all off). */
-export function openActsFromParams(get: (name: string) => string | null): OpenActsSettings {
+export function openActsFromParams(get: (name: string) => string | null, raceMode = false): OpenActsSettings {
+  const spoiler = get('questSpoiler');
   return normalizeOpenActs({
     shuffle: get('shuffleQuests') === '1',
     bosses: get('questBosses') !== '0',
     hints: get('questHints') !== '0',
-    spoiler: get('questSpoiler') !== '0',
+    spoiler: spoiler === null ? undefined : spoiler === '1',
     acts: (get('openActs') ?? '').split(',').filter(Boolean),
-  });
+  }, raceMode);
 }

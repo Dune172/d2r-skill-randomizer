@@ -102,8 +102,14 @@ export function buildOpenActsFiles(input: OpenActsFilesInput): OpenActsFiles {
       `  %USERPROFILE%\\Saved Games\\Diablo II Resurrected\\mods\\${input.savepath}\\`,
       '',
       `Create the "${input.savepath}" folder if it does not exist yet (or launch the mod once).`,
-      'Then start the mod and pick the character from the list. New characters you create',
-      'yourself in this mod start with only Act I open.',
+      'Then start the mod and pick the character from the list.',
+      '',
+      'PLAY ONE OF THESE CHARACTERS. A character you create yourself in this mod starts with',
+      'only Act I open.',
+      ...(shuffle ? [
+        'The quest items are shuffled on the assumption that these acts are open, so such a',
+        'character will usually get stuck before Duriel: the items it needs can be in Act III.',
+      ] : []),
       '',
     ].join('\r\n');
   }

@@ -60,7 +60,9 @@ A generator option where **Acts I–III are open from the start** and the **key 
      - The first summary used line breaks and ran long: the quest log ignores `\n` (a blank line showed as `*`) and text past ~175 characters runs under the Play Quest Dialogue button. Hints are now single lines under `HINT_MAX_LENGTH` (175), checked by `verify-open-acts-fill.mjs`, and the fixed line was confirmed in game.
      - The ZIP cache is on disk and keyed by options, so a change to Open Acts output needs a new `:open-acts-vN` tag in `openActsCacheSegment` once v1 ZIPs exist in production (dev caches can be cleared by hand).
    - `/guide/install` has an "Open Acts: installing the starter characters" section. `npm run build` passes.
-   - **Still to do:** play a generated seed past town (Tristram → Duriel → Mephisto) following the hints; H2–H4 were never played.
+   - **Own characters on acts-open seeds:** the shuffle assumes the opened acts, so a character made in game (only Act I open) can't finish 66–85% of shuffled acts-open seeds (Cube/Staff in Act III). The form, install steps, README and `/guide/install` now tell players to use a starter; "shuffle only" with no acts is the mode for own characters.
+   - **Race Mode:** the spoiler defaults to off (`defaultSpoiler`); share links write `questSpoiler` only when it differs from the mode's default.
+   - **Still to do:** play a generated seed past town (Tristram → Duriel → Mephisto) following the hints; H2–H4 were never played. Seed 20261026 (shuffle, Acts II/III) is installed on this PC with fresh starters: scroll in the Maggot Lair, Cube on Wirt's body, Heart on Duriel.
 
 ## Proven in game (D2R 3.x, save v105)
 - **Data edits cannot open act tabs.** Spike variants A–C, 2026-09-29:
@@ -102,7 +104,7 @@ A generator option where **Acts I–III are open from the start** and the **key 
 - **Hints replace vanilla lines** that name vanilla spots: `qstsa1q41`, `qstsa2q22`, `qstsa3q21`, `qstsa3q22`, `qstsa3q24`.
   - The Den of Evil line (`qstsa1q11`) also carries a summary of every key's act, because the Khalim quest appears late.
   - Every locale gets the English hint.
-  - **Known gap:** spoken NPC lines still mention vanilla spots.
+  - **Known gap:** spoken NPC lines still mention vanilla spots. The voice audio can't change and their subtitle strings aren't in quests.json (extracting them needs D2RMM's CascLib), so the Den of Evil line ends with "NPC directions are outdated." The filler quests' lines (Malus `qstsa1q31`, Lam Esen `qstsa3q11`) get act hints too.
 - **Sub-RNG** `createRNG(seed ^ 0x4F504E41)`, so existing seeds don't change.
 
 ## Testing

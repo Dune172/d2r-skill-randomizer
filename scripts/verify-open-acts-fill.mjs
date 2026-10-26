@@ -153,7 +153,7 @@ if (fs.existsSync(bak) && fs.existsSync(spike)) {
   const actOf = code => actName[sample.manifest.find(m => m.item === code).act];
   if (!h.qstsa2q22.includes(`Staff of Kings is somewhere in ${actOf('msf')}.`)) fail('staff hint wrong');
   if (!h.qstsa3q21.includes(actOf('qey') + '.')) fail('eye hint wrong');
-  if (!h.qstsa1q11.includes(`Heart ${actOf('qhr')}`)) fail('summary wrong');
+  if (!h.qstsa1q11.includes(`Heart ${actOf('qhr').replace('Act ', '')}`)) fail('summary wrong');
   const noCube = hints.hintStrings(fill.shuffleOpenActs(1234, combos[1], modes).manifest);
   if (/Cube/.test(noCube.qstsa2q22)) fail('cube hint shown though the character starts with it');
   // The quest log shows no line breaks and has room for about 175 characters (seen in game).

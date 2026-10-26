@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { DEFAULT_OPEN_ACTS, normalizeOpenActs, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
+import { DEFAULT_OPEN_ACTS, defaultSpoiler, normalizeOpenActs, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 
 type Preset = 'custom' | 'season1race' | 'turbo';
 
@@ -219,10 +219,13 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   // Forgotten Arts is challenge-only; the standard generator never enables it.
   const forgottenArts = false;
   const [enemyShuffle, setEnemyShuffle] = useState(initialOptions?.enemyShuffle ?? SEASON1_PRESET.enemyShuffle);
-  const [openActs, setOpenActs] = useState<OpenActsSettings>(initialOptions?.openActs ?? SEASON1_PRESET.openActs);
+  // The spoiler file follows Race Mode's default (off in Race Mode) until changed by hand.
+  const withModeSpoiler = (oa: OpenActsSettings, race: boolean) => ({ ...oa, spoiler: defaultSpoiler(race) });
+  const [openActs, setOpenActs] = useState<OpenActsSettings>(
+    initialOptions?.openActs ?? withModeSpoiler(SEASON1_PRESET.openActs, SEASON1_PRESET.raceMode));
   const updateOpenActs = (patch: Partial<OpenActsSettings>) => {
     setPreset('custom');
-    setOpenActs(prev => normalizeOpenActs({ ...prev, ...patch }));
+    setOpenActs(prev => normalizeOpenActs({ ...prev, ...patch }, raceMode));
   };
   // Act III starts open only together with Act II, so the pills behave as a ladder.
   const toggleOpenAct = (act: number) => {
@@ -248,7 +251,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setXpDifficulties(src.xpDifficulties);
       setRaceMode(src.raceMode);
       setEnemyShuffle(src.enemyShuffle);
-      setOpenActs(src.openActs);
+      setOpenActs(withModeSpoiler(src.openActs, src.raceMode));
     }
   };
 
@@ -529,7 +532,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
                   checked={openActs.spoiler}
                   onChange={v => updateOpenActs({ spoiler: v })}
                   label="Spoiler file"
-                  tooltip="Adds quest-shuffle.json to the mod folder, listing the exact spot of every item."
+                  tooltip="Adds quest-shuffle.json to the mod folder, listing the exact spot of every item. Off by default in Race Mode, which keeps spoilers hidden."
                 />
               </div>
             )}
@@ -539,9 +542,17 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           <div className="flex flex-col justify-start">
             <span className="text-sm text-[#c8a870] flex items-center">
               Start with acts open
-              <Tip text="Ships level-1 starter characters whose waypoint and quest tabs for these acts are already open, in every difficulty. Copy them into your save folder (the install steps show where). Act III needs Act II." />
+              <Tip text="Ships level-1 starter characters whose waypoint and quest tabs for these acts are already open, in every difficulty. Copy them into your save folder (the install steps show where) and play one of them: a character you create in game starts with only Act I open. Act III needs Act II." />
             </span>
             <ActPillRow acts={[2, 3]} selected={openActs.acts} onToggle={toggleOpenAct} />
+            {openActs.acts.length > 0 && (
+              <p className="mt-2 ml-1 pl-3 border-l-2 border-[#c42020]/70 text-xs text-[#e0a070] leading-relaxed">
+                Play one of the included starter characters.
+                {openActs.shuffle
+                  ? ' The shuffle counts on these acts being open, so a character you create in game will usually get stuck before Duriel.'
+                  : ' A character you create in game starts with only Act I open.'}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -568,7 +579,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           id="raceMode"
           checked={!forgottenArts && raceMode}
           disabled={forgottenArts}
-          onChange={field(setRaceMode)}
+          onChange={v => { field(setRaceMode)(v); setOpenActs(prev => withModeSpoiler(prev, v)); }}
           label="Race Mode"
           tooltip="Includes -seed in the launch shortcut and manual args, locking the map seed so all racers see the same maps. Also hides the spoiler so the randomized skill trees stay secret."
         />

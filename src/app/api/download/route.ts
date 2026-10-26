@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     const enemyShuffle = weeklyParam ? challengeRandomizesMonsters(weeklyKey) : searchParams.get('enemyShuffle') === '1';
     // Same guard as /api/randomize: no Open Acts for challenges or Class Builder mods.
     const openActs = classBuild || weeklyParam || forgottenArts
-      ? DEFAULT_OPEN_ACTS : openActsFromParams(name => searchParams.get(name));
+      ? DEFAULT_OPEN_ACTS : openActsFromParams(name => searchParams.get(name), raceMode);
     const cacheKey = withBuildSegment(
       makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
         + openActsCacheSegment(openActs),

@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     // Open Acts is a main-generator option: challenges and Class Builder mods never get it.
     // Mirrored in /api/download so the cache keys agree.
     const openActs = classBuild || weeklyEnabled || forgottenArts
-      ? DEFAULT_OPEN_ACTS : normalizeOpenActs(body.openActs);
+      ? DEFAULT_OPEN_ACTS : normalizeOpenActs(body.openActs, raceMode);
     if (!classBuild && !seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
     }

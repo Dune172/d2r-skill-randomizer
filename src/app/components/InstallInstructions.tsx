@@ -123,7 +123,11 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
             {openActs.includes(3) ? ' Acts II and III' : ' Act II'} already open. Copy the <code className="text-[#a89858]">.d2s</code> files to:
           </p>
           <code className="block text-[#a89858] break-all">%USERPROFILE%\Saved Games\Diablo II Resurrected\mods\{starterFolder}\</code>
-          <p className="text-[#7a7858]">Create that folder if it isn&apos;t there yet (launching the mod once also creates it). Characters you create yourself start with only Act I open.</p>
+          <p className="text-[#7a7858]">Create that folder if it isn&apos;t there yet (launching the mod once also creates it).</p>
+          <p className="text-[#e0a070]">
+            <strong>Play one of these starter characters.</strong> A character you create in game starts with only Act I open; with
+            quest items shuffled, it will usually get stuck before Duriel because the items it needs can be in Act III.
+          </p>
         </div>
       )}
 

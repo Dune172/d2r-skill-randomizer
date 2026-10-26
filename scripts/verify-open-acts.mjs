@@ -117,7 +117,7 @@ for (const v of variants) {
     const den = q.find(e => e.Key === 'qstsa1q11').enUS;
     const eye = q.find(e => e.Key === 'qstsa3q21').enUS;
     if (v.hints && !/Act I/.test(eye)) fail(`${label}: no act hint in "${eye}"`);
-    if (!v.hints && (/Act I/.test(eye) || /Relics:/.test(den))) fail(`${label}: hints off but "${eye}"`);
+    if (!v.hints && (/Act I/.test(eye) || /Relic acts:/.test(den))) fail(`${label}: hints off but "${eye}"`);
   }
   if (shuffle && v.spoiler) {
     const s = JSON.parse(on.get(`${m}/quest-shuffle.json`).toString());
@@ -137,6 +137,23 @@ for (const v of variants) {
     }
   }
   ok(`${label}: ${added.length} added files, ${wrappers.length} TC wrappers, savepath ${modinfo.savepath}`);
+}
+
+// Race Mode: the spoiler is off unless asked for, and links say so only when it differs.
+for (const [label, spoilerField, params, want] of [
+  ['race default', {}, '&shuffleQuests=1', false],
+  ['race with spoiler', { spoiler: true }, '&shuffleQuests=1&questSpoiler=1', true],
+]) {
+  const res = await retry(() => fetch(`${base}/api/randomize`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ seed, raceMode: true, openActs: { shuffle: true, ...spoilerField } }),
+  }));
+  if (!res.ok) { fail(`${label}: randomize ${res.status}`); continue; }
+  const dl = await retry(() => fetch(`${base}/api/download?seed=${seed}${params}`));
+  if (!dl.ok) { fail(`${label}: download ${dl.status} (cache key mismatch?)`); continue; }
+  const has = entryMap(new AdmZip(Buffer.from(await dl.arrayBuffer()))).has(`${m}/quest-shuffle.json`);
+  if (has !== want) fail(`${label}: spoiler file ${has ? 'present' : 'missing'}`);
+  else ok(`${label}: spoiler file ${has ? 'present' : 'absent'}, link "${params}" downloads it`);
 }
 
 console.log(failures ? `\n${failures} FAILURES` : '\nALL CHECKS PASSED');

@@ -14,6 +14,9 @@ import type { ItemCode } from './pool';
 
 export const HINT_MAX_LENGTH = 175;
 
+/** NPCs still give their vanilla directions (spoken audio can't be changed). */
+export const NPC_WARNING = 'NPC directions are outdated.';
+
 const ACT_NAMES = { 1: 'Act I', 2: 'Act II', 3: 'Act III' } as const;
 
 export interface QuestString {
@@ -36,17 +39,22 @@ export function hintStrings(manifest: ManifestEntry[]): Record<string, string> {
 
   // One line, short enough for the quest log: it ignores line breaks (shown as '*'), and
   // text past about 175 characters runs under the Play Quest Dialogue button (seen in game).
+  // NPCs still speak their vanilla directions (voice audio can't change), so say so here.
+  const roman = (code: ItemCode) => at(code)?.replace('Act ', '');
   const summary = [
-    `Scroll ${at('bks')}`,
-    cube ? `Cube ${cube}` : null,
-    `Staff ${at('msf')}`,
-    `Eye ${at('qey')}`,
-    `Brain ${at('qbr')}`,
-    `Heart ${at('qhr')}`,
+    `Scroll ${roman('bks')}`,
+    cube ? `Cube ${roman('box')}` : null,
+    `Staff ${roman('msf')}`,
+    `Eye ${roman('qey')}`,
+    `Brain ${roman('qbr')}`,
+    `Heart ${roman('qhr')}`,
   ].filter(Boolean).join(', ');
-  out.qstsa1q11 = `Look for the Den in the wilderness outside the Rogues' Camp. Relics: ${summary}.`;
+  out.qstsa1q11 = `Look for the Den in the wilderness outside the Rogues' Camp. Relic acts: ${summary}. ${NPC_WARNING}`;
 
   out.qstsa1q41 = `Search for the Scroll of Inifuss. It lies somewhere in ${at('bks')}.`;
+  // The fillers move too, and their vanilla lines name the Barracks and Kurast's temples.
+  out.qstsa1q31 = `Look for the Horadric Malus somewhere in ${at('hdm')}. Beware of the Smith in the Barracks.`;
+  out.qstsa3q11 = `Search for Lam Esen's Tome. It lies somewhere in ${at('bbb')}.`;
   out.qstsa2q22 = [
     cube ? `The Horadric Cube is somewhere in ${cube}.` : null,
     `The Staff of Kings is somewhere in ${at('msf')}.`,
@@ -64,6 +72,9 @@ export function hintStrings(manifest: ManifestEntry[]): Record<string, string> {
  */
 export function neutralStrings(startWithCube: boolean): Record<string, string> {
   return {
+    qstsa1q11: `Look for the Den in the wilderness outside the Rogues' Camp. The relics have moved. ${NPC_WARNING}`,
+    qstsa1q31: 'Look for the Horadric Malus. Its hiding place is unknown. Beware of the Smith in the Barracks.',
+    qstsa3q11: "Search for Lam Esen's Tome. Its hiding place is unknown.",
     qstsa1q41: 'Search for the Scroll of Inifuss. Its hiding place is unknown.',
     qstsa2q22: [
       startWithCube ? null : 'Find the Horadric Cube.',
