@@ -168,14 +168,14 @@ func watch(gr *memory.GameReader, path string) int {
 								best, bestD = s.name, dd
 							}
 						}
-						emit("drop", map[string]any{"item": string(it.Name), "classId": it.ID, "x": it.Position.X, "y": it.Position.Y, "src": best, "areaId": area})
+						emit("drop", map[string]any{"item": itemName(it.ID, it.Name), "classId": it.ID, "x": it.Position.X, "y": it.Position.Y, "src": best, "areaId": area})
 					}
 				}
 				continue
 			}
-			nowCarried[id] = string(it.Name)
+			nowCarried[id] = itemName(it.ID, it.Name)
 			if _, had := carried[id]; !had && !firstTick {
-				emit("pickup", map[string]any{"item": string(it.Name), "classId": it.ID, "where": string(it.Location.LocationType)})
+				emit("pickup", map[string]any{"item": itemName(it.ID, it.Name), "classId": it.ID, "where": string(it.Location.LocationType)})
 			}
 		}
 		for id, name := range carried {

@@ -140,7 +140,7 @@ func main() {
 		}
 	}
 	for _, it := range d.Inventory.AllItems {
-		t := thing{Kind: "item", Name: string(it.Name), ID: int(it.UnitID), X: it.Position.X, Y: it.Position.Y, Where: string(it.Location.LocationType), Hover: it.IsHovered}
+		t := thing{Kind: "item", Name: itemName(it.ID, it.Name), ID: int(it.UnitID), X: it.Position.X, Y: it.Position.Y, Where: string(it.Location.LocationType), Hover: it.IsHovered}
 		if it.Location.LocationType == item.LocationGround {
 			t = place(t)
 			if t.Dist <= *radius {

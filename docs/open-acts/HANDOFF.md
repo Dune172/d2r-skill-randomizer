@@ -17,6 +17,8 @@ A generator option where **Acts I–III are open from the start** and the **key 
 - **Keep in-game testing to a minimum.** Prove everything you can offline. Batch the rest into one short session in the test-only arena mod, graded from memory by the watcher, not from screenshots.
 - **Computer use is allowed but optional.** Ask for access when the user is at the PC; a prompt that arrives while they're away gets auto-denied.
   - The app name **"Diablo II Resurrected" resolves to the launcher**, not the game. Ask for **`D2R.exe`**, which only resolves while D2R is running: start it with `-mod ... -txt` first, then request access.
+  - **Start it windowed** with `scripts/open-acts-spike/launch-d2r.ps1`. In exclusive fullscreen Windows reports no foreground window and the game ignores computer-use input. D2R keeps a `Settings.json` per mod save folder, so every new mod starts fullscreen; the script sets `"Window Mode": 0` there first.
+  - In windowed mode the top ~130 px of the screen is the title bar: clicks there do nothing in game. Walk toward far targets in steps.
   - Only one session on the PC can hold computer control. If another holds it, ask the user rather than retrying.
 - Commit, push or open PRs only when asked.
 
@@ -27,6 +29,8 @@ A generator option where **Acts I–III are open from the start** and the **key 
 | Starter save with act flags set (Normal) | **Works in game** (user tested 2026-09-29) |
 | `src/lib/randomizer/open-acts/` (`pool`, `fill`, `starter-save`, `hints`) | Written. `scripts/verify-open-acts-fill.mjs` passes on 5000 seeds × 4 option combos. Not wired anywhere. |
 | Arena test mod, test saves, memory watcher, grader | Built. Pipeline tested end to end, **session not yet played** |
+| Watcher on D2R 3.3 (3.3.93847) | **Fixed 2026-10-26**, see below. Not yet committed |
+| Launcher shortcut (L1) | **Blocked by Smart App Control** on a Windows 11 PC (2026-10-26): "blocked an app with a dangerous file extension". Decision gate L1 applies |
 | Template characters (16: 8 classes × with/without Cube) | Not made |
 | Generator wiring, ZIP, launcher, UI, changelog | Not started |
 
@@ -102,6 +106,7 @@ All tooling is in [`scripts/open-acts-spike/`](../../scripts/open-acts-spike/REA
   - `observe.exe` alone prints a snapshot. With `-watch log.jsonl` it logs events until D2R exits (attaching takes about 10 s).
   - `run-session.ps1` runs the watcher, then `check-arena.mjs`, and prints PASS/FAIL/NOT RUN per test.
   - d2go object ids equal objects.txt `*ID`. Item names are CamelCase (`KhalimsEye`).
+  - **D2R 3.3 broke d2go** (2026-10-26): the watcher saw no character. Fixed by new patches in the Archipelago branch's `scripts/patch-d2go.mjs` (state offset, stash units, inventory panic, UI/waypoint offsets per build; details in that branch's `docs/archipelago/DESIGN_NOTES.md`) and by `observe/names.go`, which names items from `data/txt` because d2go's item table predates 3.3. `build-observe.mjs` prefers a local `../archipelago-branch-cleanup-34def9` worktree, so **the fixes only apply where that worktree has them** until they are committed and pushed.
 
 ## Setting up a PC
 - **Required:** Windows, D2R at `C:\Program Files (x86)\Diablo II Resurrected` (the launcher and test scripts assume it), Node 22+, Go 1.22+, git, and `gh` (logged in for PRs).
