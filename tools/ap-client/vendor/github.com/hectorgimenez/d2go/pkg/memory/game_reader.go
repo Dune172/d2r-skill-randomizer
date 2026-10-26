@@ -23,6 +23,9 @@ type GameReader struct {
 	cachedMonsters  data.Monsters
 	cachedInventory data.Inventory
 	cachedObjects   []data.Object
+
+	// D2RR PATCH: when GetData last rescanned for missing offsets.
+	offsetsScanned time.Time
 }
 
 type MercOption struct {
@@ -68,8 +71,20 @@ func NewGameReader(process *Process) *GameReader {
 }
 
 func (gd *GameReader) GetData() data.Data {
-	if gd.offset.UnitTable == 0 {
+	// D2RR PATCH: D2R makes code pages readable as they first run, so a pattern can be
+	// missing at attach time and present later. Rescan, at most every 2 s, while the UI
+	// block or the waypoint list is still unresolved.
+	// A rescan never discards an offset that an earlier scan resolved.
+	if gd.offset.UnitTable == 0 || ((gd.offset.UI == 0 || gd.offset.WaypointsOffset == 0) && time.Since(gd.offsetsScanned) > 2*time.Second) {
+		prev := gd.offset
 		gd.offset = calculateOffsets(gd.Process)
+		if gd.offset.UI == 0 {
+			gd.offset.UI = prev.UI
+		}
+		if gd.offset.WaypointsOffset == 0 {
+			gd.offset.WaypointsOffset = prev.WaypointsOffset
+		}
+		gd.offsetsScanned = time.Now()
 	}
 
 	// Always refresh core player data
@@ -171,6 +186,10 @@ func (gd *GameReader) InGame() bool {
 }
 
 func (gd *GameReader) OpenMenus() data.OpenMenus {
+	// D2RR PATCH: UI 0 means unresolved; reading base-0xA would report PE header bytes.
+	if gd.offset.UI == 0 {
+		return data.OpenMenus{}
+	}
 	uiBase := gd.Process.moduleBaseAddressPtr + gd.offset.UI - 0xA
 
 	buffer := gd.Process.ReadBytesFromMemory(uiBase, 0x16D)

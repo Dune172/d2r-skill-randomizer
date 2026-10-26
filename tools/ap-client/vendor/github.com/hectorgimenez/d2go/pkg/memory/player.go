@@ -71,6 +71,22 @@ func (gd *GameReader) GetRawPlayerUnits() RawPlayerUnits {
 		}
 	}
 
+	// D2RR PATCH: on D2R 3.3 the expansion-flag pattern does not resolve, so the classic
+	// main-player test is true for the six shared-stash pseudo-players too. They carry
+	// the Sharedstash state; drop the flag from them whenever it is ambiguous.
+	mains := 0
+	for _, u := range rawPlayerUnits {
+		if u.IsMainPlayer {
+			mains++
+		}
+	}
+	if mains > 1 {
+		for i := range rawPlayerUnits {
+			if rawPlayerUnits[i].States.HasState(state.Sharedstash) {
+				rawPlayerUnits[i].IsMainPlayer = false
+			}
+		}
+	}
 	return rawPlayerUnits
 }
 
@@ -92,7 +108,13 @@ func (gd *GameReader) GetPlayerUnit(mainPlayerUnit RawPlayerUnit) data.PlayerUni
 
 	availableWPs := make([]area.ID, 0)
 	// Probably there is a better place to pick up those values, since this seems to be very tied to the UI
-	wpList := gd.Process.ReadBytesFromMemory(gd.moduleBaseAddressPtr+gd.offset.WaypointsOffset, 0x48)
+	// D2RR PATCH: an unresolved offset (0) would read the PE header as a waypoint list.
+	wpList := make([]byte, 0x48)
+	if gd.offset.WaypointsOffset != 0 {
+		if b := gd.Process.ReadBytesFromMemory(gd.moduleBaseAddressPtr+gd.offset.WaypointsOffset, 0x48); len(b) == 0x48 {
+			wpList = b
+		}
+	}
 	for i := 0; i < 0x48; i = i + 8 {
 		a := binary.LittleEndian.Uint32(wpList[i : i+4])
 		available := binary.LittleEndian.Uint32(wpList[i+4 : i+8])
@@ -159,7 +181,9 @@ func (gd *GameReader) GetStates(statsListExPtr uintptr) state.States {
 	var states state.States
 	for i := 0; i < 6; i++ {
 		offset := i * 4
-		stateByte := gd.Process.ReadUInt(statsListExPtr+0xAF0+uintptr(offset), Uint32)
+		// D2RR PATCH: D2R 3.3 moved the state bitfield from +0xAF0 to +0xB30 (a second
+		// copy sits at +0xB50).
+		stateByte := gd.Process.ReadUInt(statsListExPtr+0xB30+uintptr(offset), Uint32)
 
 		offset = (32 * i) - 1
 		states = append(states, calculateStates(stateByte, uint(offset))...)

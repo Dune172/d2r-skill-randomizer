@@ -12,6 +12,15 @@ import (
 	"github.com/hectorgimenez/d2go/pkg/utils"
 )
 
+// D2RR PATCH: unit id of the i-th shared-stash pseudo-player, or a value no item owner
+// can hold when D2R did not expose that many.
+func stashOwnerID(units map[uint]RawPlayerUnit, order []uint, i int) uint {
+	if i >= len(order) {
+		return ^uint(0)
+	}
+	return uint(units[order[i]].UnitID)
+}
+
 func (gd *GameReader) Inventory(rawPlayerUnits RawPlayerUnits, hover data.HoverData) data.Inventory {
 	mainPlayer := rawPlayerUnits.GetMainPlayer()
 	baseAddr := gd.Process.moduleBaseAddressPtr + gd.offset.UnitTable + (4 * 1024)
@@ -251,13 +260,15 @@ func (gd *GameReader) Inventory(rawPlayerUnits RawPlayerUnits, hover data.HoverD
 			location := item.LocationUnknown
 			switch itemLoc {
 			case 0:
-				if itemOwnerNPC == 2 || itemOwnerNPC == uint(stashPlayerUnits[stashPlayerUnitOrder[0]].UnitID) {
+				// D2RR PATCH: upstream indexed stashPlayerUnitOrder blindly and panicked (taking
+				// all of GetData down) whenever fewer than three stash units were identified.
+				if itemOwnerNPC == 2 || itemOwnerNPC == stashOwnerID(stashPlayerUnits, stashPlayerUnitOrder, 0) {
 					location = item.LocationSharedStash
 					invPage = 1
-				} else if itemOwnerNPC == 3 || itemOwnerNPC == uint(stashPlayerUnits[stashPlayerUnitOrder[1]].UnitID) {
+				} else if itemOwnerNPC == 3 || itemOwnerNPC == stashOwnerID(stashPlayerUnits, stashPlayerUnitOrder, 1) {
 					location = item.LocationSharedStash
 					invPage = 2
-				} else if itemOwnerNPC == 4 || itemOwnerNPC == uint(stashPlayerUnits[stashPlayerUnitOrder[2]].UnitID) {
+				} else if itemOwnerNPC == 4 || itemOwnerNPC == stashOwnerID(stashPlayerUnits, stashPlayerUnitOrder, 2) {
 					location = item.LocationSharedStash
 					invPage = 3
 				} else if 0x00002000&flags != 0 && itemOwnerNPC == 4294967295 {

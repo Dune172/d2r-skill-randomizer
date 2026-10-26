@@ -165,6 +165,222 @@ func NewGameReader(process *Process) *GameReader {`,
 			continue
 		}`,
   },
+  // ── D2R 3.3 (build 3.3.93847) ─────────────────────────────────────────────
+  // Re-derived on 2026-10-26 against a live game; see docs/archipelago/DESIGN_NOTES.md.
+  {
+    file: 'offset.go',
+    name: '3.3 UI pattern fallbacks',
+    find: String.raw`	// UI
+	pattern = process.FindPattern(memory, "\x40\x84\xed\x0f\x94\x05", "xxxxxx")
+	uiOffset := process.ReadUInt(pattern+6, Uint32)
+	uiOffsetPtr := (pattern - process.moduleBaseAddressPtr) + 10 + uintptr(uiOffset)`,
+    replace: String.raw`	// UI
+	// D2RR PATCH: D2R 3.3 dropped the sete site. Fall back to two lea-of-uiBase sites
+	// (uiBase = UI - 0xA) found on 3.3.93847, and leave UI at 0 when nothing matches so
+	// callers can tell "unresolved" from an offset.
+	var uiOffsetPtr uintptr
+	if pattern = process.FindPattern(memory, "\x40\x84\xed\x0f\x94\x05", "xxxxxx"); pattern != 0 {
+		uiOffset := process.ReadUInt(pattern+6, Uint32)
+		uiOffsetPtr = (pattern - process.moduleBaseAddressPtr) + 10 + uintptr(uiOffset)
+	} else if pattern = process.FindPattern(memory, "\x41\x0F\xB6\xE8\x48\x8D\x35\x00\x00\x00\x00\x85\xD2\x74", "xxxxxxx????xxx"); pattern != 0 {
+		uiOffsetPtr = ripTarget(process, pattern+7) + 0xA
+	} else if pattern = process.FindPattern(memory, "\x45\x33\xF6\x48\x8D\x35\x00\x00\x00\x00\x41\x8B\xDE\x48\x8D\x3D", "xxxxxx????xxxxxx"); pattern != 0 {
+		uiOffsetPtr = ripTarget(process, pattern+6) + 0xA
+	}`,
+  },
+  {
+    file: 'offset.go',
+    name: 'unresolved waypoint offset stays 0',
+    find: String.raw`	pattern = process.FindPattern(memory, "\x48\x89\x05\x00\x00\x00\x00\x0F\x11\x00", "xxx????xxx")
+	offsetBuffer := process.ReadUInt(pattern+3, Uint32)
+	WaypointsOffset := pattern - process.moduleBaseAddressPtr + 23 + uintptr(offsetBuffer)`,
+    replace: String.raw`	pattern = process.FindPattern(memory, "\x48\x89\x05\x00\x00\x00\x00\x0F\x11\x00", "xxx????xxx")
+	// D2RR PATCH: this code page is only readable once the waypoint panel has run, so
+	// the pattern is often missing at attach time. Keep 0 rather than a wild offset.
+	var WaypointsOffset uintptr
+	if pattern != 0 {
+		offsetBuffer := process.ReadUInt(pattern+3, Uint32)
+		WaypointsOffset = pattern - process.moduleBaseAddressPtr + 23 + uintptr(offsetBuffer)
+	}`,
+  },
+  {
+    file: 'offset.go',
+    name: 'ripTarget helper',
+    find: 'func calculateOffsets(process *Process) Offset {',
+    replace: `// D2RR PATCH: module offset named by a rip-relative operand whose disp32 is at dispAddr.
+func ripTarget(process *Process, dispAddr uintptr) uintptr {
+	disp := int32(process.ReadUInt(dispAddr, Uint32))
+	return uintptr(int64(dispAddr-process.moduleBaseAddressPtr) + 4 + int64(disp))
+}
+
+func calculateOffsets(process *Process) Offset {`,
+    skipIf: s => s.includes('func ripTarget('),
+  },
+  {
+    file: 'offset.go',
+    name: 'known offsets per D2R build',
+    find: `	return Offset{
+		GameData:                    gameDataOffset,`,
+    replace: `	// D2RR PATCH: D2R 3.3 keeps code pages unreadable except while they are in use, so
+	// a pattern that matched a minute ago can miss now. Module offsets are fixed for a
+	// given D2R.exe, so fall back to values measured on known builds.
+	if known, ok := knownBuildOffsets[peTimestamp(process)]; ok {
+		if uiOffsetPtr == 0 {
+			uiOffsetPtr = known.UI
+		}
+		if WaypointsOffset == 0 {
+			WaypointsOffset = known.WaypointsOffset
+		}
+	}
+
+	return Offset{
+		GameData:                    gameDataOffset,`,
+  },
+  {
+    file: 'offset.go',
+    name: 'known-build table',
+    find: 'func calculateOffsets(process *Process) Offset {',
+    replace: `// D2RR PATCH: module offsets measured on specific D2R.exe builds, keyed by the PE
+// header's TimeDateStamp. Re-measure after a patch with the diff method in
+// docs/archipelago/DESIGN_NOTES.md.
+var knownBuildOffsets = map[uint32]Offset{
+	0x6a6b96a4: {UI: 0x1ebd162, WaypointsOffset: 0x1d5f470}, // 3.3.93847
+}
+
+// D2RR PATCH: the TimeDateStamp of the loaded D2R.exe, which identifies the build.
+func peTimestamp(process *Process) uint32 {
+	base := process.moduleBaseAddressPtr
+	pe := uintptr(process.ReadUInt(base+0x3C, Uint32))
+	if process.ReadUInt(base+pe, Uint32) != 0x4550 { // "PE\\0\\0"
+		return 0
+	}
+	return uint32(process.ReadUInt(base+pe+8, Uint32))
+}
+
+func calculateOffsets(process *Process) Offset {`,
+    skipIf: s => s.includes('var knownBuildOffsets'),
+  },
+  {
+    file: 'game_reader.go',
+    name: 'offset rescan timestamp',
+    find: '\tcachedObjects   []data.Object\n}',
+    replace: '\tcachedObjects   []data.Object\n\n\t// D2RR PATCH: when GetData last rescanned for missing offsets.\n\toffsetsScanned time.Time\n}',
+  },
+  {
+    file: 'game_reader.go',
+    name: 'rescan offsets that were missing at attach',
+    find: `	if gd.offset.UnitTable == 0 {
+		gd.offset = calculateOffsets(gd.Process)
+	}`,
+    replace: `	// D2RR PATCH: D2R makes code pages readable as they first run, so a pattern can be
+	// missing at attach time and present later. Rescan, at most every 2 s, while the UI
+	// block or the waypoint list is still unresolved.
+	// A rescan never discards an offset that an earlier scan resolved.
+	if gd.offset.UnitTable == 0 || ((gd.offset.UI == 0 || gd.offset.WaypointsOffset == 0) && time.Since(gd.offsetsScanned) > 2*time.Second) {
+		prev := gd.offset
+		gd.offset = calculateOffsets(gd.Process)
+		if gd.offset.UI == 0 {
+			gd.offset.UI = prev.UI
+		}
+		if gd.offset.WaypointsOffset == 0 {
+			gd.offset.WaypointsOffset = prev.WaypointsOffset
+		}
+		gd.offsetsScanned = time.Now()
+	}`,
+  },
+  {
+    file: 'game_reader.go',
+    name: 'no menus from an unresolved UI offset',
+    find: `func (gd *GameReader) OpenMenus() data.OpenMenus {
+	uiBase :=`,
+    replace: `func (gd *GameReader) OpenMenus() data.OpenMenus {
+	// D2RR PATCH: UI 0 means unresolved; reading base-0xA would report PE header bytes.
+	if gd.offset.UI == 0 {
+		return data.OpenMenus{}
+	}
+	uiBase :=`,
+  },
+  {
+    file: 'player.go',
+    name: 'no waypoints from an unresolved offset',
+    find: '\twpList := gd.Process.ReadBytesFromMemory(gd.moduleBaseAddressPtr+gd.offset.WaypointsOffset, 0x48)',
+    replace: `	// D2RR PATCH: an unresolved offset (0) would read the PE header as a waypoint list.
+	wpList := make([]byte, 0x48)
+	if gd.offset.WaypointsOffset != 0 {
+		if b := gd.Process.ReadBytesFromMemory(gd.moduleBaseAddressPtr+gd.offset.WaypointsOffset, 0x48); len(b) == 0x48 {
+			wpList = b
+		}
+	}`,
+  },
+  {
+    file: 'player.go',
+    name: '3.3 state bitfield offset',
+    find: '\t\tstateByte := gd.Process.ReadUInt(statsListExPtr+0xAF0+uintptr(offset), Uint32)',
+    replace: '\t\t// D2RR PATCH: D2R 3.3 moved the state bitfield from +0xAF0 to +0xB30 (a second\n\t\t// copy sits at +0xB50).\n\t\tstateByte := gd.Process.ReadUInt(statsListExPtr+0xB30+uintptr(offset), Uint32)',
+  },
+  {
+    file: 'player.go',
+    name: 'shared-stash units are not the main player',
+    find: '\treturn rawPlayerUnits\n}\n\nfunc (gd *GameReader) GetPlayerUnit(',
+    replace: `	// D2RR PATCH: on D2R 3.3 the expansion-flag pattern does not resolve, so the classic
+	// main-player test is true for the six shared-stash pseudo-players too. They carry
+	// the Sharedstash state; drop the flag from them whenever it is ambiguous.
+	mains := 0
+	for _, u := range rawPlayerUnits {
+		if u.IsMainPlayer {
+			mains++
+		}
+	}
+	if mains > 1 {
+		for i := range rawPlayerUnits {
+			if rawPlayerUnits[i].States.HasState(state.Sharedstash) {
+				rawPlayerUnits[i].IsMainPlayer = false
+			}
+		}
+	}
+	return rawPlayerUnits
+}
+
+func (gd *GameReader) GetPlayerUnit(`,
+  },
+  {
+    file: 'item.go',
+    name: 'bounds-safe shared-stash owners',
+    find: `			case 0:
+				if itemOwnerNPC == 2 || itemOwnerNPC == uint(stashPlayerUnits[stashPlayerUnitOrder[0]].UnitID) {
+					location = item.LocationSharedStash
+					invPage = 1
+				} else if itemOwnerNPC == 3 || itemOwnerNPC == uint(stashPlayerUnits[stashPlayerUnitOrder[1]].UnitID) {
+					location = item.LocationSharedStash
+					invPage = 2
+				} else if itemOwnerNPC == 4 || itemOwnerNPC == uint(stashPlayerUnits[stashPlayerUnitOrder[2]].UnitID) {`,
+    replace: `			case 0:
+				// D2RR PATCH: upstream indexed stashPlayerUnitOrder blindly and panicked (taking
+				// all of GetData down) whenever fewer than three stash units were identified.
+				if itemOwnerNPC == 2 || itemOwnerNPC == stashOwnerID(stashPlayerUnits, stashPlayerUnitOrder, 0) {
+					location = item.LocationSharedStash
+					invPage = 1
+				} else if itemOwnerNPC == 3 || itemOwnerNPC == stashOwnerID(stashPlayerUnits, stashPlayerUnitOrder, 1) {
+					location = item.LocationSharedStash
+					invPage = 2
+				} else if itemOwnerNPC == 4 || itemOwnerNPC == stashOwnerID(stashPlayerUnits, stashPlayerUnitOrder, 2) {`,
+  },
+  {
+    file: 'item.go',
+    name: 'stashOwnerID helper',
+    find: 'func (gd *GameReader) Inventory(rawPlayerUnits RawPlayerUnits, hover data.HoverData) data.Inventory {',
+    replace: `// D2RR PATCH: unit id of the i-th shared-stash pseudo-player, or a value no item owner
+// can hold when D2R did not expose that many.
+func stashOwnerID(units map[uint]RawPlayerUnit, order []uint, i int) uint {
+	if i >= len(order) {
+		return ^uint(0)
+	}
+	return uint(units[order[i]].UnitID)
+}
+
+func (gd *GameReader) Inventory(rawPlayerUnits RawPlayerUnits, hover data.HoverData) data.Inventory {`,
+    skipIf: s => s.includes('func stashOwnerID('),
+  },
 ];
 
 function main() {

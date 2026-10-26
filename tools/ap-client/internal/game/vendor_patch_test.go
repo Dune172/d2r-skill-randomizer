@@ -29,6 +29,9 @@ func TestVendoredD2GoIsPatched(t *testing.T) {
 	process := readVendored(t, "process.go")
 	sendPacket := readVendored(t, "send_packet.go")
 	gameReader := readVendored(t, "game_reader.go")
+	offset := readVendored(t, "offset.go")
+	player := readVendored(t, "player.go")
+	item := readVendored(t, "item.go")
 
 	checks := []struct {
 		file, src, needle, why string
@@ -58,6 +61,29 @@ func TestVendoredD2GoIsPatched(t *testing.T) {
 			file: "game_reader.go", src: gameReader, needle: "func (gd *GameReader) Offsets() Offset",
 			why: "the pattern-scanned offsets are otherwise private, so live waypoint " +
 				"checks cannot be read at all",
+		},
+		// D2R 3.3 (build 3.3.93847)
+		{
+			file: "offset.go", src: offset, needle: "var knownBuildOffsets",
+			why: "3.3 keeps code pages unreadable except while in use, so the UI and " +
+				"waypoint patterns miss intermittently; measured offsets cover them",
+		},
+		{
+			file: "game_reader.go", src: gameReader, needle: "prev := gd.offset",
+			why: "without the rescan, offsets missing at attach stay missing for the session",
+		},
+		{
+			file: "player.go", src: player, needle: "statsListExPtr+0xB30+",
+			why: "3.3 moved the state bitfield; at +0xAF0 every unit reads no states",
+		},
+		{
+			file: "player.go", src: player, needle: "HasState(state.Sharedstash)",
+			why: "on 3.3 the six shared-stash units also claim to be the main player",
+		},
+		{
+			file: "item.go", src: item, needle: "func stashOwnerID(",
+			why: "Inventory indexed the stash-unit list blindly and panicked, taking all " +
+				"of GetData down with it",
 		},
 	}
 

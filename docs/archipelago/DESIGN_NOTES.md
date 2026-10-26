@@ -106,3 +106,28 @@ These are what `PLAYTEST.md` exists to settle.
 3. G1 from `PLAYTEST.md`.
 4. `d2rr-ap doctor -manifest <zip> -calibrate-difficulty -difficulty 0` from a Normal
    game, to re-record the difficulty profile for the new executable.
+5. Re-measure the module offsets in `knownBuildOffsets` (`scripts/patch-d2go.mjs`).
+
+### D2R 3.3 (build 3.3.93847, measured 2026-10-26)
+
+- **Code pages are readable only while in use.** A pattern that matched a minute ago
+  can miss now, and most of d2go's 16 patterns miss at attach. The UI block and the
+  waypoint list therefore fall back to offsets measured per build, keyed by the PE
+  header's TimeDateStamp (`0x6a6b96a4` here): UI `0x1EBD162`, waypoints `0x1D5F470`.
+  `GameReader.GetData` rescans every 2 s while either is unresolved and never discards
+  one it already has.
+- **States moved** from statsListEx `+0xAF0` to `+0xB30` (a second copy at `+0xB50`).
+- **Seven player units** in an offline game: the character plus six shared-stash
+  pseudo-players. The expansion-flag pattern no longer resolves, so all seven passed
+  the main-player test; the stash ones are now dropped by their Sharedstash state.
+- **d2go's item table predates 3.3**, so classIDs after the first inserted item name
+  the wrong item (a Town Portal scroll reads as `TheBlackTowerKey`). Map classID to
+  code from the repo's `data/txt` (weapons, armor, misc, skipping `Expansion` rows).
+- **How the offsets were found** (`go run ./cmd/obsdebug snap|diff|wp|pat` in
+  `tools/ap-client`): with a character loaded, snapshot the D2R.exe module
+  image, toggle one panel, snapshot again, and keep bytes that flip 0 -> 1 -> 0. The
+  inventory flag is `uiBase+0x01` and the character panel `uiBase+0x02`; one address
+  satisfied both. For the waypoint list, open the panel and search for the Act I area
+  ids `1, 3, 4, 5, 6, 27, 29, 32, 35` at an 8-byte stride.
+- Still unresolved on 3.3 and unused by the client: GameData, Expansion, Roster,
+  PanelManager, WidgetStates, KeyBindings, TZ, Ping, and the quest bytes (read as zeros).
