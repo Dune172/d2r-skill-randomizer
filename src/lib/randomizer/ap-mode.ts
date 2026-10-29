@@ -48,6 +48,19 @@
  *
  * Both custom stats hold their value PLUS ONE, so they are never zero: the game drops
  * zero-valued stats from a character, and the client can only write an entry that exists.
+ *
+ * HOW A STAT ENTRY COMES TO EXIST. Player spell 4 (the vanilla "Healing Potion" spell)
+ * adds each statN/calcN of the item to the drinker's base stats, permanently when `len`
+ * is empty. It is the one data-driven way to create an entry, and three items use it:
+ *
+ *  - the Draught of Attunement creates ap_keys, ap_mail and the skill-point pool;
+ *  - the Receipt adds one to ap_mail;
+ *  - the Tonic of Renewal recreates the skill-point pool (and, with pooled stat points,
+ *    the stat-point pool) after the player has spent it to zero and the game dropped it.
+ *
+ * Measured on D2R 3.3 (2026-10-29): the Draught created 5, 368 and 369 on both copies of
+ * the character, the Receipt moved 369 from an offer to offer + 1, and all of it survived
+ * Save and Exit. Spell 8, used before, ignores the stat columns entirely.
  */
 import { SkillPlacement, ClassCode } from './types';
 import { CLASS_DEFS } from './config';
@@ -60,7 +73,7 @@ import { PIPELINE_VERSION } from './pipeline-version';
  * code: in development that looks like "my change did nothing", and in production it
  * would hand clients a manifest that disagrees with the mod.
  */
-export const AP_CONTRACT_VERSION = 3;
+export const AP_CONTRACT_VERSION = 4;
 
 export interface ApModeOptions {
   /** The class this Archipelago slot plays. */
@@ -69,6 +82,11 @@ export interface ApModeOptions {
   savepath: string;
   /** Lock the Horadric Staff and Khalim's Will recipes behind Progressive Horadric Keys. */
   keyItems: boolean;
+  /**
+   * Stat points come only from the multiworld, so the Tonic recreates the stat-point pool
+   * too. Without this it must not: nothing would take the free stat point back.
+   */
+  pooledStats?: boolean;
 }
 
 type Table = { headers: string[]; rows: string[][] };
@@ -76,12 +94,20 @@ type Table = { headers: string[]; rows: string[][] };
 const CLASS_NAMES = Object.fromEntries(CLASS_DEFS.map(d => [d.code, d.name])) as Record<ClassCode, string>;
 
 /**
- * Unused vanilla items repurposed here. All four already have inventory and HD art, and
+ * Unused vanilla items repurposed here. All five already have inventory and HD art, and
  * none of them drops or is sold in the unmodded game.
  */
 const SIGIL_CODES = ['hrt', 'sol'] as const; // "Heart" and "Soul", monster parts
 const ATTUNEMENT_CODE = 'elx';               // "Elixir"
 const RECEIPT_CODE = 'hrb';                  // "Herb"
+const TONIC_CODE = 'mpf';                    // "Full Mana Potion", already a spell 4 item
+
+/**
+ * String ids for names the base game lacks (the Tonic's item, `mpf`, has none). Ids are
+ * global across every strings file: 40000+ are the pipeline's books, 41000+ its synergy
+ * lines, and no vanilla string in data/local/strings reaches 40000.
+ */
+const AP_STRING_ID_BASE = 42000;
 
 /** Keys needed before each quest recipe opens. Progressive, in the order the game needs them. */
 export const AP_KEY_GATES = { horadricStaff: 2, khalimsWill: 5 } as const;
@@ -124,6 +150,8 @@ export interface ApTables {
   sigils: string[];
   attunement: string;
   receipt: string;
+  /** Brewed from a Sigil while the mailbox is idle; recreates the point pools. */
+  tonic: string;
   mailIdle: number;
   mailAttuned: number;
   mail: ApMailItem[];
@@ -213,6 +241,7 @@ export function applyApTables(args: {
     });
   }
 
+  let nextStringId = AP_STRING_ID_BASE;
   const repurpose = (code: string, name: string, cells: Record<string, string>) => {
     setCells(misc, findRow(misc, 'code', code), {
       // Never from a shop or a drop, worthless to a vendor, and no vanilla right-click
@@ -222,21 +251,35 @@ export function applyApTables(args: {
       stat1: '', calc1: '', stat2: '', calc2: '', stat3: '', calc3: '',
       ...cells,
     });
-    const entry = itemNames.find(e => e.Key === code);
-    if (!entry) throw new Error(`apMode: no item name ${code}`);
+    let entry = itemNames.find(e => e.Key === code);
+    if (!entry) {
+      // Every locale the file carries, so no language falls back to a missing string.
+      const locales = Object.keys(itemNames[0] ?? {}).filter(f => f !== 'id' && f !== 'Key');
+      if (locales.length === 0) throw new Error(`apMode: no item name ${code}, and no locales to add one`);
+      entry = { id: nextStringId++, Key: code };
+      itemNames.push(entry);
+      for (const locale of locales) entry[locale] = name;
+    }
     for (const field of Object.keys(entry)) {
       if (field !== 'id' && field !== 'Key') entry[field] = name;
     }
   };
-  // Player spell 8 adds each calc to its stat, permanently. That is how a stat entry the
-  // client can write comes to exist, and how the Receipt signals a delivery.
-  const addsToStats = { useable: '1', pSpell: '8' };
+  // Player spell 4 adds each calc to its stat, permanently while `len` is empty (repurpose
+  // clears it). That is how a stat entry the client can write comes to exist, and how the
+  // Receipt signals a delivery. Spell 8 looks similar in the tables and ignores them.
+  const addsToStats = { useable: '1', pSpell: '4' };
   for (const code of SIGIL_CODES) repurpose(code, 'Archipelago Sigil', { useable: '0', pSpell: '-1' });
   repurpose(ATTUNEMENT_CODE, 'Draught of Attunement', {
     ...addsToStats,
     stat1: 'ap_keys', calc1: '1', stat2: 'ap_mail', calc2: String(MAIL_ATTUNED), stat3: 'newskills', calc3: '1',
   });
   repurpose(RECEIPT_CODE, 'Archipelago Receipt', { ...addsToStats, stat1: 'ap_mail', calc1: '1' });
+  // One point in each pool the client manages. The client writes the pool straight back
+  // to its target, so all the Tonic really gives is an entry to write to.
+  repurpose(TONIC_CODE, 'Tonic of Renewal', {
+    ...addsToStats, stat1: 'newskills', calc1: '1',
+    ...(ap.pooledStats ? { stat2: 'statpts', calc2: '1' } : {}),
+  });
 
   // Every class starts with a Sigil and one Draught.
   for (const row of charstats.rows) {
@@ -272,13 +315,20 @@ export function applyApTables(args: {
       output: entry.item, 'output b': returned, 'output c': RECEIPT_CODE, '*eol': '0',
     });
   }
-  // With nothing waiting, a Sigil brews another Draught: the way back if a stat entry is
-  // ever lost. Listed after the mail, and it keeps the Sigil it was given.
+  // With nothing waiting, a Sigil brews: a Draught while the mail stat does not exist yet
+  // (the starting one was lost before it was drunk), a Tonic once it does. Recipes are
+  // tried in file order, so the Draught (ap_mail <= 0) is checked before the Tonic
+  // (ap_mail <= idle). Both come after the mail and keep the Sigil they were given.
   for (const sigil of SIGIL_CODES) {
     appendRow(cubemain, {
       description: `Archipelago: brew a Draught of Attunement (${sigil})`, enabled: '1', version: '100',
-      op: playerBaseStatAtMost, param: String(stats.mail), value: String(MAIL_IDLE),
+      op: playerBaseStatAtMost, param: String(stats.mail), value: '0',
       numinputs: '1', 'input 1': sigil, output: ATTUNEMENT_CODE, 'output b': sigil, '*eol': '0',
+    });
+    appendRow(cubemain, {
+      description: `Archipelago: brew a Tonic of Renewal (${sigil})`, enabled: '1', version: '100',
+      op: playerBaseStatAtMost, param: String(stats.mail), value: String(MAIL_IDLE),
+      numinputs: '1', 'input 1': sigil, output: TONIC_CODE, 'output b': sigil, '*eol': '0',
     });
   }
 
@@ -295,7 +345,7 @@ export function applyApTables(args: {
   }
 
   return {
-    stats, sigils: [...SIGIL_CODES], attunement: ATTUNEMENT_CODE, receipt: RECEIPT_CODE,
+    stats, sigils: [...SIGIL_CODES], attunement: ATTUNEMENT_CODE, receipt: RECEIPT_CODE, tonic: TONIC_CODE,
     mailIdle: MAIL_IDLE, mailAttuned: MAIL_ATTUNED, mail, keyGates, baseAttributes,
   };
 }

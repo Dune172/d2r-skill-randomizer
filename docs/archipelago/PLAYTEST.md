@@ -163,9 +163,12 @@ mechanism, or to confirm a D2R patch did not change the answer.
 1. `dist\d2rr-ap.exe probe`: stats 5, 368 and 369 are absent.
 2. Right-click the **Draught of Attunement**, then `probe` again.
 
-**Pass:** 368 is 1, 369 is 256 and 5 is 1, and all three are still there after Save and
-Exit and re-entering. On 3.3 the Draught instead gives +1 to a random attribute, like an
-Elixir.
+**Pass:** 368 is 1, 369 is 256, 5 is 1. Save and Exit, re-enter, probe: 368 and 369
+are still there.
+
+**Fail:** the Draught does nothing, or the stats are gone after re-entering. Keys and
+runes then need another way to create the stat (a starter save is the fallback).
+Passed on 2026-10-29 once the Draught used player spell 4 (see `KEYS_AND_RUNES.md`).
 
 ## G3: does a Cube recipe obey a stat?
 
@@ -177,6 +180,10 @@ Elixir.
 The rune half needs a 369 entry to write, which only G2 can create, so it **cannot pass
 yet**. Once a mechanism exists:
 
+1. `dist\d2rr-ap.exe probe -set 369=1` to set the mailbox idle (the running client does
+   this by itself; the Draught leaves it at 256). Put the **Sigil alone** in the Cube
+   and transmute. Expect a **Tonic of Renewal** and the Sigil back (a Draught comes only
+   while 369 is absent).
 2. `dist\d2rr-ap.exe probe -set 369=2`, transmute the Sigil alone. Expect an **El Rune**,
    the other Sigil and an **Archipelago Receipt**.
 3. Transmute the Sigil alone **again** without using the Receipt. Expect **nothing**:
@@ -188,6 +195,19 @@ yet**. Once a mechanism exists:
 
 **Pass:** all five. Runes then work, and so do key gates, which use the same mechanism:
 the Horadric Staff recipe needs stat 368 at 3 or more, Khalim's Will at 6 or more.
+
+## G6: does the Tonic bring back an empty pool?
+
+Same character, in town. Step 3 needs a mod with pooled stat points.
+
+1. Spend the last unspent skill point in the tree. `probe` and `probe -game`: stat 5 is
+   gone from both copies.
+2. `dist\d2rr-ap.exe probe -set 369=1`, transmute the Sigil alone, right-click the Tonic
+   of Renewal. `probe` and `probe -game`: 5 is 1 on both, the point spends, and the skill
+   is still learned after Save and Exit.
+3. The same with the last stat point: stat 4 comes back as 1.
+
+**Pass:** all three. Points sent while a pool is empty then arrive after one Tonic.
 
 ## G4: traps and DeathLink
 

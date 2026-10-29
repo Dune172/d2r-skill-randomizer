@@ -101,8 +101,11 @@ func (a *app) applyStatPoints(player uintptr, classBase int) {
 	switch {
 	case err != nil:
 		a.note("stat", "setting stat points: "+err.Error())
+	case !existed && want == 0:
+		a.note("stat", "") // nothing owed, so nothing to write to yet
 	case !existed:
-		a.note("stat", "waiting for the game to create the stat-point stat (it appears on your first level-up)")
+		a.note("stat", "waiting for the game to create the stat-point stat: put the Archipelago Sigil alone "+
+			"in the Horadric Cube, transmute, and right-click the Tonic of Renewal it makes")
 	default:
 		a.note("stat", fmt.Sprintf("stat points: %d unspent (%d sent, %d spent)", want, sent, spent))
 	}

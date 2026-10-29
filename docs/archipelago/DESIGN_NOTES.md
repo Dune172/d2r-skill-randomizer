@@ -64,6 +64,17 @@ without leaving town).
   the Sigil alone produced a Draught and the Sigil back: the brew recipe (op 8, 369 ≤ 1)
   fired and the El Rune recipe listed before it (op 10, 369 = 2) did not. The rest of
   G3 needs a 369 entry, which nothing can create yet (see G2).
+- **G2 and G3 pass with player spell 4** (same day, gate mod hand-patched from spell 8 to
+  4 on the Draught and the Receipt). The Draught created 5 = 1, 368 = 1 and 369 = 256 on
+  both copies and changed no attribute. With 369 = 2 the Sigil gave an El Rune, the other
+  Sigil and a Receipt. The Receipt took 369 to 3. The other Sigil then did nothing at 3
+  and delivered at 4. Everything survived Save and Exit. Spell 4 adds an item's stat
+  columns to base stats permanently when `len` is empty (D2MOO `SkillItem.cpp`); the
+  other spells don't. See `KEYS_AND_RUNES.md`.
+- **G6 passes: the Tonic brings back an empty pool** (same day, on a mod generated from
+  the branch with pooled stats). With the last skill point spent, stat 5 was gone from
+  both copies. A Tonic brewed from the idle Sigil restored `5=1` and `4=1` on both. The
+  point it gave was spent, and the skill stayed learned after Save and Exit.
 - **Not run (needs leaving town):** G1 step 4 (do learned skills work in combat), G4
   (traps, DeathLink) and G5 (a real room).
 - **Cosmetic:** the Sigil shows as "Burning Dead Archipelago Sigil". The `hrt` monster
@@ -92,6 +103,10 @@ without leaving town).
   is cached per player unit, and must be the only candidate; `probe -copies` still does
   the full scan.
 - **Custom stats store value + 1** so they are never zero.
+- **Stat entries come from player spell 4 items.** The Draught creates the custom stats
+  and the skill-point pool, the Receipt acknowledges a rune, and a Tonic of Renewal
+  (brewed from the Sigil while the mailbox is idle) recreates a point pool the player
+  has spent to zero.
 - **Keys gate recipes, not items.** Making a quest item is not possible from outside the
   game; refusing to combine the ones the player found is a one-line table change.
 - **The mailbox.** One recipe is alive per offer; it takes the Sigil the player holds
@@ -112,11 +127,11 @@ without leaving town).
 
 ## Known limits
 
-- Horadric Keys, pooled stat points and runes do not work: nothing can create their
-  stats (see the gate results). The options stay, marked as not working, until a new
-  mechanism (a starter save, say) exists.
-- Skill points received while none are unspent wait: the game removes the entry at zero
-  and only a level-up or a quest reward creates it again.
+- Horadric Keys, pooled stat points and runes were marked as not working in the
+  preview because nothing could create their stats. Spell 4 now does (see the gate
+  results). The options stay labelled until the checks in `KEYS_AND_RUNES.md` have run.
+- Skill points received while none are unspent wait until the player drinks a Tonic of
+  Renewal (or levels up): the game removes the entry at zero.
 
 - Level-up and quest points can be spent in the fraction of a second before the client
   takes them back, and freely if the client is not running. It is a single-player game;

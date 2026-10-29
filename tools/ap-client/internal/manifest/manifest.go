@@ -19,7 +19,7 @@ import (
 
 // ContractVersion is the manifest shape this client understands. The server rejects a
 // mismatch rather than serving something we would misread.
-const ContractVersion = 3
+const ContractVersion = 4
 
 type Slot struct {
 	SlotID    string `json:"slotId"`
@@ -62,9 +62,11 @@ type Tables struct {
 		Keys int `json:"keys"`
 		Mail int `json:"mail"`
 	} `json:"stats"`
-	Sigils      []string   `json:"sigils"`
-	Attunement  string     `json:"attunement"`
-	Receipt     string     `json:"receipt"`
+	Sigils     []string `json:"sigils"`
+	Attunement string   `json:"attunement"`
+	Receipt    string   `json:"receipt"`
+	// Tonic is brewed from a Sigil while the mailbox is idle and recreates the point pools.
+	Tonic       string     `json:"tonic"`
 	MailIdle    uint32     `json:"mailIdle"`
 	MailAttuned uint32     `json:"mailAttuned"`
 	Mail        []MailItem `json:"mail"`
