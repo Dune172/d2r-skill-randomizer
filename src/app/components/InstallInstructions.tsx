@@ -2,14 +2,17 @@ import Link from 'next/link';
 import { pickRaceClassIndex } from '@/lib/classes';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { openActsLabel, openActsSavepath, starterName, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
+import { mutationName, mutationSavepathSuffix } from '@/lib/mutations/custom';
 
-export function InstallInstructions({ seed, raceMode = true, forgottenArts = false, modName, openActs }: { seed: number; raceMode?: boolean; forgottenArts?: boolean; modName?: string; openActs?: OpenActsSettings }) {
+export function InstallInstructions({ seed, raceMode = true, forgottenArts = false, modName, openActs, mutations = [] }: { seed: number; raceMode?: boolean; forgottenArts?: boolean; modName?: string; openActs?: OpenActsSettings; mutations?: number[] }) {
   const seedUnsigned = seed >>> 0;
   // Class Builder mods are named by their build, not their seed.
   const mod = modName ?? `seed${seed}`;
   const raceClass = raceMode ? CLASS_DEFS[pickRaceClassIndex(seed)] : null;
   const starters = openActs?.acts.length ? openActs : null;
-  const starterFolder = starters ? openActsSavepath(mod, raceClass?.code ?? null) : null;
+  // Picked mutations give the mod its own save folder (see /api/randomize).
+  const mutSuffix = mutationSavepathSuffix(mutations);
+  const starterFolder = starters ? openActsSavepath(mod, raceClass?.code ?? null) + mutSuffix : null;
   const starterExample = starters ? starterName(starters.name, raceClass?.name ?? 'Sorceress', !!raceClass) : '';
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-[#c8a870]">
@@ -115,6 +118,16 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
           <span className="text-[#c8a870] font-semibold">Game Pass?</span> Use the Microsoft Store install path instead. If you&apos;re unsure where D2R is installed, search <code className="text-[#a89858]">Diablo II Resurrected</code> in File Explorer.
         </div>
       </div>
+
+      {mutations.length > 0 && (
+        <div className="md:col-span-2 rounded p-3 bg-[#080203]/40 border border-[#5c1818] space-y-1">
+          <p>
+            <span className="text-[#c8942a] font-semibold">Mutations:</span>{' '}
+            {mutations.map(mutationName).join(', ')}. This mod keeps its characters in a save folder of its own
+            {' '}(<code className="text-[#a89858]">…{mutSuffix}</code>), so <strong>create a new character</strong> to play it.
+          </p>
+        </div>
+      )}
 
       {starters && starterFolder && (
         <div className="md:col-span-2 rounded p-3 bg-[#080203]/40 border border-[#5c1818] space-y-1">

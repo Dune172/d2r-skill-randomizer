@@ -127,6 +127,8 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
     }
   }, [spec, catalog.skills, treePages]);
   const optsKey = optionParams(options);
+  // The preview depends on the build and on the mutations (No Guard, Mystery Box).
+  const previewKey = code ? `${code}|${options.mutations.join('.')}` : null;
   const isBuilt = !!built && built.code === code && built.opts === optsKey;
 
   // --- Load a shared link -----------------------------------------------------
@@ -258,18 +260,18 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
 
   // --- Build ------------------------------------------------------------------
   const handlePreview = async () => {
-    if (!code) return;
+    if (!code || !previewKey) return;
     setBusy('preview');
     setMessage(null);
     try {
       const res = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classBuild: code }),
+        body: JSON.stringify({ classBuild: code, mutations: options.mutations }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Preview failed.');
-      setPreview({ code, data });
+      setPreview({ code: previewKey, data });
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Preview failed.');
     } finally {
@@ -560,11 +562,11 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
                   Reroll
                 </button>
                 <button type="button" className={BTN_QUIET} disabled={!buildable || busy !== null} onClick={handlePreview}>
-                  {busy === 'preview' ? 'Loading…' : preview?.code === code ? 'Refresh preview' : 'Preview'}
+                  {busy === 'preview' ? 'Loading…' : preview?.code === previewKey ? 'Refresh preview' : 'Preview'}
                 </button>
               </div>
             </div>
-            {preview && preview.code === code && (
+            {preview && preview.code === previewKey && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                 {preview.data.classes.filter(c => c.code !== spec.classCode).map(cls => (
                   <ClassTreeCard
@@ -572,7 +574,7 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
                     code={cls.code}
                     name={cls.name}
                     tabs={cls.tabs}
-                    masked={false}
+                    masked={preview.data.masked}
                     expanded={openCards.has(cls.code)}
                     onToggleExpanded={() => setOpenCards(prev => {
                       const next = new Set(prev);
@@ -585,7 +587,7 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
             )}
           </div>
 
-          <BuildOptionsPanel value={options} onChange={setOptions} />
+          <BuildOptionsPanel value={options} onChange={setOptions} buildSkills={placed} />
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
@@ -613,7 +615,7 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
           {isBuilt && built && (
             <div className="rounded-lg border border-[#3a1510] bg-[#0c0304] p-4">
               <h3 className="font-cinzel font-bold text-[11px] tracking-[0.18em] uppercase text-[#c8942a] mb-3">Install</h3>
-              <InstallInstructions seed={built.seed} raceMode={false} modName={built.modName || undefined} openActs={options.openActs} />
+              <InstallInstructions seed={built.seed} raceMode={false} modName={built.modName || undefined} openActs={options.openActs} mutations={options.mutations} />
             </div>
           )}
         </section>

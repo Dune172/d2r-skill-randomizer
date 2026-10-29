@@ -5,6 +5,8 @@ import { Tip, Checkbox, ActPillRow, SectionDivider } from './FormControls';
 import type { ModOptions } from '@/lib/builder/mod-options';
 import { openActsLabel } from '@/lib/randomizer/open-acts/options';
 import OpenActsFields from '../OpenActsFields';
+import MutationPicker from '../mutations/MutationPicker';
+import { mutationName, mutationOptionConflict } from '@/lib/mutations/custom';
 
 const SELECT_CLASS =
   'appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1.5 text-sm text-[#e8d5a0] ' +
@@ -34,10 +36,13 @@ export default function BuildOptionsPanel({
   value,
   onChange,
   defaultOpen = false,
+  buildSkills,
 }: {
   value: ModOptions;
   onChange: (next: ModOptions) => void;
   defaultOpen?: boolean;
+  /** Skills placed by hand in the build; No Guard can't strip them. */
+  buildSkills?: Iterable<string>;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -60,6 +65,7 @@ export default function BuildOptionsPanel({
     value.enemyShuffle && 'monster shuffle',
     value.openActs.shuffle && 'quest shuffle',
     value.openActs.acts.length > 0 && `${openActsLabel(value.openActs.acts)} open`,
+    ...value.mutations.map(mutationName),
   ].filter(Boolean).join(' · ');
 
   return (
@@ -230,6 +236,14 @@ export default function BuildOptionsPanel({
 
           <SectionDivider label="Open Acts" />
           <OpenActsFields value={value.openActs} onChange={v => set('openActs', v)} />
+
+          <SectionDivider label="Mutations" />
+          <MutationPicker
+            idPrefix="b-mut"
+            value={value.mutations}
+            onChange={v => set('mutations', v)}
+            blocked={id => mutationOptionConflict(id, { openActsShuffle: value.openActs.shuffle, buildSkills })}
+          />
         </div>
       )}
     </div>

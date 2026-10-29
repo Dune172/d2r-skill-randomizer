@@ -9,6 +9,7 @@
  * off for builds (Race Mode's Prayer filler would erase the hand-built class).
  */
 import { DEFAULT_OPEN_ACTS, normalizeOpenActs, openActsFromParams, openActsToParams, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
+import { encodeMutationParam, normalizeMutationIds, parseMutationParam } from '@/lib/mutations/custom';
 
 export interface ModOptions {
   enablePrereqs: boolean;
@@ -29,6 +30,8 @@ export interface ModOptions {
   xpDifficulties: number[];
   enemyShuffle: boolean;
   openActs: OpenActsSettings;
+  /** Player-picked mutation ids (sorted). */
+  mutations: number[];
 }
 
 export const DEFAULT_MOD_OPTIONS: ModOptions = {
@@ -50,6 +53,7 @@ export const DEFAULT_MOD_OPTIONS: ModOptions = {
   xpDifficulties: [1, 2, 3],
   enemyShuffle: false,
   openActs: DEFAULT_OPEN_ACTS,
+  mutations: [],
 };
 
 const sorted = (list: number[]) => [...list].sort((a, b) => a - b).join(',');
@@ -83,6 +87,7 @@ export function optionParams(opts: ModOptions): string {
     boosted && `xpDifficulties=${sorted(opts.xpDifficulties)}`,
     opts.enemyShuffle && 'enemyShuffle=1',
     openActsToParams(normalizeOpenActs(opts.openActs)).slice(1),
+    opts.mutations.length > 0 && `mut=${encodeMutationParam(opts.mutations)}`,
   ].filter(Boolean).map(p => `&${p}`).join('');
 }
 
@@ -114,6 +119,7 @@ export function parseModOptions(p: URLSearchParams): ModOptions {
     xpDifficulties: list('xpDifficulties', 3, [1, 2, 3]),
     enemyShuffle: p.get('enemyShuffle') === '1',
     openActs: openActsFromParams(name => p.get(name)),
+    mutations: parseMutationParam(p.get('mut')),
   };
 }
 
@@ -133,5 +139,6 @@ export function buildRandomizeBody(code: string, opts: ModOptions): string {
     xpDifficulties: opts.xpDifficulties,
     enemyShuffle: opts.enemyShuffle,
     openActs: normalizeOpenActs(opts.openActs),
+    mutations: normalizeMutationIds(opts.mutations),
   });
 }

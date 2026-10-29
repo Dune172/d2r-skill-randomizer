@@ -11,6 +11,7 @@ import type { PreviewData } from '@/lib/randomizer/types';
 import { generateMod } from '@/lib/generate-mod';
 import AdUnit from './AdUnit';
 import { DEFAULT_OPEN_ACTS, openActsFromParams, openActsToParams, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
+import { encodeMutationParam, parseMutationParam } from '@/lib/mutations/custom';
 
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
 
@@ -29,6 +30,8 @@ interface Options {
   enemyShuffle: boolean;
   forgottenArts: boolean;
   openActs: OpenActsSettings;
+  /** Player-picked mutation ids (sorted). */
+  mutations: number[];
 }
 
 const defaultOptions: Options = {
@@ -46,6 +49,7 @@ const defaultOptions: Options = {
   enemyShuffle: false,
   forgottenArts: false,
   openActs: DEFAULT_OPEN_ACTS,
+  mutations: [],
 };
 
 function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearchParams>): Options | null {
@@ -81,6 +85,7 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
     forgottenArts: false, // challenge-only
     // Absent on links from before Open Acts, which then stays off.
     openActs: openActsFromParams(name => p.get(name), p.get('raceMode') !== '0'),
+    mutations: parseMutationParam(p.get('mut')),
   };
 }
 
@@ -120,7 +125,9 @@ export default function RandomizerApp() {
     const xpDiffParam       = opts.xpMultiplier > 1 ? `&xpDifficulties=${[...opts.xpDifficulties].sort((a, b) => a - b).join(',')}` : '';
     const raceModeParam     = !opts.raceMode ? '&raceMode=0' : '';
     const enemyParam = opts.enemyShuffle ? '&enemyShuffle=1' : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}${openActsToParams(opts.openActs, opts.raceMode)}`;
+    // Part of the download cache key: /api/download parses it back the same way.
+    const mutParam = opts.mutations.length ? `&mut=${encodeMutationParam(opts.mutations)}` : '';
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}${openActsToParams(opts.openActs, opts.raceMode)}${mutParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -133,7 +140,7 @@ export default function RandomizerApp() {
       const previewRes = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: seedInput, forgottenArts: options.forgottenArts }),
+        body: JSON.stringify({ seed: seedInput, forgottenArts: options.forgottenArts, mutations: options.mutations }),
       });
 
       if (!previewRes.ok) {
@@ -151,7 +158,7 @@ export default function RandomizerApp() {
 
       setStatus('building');
       const buildingStart = Date.now();
-      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts, openActs: options.openActs });
+      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts, openActs: options.openActs, mutations: options.mutations });
 
       await generateMod(buildBody, setErrorMessage);
 
@@ -211,7 +218,7 @@ export default function RandomizerApp() {
             )}
 
             <div className="pt-0.5">
-              <InstallInstructions seed={currentSeed!} raceMode={currentOptions.raceMode} forgottenArts={currentOptions.forgottenArts} openActs={currentOptions.openActs} />
+              <InstallInstructions seed={currentSeed!} raceMode={currentOptions.raceMode} forgottenArts={currentOptions.forgottenArts} openActs={currentOptions.openActs} mutations={currentOptions.mutations} />
             </div>
           </div>
         )}

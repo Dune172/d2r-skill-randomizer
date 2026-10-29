@@ -53,6 +53,7 @@ export interface ZipContents {
   openActsSpoilerJson?: string;     // quest-shuffle.json: where every Open Acts item is
   starterSaves?: Map<string, Buffer>; // Open Acts starter characters, file name → .d2s
   starterReadme?: string;           // how to install the starter characters
+  mutationsJson?: string;           // mutations.json: the mutations the player picked
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -98,6 +99,9 @@ export function buildZip(contents: ZipContents): Buffer {
   }
   if (contents.questsJson) {
     zip.addFile(`${d}/data/local/lng/strings/quests.json`, str(contents.questsJson));
+  }
+  if (contents.mutationsJson) {
+    zip.addFile(`${m}/mutations.json`, str(contents.mutationsJson));
   }
   if (contents.openActsSpoilerJson) {
     zip.addFile(`${m}/quest-shuffle.json`, str(contents.openActsSpoilerJson));

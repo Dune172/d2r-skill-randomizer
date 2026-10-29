@@ -8,7 +8,9 @@ import { runPlacement } from '@/lib/randomizer/placement-step';
 import { BuildRequestError, resolveClassBuild } from '@/lib/builder/class-build-server';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { MYSTERY_ICON } from '@/lib/randomizer/mutations/mystery-box';
-import { getMutationExcludedSkills, isMutationActiveForWeek } from '@/lib/randomizer/mutations';
+import { getMutationExcludedSkillsFor, hasMutation } from '@/lib/randomizer/mutations';
+import { getMutationIds } from '@/lib/mutations/registry';
+import { normalizeMutationIds } from '@/lib/mutations/custom';
 import { PreviewData, SkillEntry } from '@/lib/randomizer/types';
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +18,7 @@ export async function POST(request: NextRequest) {
     const seedInput = body.seed;
     // When the Mystery Box mutation is active, the spoiler must not reveal skills.
     // Mask names/source-class server-side so the real values never leave the server.
-    const maskSkills = body.maskSkills === true;
+    const maskFlag = body.maskSkills === true;
     // No Guard removes defense skills from the shuffle pool, which changes every
     // downstream placement. The spoiler must run the same exclusions or it shows
     // a tree the generated mod will not contain.
@@ -31,6 +33,10 @@ export async function POST(request: NextRequest) {
       }
     }
     const weekNumber = !classBuild && Number.isInteger(body.weekNumber) ? Number(body.weekNumber) : 0;
+    // A challenge previews its own set; otherwise the player's picks (builds included,
+    // since No Guard also reshapes the seven randomized classes).
+    const mutationIds = weekNumber > 0 ? getMutationIds(weekNumber) : normalizeMutationIds(body.mutations);
+    const maskSkills = maskFlag || hasMutation(mutationIds, 'mystery-box');
 
     if (!classBuild && !seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -40,7 +46,7 @@ export async function POST(request: NextRequest) {
     const seed = classBuild ? classBuild.seed : (typeof seedInput === 'number' || (typeof seedInput === 'string' && !isNaN(numericSeed) && Number.isInteger(numericSeed)))
       ? Math.trunc(numericSeed)
       : seedFromString(String(seedInput));
-    if (isMutationActiveForWeek(weekNumber, 'forgotten-arts')) {
+    if (hasMutation(mutationIds, 'forgotten-arts')) {
       return NextResponse.json({ seed, masked: false, classes: [], mode: 'forgotten-arts' });
     }
     const rng = createRNG(seed);
@@ -53,7 +59,7 @@ export async function POST(request: NextRequest) {
     const { treeAssignments, placements, substitutes } = runPlacement(rng, {
       treePages,
       skills,
-      excludeSkills: getMutationExcludedSkills(weekNumber),
+      excludeSkills: getMutationExcludedSkillsFor(mutationIds),
       build: classBuild ?? undefined,
     });
     const placementsByClass = groupByClass(placements);

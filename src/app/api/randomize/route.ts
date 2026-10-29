@@ -32,7 +32,9 @@ import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
-import { applyWeeklyMutations, preApplyMagicAffixMutations, isMutationActiveForWeek, getMutationExcludedSkills } from '@/lib/randomizer/mutations';
+import { applyMutations, preApplyMagicAffixMutationsFor, isMutationActiveForWeek, getMutationExcludedSkillsFor, hasMutation } from '@/lib/randomizer/mutations';
+import { getMutationIds, MUTATIONS } from '@/lib/mutations/registry';
+import { normalizeMutationIds, validateMutations, mutationCacheSegment, mutationSavepathSuffix, mutationFeatureKeys } from '@/lib/mutations/custom';
 import { buildGambleTable } from '@/lib/randomizer/mutations/house-always-wins';
 import { MYSTERY_ICON, applyMysteryStrings, hideSkillDetailLines } from '@/lib/randomizer/mutations/mystery-box';
 import chatPanelRaw from '@/lib/randomizer/ui/chatpanel.json';
@@ -130,7 +132,19 @@ export async function POST(request: NextRequest) {
     // Class Builder mods support Open Acts; challenges keep their fixed rules.
     const openActs = weeklyEnabled || forgottenArts
       ? DEFAULT_OPEN_ACTS : normalizeOpenActs(body.openActs, raceMode);
-    const featureKeys = openActsFeatureKeys(openActs, { raceMode, classBuild: !!classBuild });
+    // Player-picked mutations (Generate page). A challenge always uses its own set and
+    // ignores any picks; mirrored in /api/download so the cache keys agree.
+    const customMutations = weeklyEnabled ? [] : normalizeMutationIds(body.mutations);
+    const mutationError = validateMutations(customMutations, {
+      openActsShuffle: openActs.shuffle,
+      buildSkills: classBuild ? Object.values(classBuild.spec.slots) : undefined,
+    });
+    if (mutationError) return NextResponse.json({ error: mutationError }, { status: 400 });
+    const mutationIds: readonly number[] = weeklyEnabled ? getMutationIds(weekNumber) : customMutations;
+    const featureKeys = [
+      ...openActsFeatureKeys(openActs, { raceMode, classBuild: !!classBuild }),
+      ...mutationFeatureKeys(customMutations),
+    ];
     if (!classBuild && !seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
     }
@@ -145,7 +159,7 @@ export async function POST(request: NextRequest) {
     const effectiveXpDifficulties = xpMultiplier > 1 ? xpDifficulties : [1, 2, 3];
     const cacheKey = withBuildSegment(
       makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
-        + openActsCacheSegment(openActs),
+        + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations),
       classBuild?.code,
     );
     const ready = { seed, status: 'ready', ...(classBuild ? { build: classBuild.code, modName: classBuild.modName } : {}) };
@@ -194,7 +208,7 @@ export async function POST(request: NextRequest) {
 
     const rng = createRNG(seed);
 
-    const mysteryActive = weeklyEnabled && isMutationActiveForWeek(weekNumber, 'mystery-box');
+    const mysteryActive = hasMutation(mutationIds, 'mystery-box');
 
     // Load all data
     const treePages = loadTreeGrid();
@@ -209,7 +223,7 @@ export async function POST(request: NextRequest) {
     const placed = runPlacement(rng, {
       treePages,
       skills,
-      excludeSkills: getMutationExcludedSkills(weekNumber),
+      excludeSkills: getMutationExcludedSkillsFor(mutationIds),
       build: classBuild ?? undefined,
     });
     const treeAssignments = placed.treeAssignments;
@@ -451,9 +465,7 @@ export async function POST(request: NextRequest) {
     // dedicated sub-RNG so we don't disturb the main pipeline's RNG order.
     const magicPrefixTxt = loadTxtFile('magicprefix.txt');
     const magicSuffixTxt = loadTxtFile('magicsuffix.txt');
-    if (weeklyEnabled) {
-      preApplyMagicAffixMutations(weekNumber, magicPrefixTxt, magicSuffixTxt);
-    }
+    preApplyMagicAffixMutationsFor(mutationIds, magicPrefixTxt, magicSuffixTxt);
     // Dedicated sub-RNG (derived from, but independent of, the main seed) so
     // injected-proc skill selection doesn't disturb the main pipeline's RNG order.
     const procRng = createRNG(seed ^ 0x50524f43); // 'PROC'
@@ -707,7 +719,7 @@ export async function POST(request: NextRequest) {
     const monstatsSrc = loadTxtFile('monstats.txt');
     const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
     // One shared levels table, so density mutations compose with spawn rewrites.
-    const levelsSrc = enemyShuffle || (weeklyEnabled && isMutationActiveForWeek(weekNumber, 'court-of-kings'))
+    const levelsSrc = enemyShuffle || hasMutation(mutationIds, 'court-of-kings')
       ? loadTxtFile('levels.txt') : null;
     const enemies = enemyShuffle && levelsSrc ? randomizeEnemies(
       seed, monstatsSrc, levelsSrc, loadTxtFile('monstats2.txt'), loadTxtFile('missiles.txt'),
@@ -747,7 +759,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Step 11d: weekly challenge mutations
+    // Step 11d: mutations (the challenge's set, or the player's picks)
     let armorTxt: string | undefined;
     let weaponsTxt: string | undefined;
     let experienceTxt: string | undefined;
@@ -755,7 +767,7 @@ export async function POST(request: NextRequest) {
     let gambleTxt: string | undefined;
     let levelsTxt: string | undefined;
 
-    if (weeklyEnabled) {
+    if (mutationIds.length) {
       const expSrc = loadTxtFile('experience.txt');
       const armorSrc = loadTxtFile('armor.txt');
       const weaponsSrc = loadTxtFile('weapons.txt');
@@ -765,11 +777,11 @@ export async function POST(request: NextRequest) {
       // reuse the same rows writeHirelingRows already populated. Loading is gated
       // on the mutation being active so a weekly run without it keeps shipping no
       // hireling.txt at all, exactly as before.
-      if (!hirelingTxtFile && isMutationActiveForWeek(weekNumber, 'band-of-brothers')) {
+      if (!hirelingTxtFile && hasMutation(mutationIds, 'band-of-brothers')) {
         hirelingTxtFile = loadTxtFile('hireling.txt');
       }
 
-      applyWeeklyMutations(weekNumber, {
+      applyMutations(mutationIds, {
         monsterDestinationActs: enemies?.destinationActs,
         monstats:      monstatsSrc,
         charstats:     charstats,
@@ -803,7 +815,7 @@ export async function POST(request: NextRequest) {
 
       // House Always Wins: gambling is the only source of weapons/armor, so ship a
       // comprehensive gamble pool (vanilla omits daggers, throwing weapons, class items…).
-      if (isMutationActiveForWeek(weekNumber, 'house-always-wins')) {
+      if (hasMutation(mutationIds, 'house-always-wins')) {
         const g = buildGambleTable(weaponsSrc, armorSrc, miscSrc);
         gambleTxt = serializeTxtFile(g.headers, g.rows);
       }
@@ -823,7 +835,7 @@ export async function POST(request: NextRequest) {
     if (enemies) finalizeEnemyManifest(enemies.manifest, monstatsSrc);
     superuniquesTxt = serializeTxtFile(suSrc.headers, suSrc.rows);
     // Serialize tcTxt if any feature modified tcSrc (teleport staff, weekly mutations, Open Acts)
-    if (startingTeleportStaff || weeklyEnabled || openActsShuffle) {
+    if (startingTeleportStaff || mutationIds.length || openActsShuffle) {
       tcTxt = serializeTxtFile(tcSrc.headers, tcSrc.rows);
     }
 
@@ -964,10 +976,12 @@ export async function POST(request: NextRequest) {
     // characters don't mix with casual ones. Race: seed + race class (e.g. seed123pal).
     // Weekly: the mod name — unique per challenge since the weekly seed is week-derived.
     // Open Acts starters are built for one seed, so they get a folder of their own too.
+    // Picked mutations add a suffix (e.g. D2RRandomizer_m1-5-7) so mutated characters
+    // stay apart from unmutated ones.
     const savepath = weeklyEnabled ? modName : forgottenArts ? `${modName}_forgotten_arts_v7`
-      : openActs.acts.length ? openActsSavepath(modName, raceMode ? pickRaceClassCode(seed) : null)
-      : raceMode ? `${modName}${pickRaceClassCode(seed)}`
-      : 'D2RRandomizer';
+      : (openActs.acts.length ? openActsSavepath(modName, raceMode ? pickRaceClassCode(seed) : null)
+        : raceMode ? `${modName}${pickRaceClassCode(seed)}`
+        : 'D2RRandomizer') + mutationSavepathSuffix(customMutations);
     const openActsFiles = buildOpenActsFiles({
       dataDir: DATA_DIR, seed, modName, savepath, settings: openActs, shuffle: openActsShuffle,
       startWithCube: startingHoradricCube, raceClassCode: raceMode ? pickRaceClassCode(seed) : null,
@@ -1030,6 +1044,9 @@ export async function POST(request: NextRequest) {
       openActsSpoilerJson: openActsFiles.spoilerJson,
       starterSaves: openActsFiles.starterSaves,
       starterReadme: openActsFiles.starterReadme,
+      mutationsJson: customMutations.length
+        ? JSON.stringify({ mutations: customMutations.map(id => ({ id, name: MUTATIONS[id].name })) }, null, 2)
+        : undefined,
     });
 
     // Cache the result (byte-bounded LRU handles eviction internally)
