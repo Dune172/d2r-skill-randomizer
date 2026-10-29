@@ -28,6 +28,11 @@ const MAX_BYTES_MEM = 500 * 1024 * 1024;
 const MAX_ENTRIES_DISK = 2000;
 const MAX_BYTES_DISK = 3 * 1024 * 1024 * 1024;
 
+// Archipelago slot mods get a budget of their own, outside the one above, so a room
+// full of ~47 MB one-off zips evicts other AP zips and never a public seed.
+const MAX_BYTES_DISK_AP = 500 * 1024 * 1024;
+const AP_SEGMENT = ':ap:';
+
 function cacheDir(): string {
   // Lives in STATE_DIR (see state-dir.ts). Unlike the counters, losing this only
   // costs a cache warm-up — but a cwd-relative path also means a per-build deploy
@@ -168,23 +173,50 @@ function ensureBooted(): void {
   );
 }
 
+/** True for keys built by withApSegment. Public keys never contain the segment. */
+function isApKey(cacheKey: string): boolean {
+  return cacheKey.includes(AP_SEGMENT);
+}
+
 function diskBytes(): number {
   let total = 0;
   for (const e of getDiskIndex().values()) total += e.bytes;
   return total;
 }
 
+/** Entry count and bytes of one tier: the public seeds, or the AP slot mods. */
+function diskUsage(ap: boolean): { entries: number; bytes: number } {
+  let entries = 0;
+  let bytes = 0;
+  for (const e of getDiskIndex().values()) {
+    if (isApKey(e.cacheKey) !== ap) continue;
+    entries++;
+    bytes += e.bytes;
+  }
+  return { entries, bytes };
+}
+
 function evictDiskIfNeeded(): void {
+  const overPublic = () => {
+    const u = diskUsage(false);
+    return u.entries > MAX_ENTRIES_DISK || u.bytes > MAX_BYTES_DISK;
+  };
+  const overAp = () => diskUsage(true).bytes > MAX_BYTES_DISK_AP;
+  while (overPublic()) if (!evictOldest(false)) break;
+  while (overAp()) if (!evictOldest(true)) break;
+}
+
+/** Drop the least recently used entry of one tier. False when that tier is empty. */
+function evictOldest(ap: boolean): boolean {
   const index = getDiskIndex();
-  while (index.size > MAX_ENTRIES_DISK || diskBytes() > MAX_BYTES_DISK) {
-    const firstKey = index.keys().next().value;
-    if (firstKey === undefined) break;
-    const victim = index.get(firstKey);
-    if (!victim) { index.delete(firstKey); continue; }
+  for (const [key, victim] of index) {
+    if (isApKey(key) !== ap) continue;
     try { fs.unlinkSync(zipPath(victim.hash)); } catch { /* ignore */ }
     try { fs.unlinkSync(sidecarPath(victim.hash)); } catch { /* ignore */ }
-    index.delete(firstKey);
+    index.delete(key);
+    return true;
   }
+  return false;
 }
 
 function evictMemIfNeeded(): void {
@@ -303,7 +335,8 @@ export function getCached(key: string): Buffer | undefined {
 /**
  * Disk-only variants, for zips that are downloaded once or twice and never again
  * (an Archipelago slot's mod). They skip the memory tier in both directions, so a room
- * full of one-off 50 MB zips cannot push hot public seeds out of memory.
+ * full of one-off 50 MB zips cannot push hot public seeds out of memory. On disk, keys
+ * from withApSegment count against MAX_BYTES_DISK_AP, not the public budget.
  */
 export function setCachedOnDisk(key: string, buf: Buffer): void {
   ensureBooted();
@@ -312,13 +345,20 @@ export function setCachedOnDisk(key: string, buf: Buffer): void {
 
 export function getCachedFromDisk(key: string): Buffer | undefined {
   ensureBooted();
-  const entry = getDiskIndex().get(key);
+  const index = getDiskIndex();
+  const entry = index.get(key);
   if (!entry) return undefined;
   try {
     const loaded = fs.readFileSync(zipPath(entry.hash));
     touchDisk(key);
     return loaded;
-  } catch {
+  } catch (err) {
+    // Same as getCached: a missing or unreadable file must not keep counting against
+    // the budget, or keep looking like a hit.
+    console.warn(`[zip-cache] disk read failed for ${key}; dropping index entry:`, err);
+    index.delete(key);
+    try { fs.unlinkSync(sidecarPath(entry.hash)); } catch { /* ignore */ }
+    try { fs.unlinkSync(zipPath(entry.hash)); } catch { /* ignore */ }
     return undefined;
   }
 }
@@ -390,5 +430,5 @@ export function withBuildSegment(key: string, buildCode?: string): string {
  * and for the same reason as withBuildSegment.
  */
 export function withApSegment(key: string, apKey: string): string {
-  return `${key}:ap:${apKey}`;
+  return `${key}${AP_SEGMENT}${apKey}`;
 }
