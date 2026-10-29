@@ -87,7 +87,44 @@ const SPECS = [
                                  staff: 10, dropSource: 'Blood Raven', cube: true,
                                  hirelingAura: false, disableChat: true,
                                  xpMultiplier: 3, xpActs: [3, 4], xpDifficulties: [1, 3] },
+  { name: 'open-acts-shuffle',   seed: 2468,  openActs: { shuffle: true } },
+  { name: 'open-acts-2-3',       seed: 2468,  openActs: { acts: [2, 3] } },
+  { name: 'open-acts-everything', seed: 1357, cube: true,
+                                 openActs: { shuffle: true, bosses: false, hints: false, spoiler: false,
+                                             acts: [2, 3, 4, 5], hardcore: true, name: 'Tester' } },
+  { name: 'open-acts-race',      seed: 44,    raceMode: true, openActs: { shuffle: true, acts: [2] } },
+  { name: 'mutations-1-5-7',     seed: 3030,  mutations: [1, 5, 7] },
+  { name: 'mutations-9',         seed: 3031,  mutations: [9] },
+  { name: 'mutations-open-acts', seed: 3032,  mutations: [1], openActs: { acts: [2] } },
+  { name: 'class-build-open-acts', build: { cls: 'sor', seed: 1001, pages: [2, 7, 9], fill: 77 },
+                                 openActs: { acts: [2, 3] } },
 ];
+
+/**
+ * The Open Acts and picked-mutation part of a tuple: the POST body fields, and the
+ * /api/download query params that openActsFromParams and parseMutationParam read back.
+ */
+function extraOptions(spec) {
+  const body = {};
+  const q = new URLSearchParams();
+  const oa = spec.openActs;
+  if (oa) {
+    body.openActs = oa;
+    if (oa.shuffle) q.set('shuffleQuests', '1');
+    if (oa.bosses === false) q.set('questBosses', '0');
+    if (oa.hints === false) q.set('questHints', '0');
+    if (typeof oa.spoiler === 'boolean') q.set('questSpoiler', oa.spoiler ? '1' : '0');
+    if (oa.acts?.length) q.set('openActs', oa.acts.join(','));
+    if (oa.hardcore) q.set('starterHc', '1');
+    if (oa.name) q.set('starterName', oa.name);
+  }
+  if (spec.mutations) {
+    body.mutations = spec.mutations;
+    q.set('mut', spec.mutations.join('.'));
+  }
+  const query = q.toString();
+  return { body, query: query ? `&${query}` : '' };
+}
 
 /**
  * A Class Builder share code, built the same way scripts/verify-class-build-download.mjs
@@ -130,9 +167,10 @@ function classBuildCode({ cls, seed, pages, fill }) {
 function buildTuple(spec) {
   // A build's share code carries its own seed and forces race mode and weekly off, so
   // nothing else in the spec applies.
+  const extra = extraOptions(spec);
   if (spec.build) {
     const code = classBuildCode(spec.build);
-    return { name: spec.name, body: { classBuild: code }, query: `build=${code}` };
+    return { name: spec.name, body: { classBuild: code, ...extra.body }, query: `build=${code}${extra.query}` };
   }
   const {
     seed, enablePrereqs = true, players = 1, acts = [1, 2, 3, 4, 5],
@@ -173,6 +211,7 @@ function buildTuple(spec) {
     raceMode: effRace,
     enemyShuffle,
     ...(weekly ? { weeklyChallenge: { enabled: true, weekOverride: weekly } } : {}),
+    ...extra.body,
   };
 
   const q = new URLSearchParams();
@@ -193,7 +232,7 @@ function buildTuple(spec) {
   if (enemyShuffle) q.set('enemyShuffle', '1');
   if (weekly) { q.set('weekly', '1'); q.set('weekOverride', String(weekly)); }
 
-  return { name: spec.name, body, query: q.toString() };
+  return { name: spec.name, body, query: q.toString() + extra.query };
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
