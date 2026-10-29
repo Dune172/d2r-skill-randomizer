@@ -31,7 +31,7 @@ func (c *Client) SetUnspentSkillPoints(player uintptr, n int) (bool, error) {
 	if n < 0 || n > MaxSkillPoints {
 		return false, fmt.Errorf("unspent point target out of range: %d", n)
 	}
-	return c.SetBaseStat(player, stat.SkillPoints, uint32(n))
+	return c.SetPlayerStat(player, stat.SkillPoints, uint32(n))
 }
 
 // SpentSkillPoints sums the hard points the character has put into the given skills.

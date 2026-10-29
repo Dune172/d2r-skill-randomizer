@@ -24,7 +24,7 @@ const (
 // is *game.Client; tests substitute a character made of a map.
 type gameView interface {
 	BaseStat(unit uintptr, id stat.ID) (uint32, bool, error)
-	SetBaseStat(unit uintptr, id stat.ID, value uint32) (bool, error)
+	SetPlayerStat(player uintptr, id stat.ID, value uint32) (bool, error)
 	SpentStatPoints(player uintptr, classBase int) (int, error)
 	Apply(player uintptr, effect game.TrapEffect) (bool, error)
 	IsDead(player uintptr) (bool, error)
@@ -93,7 +93,7 @@ func (a *app) applyStatPoints(player uintptr, classBase int) {
 	if want < 0 {
 		want = 0
 	}
-	existed, err := a.view().SetBaseStat(player, stat.StatPoints, uint32(want))
+	existed, err := a.view().SetPlayerStat(player, stat.StatPoints, uint32(want))
 	switch {
 	case err != nil:
 		a.note("stat", "setting stat points: "+err.Error())
@@ -110,7 +110,7 @@ func (a *app) applyKeys(player uintptr, keyStat stat.ID) {
 	if keys == 0 && !a.keyItems {
 		return
 	}
-	existed, err := a.view().SetBaseStat(player, keyStat, uint32(keys+1))
+	existed, err := a.view().SetPlayerStat(player, keyStat, uint32(keys+1))
 	switch {
 	case err != nil:
 		a.note("keys", "setting Horadric Keys: "+err.Error())
@@ -196,7 +196,7 @@ func (a *app) applyMail(player uintptr) {
 
 	step := box.Step(value, current, sigil, a.session.Pending)
 	if step.Write != 0 {
-		if _, err := a.view().SetBaseStat(player, mailStat, step.Write); err != nil {
+		if _, err := a.view().SetPlayerStat(player, mailStat, step.Write); err != nil {
 			a.note("mail", "updating the mailbox: "+err.Error())
 			return
 		}
@@ -239,7 +239,7 @@ func (a *app) applyGold(player uintptr, level int) {
 		return
 	}
 	next := game.GoldAfter(current, level)
-	if _, err := a.view().SetBaseStat(player, stat.Gold, next); err != nil {
+	if _, err := a.view().SetPlayerStat(player, stat.Gold, next); err != nil {
 		return
 	}
 	if err := a.session.MarkApplied(ids.GoldItemID, 1); err == nil {

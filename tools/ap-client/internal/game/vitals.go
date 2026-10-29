@@ -95,7 +95,7 @@ func (c *Client) Apply(player uintptr, effect TrapEffect) (exists bool, err erro
 	if err != nil || !ok {
 		return false, err
 	}
-	return c.SetBaseStat(player, effect.Stat, effect.New(cur))
+	return c.SetPlayerStat(player, effect.Stat, effect.New(cur))
 }
 
 // GoldCapPerLevel is the most gold a character can carry, per character level.

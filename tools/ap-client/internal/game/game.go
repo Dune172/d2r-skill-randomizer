@@ -37,6 +37,9 @@ type SkillNode struct {
 type Client struct {
 	proc *memory.Process
 	gr   *memory.GameReader
+
+	// The game's own copy of the player (see SimulationCopy), cached for simFor.
+	simFor, sim uintptr
 }
 
 // Attach finds and opens the running D2R process.

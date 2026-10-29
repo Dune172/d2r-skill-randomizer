@@ -98,7 +98,29 @@ func (c *Client) BaseStat(unit uintptr, id stat.ID) (uint32, bool, error) {
 	return v, ok, err
 }
 
-// SetBaseStat overwrites the value of a base stat entry the game already created.
+// SetPlayerStat writes a player stat the way the game will honour it: to the game's own
+// copy of the character (SimulationCopy) and then to the display copy, so the rules and
+// the screen agree. Written to the display copy alone, a value is shown and spendable on
+// screen but the game does not act on it (measured on D2R 3.3).
+//
+// exists reports whether the game's copy has the entry; that is the one that counts.
+func (c *Client) SetPlayerStat(player uintptr, id stat.ID, value uint32) (exists bool, err error) {
+	sim, err := c.SimulationCopy(player)
+	if err != nil {
+		return false, fmt.Errorf("finding the game's copy of the character: %w", err)
+	}
+	exists, err = c.SetBaseStat(sim, id, value)
+	if err != nil || !exists {
+		return exists, err
+	}
+	if _, err := c.SetBaseStat(player, id, value); err != nil {
+		return true, fmt.Errorf("display copy: %w", err)
+	}
+	return true, nil
+}
+
+// SetBaseStat overwrites the value of a base stat entry the game already created, on
+// one unit. Grants go through SetPlayerStat instead.
 //
 // Reports exists=false, with no error, when the stat has no entry: that is "not yet",
 // not a failure. The client never adds entries; it only changes the value of one.

@@ -38,7 +38,7 @@ func (f *fakeCharacter) BaseStat(_ uintptr, id stat.ID) (uint32, bool, error) {
 	return v, ok, nil
 }
 
-func (f *fakeCharacter) SetBaseStat(_ uintptr, id stat.ID, value uint32) (bool, error) {
+func (f *fakeCharacter) SetPlayerStat(_ uintptr, id stat.ID, value uint32) (bool, error) {
 	if _, ok := f.stats[id]; !ok {
 		return false, nil
 	}
@@ -69,7 +69,7 @@ func (f *fakeCharacter) Apply(p uintptr, effect game.TrapEffect) (bool, error) {
 	if !ok {
 		return false, nil
 	}
-	return f.SetBaseStat(p, effect.Stat, effect.New(cur))
+	return f.SetPlayerStat(p, effect.Stat, effect.New(cur))
 }
 
 func (f *fakeCharacter) IsDead(uintptr) (bool, error) { return f.dead, nil }

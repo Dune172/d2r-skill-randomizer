@@ -47,8 +47,9 @@ func (w *statWrites) Set(s string) error {
 //
 //	d2rr-ap probe                      list the player's base stats and skills
 //	d2rr-ap probe -copies              also find other copies of the player in memory
-//	d2rr-ap probe -set 5=3             write 3 unspent skill points (stat id 5)
-//	d2rr-ap probe -unit 0x1F2A -set 5=3   write to a copy found by -copies instead
+//	d2rr-ap probe -set 5=3             write 3 unspent skill points (stat id 5) to both
+//	                                   copies of the character, as the client does
+//	d2rr-ap probe -unit 0x1F2A -set 5=3   write to that one unit only
 func probe(args []string) int {
 	f := flag.NewFlagSet("probe", flag.ContinueOnError)
 	unitFlag := f.String("unit", "", "unit address to inspect or write (default: the player)")
@@ -93,10 +94,26 @@ func probe(args []string) int {
 		report["classID"] = cls
 	}
 
+	// The game's own copy of the character, which its rules read. Without -unit, -set
+	// writes it and the display copy together, as the client does.
+	if *unitFlag == "" && len(writes) > 0 {
+		if sim, err := gc.SimulationCopy(player); err == nil {
+			report["gameCopy"] = fmt.Sprintf("0x%x", sim)
+		} else {
+			report["gameCopyError"] = err.Error()
+		}
+	}
+
 	failed := false
 	writeResults := []string{}
 	for _, w := range writes {
-		existed, err := gc.SetBaseStat(target, w.id, w.value)
+		var existed bool
+		var err error
+		if *unitFlag == "" {
+			existed, err = gc.SetPlayerStat(player, w.id, w.value)
+		} else {
+			existed, err = gc.SetBaseStat(target, w.id, w.value)
+		}
 		switch {
 		case err != nil:
 			failed = true
