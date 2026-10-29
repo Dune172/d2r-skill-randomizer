@@ -1,3 +1,5 @@
+//go:build windows
+
 package main
 
 import (
@@ -8,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
 	"github.com/hectorgimenez/d2go/pkg/data/stat"
-	"github.com/swannysoft/d2rr-ap-client/internal/game"
 )
 
 // statWrites collects repeated -set id=value flags.

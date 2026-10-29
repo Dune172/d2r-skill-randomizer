@@ -39,7 +39,7 @@ func validJSON(t *testing.T) []byte {
 
 func TestFetchPostsTheRoomAndReturnsTheZipAndManifest(t *testing.T) {
 	zipBytes := modZip(t, map[string][]byte{
-		"seed1234/d2rr-ap-manifest.json":    validJSON(t),
+		"seed1234/d2rr-ap-manifest.json":     validJSON(t),
 		"seed1234/seed1234.mpq/modinfo.json": []byte(`{}`),
 	})
 	var got wireRequest

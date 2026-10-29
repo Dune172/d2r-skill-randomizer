@@ -1,3 +1,5 @@
+//go:build windows
+
 package main
 
 import (
@@ -7,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
-	"github.com/swannysoft/d2rr-ap-client/internal/setup"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/setup"
 	"golang.org/x/sys/windows"
 )
 

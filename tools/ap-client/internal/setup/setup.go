@@ -1,3 +1,5 @@
+//go:build windows
+
 // Package setup verifies the selected process and installs a matching offline mod.
 package setup
 
@@ -19,7 +21,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
 	"golang.org/x/sys/windows"
 )
 

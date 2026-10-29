@@ -15,7 +15,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/apc"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/apc"
 )
 
 func TestSaveDirDefaultsToTheModsFolder(t *testing.T) {

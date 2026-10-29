@@ -1,3 +1,5 @@
+//go:build windows
+
 package main
 
 import (
@@ -5,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/game"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
 )
 
 type statusReport struct {

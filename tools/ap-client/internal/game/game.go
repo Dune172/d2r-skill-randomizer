@@ -1,3 +1,5 @@
+//go:build windows
+
 // Package game reads D2R state and reconciles the character's Archipelago grants.
 //
 // The client never builds game structures of its own. It reads the player unit, and its

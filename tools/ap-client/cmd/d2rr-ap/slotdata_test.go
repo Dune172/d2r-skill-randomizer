@@ -5,7 +5,7 @@ package main
 import (
 	"testing"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/ids"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
 )
 
 func slotApp() *app {

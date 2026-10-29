@@ -1,3 +1,5 @@
+//go:build windows
+
 package setup
 
 import (
@@ -11,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
 	"golang.org/x/sys/windows"
 )
 

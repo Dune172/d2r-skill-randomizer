@@ -1,12 +1,14 @@
+//go:build windows
+
 package main
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/game"
-	"github.com/swannysoft/d2rr-ap-client/internal/ids"
-	"github.com/swannysoft/d2rr-ap-client/internal/save"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/save"
 )
 
 // pollSave reads the character file and reports any newly checked locations.

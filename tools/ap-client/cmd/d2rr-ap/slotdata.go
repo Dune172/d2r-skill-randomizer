@@ -1,6 +1,8 @@
+//go:build windows
+
 package main
 
-import "github.com/swannysoft/d2rr-ap-client/internal/ids"
+import "github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
 
 // applySlotData adopts the room's settings from the Connected packet's slot_data, and
 // reports whether the room wants DeathLink.

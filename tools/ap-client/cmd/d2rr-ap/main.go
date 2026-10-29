@@ -1,3 +1,5 @@
+//go:build windows
+
 // Command d2rr-ap connects an offline D2RR character to Archipelago.
 //
 // Checks come from the character's save file and from the running game. Everything the
@@ -15,9 +17,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/apc"
-	"github.com/swannysoft/d2rr-ap-client/internal/ids"
-	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/apc"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
 )
 
 func main() {

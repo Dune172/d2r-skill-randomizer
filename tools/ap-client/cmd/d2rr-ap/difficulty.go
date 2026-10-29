@@ -1,9 +1,11 @@
+//go:build windows
+
 package main
 
 import (
 	"time"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/save"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/save"
 )
 
 // warnAssumedDifficulty fires once when area checks start running on an assumption.

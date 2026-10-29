@@ -1,3 +1,5 @@
+//go:build windows
+
 package main
 
 import (
@@ -7,10 +9,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/apc"
-	"github.com/swannysoft/d2rr-ap-client/internal/ids"
-	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
-	"github.com/swannysoft/d2rr-ap-client/internal/save"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/apc"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/save"
 )
 
 func TestLocalManifestWaitsForCompatibleRoom(t *testing.T) {

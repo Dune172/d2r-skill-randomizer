@@ -1,3 +1,5 @@
+//go:build windows
+
 package main
 
 import (
@@ -6,11 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/apc"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
 	"github.com/hectorgimenez/d2go/pkg/data/stat"
-	"github.com/swannysoft/d2rr-ap-client/internal/apc"
-	"github.com/swannysoft/d2rr-ap-client/internal/game"
-	"github.com/swannysoft/d2rr-ap-client/internal/ids"
-	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
 )
 
 const (

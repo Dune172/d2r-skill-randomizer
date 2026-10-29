@@ -1,3 +1,5 @@
+//go:build windows
+
 package main
 
 import (
@@ -5,11 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/apc"
-	"github.com/swannysoft/d2rr-ap-client/internal/game"
-	"github.com/swannysoft/d2rr-ap-client/internal/grants"
-	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
-	"github.com/swannysoft/d2rr-ap-client/internal/save"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/apc"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/grants"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/save"
 )
 
 // Poll live checks and reconcile what the character holds.
