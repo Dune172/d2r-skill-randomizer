@@ -145,14 +145,18 @@ func (a *app) offsetsResolved() bool {
 	ui, waypoints := a.gc.OffsetsResolved()
 	if ui && waypoints {
 		a.offsetsMissingSince = time.Time{}
+		a.note("offsets", "")
 		return true
 	}
 	build := a.gc.BuildTimestamp()
 	if !ui {
+		// Through warnAttach: grants stop here, so this is why the game side is idle.
 		a.warnAttach(fmt.Sprintf("D2R build 0x%08x: the UI block was not found, so nothing "+
 			"is granted (checks still send). %s", build, buildHint(build)))
 	} else {
-		a.warnAttach(fmt.Sprintf("D2R build 0x%08x: the waypoint panel was not found, so "+
+		// Grants go on, and their success clears warnAttach's throttle every poll, so a
+		// note (logged once per change) is the one that stays quiet.
+		a.note("offsets", fmt.Sprintf("D2R build 0x%08x: the waypoint panel was not found, so "+
 			"waypoint checks wait for the save. %s", build, buildHint(build)))
 	}
 	if a.offsetsMissingSince.IsZero() {
