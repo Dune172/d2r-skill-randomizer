@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.337',
+    date: 'October 2026',
+    tagline: 'Add mutations to your own mods',
+    notes: [
+      'New Mutations section on the Generate page, for random seeds and the Class Builder. Pick as many as you like',
+      'Every challenge mutation is available except Forgotten Arts. Mutations that clash are greyed out',
+      'Your picks are saved in the share link, and a mutated mod uses its own save folder, so start a new character to play it',
+    ],
+  },
+  {
     version: 'v0.336',
     date: 'October 2026',
     tagline: 'Open Acts: shuffle the quest items across Acts I–III and start with any of Acts II–V already open',
