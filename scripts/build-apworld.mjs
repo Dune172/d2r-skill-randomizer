@@ -19,9 +19,11 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import AdmZip from 'adm-zip';
 
-const repoRoot = path.resolve(import.meta.dirname, '..');
+// Not import.meta.dirname: that needs Node 20.11 or later.
+const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const srcDir = path.join(repoRoot, 'apworld', 'd2rr');
 const outFile = path.join(repoRoot, 'dist', 'd2rr.apworld');
 const AP_DIR = process.env.ARCHIPELAGO_DIR || 'C:\\ProgramData\\Archipelago';
