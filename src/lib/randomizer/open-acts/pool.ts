@@ -123,9 +123,10 @@ export interface OpenActsOptions {
    * Acts open from the start (the starter save sets their act-access flags). Act I is
    * always open. A closed Act II is still reached by killing Andariel, who needs nothing,
    * but a closed Act III is only reached through Duriel, so it inherits the Duriel gate.
+   * Acts IV and V hold no pool items, so only Act III matters here.
    * Defaults to [2, 3], the original all-open design.
    */
-  openActs?: Act[];
+  openActs?: readonly number[];
 }
 
 /** Whether `owned` lets the player reach `loc`: its own gate, plus Act III's access when that act starts closed. */

@@ -41,7 +41,8 @@ import { applyForgottenArts, configureForgottenArtsShop, addSpellSynergyTooltips
 import { buildGlobalSkillIcons } from '@/lib/sprites/global-skill-icons';
 import { buildForgottenArtsItemAssets } from '@/lib/sprites/forgotten-arts-items';
 import { seasonFilesForNow } from '@/lib/seasons/overlay';
-import { DEFAULT_OPEN_ACTS, normalizeOpenActs, openActsCacheSegment, openActsSavepath } from '@/lib/randomizer/open-acts/options';
+import { DEFAULT_OPEN_ACTS, normalizeOpenActs, openActsCacheSegment, openActsFeatureKeys, openActsSavepath } from '@/lib/randomizer/open-acts/options';
+import { recordFeatures } from '@/lib/feature-stats';
 import { buildOpenActsFiles, runOpenActsShuffle } from '@/lib/randomizer/open-acts/generate';
 import type { OpenActsShuffle } from '@/lib/randomizer/open-acts/fill';
 
@@ -126,8 +127,10 @@ export async function POST(request: NextRequest) {
     const enemyShuffle = weeklyEnabled ? challengeRandomizesMonsters(weekNumber) : body.enemyShuffle === true;
     // Open Acts is a main-generator option: challenges and Class Builder mods never get it.
     // Mirrored in /api/download so the cache keys agree.
-    const openActs = classBuild || weeklyEnabled || forgottenArts
+    // Class Builder mods support Open Acts; challenges keep their fixed rules.
+    const openActs = weeklyEnabled || forgottenArts
       ? DEFAULT_OPEN_ACTS : normalizeOpenActs(body.openActs, raceMode);
+    const featureKeys = openActsFeatureKeys(openActs, { raceMode, classBuild: !!classBuild });
     if (!classBuild && !seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
     }
@@ -150,12 +153,14 @@ export async function POST(request: NextRequest) {
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
     if (hasCached(cacheKey)) {
+      recordFeatures(featureKeys);
       return NextResponse.json(ready);
     }
 
     const pending = pendingBuilds.get(cacheKey);
     if (pending) {
       await pending;
+      recordFeatures(featureKeys);
       return NextResponse.json(ready);
     }
 
@@ -1039,6 +1044,7 @@ export async function POST(request: NextRequest) {
       pendingBuilds.delete(cacheKey);
     }
 
+    recordFeatures(featureKeys);
     return NextResponse.json(ready);
   } catch (error) {
     // Log the full error server-side for debugging; return a generic message

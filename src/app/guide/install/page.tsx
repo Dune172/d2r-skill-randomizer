@@ -33,7 +33,7 @@ export default function InstallGuidePage() {
       <ContentPage
         eyebrow="Guide"
         title="How to Install a D2R Randomizer Mod"
-        updated="2026-10-26"
+        updated="2026-10-29"
         intro={
           <p>
             A D2R Randomizer mod is a small folder of game data files that Diablo II: Resurrected loads
@@ -167,8 +167,14 @@ export default function InstallGuidePage() {
         <p>
           If you picked <strong>Start with acts open</strong>, the mod folder in your ZIP has a{' '}
           <code>starter-saves</code> folder with level-1 characters (just your race class in Race Mode).
-          Their Act II, or Act II and III, waypoint and quest tabs are already open in every difficulty.
-          Characters you create yourself start with only Act I open.
+          The acts you picked, from Act II up to Act V, are already open on their waypoint and quest tabs in
+          every difficulty. Opening Act V needs Diablo&apos;s quest marked as done, so Terror&apos;s End shows as
+          completed in the quest log (Diablo can still be fought). Characters you create yourself start with only
+          Act I open. If you ticked{' '}
+          <strong>Hardcore starters</strong>, the characters are hardcore; keep a copy of the files, because a
+          hardcore character that dies can&apos;t be played again. With a <strong>starter name</strong>, each
+          file carries your name plus a class tag, such as <code>Swanny-Sorc.d2s</code> (in Race Mode, just your
+          name).
         </p>
         <p>
           Copy the <code>.d2s</code> files into the mod&apos;s own save folder:{' '}

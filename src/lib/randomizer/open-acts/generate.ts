@@ -4,7 +4,7 @@ import { CLASS_DEFS } from '../config';
 import { applyOpenActsShuffle, hostModes, type OpenActsTables, type Table } from './apply';
 import { shuffleOpenActs, type OpenActsShuffle } from './fill';
 import { applyHints, hintStrings, neutralStrings, type QuestString } from './hints';
-import type { OpenActsSettings } from './options';
+import { openActsLabel, starterName, type OpenActsSettings } from './options';
 import { patchStarterSave, startSkillSlot } from './starter-save';
 
 /**
@@ -48,8 +48,6 @@ export interface OpenActsFiles {
   starterReadme?: string;
 }
 
-const ACT_ROMAN = { 2: 'II', 3: 'III' } as const;
-
 export function buildOpenActsFiles(input: OpenActsFilesInput): OpenActsFiles {
   const { settings, shuffle } = input;
   const files: OpenActsFiles = {};
@@ -86,17 +84,21 @@ export function buildOpenActsFiles(input: OpenActsFilesInput): OpenActsFiles {
       const row = input.charstats.rows.find(r => r[classCol] === def.name);
       if (!row) throw new Error(`open-acts: charstats.txt has no ${def.name}`);
       const slot = startSkillSlot(input.skills.headers, input.skills.rows, def.charclass, row[startCol]);
-      saves.set(`${def.name}.d2s`, patchStarterSave(fs.readFileSync(template), {
-        name: def.name, startSkillSlot: slot, openActs: settings.acts,
+      // The file name must match the name inside the save.
+      const name = starterName(settings.name, def.name, classes.length === 1);
+      saves.set(`${name}.d2s`, patchStarterSave(fs.readFileSync(template), {
+        name, startSkillSlot: slot, openActs: settings.acts, hardcore: settings.hardcore,
       }));
     }
     files.starterSaves = saves;
-    const opened = settings.acts.map(a => `Act ${ACT_ROMAN[a]}`).join(' and ');
+    const opened = openActsLabel(settings.acts);
     files.starterReadme = [
       'D2R Randomizer - Open Acts starter characters',
       '',
-      `These level-1 characters start with ${opened} already open (waypoint and quest tabs),`,
-      'in Normal, Nightmare and Hell. They are built for this seed: load them only with this mod.',
+      `These level-1 ${settings.hardcore ? 'HARDCORE ' : ''}characters start with ${opened} already open`,
+      '(waypoint and quest tabs), in Normal, Nightmare and Hell.',
+      'They are built for this seed: load them only with this mod.',
+      ...(settings.hardcore ? ['Hardcore: a character that dies stays dead. Keep a backup copy of these files.'] : []),
       '',
       'To install, copy the .d2s files from this folder to:',
       `  %USERPROFILE%\\Saved Games\\Diablo II Resurrected\\mods\\${input.savepath}\\`,
@@ -106,7 +108,7 @@ export function buildOpenActsFiles(input: OpenActsFilesInput): OpenActsFiles {
       '',
       'PLAY ONE OF THESE CHARACTERS. A character you create yourself in this mod starts with',
       'only Act I open.',
-      ...(shuffle ? [
+      ...(shuffle && settings.acts.includes(3) ? [
         'The quest items are shuffled on the assumption that these acts are open, so such a',
         'character will usually get stuck before Duriel: the items it needs can be in Act III.',
       ] : []),

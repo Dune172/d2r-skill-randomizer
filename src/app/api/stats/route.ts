@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStats } from '@/lib/traffic-stats';
 import { getCount } from '@/lib/counter';
+import { getFeatureStats } from '@/lib/feature-stats';
 
 export const dynamic = 'force-dynamic';
 
 // Public read-only traffic attribution summary (daily aggregates only — see
-// src/lib/traffic-stats.ts; nothing sensitive). CORS is open so the marketing
+// src/lib/traffic-stats.ts; nothing sensitive), plus per-feature generation counts
+// (src/lib/feature-stats.ts, e.g. features.totals['open-acts']). CORS is open so the marketing
 // dashboard can read it cross-origin.
 
 const CORS_HEADERS = {
@@ -19,7 +21,7 @@ export async function GET(request: NextRequest) {
   const daysParam = Number(url.searchParams.get('days') ?? 30);
   const days = Number.isFinite(daysParam) ? Math.min(Math.max(Math.floor(daysParam), 1), 366) : 30;
   return NextResponse.json(
-    { ...getStats(days), generations: getCount() },
+    { ...getStats(days), generations: getCount(), features: getFeatureStats(days) },
     { headers: CORS_HEADERS },
   );
 }

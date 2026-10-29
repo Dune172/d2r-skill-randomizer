@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { DEFAULT_OPEN_ACTS, defaultSpoiler, normalizeOpenActs, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
+import { DEFAULT_OPEN_ACTS, defaultSpoiler, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
+import OpenActsFields from './OpenActsFields';
 
-type Preset = 'custom' | 'season1race' | 'turbo';
+type Preset = 'custom' | 'season1race' | 'turbo' | 'openacts';
 
 interface FormState {
   enablePrereqs: boolean;
@@ -63,6 +64,28 @@ const TURBO_PRESET: FormState = {
   enemyShuffle: false,
   forgottenArts: false,
   openActs: DEFAULT_OPEN_ACTS,
+};
+
+// Open Acts: a casual quest-item hunt. Starter characters with Acts II and III open,
+// the quest items shuffled across Acts I–III, with hints and a spoiler file.
+const OPEN_ACTS_PRESET: FormState = {
+  enablePrereqs: true,
+  playersCount: 1,
+  playersActs: [1, 2, 3, 4, 5],
+  teleportStaff: false,
+  teleportStaffLevel: 1,
+  teleportStaffDropSource: 'Corpsefire',
+  teleportStaffSpeed: true,
+  horadricCube: false,
+  hirelingAura: true,
+  disableChat: false,
+  xpMultiplier: 1.5,
+  xpActs: [1, 2, 3, 4, 5],
+  xpDifficulties: [1],
+  raceMode: false,
+  enemyShuffle: false,
+  forgottenArts: false,
+  openActs: { ...DEFAULT_OPEN_ACTS, shuffle: true, acts: [2, 3] },
 };
 
 const DEFAULT_STATE: FormState = {
@@ -223,18 +246,9 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const withModeSpoiler = (oa: OpenActsSettings, race: boolean) => ({ ...oa, spoiler: defaultSpoiler(race) });
   const [openActs, setOpenActs] = useState<OpenActsSettings>(
     initialOptions?.openActs ?? withModeSpoiler(SEASON1_PRESET.openActs, SEASON1_PRESET.raceMode));
-  const updateOpenActs = (patch: Partial<OpenActsSettings>) => {
-    setPreset('custom');
-    setOpenActs(prev => normalizeOpenActs({ ...prev, ...patch }, raceMode));
-  };
-  // Act III starts open only together with Act II, so the pills behave as a ladder.
-  const toggleOpenAct = (act: number) => {
-    const has = openActs.acts.includes(act as 2 | 3);
-    updateOpenActs({ acts: act === 2 ? (has ? [] : [2]) : (has ? [2] : [2, 3]) });
-  };
   const applyPreset = (p: Preset) => {
     setPreset(p);
-    const src = p === 'season1race' ? SEASON1_PRESET : p === 'turbo' ? TURBO_PRESET : null;
+    const src = p === 'season1race' ? SEASON1_PRESET : p === 'turbo' ? TURBO_PRESET : p === 'openacts' ? OPEN_ACTS_PRESET : null;
     if (src) {
       setEnablePrereqs(src.enablePrereqs);
       setPlayersCount(src.playersCount);
@@ -302,7 +316,9 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       ? 'Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!'
       : preset === 'turbo'
         ? 'Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.'
-        : null;
+        : preset === 'openacts'
+          ? 'Open Acts: A quest-item hunt. Starter characters begin with Acts II and III open, and the Scroll of Inifuss, Horadric Cube, Staff of Kings and Khalim’s parts are shuffled across Acts I–III, with quest-log hints and a spoiler file. 1.5× XP in Normal.'
+          : null;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-1">
@@ -326,6 +342,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
             <option value="custom">Custom</option>
             <option value="season1race" title="Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!">Season Beta Race</option>
             <option value="turbo" title="Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.">Turbo</option>
+            <option value="openacts" title="Open Acts: A quest-item hunt. Starter characters begin with Acts II and III open, and the Scroll of Inifuss, Horadric Cube, Staff of Kings and Khalim’s parts are shuffled across Acts I–III, with quest-log hints and a spoiler file. 1.5× XP in Normal.">Open Acts</option>
           </select>
           <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
         </div>
@@ -500,61 +517,11 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       {/* Open Acts section */}
       <div className="space-y-3 pt-1 pb-2">
         <SectionDivider label="Open Acts" />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-          {/* Left: quest-item shuffle */}
-          <div className="flex flex-col justify-start gap-3">
-            <Checkbox
-              id="shuffleQuests"
-              checked={openActs.shuffle}
-              onChange={v => updateOpenActs({ shuffle: v })}
-              label="Shuffle quest items (experimental)"
-              tooltip="Moves the Scroll of Inifuss, the Horadric Cube, the Staff of Kings and Khalim's Eye, Brain and Heart to new spots across Acts I–III. Every seed is checked to be beatable. Works with any new character, or with open acts below."
-            />
-            {openActs.shuffle && (
-              <div className="ml-1 pl-3 border-l-2 border-[#7a1010]/60 flex flex-col gap-2">
-                <Checkbox
-                  id="questBosses"
-                  checked={openActs.bosses}
-                  onChange={v => updateOpenActs({ bosses: v })}
-                  label="Bosses can hold quest items"
-                  tooltip="Blood Raven, Andariel, Griswold, Radament, the Summoner, Duriel, Battlemaid Sarina and Icehawk Riftwing can carry a quest item. It drops on every kill, so a lost item can be farmed again."
-                />
-                <Checkbox
-                  id="questHints"
-                  checked={openActs.hints}
-                  onChange={v => updateOpenActs({ hints: v })}
-                  label="Quest-log hints"
-                  tooltip="The quest log says which act each item is in, e.g. “Khalim's Eye is somewhere in Act I.” Turn off to search with no hints."
-                />
-                <Checkbox
-                  id="questSpoiler"
-                  checked={openActs.spoiler}
-                  onChange={v => updateOpenActs({ spoiler: v })}
-                  label="Spoiler file"
-                  tooltip="Adds quest-shuffle.json to the mod folder, listing the exact spot of every item. Off by default in Race Mode, which keeps spoilers hidden."
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Right: acts open from the start */}
-          <div className="flex flex-col justify-start">
-            <span className="text-sm text-[#c8a870] flex items-center">
-              Start with acts open
-              <Tip text="Ships level-1 starter characters whose waypoint and quest tabs for these acts are already open, in every difficulty. Copy them into your save folder (the install steps show where) and play one of them: a character you create in game starts with only Act I open. Act III needs Act II." />
-            </span>
-            <ActPillRow acts={[2, 3]} selected={openActs.acts} onToggle={toggleOpenAct} />
-            {openActs.acts.length > 0 && (
-              <p className="mt-2 ml-1 pl-3 border-l-2 border-[#c42020]/70 text-xs text-[#e0a070] leading-relaxed">
-                Play one of the included starter characters.
-                {openActs.shuffle
-                  ? ' The shuffle counts on these acts being open, so a character you create in game will usually get stuck before Duriel.'
-                  : ' A character you create in game starts with only Act I open.'}
-              </p>
-            )}
-          </div>
-        </div>
+        <OpenActsFields
+          value={openActs}
+          onChange={v => { setPreset('custom'); setOpenActs(v); }}
+          raceMode={raceMode}
+        />
       </div>
 
       {/* Hirelings section */}

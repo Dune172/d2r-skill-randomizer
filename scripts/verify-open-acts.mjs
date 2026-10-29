@@ -57,6 +57,8 @@ const variants = [
   { name: 'shuffle + Acts II/III', oa: { shuffle: true, acts: [2, 3] }, params: '&shuffleQuests=1&openActs=2,3', bosses: true, hints: true, spoiler: true, acts: [2, 3] },
   { name: 'shuffle only, no bosses/hints/spoiler', oa: { shuffle: true, bosses: false, hints: false, spoiler: false }, params: '&shuffleQuests=1&questBosses=0&questHints=0&questSpoiler=0', bosses: false, hints: false, spoiler: false, acts: [] },
   { name: 'Act II open, no shuffle', oa: { acts: [2] }, params: '&openActs=2', shuffle: false, acts: [2] },
+  { name: 'shuffle + Acts II–V, hardcore, named', oa: { shuffle: true, acts: [5], hardcore: true, name: 'Swanny' }, params: '&shuffleQuests=1&openActs=2,3,4,5&starterHc=1&starterName=Swanny', bosses: true, hints: true, spoiler: true, acts: [2, 3, 4, 5], hardcore: true,
+    starters: ['Swanny-Ama', 'Swanny-Sorc', 'Swanny-Necro', 'Swanny-Pala', 'Swanny-Barb', 'Swanny-Druid', 'Swanny-Sin', 'Swanny-Lock'] },
 ];
 
 for (const v of variants) {
@@ -73,7 +75,7 @@ for (const v of variants) {
     ...(shuffle ? [`${d}/data/local/lng/strings/quests.json`] : []),
     ...(shuffle && v.spoiler ? [`${m}/quest-shuffle.json`] : []),
     ...(shuffle ? [`${X}/objects.txt`] : []),
-    ...(v.acts.length ? [...['Amazon', 'Sorceress', 'Necromancer', 'Paladin', 'Barbarian', 'Druid', 'Assassin', 'Warlock'].map(c => `${m}/starter-saves/${c}.d2s`), `${m}/starter-saves/README.txt`] : []),
+    ...(v.acts.length ? [...(v.starters ?? ['Amazon', 'Sorceress', 'Necromancer', 'Paladin', 'Barbarian', 'Druid', 'Assassin', 'Warlock']).map(c => `${m}/starter-saves/${c}.d2s`), `${m}/starter-saves/README.txt`] : []),
   ]);
   for (const k of added) if (!expectAdded.has(k) && !off.has(k) && k !== `${X}/treasureclassex.txt`) fail(`${label}: unexpected file ${k}`);
   for (const k of expectAdded) if (!on.has(k)) fail(`${label}: missing ${k}`);
@@ -131,9 +133,12 @@ for (const v of variants) {
     const c = Buffer.from(b); c.writeUInt32LE(0, 12);
     let sum = 0; for (const x of c) sum = (((sum << 1) | (sum >>> 31)) + x) >>> 0;
     if (b.readUInt32LE(12) !== sum) fail(`${label}: ${name} checksum`);
+    if (((b[20] & 0x04) !== 0) !== !!v.hardcore) fail(`${label}: ${name} hardcore bit`);
+    const inside = b.toString('latin1', 299, 315).split(String.fromCharCode(0))[0];
+    if (!name.endsWith(`/${inside}.d2s`)) fail(`${label}: ${name} holds the name ${inside}`);
     for (let dd = 0; dd < 3; dd++) {
       const w = word => b.readUInt16LE(403 + 10 + dd * 96 + word * 2);
-      if ((w(7) === 0x2001) !== v.acts.includes(2) || (w(15) === 0x2001) !== v.acts.includes(3)) fail(`${label}: ${name} act flags in difficulty ${dd}`);
+      for (const [act, word] of [[2, 7], [3, 15], [4, 23], [5, 26], [5, 28]]) if ((w(word) === 0x2001) !== v.acts.includes(act)) fail(`${label}: ${name} Act ${act} flag in difficulty ${dd}`);
     }
   }
   ok(`${label}: ${added.length} added files, ${wrappers.length} TC wrappers, savepath ${modinfo.savepath}`);

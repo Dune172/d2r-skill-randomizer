@@ -21,7 +21,7 @@ const src = path.join(repo, 'src', 'lib', 'randomizer', 'open-acts');
 execFileSync(process.execPath, [require.resolve('typescript/bin/tsc', { paths: [repo] }),
   '--outDir', out, '--rootDir', path.join(repo, 'src'), '--module', 'commonjs', '--target', 'es2022',
   '--moduleResolution', 'node', '--strict', '--skipLibCheck', '--types', 'node',
-  ...['pool.ts', 'fill.ts', 'starter-save.ts', 'hints.ts'].map(f => path.join(src, f))], { stdio: 'inherit' });
+  ...['pool.ts', 'fill.ts', 'starter-save.ts', 'hints.ts', 'options.ts'].map(f => path.join(src, f))], { stdio: 'inherit' });
 const lib = p => require(path.join(out, 'lib', 'randomizer', 'open-acts', p));
 const pool = lib('pool.js');
 const fill = lib('fill.js');
@@ -144,6 +144,86 @@ if (fs.existsSync(bak) && fs.existsSync(spike)) {
   const name = rows[firstBar + 18][h.indexOf('skill')];
   if (save.startSkillSlot(h, rows, 'bar', name) !== 18) fail('startSkillSlot does not find slot 18');
   if (save.startSkillSlot(h, rows, 'bar', '') !== null) fail('empty StartSkill should give null');
+}
+
+// ── 2b. Acts IV/V, hardcore and names on the shipped templates ─────────────
+{
+  const dir = path.join(repo, 'data', 'starter-saves');
+  // Words checked in game: Act V needs Terror's End (26) and Act IV completed (28).
+  const ACCESS = { 2: [[7], 9], 3: [[15], 18], 4: [[23], 27], 5: [[26, 28], 30] };
+  let checked = 0;
+  for (const f of fs.readdirSync(dir).filter(n => n.endsWith('.d2s'))) {
+    const t = fs.readFileSync(dir + '/' + f);
+    const base = save.patchStarterSave(t, { name: 'Abc', startSkillSlot: null });
+    const two3 = save.patchStarterSave(t, { name: 'Abc', startSkillSlot: null, openActs: [2, 3], hardcore: false });
+    if (!base.equals(two3)) fail(`${f}: explicit Acts II–III differs from the default`);
+    for (const acts of [[2], [2, 3], [2, 3, 4], [2, 3, 4, 5]]) {
+      for (const hardcore of [false, true]) {
+        const p = save.patchStarterSave(t, { name: 'Swanny-Sorc', startSkillSlot: null, openActs: acts, hardcore });
+        if (save.d2sChecksum(p) !== p.readUInt32LE(12)) fail(`${f} ${acts}: checksum`);
+        if (((p[20] & 0x04) !== 0) !== hardcore) fail(`${f}: hardcore bit ${p[20]}`);
+        if ((p[20] & ~0x04) !== (t[20] & ~0x04)) fail(`${f}: other status bits changed`);
+        if (p.toString('latin1', 299, 310) !== 'Swanny-Sorc' || p[310] !== 0) fail(`${f}: name bytes`);
+        for (let d = 0; d < 3; d++) {
+          const q = 403 + 10 + d * 96, wp = 701 + 8 + d * 24 + 2;
+          const bit = b => (p[wp + (b >> 3)] >> (b & 7)) & 1;
+          if (!bit(0)) fail(`${f}: Rogue Encampment waypoint`);
+          for (const [act, [words, wpBit]] of Object.entries(ACCESS)) {
+            const open = acts.includes(Number(act));
+            for (const word of words) if ((p.readUInt16LE(q + word * 2) === 0x2001) !== open) fail(`${f} ${acts}: act ${act} word ${word} in difficulty ${d}`);
+            if (bit(wpBit) !== (open ? 1 : 0)) fail(`${f} ${acts}: act ${act} waypoint ${wpBit} in difficulty ${d}`);
+          }
+        }
+        // Outside the status byte, act words, waypoint bytes and checksum, nothing may differ from Acts II–III.
+        const allowed = new Set([12, 13, 14, 15, 20]);
+        for (let d = 0; d < 3; d++) {
+          for (const w of [7, 15, 23, 26, 28]) { allowed.add(403 + 10 + d * 96 + w * 2); allowed.add(403 + 10 + d * 96 + w * 2 + 1); }
+          for (let b = 0; b < 5; b++) allowed.add(701 + 8 + d * 24 + 2 + b);
+        }
+        const ref = save.patchStarterSave(t, { name: 'Swanny-Sorc', startSkillSlot: null });
+        for (let i = 0; i < p.length; i++) if (p[i] !== ref[i] && !allowed.has(i)) { fail(`${f} ${acts}: byte ${i} changed`); break; }
+        checked++;
+      }
+    }
+  }
+  console.log(`starter saves: ${checked} act/hardcore variants of the shipped templates check out`);
+}
+
+// ── 2c. options: ladder, names, cache keys, links ──────────────────────────
+{
+  const o = lib('options.js');
+  const eq = (a, b, msg) => { if (JSON.stringify(a) !== JSON.stringify(b)) fail(`${msg}: ${JSON.stringify(a)} ≠ ${JSON.stringify(b)}`); };
+  eq(o.normalizeOpenActs({ acts: [5] }).acts, [2, 3, 4, 5], 'Act V opens the acts before it');
+  eq(o.normalizeOpenActs({ acts: [3, 9] }).acts, [2, 3], 'out-of-range acts ignored');
+  eq(o.toggleActLadder([2, 3, 4], 3), [2], 'un-picking Act III closes III and IV');
+  eq(o.toggleActLadder([2], 4), [2, 3, 4], 'picking Act IV opens II–IV');
+  eq(o.normalizeOpenActs({ hardcore: true, name: 'Swanny' }), { ...o.DEFAULT_OPEN_ACTS }, 'hardcore and name need open acts');
+  eq(o.normalizeOpenActs({ acts: [2], name: 'Bad1' }).name, '', 'invalid name dropped');
+  eq(o.starterName('', 'Sorceress', false), 'Sorceress', 'no name → class name');
+  eq(o.starterName('Swanny', 'Sorceress', false), 'Swanny-Sorc', 'tagged name');
+  eq(o.starterName('Swanny', 'Sorceress', true), 'Swanny', 'single starter keeps the name');
+  eq(o.starterName('Big_Dave', 'Necromancer', false), 'Big_DaveNecro', 'no second separator');
+  const classes = ['Amazon', 'Sorceress', 'Necromancer', 'Paladin', 'Barbarian', 'Druid', 'Assassin', 'Warlock'];
+  for (const base of ['Ab', 'Swanny', 'Abcdefghijklmno', 'Abcdefghijklm-n', 'A_bcdefghijklmn']) {
+    const names = classes.map(c => o.starterName(base, c, false));
+    if (new Set(names.map(n => n.toLowerCase())).size !== 8) fail(`${base}: starter names collide (${names})`);
+    for (const n of names) if (!o.isValidCharacterName(n)) fail(`${base}: invalid starter name ${n}`);
+  }
+  // Keys from before hardcore/names/Acts IV–V must not change.
+  eq(o.openActsCacheSegment(o.normalizeOpenActs({ shuffle: true, acts: [2, 3] })), ':open-acts-v1:sbhp:a23', 'old cache key');
+  eq(o.openActsCacheSegment(o.normalizeOpenActs({ acts: [2] })), ':open-acts-v1:-:a2', 'old cache key (acts only)');
+  eq(o.openActsCacheSegment(o.normalizeOpenActs({ acts: [5], hardcore: true, name: 'Swanny' })), ':open-acts-v1:-:a2345:hc:nSwanny', 'new cache key');
+  for (const s of [{ shuffle: true, spoiler: false }, { acts: [4], hardcore: true }, { acts: [5], name: 'Big_Dave' }, { shuffle: true, bosses: false, acts: [3], name: 'Ab' }]) {
+    for (const race of [false, true]) {
+      const n = o.normalizeOpenActs(s, race);
+      const q = new URLSearchParams(o.openActsToParams(n, race).slice(1));
+      eq(o.openActsFromParams(k => q.get(k), race), n, `link round trip ${JSON.stringify(s)} race=${race}`);
+    }
+  }
+  eq(o.openActsFeatureKeys(o.normalizeOpenActs({ acts: [4], hardcore: true }), { raceMode: false, classBuild: true }),
+    ['open-acts', 'open-acts:acts-to-4', 'open-acts:hardcore', 'open-acts:class-builder'], 'feature keys');
+  eq(o.openActsLabel([2, 3, 4]), 'Acts II, III and IV', 'act label');
+  console.log('options: ladder, names, cache keys and links check out');
 }
 
 // ── 3. hints ───────────────────────────────────────────────────────────────

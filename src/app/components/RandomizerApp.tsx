@@ -211,7 +211,7 @@ export default function RandomizerApp() {
             )}
 
             <div className="pt-0.5">
-              <InstallInstructions seed={currentSeed!} raceMode={currentOptions.raceMode} forgottenArts={currentOptions.forgottenArts} openActs={currentOptions.openActs.acts} />
+              <InstallInstructions seed={currentSeed!} raceMode={currentOptions.raceMode} forgottenArts={currentOptions.forgottenArts} openActs={currentOptions.openActs} />
             </div>
           </div>
         )}

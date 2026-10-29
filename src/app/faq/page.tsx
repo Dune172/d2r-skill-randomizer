@@ -78,6 +78,37 @@ const sections: { heading: string; items: QA[] }[] = [
         text: 'The Class Builder is the second tab on the Generate page. You pick one class, choose a layout for each of its three tabs from any of the 24 vanilla skill trees, and place any skill wherever you want it. The other seven classes are then randomized from the skills you left out. Each build has a short share link that recreates the exact same mod.',
       },
       {
+        q: 'What is Open Acts?',
+        text: 'Open Acts is a set of experimental options on the Generate page and in the Class Builder. Shuffle quest items moves the Scroll of Inifuss, the Horadric Cube, the Staff of Kings and Khalim\'s Eye, Brain and Heart to new spots across Acts I to III, and every seed is checked to be finishable. Bosses can carry them too, the quest log can hint at the act each one is in, and an optional spoiler file lists every spot. Start with acts open adds level-1 starter characters to the download with any of Acts II to V already unlocked on the waypoint and quest tabs. They can be hardcore and carry your own name. Copy them into the mod\'s save folder and play one of them: a character you create yourself starts with only Act I open, and with the shuffle on it will usually get stuck before Duriel. To play the shuffle with your own new character, turn on Shuffle quest items and leave every act closed.',
+        body: (
+          <>
+            <p>
+              Open Acts is a set of experimental options on the <Link href="/generate">Generate page</Link> and in the
+              Class Builder, also available as the Open Acts preset.
+            </p>
+            <ul>
+              <li>
+                <strong>Shuffle quest items</strong> moves the Scroll of Inifuss, the Horadric Cube, the Staff of Kings
+                and Khalim&apos;s Eye, Brain and Heart to new spots across Acts I–III. Every seed is checked to be
+                finishable. Bosses can carry them too, the quest log can hint at the act each one is in, and an
+                optional spoiler file lists every spot.
+              </li>
+              <li>
+                <strong>Start with acts open</strong> adds level-1 starter characters to the download with any of Acts
+                II–V already unlocked on the waypoint and quest tabs, in every difficulty. They can be hardcore and
+                carry your own name.
+              </li>
+            </ul>
+            <p>
+              Copy the starters into the mod&apos;s save folder (see the{' '}
+              <Link href="/guide/install">install guide</Link>) and play one of them. A character you create yourself
+              starts with only Act I open, and with the shuffle on it will usually get stuck before Duriel. To play the
+              shuffle with your own new character, turn on Shuffle quest items and leave every act closed.
+            </p>
+          </>
+        ),
+      },
+      {
         q: 'What other options are there?',
         text: 'The generator can also shuffle ordinary monster families between acts (with stats and rewards rebalanced for their new areas), remove skill prerequisites, boost experience per difficulty, start you with a Teleport staff or a Horadric Cube, give every mercenary a random aura, and hide the chat box. Each option has a short explanation next to it on the generator.',
       },
@@ -178,7 +209,7 @@ export default function FaqPage() {
       <ContentPage
         eyebrow="Help"
         title="Frequently Asked Questions"
-        updated="2026-10-26"
+        updated="2026-10-29"
         intro={
           <p>
             Short answers about safety, how the shuffle works, the monthly challenges and getting a mod

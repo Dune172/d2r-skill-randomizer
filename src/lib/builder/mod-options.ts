@@ -2,9 +2,14 @@
  * The game options a Class Builder build can carry, and how they travel: in the
  * /api/randomize body, the /api/download query and the share link.
  *
+ * Open Acts travels the same way as on the seed generator (Race Mode is always off
+ * here, so the spoiler default is the casual one).
+ *
  * Race Mode and Forgotten Arts are absent on purpose — both routes force them
  * off for builds (Race Mode's Prayer filler would erase the hand-built class).
  */
+import { DEFAULT_OPEN_ACTS, normalizeOpenActs, openActsFromParams, openActsToParams, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
+
 export interface ModOptions {
   enablePrereqs: boolean;
   playersEnabled: boolean;
@@ -23,6 +28,7 @@ export interface ModOptions {
   xpActs: number[];
   xpDifficulties: number[];
   enemyShuffle: boolean;
+  openActs: OpenActsSettings;
 }
 
 export const DEFAULT_MOD_OPTIONS: ModOptions = {
@@ -43,6 +49,7 @@ export const DEFAULT_MOD_OPTIONS: ModOptions = {
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1, 2, 3],
   enemyShuffle: false,
+  openActs: DEFAULT_OPEN_ACTS,
 };
 
 const sorted = (list: number[]) => [...list].sort((a, b) => a - b).join(',');
@@ -75,6 +82,7 @@ export function optionParams(opts: ModOptions): string {
     boosted && `xpActs=${sorted(opts.xpActs)}`,
     boosted && `xpDifficulties=${sorted(opts.xpDifficulties)}`,
     opts.enemyShuffle && 'enemyShuffle=1',
+    openActsToParams(normalizeOpenActs(opts.openActs)).slice(1),
   ].filter(Boolean).map(p => `&${p}`).join('');
 }
 
@@ -105,6 +113,7 @@ export function parseModOptions(p: URLSearchParams): ModOptions {
     xpActs: list('xpActs', 5, [1, 2, 3, 4, 5]),
     xpDifficulties: list('xpDifficulties', 3, [1, 2, 3]),
     enemyShuffle: p.get('enemyShuffle') === '1',
+    openActs: openActsFromParams(name => p.get(name)),
   };
 }
 
@@ -123,5 +132,6 @@ export function buildRandomizeBody(code: string, opts: ModOptions): string {
     xpActs: opts.xpActs,
     xpDifficulties: opts.xpDifficulties,
     enemyShuffle: opts.enemyShuffle,
+    openActs: normalizeOpenActs(opts.openActs),
   });
 }
