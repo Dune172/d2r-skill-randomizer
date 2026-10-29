@@ -1,7 +1,6 @@
 # Archipelago: design notes
 
-What was decided, what was measured, and what is still only believed. The full
-exploratory history is on the branch `backup/archipelago-wip-2026-09-10`.
+What was decided, what was measured, and what is still only believed.
 
 ## Shape
 
@@ -38,22 +37,42 @@ manifest inside the zip.
   pattern scan that runs past a short buffer, and the same read bug in the packet
   scanner.
 
+## Gate results (2026-10-29, D2R 3.3.93847, in town only)
+
+Mod: seed 987002, Paladin, keys on. Characters: a fresh Paladin, and a level 2
+Barbarian save with one unspent skill point (the only way to get a `newskills` entry
+without leaving town).
+
+- **G1, a written skill point: honoured only if both copies are written.** There are
+  two copies of the player unit. `probe` writes the one the client reads. Written alone,
+  the tree shows the new total and lets you click it down to zero, but only the point
+  the character really had is learned (3 shown, 1 learned), and the save agrees. With
+  `probe -unit <copy> -set 5=3` as well, all three are learned on both copies, are in
+  the save, and are still there after Save and Exit and re-entering. So the client has
+  to write both copies. `probe -copies` takes over two minutes, so finding the second
+  copy needs a faster route than the memory scan.
+- **`keepzero` does not keep a base stat at zero.** `newskills` had `keepzero` set and
+  the entry still disappeared from both copies when the last point was spent. Once the
+  pool is empty, the client has nothing to write until a level-up or quest creates the
+  entry again.
+- **G2 fails: player spell 8 ignores the stat columns.** The Draught of Attunement
+  (spell 8, `stat1..3` = `ap_keys`, `ap_mail`, `newskills`) was used up and gave +1 to a
+  random attribute (Dexterity the first time, Vitality the second), the same as an
+  unmodded Elixir would. None of 5, 368 or 369 was created. The Receipt uses the same
+  spell, so it cannot acknowledge a delivery either.
+- **G3, partly: a cubemain `op` does test a custom player stat.** With 369 absent (0),
+  the Sigil alone produced a Draught and the Sigil back: the brew recipe (op 8, 369 ≤ 1)
+  fired and the El Rune recipe listed before it (op 10, 369 = 2) did not. The rest of
+  G3 needs a 369 entry, which nothing can create yet (see G2).
+- **Not run (needs leaving town):** G1 step 3 (do learned skills work in combat), G4
+  (traps, DeathLink) and G5 (a real room).
+- **Cosmetic:** the Sigil shows as "Burning Dead Archipelago Sigil". The `hrt` monster
+  part prefixes the monster's name.
+
 ## Believed, not yet run in the game
 
-These are what `PLAYTEST.md` exists to settle.
-
-- **A stat value written from outside is honoured by the game's logic.** Everything
-  depends on it. The failed node experiment is consistent with writes landing on a
-  display-only copy of the character; the earlier check that ruled this out looked only
-  at the client-side unit table, where a server-side copy would not appear.
-  `d2rr-ap probe -copies` finds other copies if this fails.
-- **`keepzero` in itemstatcost.txt keeps an entry alive at zero.** Set on `newskills`,
-  `statpts`, `gold` and the two custom stats. If it does not, points received while the
-  pool is empty wait for the next level-up, or for a Draught.
-- **Player spell 8 adds `calc` to `stat` permanently.** The vanilla Elixir row
-  (`experience`, 5) is the only evidence. The Draught and the Receipt rely on it.
-- **A cubemain `op` can test a custom player stat.** The data guide documents ops 7 to
-  10 as comparisons on the player's base stat. Vanilla only uses op 28.
+- **Learned skills work in combat.** The skills above were learned by the game's own
+  code, unlike the earlier nodes built in memory, so this is likely; G1 step 3 settles it.
 - **Emptying the life pool kills.** Unknown either way; the client checks and falls
   back.
 
