@@ -10,6 +10,34 @@ const GROUPS = ['Goal', 'Skill Points', 'Checks', 'The Mod', 'Experimental'] as 
 const field = 'w-full rounded border border-[#5a3a14] bg-[#140a04] px-3 py-2 text-sm text-[#e8d5a0] ' +
   'focus:outline-none focus-visible:border-[#c8942a] focus-visible:ring-1 focus-visible:ring-[#c8942a]';
 
+/**
+ * A number field whose value in the YAML is always a whole number in range. What the
+ * player types stays in the field while they edit, so clearing it to type a new number
+ * works; an empty or partial entry leaves the last valid value in the YAML, and leaving
+ * the field shows that value again.
+ */
+function RangeInput({ id, min, max, value, onChange }: {
+  id: string;
+  min: number;
+  max: number;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      id={id} type="number" inputMode="numeric" min={min} max={max} value={draft ?? String(value)}
+      onChange={e => {
+        setDraft(e.target.value);
+        const n = e.target.value.trim() === '' ? NaN : Number(e.target.value);
+        if (Number.isFinite(n)) onChange(Math.min(max, Math.max(min, Math.round(n))));
+      }}
+      onBlur={() => setDraft(null)}
+      className={field}
+    />
+  );
+}
+
 function Control({ option, value, onChange }: {
   option: ApOption;
   value: string | number | boolean;
@@ -39,12 +67,7 @@ function Control({ option, value, onChange }: {
           {option.choices.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
       ) : (
-        <input
-          id={id} type="number" inputMode="numeric" min={option.min} max={option.max} value={Number(value)}
-          onChange={e => onChange(Number(e.target.value))}
-          onBlur={e => onChange(Math.min(option.max, Math.max(option.min, Math.round(Number(e.target.value)) || option.min)))}
-          className={field}
-        />
+        <RangeInput id={id} min={option.min} max={option.max} value={Number(value)} onChange={onChange} />
       )}
       <p className="mt-1 text-xs text-[#a89060] leading-relaxed">
         {option.help}{option.type === 'range' ? ` (${option.min}–${option.max})` : ''}
