@@ -46,6 +46,16 @@ func peTimestamp(process *Process) uint32 {
 	return uint32(process.ReadUInt(base+pe+8, Uint32))
 }
 
+// D2RR PATCH: exported so the client can tell a user whether this D2R build has
+// measured offsets, and name the build when it does not.
+func (p *Process) PETimestamp() uint32 { return peTimestamp(p) }
+
+// D2RR PATCH: whether knownBuildOffsets has an entry for this PE TimeDateStamp.
+func KnownBuild(timestamp uint32) bool {
+	_, ok := knownBuildOffsets[timestamp]
+	return ok
+}
+
 func calculateOffsets(process *Process) Offset {
 	// ignoring errors, always best practices
 	memory, _ := process.getProcessMemory()

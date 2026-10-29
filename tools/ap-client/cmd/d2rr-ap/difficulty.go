@@ -6,11 +6,6 @@ import (
 	"github.com/swannysoft/d2rr-ap-client/internal/save"
 )
 
-// warnDifficulty reports an undeterminable difficulty at most once a minute.
-//
-// This must not be silent: area checks are most of the location pool, so a room whose
-// area checks never send is unwinnable for everyone in it, and the only place that
-// surfaces is here.
 // warnAssumedDifficulty fires once when area checks start running on an assumption.
 //
 // The assumption is that you are playing the hardest difficulty you have unlocked. That
@@ -31,6 +26,11 @@ func (a *app) warnAssumedDifficulty(res save.DifficultyResult) {
 	logf("  so the checks are filed correctly.")
 }
 
+// warnDifficulty reports an undeterminable difficulty at most once a minute.
+//
+// This must not be silent: area checks are most of the location pool, so a room whose
+// area checks never send is unwinnable for everyone in it, and the only place that
+// surfaces is here.
 func (a *app) warnDifficulty(reason string) {
 	a.mu.Lock()
 	quiet := time.Since(a.lastDiffWarn) < time.Minute

@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -51,6 +52,7 @@ func main() {
 		diff       = flag.Int("difficulty", -1,
 			"current difficulty for live checks: 0 normal, 1 nightmare, 2 hell; -1 uses calibrated memory or unambiguous saves")
 	)
+	flag.Usage = usage
 	flag.Parse()
 
 	if *diff < -1 || *diff > 2 {
@@ -110,43 +112,16 @@ func main() {
 		localManifest: *manPath, stateDir: *stateDir, statusFile: *statusFile,
 	}
 	if man != nil {
-		app.useManifest(man)
+		if err := app.useManifest(man); err != nil {
+			logf("ERROR: %v", err)
+		}
 	}
 
 	var conn *apc.Conn
 	conn = apc.NewConn(*host, *port, *slot, *password, session, apc.Handler{
 		OnConnected: func(slotData map[string]any, _ []int64) {
 			logf("connected as %q (%d locations already checked)", *slot, len(session.AllChecks()))
-			// The goal comes from the apworld, not from a flag: the client must not be
-			// able to declare victory on a difficulty the room did not ask for. It also
-			// decides how area checks resolve their difficulty, so it is read first.
-			if v, ok := slotData["goal_difficulty"].(float64); ok {
-				act := len(ids.GoalQuestIndex) - 1
-				if g, ok := slotData["goal_act"].(float64); ok && g >= 0 && int(g) < len(ids.GoalQuestIndex) {
-					act = int(g)
-				}
-				app.setGoal(int(v), act)
-				logf("goal: kill %s on %s", goalBossNames[act], difficultyName(int(v)))
-			}
-			// Optional check groups. Defaulting to ON matches the apworld defaults; a
-			// room that disabled them says so explicitly.
-			app.mu.Lock()
-			app.includeWaypoints = boolFromSlotData(slotData, "include_waypoints", true)
-			app.includeAreas = boolFromSlotData(slotData, "include_areas", true)
-			app.includeLevels = boolFromSlotData(slotData, "include_level_milestones", true)
-			app.levelCap = ids.LevelCap(0, 0)
-			if v, ok := slotData["level_cap"].(float64); ok {
-				app.levelCap = int(v)
-			}
-			app.statPointsPooled = boolFromSlotData(slotData, "stat_points_pooled", false)
-			if v, ok := slotData["horadric_keys"].(float64); ok {
-				app.keyItems = v > 0
-			}
-			app.deathLink = boolFromSlotData(slotData, "death_link", false)
-			deathLink := app.deathLink
-			app.slotData = slotData
-			app.mu.Unlock()
-			if deathLink {
+			if app.applySlotData(slotData) {
 				conn.EnableDeathLink()
 				logf("DeathLink is on")
 			}
@@ -184,6 +159,24 @@ func main() {
 	}()
 
 	app.run(ctx)
+}
+
+func usage() {
+	out := flag.CommandLine.Output()
+	fmt.Fprintf(out, `Usage:
+  d2rr-ap -slot <name> [flags]     connect a character to an Archipelago room
+
+Subcommands:
+  d2rr-ap doctor [flags]           check the install, the mod and the loaded character (read-only)
+  d2rr-ap saves <folder|.d2s>      list the checks a save file holds (read-only)
+  d2rr-ap probe [flags]            playtest tool: list or overwrite the loaded
+                                   character's stats; not needed to play
+
+Run "d2rr-ap <subcommand> -h" for a subcommand's flags.
+
+Flags:
+`)
+	flag.PrintDefaults()
 }
 
 // chat forwards typed lines to the room, so "!hint" and the other server commands work

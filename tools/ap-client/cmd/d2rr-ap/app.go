@@ -10,7 +10,6 @@ import (
 	"github.com/swannysoft/d2rr-ap-client/internal/grants"
 	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
 	"github.com/swannysoft/d2rr-ap-client/internal/save"
-	"github.com/swannysoft/d2rr-ap-client/internal/setup"
 )
 
 // Poll live checks and reconcile what the character holds.
@@ -31,7 +30,6 @@ type app struct {
 	characterFlag, gameDir, localManifest, stateDir, statusFile string
 	installMod, launchGame, setupOK                             bool
 	player                                                      uintptr
-	process                                                     setup.Process
 	pointSample                                                 int
 	pointSampleOK                                               bool
 	balance                                                     game.PointBalance
@@ -98,6 +96,10 @@ type app struct {
 	// Retained so the mod fetch can be retried without another Connected packet.
 	slotData     map[string]any
 	lastSetupTry time.Time
+	// The mod zip and manifest from the last successful fetch, so a retry after a
+	// failed install does not ask the server to build the mod again.
+	fetchedZip []byte
+	fetchedMan *manifest.Manifest
 
 	// Which optional check groups the room generated with, from slot_data. Sending a
 	// check for a location the room does not contain is rejected by the server, so
@@ -126,6 +128,10 @@ type app struct {
 
 	// When the player unit first stopped resolving, used to decide when to re-attach.
 	noPlayerSince time.Time
+	// When the UI or waypoint offset was first seen unresolved, for the same reason, and
+	// whether the next attach is such a retry (and so not worth announcing).
+	offsetsMissingSince time.Time
+	reattaching         bool
 
 	// The confirmed in-memory quest layout, once the save has proved one. Zero value
 	// means unproven, and quest checks stay on the save path until it is.
@@ -159,7 +165,7 @@ func (a *app) run(ctx context.Context) {
 				a.retrySetup()
 				continue
 			}
-			a.pollGame()
+			a.pollGame(ctx)
 			a.pollSave(ctx)
 			// After pollSave, which supplies the save state the difficulty check needs,
 			// and after pollGame, which does the attaching.

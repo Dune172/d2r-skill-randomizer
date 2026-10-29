@@ -87,11 +87,24 @@ func doctor(args []string) int {
 	}
 	if !setup.GameRunning() {
 		issues = append(issues, "D2R is not running; live checks are unavailable")
-	} else if m != nil {
+	} else {
 		gc, e := game.Attach()
 		add(e)
 		if e == nil {
 			defer gc.Close()
+			// The build decides whether the UI and waypoint offsets come from measured
+			// values or only from pattern scans, which can miss on an unknown build.
+			build := gc.BuildTimestamp()
+			known := game.KnownBuild(build)
+			ui, waypoints := gc.OffsetsResolved()
+			report["d2rBuild"] = fmt.Sprintf("0x%08x", build)
+			report["d2rBuildKnown"] = known
+			report["offsetsResolved"] = map[string]bool{"ui": ui, "waypoints": waypoints}
+			if !known {
+				issues = append(issues, "this D2R build has no measured offsets; grants may stay paused")
+			}
+		}
+		if e == nil && m != nil {
 			proc, e := setup.Inspect(gc.PID())
 			add(e)
 			if e == nil {
@@ -156,7 +169,7 @@ func doctor(args []string) int {
 		raw, _ := json.MarshalIndent(report, "", "  ")
 		fmt.Println(string(raw))
 	} else {
-		for _, key := range []string{"roomContract", "manifestContract", "gameDirectory", "manifest", "saveDirectory", "processID", "character", "classID", "session", "spentHardPoints", "pointBalance", "pointStatExists", "actualUnspent", "difficultyCandidates", "difficultyCalibrated", "difficultyLayout", "difficultyProfile", "clientStatus"} {
+		for _, key := range []string{"roomContract", "manifestContract", "gameDirectory", "manifest", "saveDirectory", "d2rBuild", "d2rBuildKnown", "offsetsResolved", "processID", "character", "classID", "session", "spentHardPoints", "pointBalance", "pointStatExists", "actualUnspent", "difficultyCandidates", "difficultyCalibrated", "difficultyLayout", "difficultyProfile", "clientStatus"} {
 			if val, ok := report[key]; ok {
 				raw, _ := json.Marshal(val)
 				fmt.Printf("%s: %s\n", key, raw)

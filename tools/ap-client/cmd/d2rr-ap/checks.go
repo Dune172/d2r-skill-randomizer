@@ -20,65 +20,61 @@ func (a *app) pollSave(ctx context.Context) {
 		a.warnAttach(err.Error())
 		return
 	}
-	paths := []string{path}
-
-	var newIDs []int64
-	for _, p := range paths {
-		st, err := save.ParseFile(p)
-		if err != nil {
-			continue
-		} // a save may be mid-flush
-		if st.Name != a.session.CharacterName() {
-			a.warnAttach("save header does not match the bound character")
-			continue
-		}
-
-		// Never send a check for a difficulty the character cannot have entered.
-		//
-		// D2R flags the Act I town waypoint ACTIVE IN ALL THREE difficulty blocks the
-		// moment a character is created, so a brand-new save reports Rogue Encampment
-		// for Normal, Nightmare and Hell. Measured on a fresh character: 3 waypoint
-		// checks before leaving town. Sending those hands the player two free checks
-		// they never earned, and on a Normal-goal room they name locations the room
-		// does not even contain.
-		//
-		// Beating Baal is what unlocks the next difficulty, so this is exactly the
-		// bound. It can never suppress a legitimate check: you cannot complete a quest
-		// or reach a waypoint in a difficulty you cannot enter.
-		maxDifficulty := save.HighestUnlockedDifficulty(st)
-		if maxDifficulty > goal {
-			maxDifficulty = goal
-		}
-
-		for _, q := range st.CompletedQuests {
-			if q.Difficulty > maxDifficulty {
-				continue
-			}
-			if id, ok := ids.QuestLocationID(q.Difficulty, q.Act, q.Index); ok && a.conn.KnownLocation(id) {
-				if key := q.ID(); !a.seen(key) {
-					newIDs = append(newIDs, id)
-					logf("check: %s %s (A%d)", save.DifficultyNames[q.Difficulty], q.Name, q.Act+1)
-				}
-			}
-		}
-		for _, w := range st.ActiveWaypoints {
-			if !wantWaypoints || w.Difficulty > maxDifficulty {
-				continue
-			}
-			if id, ok := ids.WaypointLocationID(w.Difficulty, w.Index); ok {
-				if key := w.ID(); !a.seen(key) {
-					newIDs = append(newIDs, id)
-				}
-			}
-		}
-		a.maybeReportGoal(ctx, st)
-
-		// Kept for the area checks, which need the save to establish which
-		// difficulties the character has actually unlocked.
-		a.mu.Lock()
-		a.lastState = st
-		a.mu.Unlock()
+	st, err := save.ParseFile(path)
+	if err != nil {
+		return // a save may be mid-flush
 	}
+	if st.Name != a.session.CharacterName() {
+		a.warnAttach("save header does not match the bound character")
+		return
+	}
+
+	// Never send a check for a difficulty the character cannot have entered.
+	//
+	// D2R flags the Act I town waypoint ACTIVE IN ALL THREE difficulty blocks the
+	// moment a character is created, so a brand-new save reports Rogue Encampment
+	// for Normal, Nightmare and Hell. Measured on a fresh character: 3 waypoint
+	// checks before leaving town. Sending those hands the player two free checks
+	// they never earned, and on a Normal-goal room they name locations the room
+	// does not even contain.
+	//
+	// Beating Baal is what unlocks the next difficulty, so this is exactly the
+	// bound. It can never suppress a legitimate check: you cannot complete a quest
+	// or reach a waypoint in a difficulty you cannot enter.
+	var newIDs []int64
+	maxDifficulty := save.HighestUnlockedDifficulty(st)
+	if maxDifficulty > goal {
+		maxDifficulty = goal
+	}
+
+	for _, q := range st.CompletedQuests {
+		if q.Difficulty > maxDifficulty {
+			continue
+		}
+		if id, ok := ids.QuestLocationID(q.Difficulty, q.Act, q.Index); ok && a.conn.KnownLocation(id) {
+			if key := q.ID(); !a.seen(key) {
+				newIDs = append(newIDs, id)
+				logf("check: %s %s (A%d)", save.DifficultyNames[q.Difficulty], q.Name, q.Act+1)
+			}
+		}
+	}
+	for _, w := range st.ActiveWaypoints {
+		if !wantWaypoints || w.Difficulty > maxDifficulty {
+			continue
+		}
+		if id, ok := ids.WaypointLocationID(w.Difficulty, w.Index); ok {
+			if key := w.ID(); !a.seen(key) {
+				newIDs = append(newIDs, id)
+			}
+		}
+	}
+	a.maybeReportGoal(ctx, st)
+
+	// Kept for the area checks, which need the save to establish which
+	// difficulties the character has actually unlocked.
+	a.mu.Lock()
+	a.lastState = st
+	a.mu.Unlock()
 	a.sendChecks(ctx, newIDs)
 }
 
@@ -121,7 +117,7 @@ func (a *app) sendChecks(ctx context.Context, newIDs []int64) {
 // pollProgress emits the checks that only memory can see: the area the player is
 // standing in, and the character level they have reached.
 //
-// Area checks are 411 of the 707 locations: without them a large pool has nowhere to go.
+// Area checks are 393 of the 689 locations: without them a large pool has nowhere to go.
 func (a *app) pollProgress(ctx context.Context) {
 	if a.gc == nil || !a.attached {
 		return
@@ -136,7 +132,9 @@ func (a *app) pollProgress(ctx context.Context) {
 	if goal < 0 {
 		return
 	}
-	if res := a.currentDifficulty(st); !res.OK {
+	// Resolved once per tick: every check below files under the same difficulty.
+	res := a.currentDifficulty(st)
+	if !res.OK {
 		a.warnDifficulty(res.Reason)
 	}
 
@@ -169,7 +167,7 @@ func (a *app) pollProgress(ctx context.Context) {
 	// authoritative and complete but can be a whole session late, while this one is
 	// immediate and covers only the current act. Both produce the same `wp:d:i` dedupe
 	// key, so whichever arrives first wins and the other is a no-op.
-	if res := a.currentDifficulty(st); wantWaypoints && res.OK {
+	if wantWaypoints && res.OK {
 		for _, areaID := range a.gc.AvailableWaypointAreaIDs() {
 			index, known := ids.WaypointIndexForLevelID(areaID)
 			if !known {
@@ -188,7 +186,7 @@ func (a *app) pollProgress(ctx context.Context) {
 	}
 
 	// Quests, read live once the layout has been proven against the save.
-	if res := a.currentDifficulty(st); res.OK {
+	if res.OK {
 		newIDs = append(newIDs, a.liveQuestChecks(st, res.Difficulty)...)
 	}
 
@@ -197,13 +195,10 @@ func (a *app) pollProgress(ctx context.Context) {
 			// Attributing an area to the wrong difficulty means the right location is
 			// never sent, which strands whatever item fill put there — in a multiworld,
 			// somebody else's progression.
-			res := a.currentDifficulty(st)
 			if res.NeedsOverrideWarning() {
 				a.warnAssumedDifficulty(res)
 			}
-			if !res.OK {
-				a.warnDifficulty(res.Reason)
-			} else if id, ok := ids.AreaLocationID(res.Difficulty, index); ok {
+			if id, ok := ids.AreaLocationID(res.Difficulty, index); ok && res.OK {
 				key := fmt.Sprintf("area:%d:%d", res.Difficulty, index)
 				if !a.seen(key) {
 					newIDs = append(newIDs, id)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
 	"github.com/swannysoft/d2rr-ap-client/internal/setup"
+	"golang.org/x/sys/windows"
 )
 
 // ensureMod downloads and loads the mod described by the room, once.
@@ -37,60 +38,64 @@ func (a *app) ensureMod(slotData map[string]any) error {
 			return err
 		}
 		if a.saveDir == "" {
-			return fmt.Errorf("local manifest could not be adopted; verify -save-dir")
+			if err := a.useManifest(existing); err != nil {
+				return fmt.Errorf("local manifest could not be adopted: %w", err)
+			}
 		}
 		a.setupOK = true
 		return nil
 	}
 
-	logf("room wants seed %d, class %s — requesting mod ...", seed, class)
-	zipBytes, man, err := manifest.Fetch(manifest.FetchRequest{
-		BaseURL: a.baseURL, Seed: seed, CharacterClass: class, Savepath: savepath, Options: options,
-	})
-	if err != nil {
-		return err
+	// A fetch that succeeded is kept, so a retry after a failed install (D2R still
+	// running, say) does not ask the server to build the whole mod again.
+	zipBytes, man := a.fetchedZip, a.fetchedMan
+	if man == nil || man.MatchRoom(seed, class, savepath) != nil {
+		logf("room wants seed %d, class %s — requesting mod ...", seed, class)
+		var err error
+		zipBytes, man, err = manifest.Fetch(manifest.FetchRequest{
+			BaseURL: a.baseURL, Seed: seed, CharacterClass: class, Savepath: savepath, Options: options,
+		})
+		if err != nil {
+			return err
+		}
+		if err := man.MatchRoom(seed, class, savepath); err != nil {
+			return err
+		}
+		if err := os.MkdirAll(a.modOut, 0755); err != nil {
+			return err
+		}
+		out := filepath.Join(a.modOut, man.ModName+".zip")
+		if err := os.WriteFile(out, zipBytes, 0o644); err != nil {
+			return fmt.Errorf("writing mod zip: %w", err)
+		}
+		a.fetchedZip, a.fetchedMan = zipBytes, man
+		logf("mod written to %s", out)
+		if !a.installMod {
+			logf(`INSTALL: rerun with -install (or -launch) to install and verify the downloaded mod:`)
+			logf("  D2R.exe -mod %s -txt", man.ModName)
+		}
 	}
-
-	if err := man.MatchRoom(seed, class, savepath); err != nil {
-		return err
-	}
-	if err := os.MkdirAll(a.modOut, 0755); err != nil {
-		return err
-	}
-	out := filepath.Join(a.modOut, man.ModName+".zip")
-	if err := os.WriteFile(out, zipBytes, 0o644); err != nil {
-		return fmt.Errorf("writing mod zip: %w", err)
-	}
-	logf("mod written to %s", out)
-	logf(`INSTALL: rerun with -install (or -launch) to install and verify the downloaded mod:`)
-	logf("  D2R.exe -mod %s -txt", man.ModName)
 
 	if err := a.prepareInstall(zipBytes, man); err != nil {
 		return err
 	}
-	a.useManifest(man)
-	if a.saveDir == "" {
-		return fmt.Errorf("manifest or save folder could not be adopted")
+	if err := a.useManifest(man); err != nil {
+		return err
 	}
 	a.setupOK = true
 	return nil
 }
 
 // useManifest adopts a manifest and derives everything downstream of it.
-func (a *app) useManifest(man *manifest.Manifest) {
-	saveDir := a.saveDirFlag
+func (a *app) useManifest(man *manifest.Manifest) error {
 	expectedSaveDir := defaultSaveDir(man.Savepath)
-	if saveDir == "" {
-		saveDir = expectedSaveDir
-	}
-	if absolute, e := filepath.Abs(saveDir); e != nil || !strings.EqualFold(absolute, expectedSaveDir) {
-		logf("ERROR: -save-dir must match the installed mod's save folder %s", expectedSaveDir)
-		return
+	saveDir, err := resolveSaveDir(a.saveDirFlag, expectedSaveDir)
+	if err != nil {
+		return err
 	}
 	classIDs, err := man.ClassSkillIDs()
 	if err != nil {
-		logf("ERROR: %v", err)
-		return
+		return err
 	}
 
 	a.mu.Lock()
@@ -105,6 +110,9 @@ func (a *app) useManifest(man *manifest.Manifest) {
 	logf("manifest: seed %d, class %s, savepath %s",
 		man.Seed, man.CharacterClass, man.Savepath)
 	logf("watching saves in %s", saveDir)
+	if !strings.EqualFold(saveDir, expectedSaveDir) {
+		logf("  (from -save-dir; this mod's own save folder is %s)", expectedSaveDir)
+	}
 
 	// A missing save folder is the difference between "no checks yet" and "checks will
 	// NEVER be detected", and the two look identical in the log. The usual cause is an
@@ -121,6 +129,27 @@ func (a *app) useManifest(man *manifest.Manifest) {
 	}
 
 	a.recomputeDesired()
+	return nil
+}
+
+// resolveSaveDir picks the folder watched for the character's save.
+//
+// Without -save-dir it is the mod's own folder under Saved Games. An explicit -save-dir
+// wins (the NOTE above tells people to pass it when the installed mod saves somewhere
+// else), but it must be a folder that exists: a typo would otherwise wait in silence for
+// saves that never appear.
+func resolveSaveDir(flagDir, expected string) (string, error) {
+	if flagDir == "" {
+		return expected, nil
+	}
+	dir, err := filepath.Abs(flagDir)
+	if err != nil {
+		return "", fmt.Errorf("-save-dir %s: %w", flagDir, err)
+	}
+	if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+		return "", fmt.Errorf("-save-dir %s is not an existing folder", flagDir)
+	}
+	return dir, nil
 }
 
 // retrySetup re-attempts the mod fetch using the slot_data we already have.
@@ -181,10 +210,19 @@ func (a *app) prepareInstall(data []byte, m *manifest.Manifest) error {
 	return nil
 }
 
+// defaultSaveDir is where D2R keeps the saves of a mod with this savepath.
 func defaultSaveDir(savepath string) string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "."
+	return filepath.Join(savedGamesDir(), "Diablo II Resurrected", "mods", savepath)
+}
+
+// savedGamesDir asks Windows for the Saved Games folder, which can be redirected (to
+// OneDrive, another drive) and so is not always ~\Saved Games.
+func savedGamesDir() string {
+	if dir, err := windows.KnownFolderPath(windows.FOLDERID_SavedGames, 0); err == nil && dir != "" {
+		return dir
 	}
-	return filepath.Join(home, "Saved Games", "Diablo II Resurrected", "mods", savepath)
+	if home, err := os.UserHomeDir(); err == nil {
+		return filepath.Join(home, "Saved Games")
+	}
+	return "."
 }

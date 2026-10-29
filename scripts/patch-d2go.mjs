@@ -261,6 +261,23 @@ func calculateOffsets(process *Process) Offset {`,
     skipIf: s => s.includes('var knownBuildOffsets'),
   },
   {
+    file: 'offset.go',
+    name: 'exported build identity',
+    find: 'func calculateOffsets(process *Process) Offset {',
+    replace: `// D2RR PATCH: exported so the client can tell a user whether this D2R build has
+// measured offsets, and name the build when it does not.
+func (p *Process) PETimestamp() uint32 { return peTimestamp(p) }
+
+// D2RR PATCH: whether knownBuildOffsets has an entry for this PE TimeDateStamp.
+func KnownBuild(timestamp uint32) bool {
+	_, ok := knownBuildOffsets[timestamp]
+	return ok
+}
+
+func calculateOffsets(process *Process) Offset {`,
+    skipIf: s => s.includes('func KnownBuild('),
+  },
+  {
     file: 'game_reader.go',
     name: 'offset rescan timestamp',
     find: '\tcachedObjects   []data.Object\n}',
@@ -390,26 +407,43 @@ function main() {
     process.exit(2);
   }
 
+  // Apply every patch in memory first, and write only if all of them found their anchor.
+  // Writing as we went would leave the vendor tree half-patched when a later anchor is
+  // missing, which is the state the vendor tests exist to catch.
+  const sources = new Map();
+  const read = name => {
+    if (!sources.has(name)) sources.set(name, fs.readFileSync(path.join(memDir, name), 'utf-8'));
+    return sources.get(name);
+  };
+  const changed = new Set();
+  const missing = [];
   let applied = 0, already = 0;
   for (const p of patches) {
-    const file = path.join(memDir, p.file);
-    let src = fs.readFileSync(file, 'utf-8');
-
+    const src = read(p.file);
     if (p.skipIf ? p.skipIf(src) : src.includes(p.replace)) {
       already++;
       console.log(`  already applied: ${p.file} — ${p.name}`);
       continue;
     }
     if (!src.includes(p.find)) {
-      console.error(`\nCannot apply "${p.name}" to ${p.file}: the upstream code does not match.`);
-      console.error('d2go changed. Re-derive the patch before trusting the client.');
-      process.exit(1);
+      missing.push(p);
+      continue;
     }
-    fs.writeFileSync(file, src.replace(p.find, p.replace));
+    sources.set(p.file, src.replace(p.find, p.replace));
+    changed.add(p.file);
     applied++;
-    console.log(`  applied: ${p.file} — ${p.name}`);
+    console.log(`  applying: ${p.file} — ${p.name}`);
   }
 
+  if (missing.length > 0) {
+    for (const p of missing) {
+      console.error(`\nCannot apply "${p.name}" to ${p.file}: the upstream code does not match.`);
+    }
+    console.error('\nd2go changed. Nothing was written. Re-derive the patches before trusting the client.');
+    process.exit(1);
+  }
+
+  for (const name of changed) fs.writeFileSync(path.join(memDir, name), sources.get(name));
   console.log(`\n${applied} patch(es) applied, ${already} already present.`);
   if (applied > 0) console.log('Rebuild the client: go build ./...');
 }

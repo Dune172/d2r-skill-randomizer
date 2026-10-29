@@ -14,7 +14,7 @@ import (
 )
 
 // pollGame verifies the mod and bound character before writing a point balance.
-func (a *app) pollGame() {
+func (a *app) pollGame(ctx context.Context) {
 	if a.gc == nil {
 		gc, err := game.Attach()
 		if err != nil {
@@ -34,13 +34,15 @@ func (a *app) pollGame() {
 			gc.Close()
 			return
 		}
-		a.process = proc
 		if build, e := setup.ExecutableHash(proc.ExecutablePath); e == nil {
 			a.difficultyProfile, _ = game.LoadDifficultyProfile(a.stateDir, build)
 		}
 		a.gc = gc
-		a.clearAttachWarning()
-		logf("attached to D2R")
+		if !a.reattaching {
+			a.clearAttachWarning()
+			logf("attached to D2R")
+		}
+		a.reattaching = false
 	}
 
 	if a.gc.IsOnline() {
@@ -62,7 +64,7 @@ func (a *app) pollGame() {
 		// is still starting up can bake in a bad unit-table offset, and a bad unit
 		// table is indistinguishable from an empty one — the client reports "no
 		// character loaded" forever while the player is demonstrably in a game, and
-		// cmd/grant, which attaches fresh every run, resolves the same character fine.
+		// a tool that attaches fresh (doctor, probe) resolves the same character fine.
 		//
 		// A fresh attach re-runs the scan, so the recovery is simply to stop reusing
 		// the old one.
@@ -113,6 +115,9 @@ func (a *app) pollGame() {
 		a.player = player
 	}
 	a.attached = true
+	if !a.offsetsResolved() {
+		return
+	}
 	if a.gc.QuitMenuOpen() {
 		return
 	} // avoid writing during exit; there are no nodes to unlink
@@ -126,7 +131,47 @@ func (a *app) pollGame() {
 	}
 
 	a.applySkillPoints(player)
-	a.applyGrants(context.Background(), player)
+	a.applyGrants(ctx, player)
+}
+
+// offsetsResolved reports whether the UI block is known, which every write waits on,
+// and re-attaches every 30 s while it or the waypoint panel is not.
+//
+// Without this an unknown D2R build looks exactly like a working client: checks keep
+// arriving from the save while QuitMenuOpen stays true forever and no grant is made.
+func (a *app) offsetsResolved() bool {
+	ui, waypoints := a.gc.OffsetsResolved()
+	if ui && waypoints {
+		a.offsetsMissingSince = time.Time{}
+		return true
+	}
+	build := a.gc.BuildTimestamp()
+	if !ui {
+		a.warnAttach(fmt.Sprintf("D2R build 0x%08x: the UI block was not found, so nothing "+
+			"is granted (checks still send). %s", build, buildHint(build)))
+	} else {
+		a.warnAttach(fmt.Sprintf("D2R build 0x%08x: the waypoint panel was not found, so "+
+			"waypoint checks wait for the save. %s", build, buildHint(build)))
+	}
+	if a.offsetsMissingSince.IsZero() {
+		a.offsetsMissingSince = time.Now()
+	} else if time.Since(a.offsetsMissingSince) > 30*time.Second {
+		// A fresh attach scans the module again, and a code page that had not run
+		// before may be readable now.
+		a.offsetsMissingSince = time.Time{}
+		a.reattaching = true
+		a.attached = false
+		a.detachGame()
+		return false
+	}
+	return ui
+}
+
+func buildHint(build uint32) string {
+	if game.KnownBuild(build) {
+		return "Retrying."
+	}
+	return "This build has no measured offsets; retrying, and it may need a client update."
 }
 
 func (a *app) detachGame() {

@@ -53,6 +53,21 @@ func Attach() (*Client, error) {
 
 func (c *Client) Close() error { return c.proc.Close() }
 
+// OffsetsResolved reports whether d2go found the UI flag block and the live waypoint
+// panel. Both are pattern-scanned at attach, with measured fallbacks for known D2R builds
+// (see BuildTimestamp). On an unknown build a pattern can miss until its code page has
+// run, and only a fresh attach scans again.
+func (c *Client) OffsetsResolved() (ui, waypoints bool) {
+	o := c.gr.Offsets()
+	return o.UI != 0, o.WaypointsOffset != 0
+}
+
+// BuildTimestamp is the PE TimeDateStamp of the running D2R.exe, which names the build.
+func (c *Client) BuildTimestamp() uint32 { return c.proc.PETimestamp() }
+
+// KnownBuild reports whether the vendored d2go has measured offsets for this build.
+func KnownBuild(timestamp uint32) bool { return memory.KnownBuild(timestamp) }
+
 // IsOnline reports whether D2R looks like it is on Battle.net.
 //
 // The client must refuse to touch an online session: memory tooling is what gets
@@ -87,7 +102,7 @@ func (c *Client) Skills(player uintptr) ([]SkillNode, error) {
 const uiQuitMenuByte = 0x09
 
 // QuitMenuOpen pauses reconciliation while the measured quit-menu byte is open.
-// An unreadable UI block is treated as unavailable for writes as well.
+// An unreadable or unresolved UI block is treated as unavailable for writes as well.
 func (c *Client) QuitMenuOpen() bool {
 	buf := c.UIBuffer()
 	return len(buf) <= uiQuitMenuByte || buf[uiQuitMenuByte] == 0
