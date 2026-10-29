@@ -20,9 +20,11 @@ const (
 	killGrace = 3 * time.Second
 )
 
-// gameView is the part of the running game the grant code reads and writes. The real one
-// is *game.Client; tests substitute a character made of a map.
+// gameView is the part of the running game the grant and skill-point code reads and
+// writes. The real one is *game.Client; tests substitute a character made of a map.
 type gameView interface {
+	SpentSkillPoints(player uintptr, classSkillIDs map[int]bool) (int, error)
+	SetUnspentSkillPoints(player uintptr, n int) (bool, error)
 	BaseStat(unit uintptr, id stat.ID) (uint32, bool, error)
 	SetPlayerStat(player uintptr, id stat.ID, value uint32) (bool, error)
 	SpentStatPoints(player uintptr, classBase int) (int, error)

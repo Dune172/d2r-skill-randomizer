@@ -49,7 +49,7 @@ func (a *app) applySkillPoints(player uintptr) {
 	if len(classIDs) == 0 {
 		return // no manifest yet, so "spent" cannot be computed
 	}
-	spent, err := a.gc.SpentSkillPoints(player, classIDs)
+	spent, err := a.view().SpentSkillPoints(player, classIDs)
 	if err != nil {
 		a.pointSampleOK = false
 		a.warnAttach("point accounting paused: " + err.Error())
@@ -75,7 +75,7 @@ func (a *app) applySkillPoints(player uintptr) {
 		want = 0 // a Skill Lock Trap: the points come back when it wears off
 	}
 
-	existed, err := a.gc.SetUnspentSkillPoints(player, want)
+	existed, err := a.view().SetUnspentSkillPoints(player, want)
 	if err != nil {
 		a.warnAttach("setting skill points: " + err.Error())
 		return

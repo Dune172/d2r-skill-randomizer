@@ -31,6 +31,20 @@ type fakeCharacter struct {
 	writes int
 	// killable makes an emptied life pool a death, the way the client hopes the game works.
 	killable bool
+	// skillsSpent is the hard points in the class skills; skillsErr makes them unreadable.
+	skillsSpent int
+	skillsErr   error
+}
+
+func (f *fakeCharacter) SpentSkillPoints(uintptr, map[int]bool) (int, error) {
+	return f.skillsSpent, f.skillsErr
+}
+
+func (f *fakeCharacter) SetUnspentSkillPoints(p uintptr, n int) (bool, error) {
+	if n < 0 || n > game.MaxSkillPoints {
+		return false, errors.New("out of range")
+	}
+	return f.SetPlayerStat(p, stat.SkillPoints, uint32(n))
 }
 
 func (f *fakeCharacter) BaseStat(_ uintptr, id stat.ID) (uint32, bool, error) {
