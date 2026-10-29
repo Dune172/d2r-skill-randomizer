@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { DEFAULT_OPEN_ACTS, defaultSpoiler, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 import OpenActsFields from './OpenActsFields';
+import MutationPicker from './mutations/MutationPicker';
+import { mutationOptionConflict } from '@/lib/mutations/custom';
 
 type Preset = 'custom' | 'season1race' | 'turbo' | 'openacts';
 
@@ -24,6 +26,7 @@ interface FormState {
   enemyShuffle: boolean;
   forgottenArts: boolean;
   openActs: OpenActsSettings;
+  mutations: number[];
 }
 
 const SEASON1_PRESET: FormState = {
@@ -44,6 +47,7 @@ const SEASON1_PRESET: FormState = {
   enemyShuffle: true,
   forgottenArts: false,
   openActs: DEFAULT_OPEN_ACTS,
+  mutations: [],
 };
 
 const TURBO_PRESET: FormState = {
@@ -64,6 +68,7 @@ const TURBO_PRESET: FormState = {
   enemyShuffle: false,
   forgottenArts: false,
   openActs: DEFAULT_OPEN_ACTS,
+  mutations: [],
 };
 
 // Open Acts: a casual quest-item hunt. Starter characters with Acts II and III open,
@@ -86,6 +91,7 @@ const OPEN_ACTS_PRESET: FormState = {
   enemyShuffle: false,
   forgottenArts: false,
   openActs: { ...DEFAULT_OPEN_ACTS, shuffle: true, acts: [2, 3] },
+  mutations: [],
 };
 
 const DEFAULT_STATE: FormState = {
@@ -106,11 +112,12 @@ const DEFAULT_STATE: FormState = {
   enemyShuffle: false,
   forgottenArts: false,
   openActs: DEFAULT_OPEN_ACTS,
+  mutations: [],
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings; mutations?: number[] };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings; mutations: number[] }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -246,6 +253,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const withModeSpoiler = (oa: OpenActsSettings, race: boolean) => ({ ...oa, spoiler: defaultSpoiler(race) });
   const [openActs, setOpenActs] = useState<OpenActsSettings>(
     initialOptions?.openActs ?? withModeSpoiler(SEASON1_PRESET.openActs, SEASON1_PRESET.raceMode));
+  const [mutations, setMutations] = useState<number[]>(initialOptions?.mutations ?? SEASON1_PRESET.mutations);
   const applyPreset = (p: Preset) => {
     setPreset(p);
     const src = p === 'season1race' ? SEASON1_PRESET : p === 'turbo' ? TURBO_PRESET : p === 'openacts' ? OPEN_ACTS_PRESET : null;
@@ -266,6 +274,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setRaceMode(src.raceMode);
       setEnemyShuffle(src.enemyShuffle);
       setOpenActs(withModeSpoiler(src.openActs, src.raceMode));
+      setMutations(src.mutations);
     }
   };
 
@@ -308,6 +317,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       enemyShuffle,
       forgottenArts,
       openActs,
+      mutations,
     });
   };
 
@@ -521,6 +531,16 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           value={openActs}
           onChange={v => { setPreset('custom'); setOpenActs(v); }}
           raceMode={raceMode}
+        />
+      </div>
+
+      {/* Mutations section */}
+      <div className="space-y-3 pt-1 pb-2">
+        <SectionDivider label="Mutations" />
+        <MutationPicker
+          value={mutations}
+          onChange={field(setMutations)}
+          blocked={id => mutationOptionConflict(id, { openActsShuffle: openActs.shuffle })}
         />
       </div>
 

@@ -1,5 +1,5 @@
 /**
- * Weekly challenge mutation orchestrator.
+ * Mutation orchestrator: challenge mutations and player-picked ones alike.
  * Server-only — imports file I/O via the individual mutation modules.
  */
 import { MUTATIONS, getMutationIds, getActiveMutations, assertNoConflictingMutations } from '@/lib/mutations/registry';
@@ -69,10 +69,15 @@ const APPLY_FNS: Record<number, ApplyFn> = {
   // Forgotten Arts (19) needs final skill IDs and art assets: the route applies it last.
 };
 
+/** True if the mutation with this slug is in the list. */
+export function hasMutation(ids: readonly number[], mutationId: string): boolean {
+  return ids.some((id) => MUTATIONS[id]?.id === mutationId);
+}
+
 /**
  * Skills the active mutations remove from the shuffle pool entirely.
  *
- * Placement runs long before applyWeeklyMutations — the tree is already built by
+ * Placement runs long before applyMutations — the tree is already built by
  * the time mutations touch txt data — so this is a PRE-hook, passed straight into
  * placeSkills(opts.excludeSkills). Excluded skills do not appear in any tree;
  * their slot is filled by a substitute that keeps the dropped skill's row
@@ -81,16 +86,17 @@ const APPLY_FNS: Record<number, ApplyFn> = {
  * Callers must pass the same set to the preview endpoint, or the spoiler tree
  * will not match the tree in the generated mod.
  */
-export function getMutationExcludedSkills(weekNumber: number): Set<string> {
+export function getMutationExcludedSkillsFor(ids: readonly number[]): Set<string> {
   const excluded = new Set<string>();
-  if (weekNumber <= 0) return excluded;
-  const ids = getMutationIds(weekNumber);
-  for (const id of ids) {
-    if (MUTATIONS[id]?.id === 'no-guard') {
-      for (const name of NO_GUARD_EXCLUDED_SKILLS) excluded.add(name);
-    }
+  if (hasMutation(ids, 'no-guard')) {
+    for (const name of NO_GUARD_EXCLUDED_SKILLS) excluded.add(name);
   }
   return excluded;
+}
+
+/** Week-number form of getMutationExcludedSkillsFor (0 = no challenge). */
+export function getMutationExcludedSkills(weekNumber: number): Set<string> {
+  return getMutationExcludedSkillsFor(weekNumber > 0 ? getMutationIds(weekNumber) : []);
 }
 
 /**
@@ -98,12 +104,11 @@ export function getMutationExcludedSkills(weekNumber: number): Set<string> {
  * before remapClassItemSkills runs so skill IDs are assigned correctly.
  * Call this on raw affix data, before the skill remapper.
  */
-export function preApplyMagicAffixMutations(
-  weekNumber: number,
+export function preApplyMagicAffixMutationsFor(
+  ids: readonly number[],
   prefix: { headers: string[]; rows: string[][] },
   suffix: { headers: string[]; rows: string[][] },
 ): void {
-  const ids = getMutationIds(weekNumber);
   for (const id of ids) {
     if (MUTATIONS[id]?.id === 'heavy-burden') {
       injectArmorProcs(prefix.headers, prefix.rows);
@@ -116,15 +121,22 @@ export function preApplyMagicAffixMutations(
   }
 }
 
-/** True if the given mutation id is one of the active mutations for this week number. */
-export function isMutationActiveForWeek(weekNumber: number, mutationId: string): boolean {
-  const ids = getMutationIds(weekNumber);
-  return ids.some((id) => MUTATIONS[id]?.id === mutationId);
+/** Week-number form of preApplyMagicAffixMutationsFor. */
+export function preApplyMagicAffixMutations(
+  weekNumber: number,
+  prefix: { headers: string[]; rows: string[][] },
+  suffix: { headers: string[]; rows: string[][] },
+): void {
+  preApplyMagicAffixMutationsFor(getMutationIds(weekNumber), prefix, suffix);
 }
 
-/** Apply the active mutations for the given week number to the provided context. */
-export function applyWeeklyMutations(weekNumber: number, ctx: MutationContext): void {
-  const ids = getMutationIds(weekNumber);
+/** True if the given mutation id is one of the active mutations for this week number. */
+export function isMutationActiveForWeek(weekNumber: number, mutationId: string): boolean {
+  return hasMutation(getMutationIds(weekNumber), mutationId);
+}
+
+/** Apply these mutations, in list order, to the provided context. */
+export function applyMutations(ids: readonly number[], ctx: MutationContext): void {
   assertNoConflictingMutations(ids);
   for (const id of ids) {
     const fn = APPLY_FNS[id];
@@ -138,4 +150,9 @@ export function applyWeeklyMutations(weekNumber: number, ctx: MutationContext): 
     if (!file || !('headers' in file)) continue;
     assertNoFractionalCells(`${name}.txt`, file.headers, file.rows);
   }
+}
+
+/** Apply the active mutations for the given week number to the provided context. */
+export function applyWeeklyMutations(weekNumber: number, ctx: MutationContext): void {
+  applyMutations(getMutationIds(weekNumber), ctx);
 }

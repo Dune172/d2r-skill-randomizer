@@ -7,6 +7,7 @@ import { getWeekName, getActiveMutations } from '@/lib/mutations/registry';
 import { getWeekStart, getCurrentWeekNumber } from '@/lib/challenge/week';
 import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
 import { DEFAULT_OPEN_ACTS, openActsCacheSegment, openActsFromParams } from '@/lib/randomizer/open-acts/options';
+import { mutationCacheSegment, parseMutationParam } from '@/lib/mutations/custom';
 
 function slugifyChallenge(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
@@ -94,9 +95,11 @@ export async function GET(request: NextRequest) {
     // Same guard as /api/randomize: no Open Acts for challenges.
     const openActs = weeklyParam || forgottenArts
       ? DEFAULT_OPEN_ACTS : openActsFromParams(name => searchParams.get(name), raceMode);
+    // Picked mutations, normalized the same way /api/randomize does; challenges ignore them.
+    const customMutations = weeklyParam ? [] : parseMutationParam(searchParams.get('mut'));
     const cacheKey = withBuildSegment(
       makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
-        + openActsCacheSegment(openActs),
+        + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations),
       classBuild?.code,
     );
     const zipBuffer = getCached(cacheKey);
@@ -111,11 +114,12 @@ export async function GET(request: NextRequest) {
     const weekParam = searchParams.get('week');
     const weekNumber = weekParam ? Number(weekParam) : NaN;
     const isWeekly = weeklyParam && Number.isInteger(weekNumber) && weekNumber >= 1;
+    const mutated = customMutations.length ? '_mutated' : '';
     const filename = classBuild
-      ? `d2rr_${classBuild.modName}.zip`
+      ? `d2rr_${classBuild.modName}${mutated}.zip`
       : isWeekly
         ? `d2rr_${slugifyChallenge(getWeekName(weekNumber))}_${formatLaIsoDate(getWeekStart(weekNumber))}.zip`
-        : `d2rr_export_${seed}.zip`;
+        : `d2rr_export_${seed}${mutated}.zip`;
 
     // A stream serves the cached bytes without rebuilding the archive or
     // copying the whole Buffer into a new response body for each download.
