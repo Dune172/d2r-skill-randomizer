@@ -5,10 +5,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
+	"golang.org/x/sys/windows"
 )
 
 func testManifest(t *testing.T) *manifest.Manifest {
@@ -77,22 +81,92 @@ func TestInstallVerifyRepairAndBackup(t *testing.T) {
 func TestUnsafeArchivesDoNotReplaceInstalledMod(t *testing.T) {
 	root := t.TempDir()
 	m := testManifest(t)
-	Install(root, testZip(t, m, ""), m)
+	if _, e := Install(root, testZip(t, m, ""), m); e != nil {
+		t.Fatal(e)
+	}
 	// Force reinstallation; traversal must be rejected before the existing dir is moved.
 	os.WriteFile(filepath.Join(root, "mods", m.ModName, "d2rr-install-hashes.json"), []byte("bad"), 0600)
 	for _, entry := range []string{"seed1234/../../outside.txt", "seed1234/.. /outside.txt", "other/file", "seed1234/C:/file", "seed1234/CON"} {
-		if _, e := Install(root, testZip(t, m, entry), m); e == nil {
+		_, e := Install(root, testZip(t, m, entry), m)
+		if e == nil {
 			t.Fatalf("accepted %q", entry)
+		}
+		if msg := e.Error(); !strings.Contains(msg, "unsafe archive") && !strings.Contains(msg, "unexpected archive entry") && !strings.Contains(msg, "reserved Windows path") {
+			t.Fatalf("%q rejected for the wrong reason: %v", entry, e)
 		}
 	}
 	if _, e := os.Stat(filepath.Join(root, "mods", m.ModName)); e != nil {
 		t.Fatal("bad archive removed existing installation")
 	}
 }
+
+// A game folder reached through an 8.3 short name (as t.TempDir is on GitHub's
+// runners, C:\Users\RUNNER~1) is a real folder, not a link.
+func TestInstallThroughShortPath(t *testing.T) {
+	long := t.TempDir()
+	p, e := windows.UTF16PtrFromString(long)
+	if e != nil {
+		t.Fatal(e)
+	}
+	buf := make([]uint16, windows.MAX_LONG_PATH)
+	n, e := windows.GetShortPathName(p, &buf[0], uint32(len(buf)))
+	if e != nil || n == 0 {
+		t.Skipf("no short path: %v", e)
+	}
+	short := windows.UTF16ToString(buf[:n])
+	if strings.EqualFold(short, long) {
+		t.Skip("8.3 names are disabled on this volume")
+	}
+	m := testManifest(t)
+	if _, e = Install(short, testZip(t, m, ""), m); e != nil {
+		t.Fatal(e)
+	}
+	if e = VerifyInstalled(short, m); e != nil {
+		t.Fatal(e)
+	}
+}
+
+func junction(t *testing.T, link, target string) {
+	t.Helper()
+	if out, e := exec.Command("cmd", "/c", "mklink", "/J", link, target).CombinedOutput(); e != nil {
+		t.Skipf("cannot create junction: %v %s", e, out)
+	}
+}
+
+// A game folder behind a junction (a library moved to another drive) is fine; a
+// mods folder that is itself a junction is refused.
+func TestJunctions(t *testing.T) {
+	base := t.TempDir()
+	m := testManifest(t)
+
+	realGame := filepath.Join(base, "real-game")
+	os.MkdirAll(realGame, 0755)
+	linkedGame := filepath.Join(base, "linked-game")
+	junction(t, linkedGame, realGame)
+	if _, e := Install(linkedGame, testZip(t, m, ""), m); e != nil {
+		t.Fatalf("install through a junctioned game folder: %v", e)
+	}
+	if _, e := os.Stat(filepath.Join(realGame, "mods", m.ModName, "d2rr-ap-manifest.json")); e != nil {
+		t.Fatal("mod did not land in the real game folder")
+	}
+
+	game := filepath.Join(base, "game")
+	elsewhere := filepath.Join(base, "elsewhere")
+	os.MkdirAll(game, 0755)
+	os.MkdirAll(elsewhere, 0755)
+	junction(t, filepath.Join(game, "mods"), elsewhere)
+	_, e := Install(game, testZip(t, m, ""), m)
+	if e == nil || !strings.Contains(e.Error(), "junction") {
+		t.Fatalf("accepted a mods folder that is a junction: %v", e)
+	}
+}
+
 func TestVerifyExactProcessArguments(t *testing.T) {
 	root := t.TempDir()
 	m := testManifest(t)
-	Install(root, testZip(t, m, ""), m)
+	if _, e := Install(root, testZip(t, m, ""), m); e != nil {
+		t.Fatal(e)
+	}
 	executable := filepath.Join(root, "D2R.exe")
 	for _, args := range []string{` -mod seed999 -txt`, ` -mod seed1234 -txtExtra`, ` -mod seed1234 -mod seed1234 -txt`, ` -mod seed1234`, ` -txt -mod`} {
 		if e := VerifyProcess(Process{ExecutablePath: executable, CommandLine: `"` + executable + `"` + args}, m); e == nil {

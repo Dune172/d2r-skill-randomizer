@@ -186,19 +186,9 @@ func Install(root string, data []byte, m *manifest.Manifest) (string, error) {
 	if err := VerifyInstalled(root, m); err == nil {
 		return filepath.Join(root, "mods", m.ModName), nil
 	}
-	mods, err := filepath.Abs(filepath.Join(root, "mods"))
+	mods, err := modsDir(root)
 	if err != nil {
 		return "", err
-	}
-	if err = os.MkdirAll(mods, 0755); err != nil {
-		return "", err
-	}
-	real, err := filepath.EvalSymlinks(mods)
-	if err != nil {
-		return "", err
-	}
-	if !strings.EqualFold(real, mods) {
-		return "", fmt.Errorf("mods directory uses a junction or symlink; choose its real installation path")
 	}
 	stage, err := os.MkdirTemp(mods, ".d2rr-install-")
 	if err != nil {
@@ -280,10 +270,10 @@ func Install(root string, data []byte, m *manifest.Manifest) (string, error) {
 	dest := filepath.Join(mods, m.ModName)
 	backup := ""
 	if info, e := os.Lstat(dest); e == nil {
-		if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+		if !info.IsDir() || info.Mode()&(os.ModeSymlink|os.ModeIrregular) != 0 {
 			return "", fmt.Errorf("existing mod is not a regular directory")
 		}
-		resolved, e := filepath.EvalSymlinks(dest)
+		resolved, e := finalPath(dest)
 		if e != nil || !strings.EqualFold(resolved, dest) {
 			return "", fmt.Errorf("existing mod resolves outside its expected path")
 		}
@@ -296,11 +286,74 @@ func Install(root string, data []byte, m *manifest.Manifest) (string, error) {
 	}
 	if err = os.Rename(verified, dest); err != nil {
 		if backup != "" {
-			os.Rename(backup, dest)
+			if rerr := os.Rename(backup, dest); rerr != nil {
+				return "", fmt.Errorf("%w; the previous installation is kept at %s (restoring it failed: %v)", err, backup, rerr)
+			}
 		}
 		return "", err
 	}
 	return dest, nil
+}
+
+// modsDir creates root\mods and returns its real path. The game root is resolved
+// first, which expands 8.3 short names (C:\Users\RUNNER~1) and allows the install
+// itself to sit behind a junction, such as a game library moved to another drive.
+// Only a mods folder that is itself a junction or symlink is refused, because
+// installing through it would write somewhere the game root does not contain.
+func modsDir(root string) (string, error) {
+	abs, err := filepath.Abs(root)
+	if err != nil {
+		return "", err
+	}
+	if err = os.MkdirAll(filepath.Join(abs, "mods"), 0755); err != nil {
+		return "", err
+	}
+	realRoot, err := finalPath(abs)
+	if err != nil {
+		return "", err
+	}
+	mods := filepath.Join(realRoot, "mods")
+	info, err := os.Lstat(mods)
+	if err != nil {
+		return "", err
+	}
+	real, err := finalPath(mods)
+	if err != nil {
+		return "", err
+	}
+	if !info.IsDir() || info.Mode()&(os.ModeSymlink|os.ModeIrregular) != 0 || !strings.EqualFold(real, mods) {
+		return "", fmt.Errorf("mods directory uses a junction or symlink; choose its real installation path")
+	}
+	return mods, nil
+}
+
+// finalPath returns the path Windows itself resolves p to, with junctions,
+// symlinks and 8.3 short names expanded. filepath.EvalSymlinks cannot be used:
+// since Go 1.23 it does not follow directory junctions and fails on any path
+// that runs through one.
+func finalPath(p string) (string, error) {
+	name, err := windows.UTF16PtrFromString(p)
+	if err != nil {
+		return "", err
+	}
+	h, err := windows.CreateFile(name, 0, windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE,
+		nil, windows.OPEN_EXISTING, windows.FILE_FLAG_BACKUP_SEMANTICS, 0)
+	if err != nil {
+		return "", &os.PathError{Op: "open", Path: p, Err: err}
+	}
+	defer windows.CloseHandle(h)
+	buf := make([]uint16, windows.MAX_LONG_PATH)
+	// FILE_NAME_NORMALIZED | VOLUME_NAME_DOS; both are 0 and x/sys/windows does not name them.
+	const normalizedDOSPath = 0
+	n, err := windows.GetFinalPathNameByHandle(h, &buf[0], uint32(len(buf)), normalizedDOSPath)
+	if err != nil {
+		return "", &os.PathError{Op: "resolve", Path: p, Err: err}
+	}
+	s := windows.UTF16ToString(buf[:n])
+	if strings.HasPrefix(s, `\\?\UNC\`) {
+		return `\\` + s[len(`\\?\UNC\`):], nil
+	}
+	return strings.TrimPrefix(s, `\\?\`), nil
 }
 
 func Launch(root string, m *manifest.Manifest) error {
