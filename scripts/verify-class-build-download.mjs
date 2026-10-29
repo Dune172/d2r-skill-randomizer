@@ -114,6 +114,43 @@ await check('options travel in the download key', async () => {
   assert.equal((await download(`build=${code}&cube=1`)).status, 404, 'a different option set must be a different zip');
 });
 
+await check('Open Acts on a build: shuffle, starters with Acts II–V, hardcore, name', async () => {
+  const mo = load('src/lib/builder/mod-options.ts');
+  const spec = cb.fillEmptySlots(cb.emptyBuild('dru', 5150), skills, treePages, 8);
+  const code = encodeClassBuild(spec, skills, treePages);
+  const opts = { ...mo.DEFAULT_MOD_OPTIONS, openActs: { ...mo.DEFAULT_MOD_OPTIONS.openActs, shuffle: true, acts: [5], hardcore: true, name: 'Tester' } };
+  const r = await fetch(`${base}/api/randomize`, { method: 'POST', headers: headers(), body: mo.buildRandomizeBody(code, opts) });
+  const body = await r.json();
+  assert.equal(r.status, 200, JSON.stringify(body));
+  // The download query must rebuild the same cache key (round trip through the share link too).
+  const shared = mo.parseModOptions(new URLSearchParams(mo.buildShareQuery(code, opts)));
+  assert.equal(mo.optionParams(shared), mo.optionParams(opts), 'share link loses Open Acts options');
+  const { status, zip } = await download(mo.buildDownloadQuery(code, opts));
+  assert.equal(status, 200, 'download key mismatch');
+  const m = body.modName;
+  const names = zip.getEntries().map(e => e.entryName);
+  const saves = names.filter(n => n.startsWith(`${m}/starter-saves/`) && n.endsWith('.d2s'));
+  assert.equal(saves.length, 8, `starters: ${saves}`);
+  assert.ok(saves.includes(`${m}/starter-saves/Tester-Druid.d2s`), `names: ${saves}`);
+  assert.ok(names.some(n => n.endsWith('/data/local/lng/strings/quests.json')), 'quests.json');
+  assert.ok(names.some(n => n.endsWith('/data/global/excel/objects.txt')), 'objects.txt');
+  const modinfo = JSON.parse(zip.getEntries().find(e => e.entryName.endsWith('modinfo.json')).getData().toString('utf8'));
+  assert.equal(modinfo.savepath, `${m}_openacts`);
+  const sk = table(zip, 'skills.txt'), cs = table(zip, 'charstats.txt');
+  for (const e of zip.getEntries().filter(e => saves.includes(e.entryName))) {
+    const b = e.getData();
+    assert.ok(b[20] & 0x04, `${e.entryName} not hardcore`);
+    for (let d = 0; d < 3; d++) for (const w of [7, 15, 23, 26, 28]) assert.equal(b.readUInt16LE(403 + 10 + d * 96 + w * 2), 0x2001, `${e.entryName} word ${w}`);
+    const cls = CLASS_DEFS[b[24]];
+    const start = cs.get(cs.rows.find(r => cs.get(r, 'class') === cls.name), 'StartSkill');
+    const block = sk.rows.filter(r => sk.get(r, 'charclass') === cls.charclass);
+    const slots = b.subarray(b.indexOf('if', b.indexOf('gf', 701, 'latin1') + 2, 'latin1') + 2).subarray(0, 30);
+    const want = start ? block.findIndex(r => r[0] === start) : -1;
+    assert.deepEqual([...slots].map((v, i) => v ? i : -1).filter(i => i >= 0), want >= 0 ? [want] : [], `${e.entryName} start skill`);
+  }
+  assert.equal((await download(`build=${code}&shuffleQuests=1&openActs=2,3,4,5&starterHc=1`)).status, 404, 'the name must be part of the key');
+});
+
 await check('incomplete, blocked and garbage codes are rejected', async () => {
   const draft = cb.emptyBuild('ama', 9);
   assert.equal((await build(encodeClassBuild(draft, skills, treePages))).status, 400);

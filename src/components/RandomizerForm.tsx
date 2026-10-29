@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { DEFAULT_OPEN_ACTS, defaultSpoiler, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
+import OpenActsFields from './OpenActsFields';
 
-type Preset = 'custom' | 'season1race' | 'turbo';
+type Preset = 'custom' | 'season1race' | 'turbo' | 'openacts';
 
 interface FormState {
   enablePrereqs: boolean;
@@ -21,6 +23,7 @@ interface FormState {
   raceMode: boolean;
   enemyShuffle: boolean;
   forgottenArts: boolean;
+  openActs: OpenActsSettings;
 }
 
 const SEASON1_PRESET: FormState = {
@@ -40,6 +43,7 @@ const SEASON1_PRESET: FormState = {
   raceMode: true,
   enemyShuffle: true,
   forgottenArts: false,
+  openActs: DEFAULT_OPEN_ACTS,
 };
 
 const TURBO_PRESET: FormState = {
@@ -59,6 +63,29 @@ const TURBO_PRESET: FormState = {
   raceMode: false,
   enemyShuffle: false,
   forgottenArts: false,
+  openActs: DEFAULT_OPEN_ACTS,
+};
+
+// Open Acts: a casual quest-item hunt. Starter characters with Acts II and III open,
+// the quest items shuffled across Acts I–III, with hints and a spoiler file.
+const OPEN_ACTS_PRESET: FormState = {
+  enablePrereqs: true,
+  playersCount: 1,
+  playersActs: [1, 2, 3, 4, 5],
+  teleportStaff: false,
+  teleportStaffLevel: 1,
+  teleportStaffDropSource: 'Corpsefire',
+  teleportStaffSpeed: true,
+  horadricCube: false,
+  hirelingAura: true,
+  disableChat: false,
+  xpMultiplier: 1.5,
+  xpActs: [1, 2, 3, 4, 5],
+  xpDifficulties: [1],
+  raceMode: false,
+  enemyShuffle: false,
+  forgottenArts: false,
+  openActs: { ...DEFAULT_OPEN_ACTS, shuffle: true, acts: [2, 3] },
 };
 
 const DEFAULT_STATE: FormState = {
@@ -78,11 +105,12 @@ const DEFAULT_STATE: FormState = {
   raceMode: true,
   enemyShuffle: false,
   forgottenArts: false,
+  openActs: DEFAULT_OPEN_ACTS,
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -214,9 +242,13 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   // Forgotten Arts is challenge-only; the standard generator never enables it.
   const forgottenArts = false;
   const [enemyShuffle, setEnemyShuffle] = useState(initialOptions?.enemyShuffle ?? SEASON1_PRESET.enemyShuffle);
+  // The spoiler file follows Race Mode's default (off in Race Mode) until changed by hand.
+  const withModeSpoiler = (oa: OpenActsSettings, race: boolean) => ({ ...oa, spoiler: defaultSpoiler(race) });
+  const [openActs, setOpenActs] = useState<OpenActsSettings>(
+    initialOptions?.openActs ?? withModeSpoiler(SEASON1_PRESET.openActs, SEASON1_PRESET.raceMode));
   const applyPreset = (p: Preset) => {
     setPreset(p);
-    const src = p === 'season1race' ? SEASON1_PRESET : p === 'turbo' ? TURBO_PRESET : null;
+    const src = p === 'season1race' ? SEASON1_PRESET : p === 'turbo' ? TURBO_PRESET : p === 'openacts' ? OPEN_ACTS_PRESET : null;
     if (src) {
       setEnablePrereqs(src.enablePrereqs);
       setPlayersCount(src.playersCount);
@@ -233,6 +265,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setXpDifficulties(src.xpDifficulties);
       setRaceMode(src.raceMode);
       setEnemyShuffle(src.enemyShuffle);
+      setOpenActs(withModeSpoiler(src.openActs, src.raceMode));
     }
   };
 
@@ -274,6 +307,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       raceMode: forgottenArts ? false : raceMode,
       enemyShuffle,
       forgottenArts,
+      openActs,
     });
   };
 
@@ -282,7 +316,9 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       ? 'Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!'
       : preset === 'turbo'
         ? 'Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.'
-        : null;
+        : preset === 'openacts'
+          ? 'Open Acts: A quest-item hunt. Starter characters begin with Acts II and III open, and the Scroll of Inifuss, Horadric Cube, Staff of Kings and Khalim’s parts are shuffled across Acts I–III, with quest-log hints and a spoiler file. 1.5× XP in Normal.'
+          : null;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-1">
@@ -306,6 +342,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
             <option value="custom">Custom</option>
             <option value="season1race" title="Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!">Season Beta Race</option>
             <option value="turbo" title="Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.">Turbo</option>
+            <option value="openacts" title="Open Acts: A quest-item hunt. Starter characters begin with Acts II and III open, and the Scroll of Inifuss, Horadric Cube, Staff of Kings and Khalim’s parts are shuffled across Acts I–III, with quest-log hints and a spoiler file. 1.5× XP in Normal.">Open Acts</option>
           </select>
           <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
         </div>
@@ -477,6 +514,16 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
         </div>
       </div>
 
+      {/* Open Acts section */}
+      <div className="space-y-3 pt-1 pb-2">
+        <SectionDivider label="Open Acts" />
+        <OpenActsFields
+          value={openActs}
+          onChange={v => { setPreset('custom'); setOpenActs(v); }}
+          raceMode={raceMode}
+        />
+      </div>
+
       {/* Hirelings section */}
       <div className="space-y-3 pt-1 pb-2">
         <SectionDivider label="Mercenaries" />
@@ -499,7 +546,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           id="raceMode"
           checked={!forgottenArts && raceMode}
           disabled={forgottenArts}
-          onChange={field(setRaceMode)}
+          onChange={v => { field(setRaceMode)(v); setOpenActs(prev => withModeSpoiler(prev, v)); }}
           label="Race Mode"
           tooltip="Includes -seed in the launch shortcut and manual args, locking the map seed so all racers see the same maps. Also hides the spoiler so the randomized skill trees stay secret."
         />

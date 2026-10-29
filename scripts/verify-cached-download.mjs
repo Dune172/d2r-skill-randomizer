@@ -61,8 +61,11 @@ for (const [seed, raceMode, args] of [
 
 const calendar = load('src/lib/challenge/week.ts');
 const challengeRules = load('src/lib/challenge/rules.ts');
+// Pure module that builds part of the cache key in both routes, so it must be the real one.
+const openActsOptions = load('src/lib/randomizer/open-acts/options.ts');
 function downloadRoute(cached, allowed = true, currentWeek = 14) {
   return load('src/app/api/download/route.ts', {
+    '@/lib/randomizer/open-acts/options': openActsOptions,
     // A regression to ZIP construction in this route must fail this test.
     'adm-zip': class { constructor() { throw new Error('Download must not rebuild the ZIP'); } },
     '@/lib/lnk-builder': { createD2RShortcut() { throw new Error('Launcher must already be cached'); } },
@@ -138,6 +141,7 @@ test('generation and download enforce the same rollout rule, ignoring client ove
   for (const currentWeek of [14, 15, 46]) for (const weekOverride of [undefined, 1, 14, 15, 16, 46]) for (const flag of [undefined, false, true]) {
     let generatedKey, downloadKey;
     const route = load('src/app/api/randomize/route.ts', {
+      '@/lib/randomizer/open-acts/options': openActsOptions,
       '@/lib/challenge/week': { getCurrentWeekNumber: () => currentWeek },
       '@/lib/challenge/rules': challengeRules,
       '@/lib/zip-cache': {

@@ -49,6 +49,10 @@ export interface ZipContents {
   animDataD2?: Buffer;              // animdata.d2 with Warlock A1/A2 records synced to their COFs
   charCofs?: Map<string, Buffer>;   // zip path under data/ → COF with injected trigger frame (must match animDataD2)
   seasonFiles?: Map<string, Buffer>; // seasonal HD overlay, paths under data/ (src/lib/seasons)
+  questsJson?: string;              // quests.json with Open Acts quest-log hints
+  openActsSpoilerJson?: string;     // quest-shuffle.json: where every Open Acts item is
+  starterSaves?: Map<string, Buffer>; // Open Acts starter characters, file name → .d2s
+  starterReadme?: string;           // how to install the starter characters
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -91,6 +95,16 @@ export function buildZip(contents: ZipContents): Buffer {
   }
   if (contents.inventorySpellsJson) {
     zip.addFile(`${m}/forgotten-arts.json`, str(contents.inventorySpellsJson));
+  }
+  if (contents.questsJson) {
+    zip.addFile(`${d}/data/local/lng/strings/quests.json`, str(contents.questsJson));
+  }
+  if (contents.openActsSpoilerJson) {
+    zip.addFile(`${m}/quest-shuffle.json`, str(contents.openActsSpoilerJson));
+  }
+  if (contents.starterSaves) {
+    for (const [name, save] of contents.starterSaves) zip.addFile(`${m}/starter-saves/${name}`, save);
+    if (contents.starterReadme) zip.addFile(`${m}/starter-saves/README.txt`, str(contents.starterReadme));
   }
   if (contents.globalSkillIcons) {
     for (const [relativePath, buffer] of contents.globalSkillIcons) {

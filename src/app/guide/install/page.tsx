@@ -33,7 +33,7 @@ export default function InstallGuidePage() {
       <ContentPage
         eyebrow="Guide"
         title="How to Install a D2R Randomizer Mod"
-        updated="2026-10-26"
+        updated="2026-10-29"
         intro={
           <p>
             A D2R Randomizer mod is a small folder of game data files that Diablo II: Resurrected loads
@@ -161,6 +161,40 @@ export default function InstallGuidePage() {
           Some options change the start. With <strong>Forgotten Arts</strong>, skill trees are disabled and
           a new character starts with a Fire Bolt scroll and a Horadric Cube. With the starting-item options
           you&apos;ll see a Teleport staff or Cube in your inventory.
+        </p>
+
+        <h2>Open Acts: installing the starter characters</h2>
+        <p>
+          If you picked <strong>Start with acts open</strong>, the mod folder in your ZIP has a{' '}
+          <code>starter-saves</code> folder with level-1 characters (just your race class in Race Mode).
+          The acts you picked, from Act II up to Act V, are already open on their waypoint and quest tabs in
+          every difficulty. Opening Act V needs Diablo&apos;s quest marked as done, so Terror&apos;s End shows as
+          completed in the quest log (Diablo can still be fought). Characters you create yourself start with only
+          Act I open. If you ticked{' '}
+          <strong>Hardcore starters</strong>, the characters are hardcore; keep a copy of the files, because a
+          hardcore character that dies can&apos;t be played again. With a <strong>starter name</strong>, each
+          file carries your name plus a class tag, such as <code>Swanny-Sorc.d2s</code> (in Race Mode, just your
+          name).
+        </p>
+        <p>
+          Copy the <code>.d2s</code> files into the mod&apos;s own save folder:{' '}
+          <code>%USERPROFILE%\Saved Games\Diablo II Resurrected\mods\seed12345_openacts\</code>. In Race Mode
+          the folder name also has your class, e.g. <code>seed12345nec_openacts</code>. The generator&apos;s
+          install steps and the <code>README.txt</code> next to the saves give the exact name. Create the
+          folder if it doesn&apos;t exist, or launch the mod once and it appears. Then pick the character from
+          the list. The starters are built for one seed, so don&apos;t use them with another.
+        </p>
+        <p>
+          <strong>Play one of the starter characters.</strong> A character you create in game starts with only
+          Act I open. When quest items are shuffled too, the shuffle counts on the open acts, so such a character
+          will usually get stuck before Duriel. To play with a character you make yourself, generate the seed
+          with <strong>Shuffle quest items</strong> on and no acts selected: that shuffle works with any new
+          character.
+        </p>
+        <p>
+          With <strong>Shuffle quest items</strong>, the quest items are in new places across Acts I–III.
+          The quest log hints at the act each one is in, and if you kept the spoiler file,{' '}
+          <code>quest-shuffle.json</code> in the mod folder lists every exact spot.
         </p>
 
         <h2>Switching seeds and uninstalling</h2>

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Tip, Checkbox, ActPillRow, SectionDivider } from './FormControls';
 import type { ModOptions } from '@/lib/builder/mod-options';
+import { openActsLabel } from '@/lib/randomizer/open-acts/options';
+import OpenActsFields from '../OpenActsFields';
 
 const SELECT_CLASS =
   'appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1.5 text-sm text-[#e8d5a0] ' +
@@ -56,6 +58,8 @@ export default function BuildOptionsPanel({
     !value.hirelingAura && 'no merc aura',
     value.disableChat && 'chat off',
     value.enemyShuffle && 'monster shuffle',
+    value.openActs.shuffle && 'quest shuffle',
+    value.openActs.acts.length > 0 && `${openActsLabel(value.openActs.acts)} open`,
   ].filter(Boolean).join(' · ');
 
   return (
@@ -223,6 +227,9 @@ export default function BuildOptionsPanel({
               />
             </div>
           </div>
+
+          <SectionDivider label="Open Acts" />
+          <OpenActsFields value={value.openActs} onChange={v => set('openActs', v)} />
         </div>
       )}
     </div>

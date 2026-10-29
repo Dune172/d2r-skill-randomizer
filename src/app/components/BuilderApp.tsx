@@ -613,7 +613,7 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
           {isBuilt && built && (
             <div className="rounded-lg border border-[#3a1510] bg-[#0c0304] p-4">
               <h3 className="font-cinzel font-bold text-[11px] tracking-[0.18em] uppercase text-[#c8942a] mb-3">Install</h3>
-              <InstallInstructions seed={built.seed} raceMode={false} modName={built.modName || undefined} />
+              <InstallInstructions seed={built.seed} raceMode={false} modName={built.modName || undefined} openActs={options.openActs} />
             </div>
           )}
         </section>

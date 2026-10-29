@@ -41,6 +41,10 @@ import { applyForgottenArts, configureForgottenArtsShop, addSpellSynergyTooltips
 import { buildGlobalSkillIcons } from '@/lib/sprites/global-skill-icons';
 import { buildForgottenArtsItemAssets } from '@/lib/sprites/forgotten-arts-items';
 import { seasonFilesForNow } from '@/lib/seasons/overlay';
+import { DEFAULT_OPEN_ACTS, normalizeOpenActs, openActsCacheSegment, openActsFeatureKeys, openActsSavepath } from '@/lib/randomizer/open-acts/options';
+import { recordFeatures } from '@/lib/feature-stats';
+import { buildOpenActsFiles, runOpenActsShuffle } from '@/lib/randomizer/open-acts/generate';
+import type { OpenActsShuffle } from '@/lib/randomizer/open-acts/fill';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 // Concurrent requests for the same mod share one build and one rate-limit slot.
@@ -121,6 +125,12 @@ export async function POST(request: NextRequest) {
     // forced off for builds too — mirrored in /api/download.
     const raceMode = classBuild || weeklyEnabled || forgottenArts ? false : (body.raceMode !== false);
     const enemyShuffle = weeklyEnabled ? challengeRandomizesMonsters(weekNumber) : body.enemyShuffle === true;
+    // Open Acts is a main-generator option: challenges and Class Builder mods never get it.
+    // Mirrored in /api/download so the cache keys agree.
+    // Class Builder mods support Open Acts; challenges keep their fixed rules.
+    const openActs = weeklyEnabled || forgottenArts
+      ? DEFAULT_OPEN_ACTS : normalizeOpenActs(body.openActs, raceMode);
+    const featureKeys = openActsFeatureKeys(openActs, { raceMode, classBuild: !!classBuild });
     if (!classBuild && !seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
     }
@@ -134,7 +144,8 @@ export async function POST(request: NextRequest) {
     const effectiveXpActs = xpMultiplier > 1 ? xpActs : [1, 2, 3, 4, 5];
     const effectiveXpDifficulties = xpMultiplier > 1 ? xpDifficulties : [1, 2, 3];
     const cacheKey = withBuildSegment(
-      makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts),
+      makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
+        + openActsCacheSegment(openActs),
       classBuild?.code,
     );
     const ready = { seed, status: 'ready', ...(classBuild ? { build: classBuild.code, modName: classBuild.modName } : {}) };
@@ -142,12 +153,14 @@ export async function POST(request: NextRequest) {
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
     if (hasCached(cacheKey)) {
+      recordFeatures(featureKeys);
       return NextResponse.json(ready);
     }
 
     const pending = pendingBuilds.get(cacheKey);
     if (pending) {
       await pending;
+      recordFeatures(featureKeys);
       return NextResponse.json(ready);
     }
 
@@ -723,6 +736,17 @@ export async function POST(request: NextRequest) {
       applyBloodRavenQuestDrop(suSrc.headers, suSrc.rows, tcSrc.headers, tcSrc.rows, teleportStaffDropSource);
     }
 
+    // Step 11c2: Open Acts quest-item shuffle. After enemy shuffle, so boss rows keep the
+    // drop wrappers; never combined with weekly mutations or Forgotten Arts.
+    let openActsObjects: ReturnType<typeof loadTxtFile> | null = null;
+    let openActsShuffle: OpenActsShuffle | null = null;
+    if (openActs.shuffle) {
+      openActsObjects = loadTxtFile('objects.txt');
+      openActsShuffle = runOpenActsShuffle(seed, openActs, startingHoradricCube, {
+        objects: openActsObjects, monstats: monstatsSrc, superuniques: suSrc, treasureclass: tcSrc,
+      });
+    }
+
     // Step 11d: weekly challenge mutations
     let armorTxt: string | undefined;
     let weaponsTxt: string | undefined;
@@ -798,8 +822,8 @@ export async function POST(request: NextRequest) {
     if (levelsSrc) levelsTxt = serializeTxtFile(levelsSrc.headers, levelsSrc.rows);
     if (enemies) finalizeEnemyManifest(enemies.manifest, monstatsSrc);
     superuniquesTxt = serializeTxtFile(suSrc.headers, suSrc.rows);
-    // Serialize tcTxt if any feature modified tcSrc (teleport staff or weekly mutations)
-    if (startingTeleportStaff || weeklyEnabled) {
+    // Serialize tcTxt if any feature modified tcSrc (teleport staff, weekly mutations, Open Acts)
+    if (startingTeleportStaff || weeklyEnabled || openActsShuffle) {
       tcTxt = serializeTxtFile(tcSrc.headers, tcSrc.rows);
     }
 
@@ -932,14 +956,23 @@ export async function POST(request: NextRequest) {
       magicSuffixContent = serializeTxtFile(magicSuffixTxt.headers, magicSuffixTxt.rows);
     }
 
+    if (openActsObjects) objectsTxt = serializeTxtFile(openActsObjects.headers, openActsObjects.rows);
+
     // Step 12: Build zip
     const modName = classBuild ? classBuild.modName : `seed${seed}`;
     // Race mode and the weekly challenge get isolated save folders so competitive
     // characters don't mix with casual ones. Race: seed + race class (e.g. seed123pal).
     // Weekly: the mod name — unique per challenge since the weekly seed is week-derived.
-    const savepath = weeklyEnabled ? modName : forgottenArts ? `${modName}_forgotten_arts_v7` : raceMode
-      ? `${modName}${pickRaceClassCode(seed)}`
+    // Open Acts starters are built for one seed, so they get a folder of their own too.
+    const savepath = weeklyEnabled ? modName : forgottenArts ? `${modName}_forgotten_arts_v7`
+      : openActs.acts.length ? openActsSavepath(modName, raceMode ? pickRaceClassCode(seed) : null)
+      : raceMode ? `${modName}${pickRaceClassCode(seed)}`
       : 'D2RRandomizer';
+    const openActsFiles = buildOpenActsFiles({
+      dataDir: DATA_DIR, seed, modName, savepath, settings: openActs, shuffle: openActsShuffle,
+      startWithCube: startingHoradricCube, raceClassCode: raceMode ? pickRaceClassCode(seed) : null,
+      charstats, skills: skillsTxt,
+    });
     const formatUiJson = (obj: unknown) =>
       '\uFEFF' + JSON.stringify(obj, null, 4).replace(/\n/g, '\r\n');
     const dataVersionBuild = fs.readFileSync(path.join(DATA_DIR, 'dataversionbuild.txt'), 'utf-8').trim();
@@ -993,6 +1026,10 @@ export async function POST(request: NextRequest) {
       animDataD2: animAssets.animData,
       charCofs: animAssets.cofs,
       seasonFiles: seasonFilesForNow(),
+      questsJson: openActsFiles.questsJson,
+      openActsSpoilerJson: openActsFiles.spoilerJson,
+      starterSaves: openActsFiles.starterSaves,
+      starterReadme: openActsFiles.starterReadme,
     });
 
     // Cache the result (byte-bounded LRU handles eviction internally)
@@ -1007,6 +1044,7 @@ export async function POST(request: NextRequest) {
       pendingBuilds.delete(cacheKey);
     }
 
+    recordFeatures(featureKeys);
     return NextResponse.json(ready);
   } catch (error) {
     // Log the full error server-side for debugging; return a generic message
