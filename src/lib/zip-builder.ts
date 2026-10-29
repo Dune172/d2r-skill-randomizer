@@ -54,6 +54,7 @@ export interface ZipContents {
   starterSaves?: Map<string, Buffer>; // Open Acts starter characters, file name → .d2s
   starterReadme?: string;           // how to install the starter characters
   mutationsJson?: string;           // mutations.json: the mutations the player picked
+  apManifestJson?: string;          // Archipelago mode: what the companion client reads about this mod
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -142,6 +143,11 @@ export function buildZip(contents: ZipContents): Buffer {
   // Cache the complete download, including its seed/mode-specific launcher.
   zip.addFile(`D2R Randomizer ${contents.seed}.lnk`,
     createD2RShortcut(m, contents.seed >>> 0, contents.raceMode));
+
+  // Beside the .mpq folder, not inside it: it is for the companion client, not the game.
+  if (contents.apManifestJson) {
+    zip.addFile(`${m}/d2rr-ap-manifest.json`, str(contents.apManifestJson));
+  }
 
   // Add modinfo.json
   const modinfo = JSON.stringify({ name: m, savepath: contents.savepath ?? 'D2RRandomizer' });

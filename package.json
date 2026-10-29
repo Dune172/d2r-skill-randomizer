@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/build-apworld.mjs --public",
     "build": "next build --webpack",
+    "ap:build": "node scripts/build-apworld.mjs --public && node scripts/build-ap-release.mjs",
+    "ap:test": "python apworld/dev/test_tables.py && node scripts/verify-ap-ids.mjs && node scripts/verify-ap-options.mjs && cd tools/ap-client && go vet ./... && go test ./...",
     "test:enemies": "node scripts/verify-enemy-shuffle.mjs",
     "test:mutations": "node --test scripts/verify-custom-mutations.mjs",
     "start": "VIPS_CONCURRENCY=2 UV_THREADPOOL_SIZE=4 next start"

@@ -51,3 +51,18 @@ counter.json
 /data/winter/foliage/*.texture
 /data/winter/assets/*.obj
 __pycache__/
+
+# Archipelago build output (apworld and client binaries)
+/dist/
+*.pyc
+
+# Local Archipelago test rooms and the mod zips the client downloads while testing
+/ap-test/
+/seed*.zip
+/seed*/
+
+# Byte-identity baseline for verify-generate-mod-refactor.mjs: captured per refactor, stale after any pipeline or season change
+/scripts/fixtures/zip-entry-hashes.json
+
+# Built by scripts/build-apworld.mjs --public (the prebuild step)
+/public/archipelago/
