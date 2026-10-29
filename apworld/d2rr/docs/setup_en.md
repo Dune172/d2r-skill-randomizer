@@ -71,16 +71,13 @@ Hell, and restart it with the right number if you go back to an easier difficult
 
 ### Experimental items
 
-- **Horadric Keys**: nothing to do. Once you hold enough, the Cube assembles the Horadric
-  Staff and Khalim's Will as usual.
-- **Runes**: when the client says a rune is waiting, put the **Archipelago Sigil** alone
-  in the Horadric Cube and transmute. Take the rune, then right-click the
-  **Archipelago Receipt** that came with it. The next rune is offered after that. Keep
-  the Receipt until you have used it: it is what tells the client the rune arrived. If
-  the Cube refuses a waiting rune, restart the client with `-mail-flip`; if you lost a
-  Receipt, restart it with `-mail-skip`.
-- If the client says a stat is missing, right-click the **Draught of Attunement** you
-  started with. Transmuting the Sigil alone brews another whenever no rune is waiting.
+Horadric Keys, pooled stat points and runes do not work in this preview, so leave them
+off. The Archipelago Sigil, Draught of Attunement and Receipt in your starting inventory
+belong to them and do nothing useful yet.
+
+Skill points you receive while you have none unspent wait until your next level-up or
+quest reward: the game removes the unspent-point entry at zero, and only those create it
+again.
 
 ## Troubleshooting
 

@@ -86,6 +86,11 @@ without leaving town).
   the item counts every poll, so duplicates, reordering and full resyncs converge.
   One-shot effects (gold, traps, runes) are owed until recorded as applied, and are
   recorded only after the write lands, because a repeat is the harmless direction.
+- **Every write goes to both copies of the character.** `SetPlayerStat` writes the
+  game's own copy first, then the display copy. The game's copy is found by scanning
+  heap memory nearest the player first (it sat 60 to 130 KB away in every measurement),
+  is cached per player unit, and must be the only candidate; `probe -copies` still does
+  the full scan.
 - **Custom stats store value + 1** so they are never zero.
 - **Keys gate recipes, not items.** Making a quest item is not possible from outside the
   game; refusing to combine the ones the player found is a one-line table change.
@@ -106,6 +111,12 @@ without leaving town).
   be stranded. Areas are named as the game shows them, not as `levels.txt` does.
 
 ## Known limits
+
+- Horadric Keys, pooled stat points and runes do not work: nothing can create their
+  stats (see the gate results). The options stay, marked as not working, until a new
+  mechanism (a starter save, say) exists.
+- Skill points received while none are unspent wait: the game removes the entry at zero
+  and only a level-up or a quest reward creates it again.
 
 - Level-up and quest points can be spent in the fraction of a second before the client
   takes them back, and freely if the client is not running. It is a single-player game;

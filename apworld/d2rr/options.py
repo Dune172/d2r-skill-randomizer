@@ -122,7 +122,9 @@ class KeyItems(Toggle):
     Khalim's Will until you hold 5. So Duriel and Mephisto wait on items that may be in
     anyone's world. You still collect the staff and Khalim's relics as usual.
 
-    Not yet confirmed in the game: leave off for a run that has to finish.
+    NOT WORKING in this preview: the key count lives in a stat that only a Draught of
+    Attunement could create, and the game ignores the Draught's stats. With this on, the
+    Staff and Khalim's Will cannot be assembled. Leave it off.
     """
     display_name = "Horadric Keys"
     default = 0
@@ -135,7 +137,8 @@ class StatPoints(Choice):
     pooled: level-ups and quests grant none. Stat Points items, each worth five, are
     placed in the multiworld instead, one for every level the goal expects you to reach.
 
-    Pooled is not yet confirmed in the game.
+    NOT WORKING in this preview: the game drops the stat point entry when it reaches
+    zero, and the client cannot create it again. Leave this on vanilla.
     """
     display_name = "Stat Points"
     option_vanilla = 0
@@ -150,7 +153,8 @@ class RunePercentage(Range):
     the Horadric Cube, transmute, then use the Archipelago Receipt that comes out with
     the rune. Higher runes are rarer and only appear on higher goal difficulties.
 
-    Not yet confirmed in the game.
+    NOT WORKING in this preview: the mailbox stat cannot be created and the Receipt
+    cannot acknowledge a delivery, so no rune would arrive. Leave this at 0.
     """
     display_name = "Rune Percentage"
     range_start = 0
@@ -165,7 +169,7 @@ class TrapPercentage(Range):
     one life, Skill Lock withholds unspent skill points for a minute, and Gold Tax takes
     a share of the gold you carry. Traps wait until you are outside town.
 
-    Not yet confirmed in the game.
+    Not yet tested in the game.
     """
     display_name = "Trap Percentage"
     range_start = 0

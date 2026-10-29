@@ -35,8 +35,10 @@ and create a new offline character of your class.
 
 ## Known limits
 
-- Options marked EXPERIMENTAL (Horadric Keys, pooled stat points, runes, traps, DeathLink)
-  are off by default and unconfirmed in the game.
+- Horadric Keys, pooled stat points and runes do not work yet; leave them off. Traps and
+  DeathLink are off by default and untested in the game.
+- Skill points received while none are unspent wait for your next level-up or quest
+  reward.
 - On Nightmare and Hell, start the client with `-difficulty 1` or `-difficulty 2`.
 - The client is unsigned, and it reads and writes the game's memory. Some antivirus
   software will warn about it.

@@ -128,7 +128,8 @@ export default function YamlBuilder() {
             </legend>
             {group === 'Experimental' && (
               <p className="text-xs text-[#d0a070] leading-relaxed mb-4">
-                Not yet confirmed in the game. Leave these off for a run that has to finish.
+                Horadric Keys, pooled stat points and runes do not work in this preview. Traps and
+                DeathLink are untested. Leave these off for a run that has to finish.
               </p>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
