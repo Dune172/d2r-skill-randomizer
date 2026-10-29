@@ -14,12 +14,19 @@ on:
   push:
     branches: [main]
     tags: ["archipelago-v*"]
+    # GitHub ignores paths on tag pushes, so every archipelago-v* tag runs the whole
+    # workflow and releases whatever changed.
     paths:
       - "apworld/**"
       - "tools/ap-client/**"
       - "scripts/*ap*"
       - "src/lib/archipelago/**"
       - "src/lib/randomizer/ap-mode.ts"
+      - "src/lib/randomizer/generate-mod.ts"
+      - "src/app/api/archipelago/**"
+      - "src/lib/zip-builder.ts"
+      - "src/lib/zip-cache.ts"
+      - "scripts/patch-d2go.mjs"
       - ".github/workflows/archipelago.yml"
   pull_request:
     paths:
@@ -28,6 +35,11 @@ on:
       - "scripts/*ap*"
       - "src/lib/archipelago/**"
       - "src/lib/randomizer/ap-mode.ts"
+      - "src/lib/randomizer/generate-mod.ts"
+      - "src/app/api/archipelago/**"
+      - "src/lib/zip-builder.ts"
+      - "src/lib/zip-cache.ts"
+      - "scripts/patch-d2go.mjs"
       - ".github/workflows/archipelago.yml"
 
 env:
@@ -104,10 +116,39 @@ jobs:
       - name: Area tables match levels.txt
         run: node scripts/gen-ap-areas.mjs --check
 
+  generation:
+    name: Generated mods keep the AP invariants
+    # Builds real Archipelago mods through POST /api/archipelago/mod on a dev server with
+    # empty caches (as scripts/dev-cold-cache.mjs sets it up), so every case is a fresh
+    # generation, then checks them with scripts/verify-ap-mode.mjs.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - name: Start a dev server on throwaway state
+        shell: bash
+        run: |
+          node scripts/dev-cold-cache.mjs > dev-server.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:3210/api/health > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          echo "Dev server did not answer on port 3210 within 3 minutes"
+          exit 1
+      - name: AP mode invariants on generated mods
+        run: node scripts/verify-ap-mode.mjs
+      - name: Dev server log
+        if: always()
+        run: cat dev-server.log
+
   release:
     name: Release
     if: startsWith(github.ref, 'refs/tags/archipelago-v')
-    needs: [world, client, agreement]
+    needs: [world, client, agreement, generation]
     runs-on: windows-latest
     permissions:
       contents: write
