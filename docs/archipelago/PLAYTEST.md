@@ -68,13 +68,14 @@ Invoke-WebRequest -Method Post -Uri http://localhost:3210/api/archipelago/mod `
   -ContentType application/json -Body $body -OutFile dist\ap_gate.zip
 ```
 
-The first build takes a minute or two. The zip holds one folder, `seed<seed>` (here
-`seed987002`). Extract it into D2R's `mods` folder, with D2R closed (an Administrator
-terminal if D2R is under Program Files):
+A build takes from seconds to a minute. The zip holds the mod folder, `seed<seed>` (here
+`seed987002`), and a launcher shortcut you do not need. Copy the folder into D2R's
+`mods` folder, with D2R closed (an Administrator terminal if D2R is under Program Files):
 
 ```powershell
 $d2r = 'C:\Program Files (x86)\Diablo II Resurrected'   # your D2R folder
-Expand-Archive dist\ap_gate.zip -DestinationPath "$d2r\mods"
+Expand-Archive dist\ap_gate.zip -DestinationPath dist\ap_gate
+Copy-Item -Recurse dist\ap_gate\seed987002 "$d2r\mods\"
 ```
 
 Start the game with the mod:
