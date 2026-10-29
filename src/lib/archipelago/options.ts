@@ -127,9 +127,17 @@ export function cleanSlotName(name: string): string {
   return name.replace(/[^A-Za-z0-9 _-]/g, '').trim().slice(0, 16);
 }
 
+/**
+ * A YAML double-quoted string. Unquoted, PyYAML reads names like `yes`, `null` or `123`
+ * as a boolean, null or number instead of the slot name.
+ */
+function yamlString(text: string): string {
+  return `"${text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
 /** The player options file Archipelago's generator reads. */
 export function buildApYaml(slotName: string, values: ApOptionValues): string {
-  const lines = [`name: ${cleanSlotName(slotName) || 'Player'}`, `game: ${AP_GAME_NAME}`, `${AP_GAME_NAME}:`];
+  const lines = [`name: ${yamlString(cleanSlotName(slotName) || 'Player')}`, `game: ${AP_GAME_NAME}`, `${AP_GAME_NAME}:`];
   for (const option of AP_OPTIONS) {
     const value = values[option.key] ?? option.default;
     lines.push(`  ${option.key}: ${value}`);

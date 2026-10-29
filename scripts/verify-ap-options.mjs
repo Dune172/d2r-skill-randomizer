@@ -95,7 +95,7 @@ if (page.AP_MINIMUM_ARCHIPELAGO !== manifest.minimum_ap_version) {
 // The builder's output must be what Archipelago's generator reads.
 const yaml = page.buildApYaml('  A name that is far too long!!  ', page.defaultApOptions());
 const lines = yaml.trimEnd().split('\n');
-if (lines[0] !== 'name: A name that is f' || lines[1] !== `game: ${manifest.game}` || lines[2] !== `${manifest.game}:`) {
+if (lines[0] !== 'name: "A name that is f"' || lines[1] !== `game: ${manifest.game}` || lines[2] !== `${manifest.game}:`) {
   problems.push(`YAML header is wrong: ${JSON.stringify(lines.slice(0, 3))}`);
 }
 if (lines.length !== 3 + fromPython.length) problems.push(`YAML has ${lines.length - 3} options, the apworld ${fromPython.length}`);
