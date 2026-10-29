@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import AdmZip from 'adm-zip';
 import { generateMod } from '@/lib/randomizer/generate-mod';
-import { AP_CONTRACT_VERSION } from '@/lib/randomizer/ap-mode';
+import { AP_CONTRACT_VERSION, type ApManifest } from '@/lib/randomizer/ap-mode';
 import { ClassCode } from '@/lib/randomizer/types';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { DEFAULT_OPEN_ACTS } from '@/lib/randomizer/open-acts/options';
 import { getCachedFromDisk, setCachedOnDisk, makeCacheKey, withApSegment } from '@/lib/zip-cache';
 import { enqueueGeneration, getQueueDepth } from '@/lib/generation-queue';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
-import { incrementCount } from '@/lib/counter';
 
 export const maxDuration = 60;
 
@@ -29,13 +28,20 @@ export const maxDuration = 60;
 
 const VALID_CLASSES = new Set<string>(CLASS_DEFS.map(d => d.code));
 
+// A fresh build also carries its manifest, so a manifest request need not unzip it again.
+type Built = { zip: Buffer; manifest?: ApManifest };
+
 // Concurrent requests for the same mod share one build.
-const pendingBuilds = new Map<string, Promise<Buffer>>();
+const pendingBuilds = new Map<string, Promise<Built>>();
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
+  // Malformed JSON is the caller's mistake, not a server error.
+  const body = await request.json().catch(() => null);
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 });
+  }
 
+  try {
     if (Number(body.contractVersion) !== AP_CONTRACT_VERSION) {
       return NextResponse.json({
         error: `Contract version mismatch: client sent ${body.contractVersion ?? 'nothing'}, ` +
@@ -81,11 +87,11 @@ export async function POST(request: NextRequest) {
       `${characterClass}:${savepath}:${keyItems ? 'k' : ''}:${AP_CONTRACT_VERSION}`,
     );
 
-    const respond = (zip: Buffer) =>
-      body.format === 'manifest' ? manifestResponse(zip) : zipResponse(zip, seed, characterClass);
+    const respond = ({ zip, manifest }: Built) =>
+      body.format === 'manifest' ? manifestResponse(zip, manifest) : zipResponse(zip, seed, characterClass);
 
     const cached = getCachedFromDisk(cacheKey);
-    if (cached) return respond(cached);
+    if (cached) return respond({ zip: cached });
 
     const pending = pendingBuilds.get(cacheKey);
     if (pending) return respond(await pending);
@@ -97,12 +103,13 @@ export async function POST(request: NextRequest) {
         { status: 503, headers: { 'Retry-After': '5', 'Cache-Control': 'no-store' } },
       );
     }
-    const rl = checkRateLimit(`ap:${getClientIp(request)}`, 6, 60_000);
+    // Each build is ~47 MB of CPU-heavy output, so the allowance is small.
+    const rl = checkRateLimit(`ap:${getClientIp(request)}`, 3, 60_000);
     if (!rl.ok) return rateLimitResponse(rl.retryAfter);
 
-    const build = enqueueGeneration(async () => {
+    const build = enqueueGeneration(async (): Promise<Built> => {
       const again = getCachedFromDisk(cacheKey);
-      if (again) return again;
+      if (again) return { zip: again };
 
       const { zip, manifest } = await generateMod(seed, {
         classBuild: null,
@@ -133,10 +140,10 @@ export async function POST(request: NextRequest) {
       if (!manifest) throw new Error('Archipelago mode produced no manifest');
 
       // Disk only: a slot's mod is fetched once or twice, and must not evict public
-      // seeds from the memory tier.
+      // seeds from the memory tier. Not counted: the public seed counter is for public
+      // seeds, and this endpoint is an unlisted preview.
       setCachedOnDisk(cacheKey, zip);
-      incrementCount();
-      return zip;
+      return { zip, manifest };
     });
     pendingBuilds.set(cacheKey, build);
     try {
@@ -153,8 +160,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/** Just the manifest, read back OUT of the zip, so it is literally the one that ships. */
-function manifestResponse(zip: Buffer): NextResponse {
+/**
+ * Just the manifest. A fresh build passes the object it serialized into the zip; a cache
+ * hit reads it back out of the zip. Either way it is the one that ships.
+ */
+function manifestResponse(zip: Buffer, manifest?: ApManifest): NextResponse {
+  if (manifest) return NextResponse.json(manifest);
   const entry = new AdmZip(zip)
     .getEntries()
     .find(e => e.entryName.endsWith('d2rr-ap-manifest.json'));
@@ -165,9 +176,17 @@ function manifestResponse(zip: Buffer): NextResponse {
 }
 
 function zipResponse(zip: Buffer, seed: number, characterClass: string): NextResponse {
-  return new NextResponse(new Uint8Array(zip), {
+  // A stream hands over the Buffer as it is; `new Uint8Array(zip)` would copy all ~47 MB.
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(zip);
+      controller.close();
+    },
+  });
+  return new NextResponse(body, {
     headers: {
       'Content-Type': 'application/zip',
+      'Content-Length': String(zip.byteLength),
       'Content-Disposition': `attachment; filename="d2rr_ap_${seed}_${characterClass}.zip"`,
       'X-D2RR-Contract-Version': String(AP_CONTRACT_VERSION),
       'Cache-Control': 'no-store',
