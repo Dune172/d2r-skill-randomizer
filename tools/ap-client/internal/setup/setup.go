@@ -206,6 +206,12 @@ func Install(root string, data []byte, m *manifest.Manifest) (string, error) {
 	hashes := map[string]string{}
 	var total uint64
 	for _, entry := range zr.File {
+		// The site's downloads carry a launcher shortcut beside the mod folder. It is
+		// not part of the mod and is not installed; anything else outside the folder is
+		// refused.
+		if isLauncherShortcut(entry.Name) {
+			continue
+		}
 		if !strings.HasPrefix(entry.Name, m.ModName+"/") || entry.Mode()&os.ModeSymlink != 0 {
 			return "", fmt.Errorf("unexpected archive entry %q", entry.Name)
 		}
@@ -295,6 +301,11 @@ func Install(root string, data []byte, m *manifest.Manifest) (string, error) {
 		return "", err
 	}
 	return dest, nil
+}
+
+// isLauncherShortcut reports a top-level .lnk, as the site's mod downloads include.
+func isLauncherShortcut(name string) bool {
+	return !strings.ContainsAny(name, `/\`) && strings.EqualFold(filepath.Ext(name), ".lnk")
 }
 
 // modsDir creates root\mods and returns its real path. The game root is resolved
