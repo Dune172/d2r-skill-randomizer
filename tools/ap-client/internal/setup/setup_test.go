@@ -221,3 +221,54 @@ func TestALauncherShortcutBesideTheModIsSkipped(t *testing.T) {
 		}
 	}
 }
+
+// zipWith is testZip plus one more file inside the mod folder.
+func zipWith(t *testing.T, m *manifest.Manifest, name, content string) []byte {
+	t.Helper()
+	var b bytes.Buffer
+	z := zip.NewWriter(&b)
+	raw, _ := json.Marshal(m)
+	for _, e := range []struct {
+		name string
+		data []byte
+	}{
+		{m.ModName + "/d2rr-ap-manifest.json", raw},
+		{m.ModName + "/" + m.ModName + ".mpq/modinfo.json", []byte(`{"name":"seed1234","savepath":"ap_1234_pal"}`)},
+		{m.ModName + "/" + name, []byte(content)},
+	} {
+		w, err := z.Create(e.name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		w.Write(e.data)
+	}
+	z.Close()
+	return b.Bytes()
+}
+
+// A mod rebuilt with a fix keeps its manifest but changes its files; it must replace
+// the copy installed for the same seed.
+func TestARebuiltModWithTheSameManifestIsReinstalled(t *testing.T) {
+	root := t.TempDir()
+	m := testManifest(t)
+	skills := m.ModName + ".mpq/data/global/excel/skills.txt"
+	old := zipWith(t, m, skills, "no prerequisites")
+	dir, err := Install(root, old, m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !MatchesArchive(root, old, m) {
+		t.Fatal("the installed zip does not match itself")
+	}
+	fixed := zipWith(t, m, skills, "prerequisites")
+	if MatchesArchive(root, fixed, m) {
+		t.Fatal("a changed file went unnoticed")
+	}
+	if _, err := Install(root, fixed, m); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := os.ReadFile(filepath.Join(dir, filepath.FromSlash(skills)))
+	if string(got) != "prerequisites" || !MatchesArchive(root, fixed, m) {
+		t.Fatalf("the rebuilt mod was not installed: %q", got)
+	}
+}

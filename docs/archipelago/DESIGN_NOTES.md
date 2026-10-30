@@ -137,9 +137,10 @@ without leaving town).
 ## Decisions
 
 - **Points, not skills.** Archipelago decides when a point arrives; the player chooses
-  the skill and the game builds it. Consequently every class skill is level 1 with no
-  prerequisites in an AP mod, and the tree for AP seed N is the tree the public spoiler
-  shows for seed N.
+  the skill and the game builds it. Consequently every class skill is level 1 in an AP
+  mod, so a point is spendable whatever the character's level. Prerequisites are kept
+  (since 2026-10-30): a generic point is the player's to place, so the chains only shape
+  that choice. The tree for AP seed N is the tree the public spoiler shows for seed N.
 - **Targets, not increments.** Unspent points, stat points and keys are recomputed from
   the item counts every poll, so duplicates, reordering and full resyncs converge.
   One-shot effects (gold, traps) are owed until recorded as applied, and are
@@ -172,6 +173,11 @@ without leaving town).
   server listed that location for the slot, which covers short goals and disabled check
   groups without the client re-deriving them.
 - **No Monster Shrine trap.** It needs the game's own code to run. Traps are stat writes.
+- **Towns are never checks**, on any difficulty: neither the town nor its waypoint
+  (`ids.TOWNS`). A character begins each act standing in its town with the waypoint
+  active, so they paid out points for nothing; a new character had two before it could
+  move, and they landed at the game's next save, reading as random. The ids stay
+  reserved.
 - **Only areas a run passes through are checks.** The cow level (open only after Baal),
   the Pandemonium event and the Colossal Summit are left out: an item placed there would
   be stranded. Areas are named as the game shows them, not as `levels.txt` does.

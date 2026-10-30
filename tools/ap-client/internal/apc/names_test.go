@@ -4,7 +4,10 @@ import "testing"
 
 func roomNames() *nameTable {
 	n := &nameTable{}
-	n.addGame("D2R Randomizer", map[string]any{"item_name_to_id": map[string]any{"Progressive Skill Point": float64(100)}})
+	n.addGame("D2R Randomizer", map[string]any{
+		"item_name_to_id":     map[string]any{"Progressive Skill Point": float64(100)},
+		"location_name_to_id": map[string]any{"Normal A1: Den of Evil": float64(5)},
+	})
 	n.addGame("A Link to the Past", map[string]any{"item_name_to_id": map[string]any{"Master Sword": float64(7)}})
 	n.setPlayers(
 		[]any{
@@ -28,8 +31,8 @@ func TestItemEventsSayWhoGotWhat(t *testing.T) {
 		want   string
 	}{
 		{itemSend(1, 2, 100), "You received Progressive Skill Point from Link"},
-		{itemSend(2, 1, 7), "You sent Master Sword to Link"},
-		{itemSend(1, 1, 100), "You found your Progressive Skill Point"},
+		{itemSend(2, 1, 7), "You sent Master Sword to Link (Normal A1: Den of Evil)"},
+		{itemSend(1, 1, 100), "You found your Progressive Skill Point (Normal A1: Den of Evil)"},
 	}
 	for _, c := range cases {
 		e, ok := n.itemEvent(c.packet)

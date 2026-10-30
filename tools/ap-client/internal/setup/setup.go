@@ -159,6 +159,50 @@ func VerifyInstalled(root string, m *manifest.Manifest) error {
 	return nil
 }
 
+// MatchesArchive reports whether the installed mod holds exactly the files in a mod zip,
+// by the hashes recorded when it was installed.
+//
+// VerifyInstalled compares manifests, and a rebuilt mod can change its files without
+// changing its manifest (a fix to the skill tables, say). Without this, a room's
+// corrected mod would never replace the copy already installed for the same seed.
+func MatchesArchive(root string, data []byte, m *manifest.Manifest) bool {
+	receipt, err := os.ReadFile(filepath.Join(root, "mods", m.ModName, "d2rr-install-hashes.json"))
+	if err != nil {
+		return false
+	}
+	var installed map[string]string
+	if json.Unmarshal(receipt, &installed) != nil {
+		return false
+	}
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return false
+	}
+	files := 0
+	for _, entry := range zr.File {
+		if entry.FileInfo().IsDir() || isLauncherShortcut(entry.Name) {
+			continue
+		}
+		name := strings.TrimPrefix(entry.Name, m.ModName+"/")
+		want, ok := installed[name]
+		if !ok || name == entry.Name {
+			return false
+		}
+		r, err := entry.Open()
+		if err != nil {
+			return false
+		}
+		h := sha256.New()
+		_, err = io.Copy(h, io.LimitReader(r, 128<<20+1))
+		r.Close()
+		if err != nil || hex.EncodeToString(h.Sum(nil)) != want {
+			return false
+		}
+		files++
+	}
+	return files == len(installed)
+}
+
 func contained(root, name string) (string, error) {
 	if strings.Contains(name, ":") || strings.Contains(name, `\`) || filepath.IsAbs(name) {
 		return "", fmt.Errorf("unsafe archive path %q", name)
@@ -185,7 +229,7 @@ func Install(root string, data []byte, m *manifest.Manifest) (string, error) {
 	if err := m.MatchRoom(m.Seed, m.CharacterClass, m.Savepath); err != nil {
 		return "", err
 	}
-	if err := VerifyInstalled(root, m); err == nil {
+	if err := VerifyInstalled(root, m); err == nil && MatchesArchive(root, data, m) {
 		return filepath.Join(root, "mods", m.ModName), nil
 	}
 	mods, err := modsDir(root)

@@ -153,6 +153,17 @@ func ParseFile(path string) (*State, error) {
 	return st, nil
 }
 
+// IsNewCharacter reports whether a save is still the header-only file D2R writes when it
+// creates a character, before it has ever saved the character in full. Such a character
+// has never beaten Baal, so it can only be on Normal.
+func IsNewCharacter(path string) bool {
+	data, err := os.ReadFile(path)
+	if err != nil || len(data) < nameOffset+16 || binary.LittleEndian.Uint32(data[0:4]) != magic {
+		return false
+	}
+	return len(data) < questMarkerOffset+4 || string(data[questMarkerOffset:questMarkerOffset+4]) != "Woo!"
+}
+
 // ReadFileName reads only the character name from a save's header.
 //
 // A character D2R has just created is saved as a header alone (403 bytes, measured on

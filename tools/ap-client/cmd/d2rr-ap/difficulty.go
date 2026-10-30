@@ -55,6 +55,7 @@ func difficultyName(d int) string {
 func (a *app) currentDifficulty(st *save.State) save.DifficultyResult {
 	a.mu.Lock()
 	goal := a.goalDifficulty
+	fresh := a.newCharacter
 	a.mu.Unlock()
 	if a.difficultyOverride >= 0 {
 		a.difficultySource = "explicit override"
@@ -68,6 +69,10 @@ func (a *app) currentDifficulty(st *save.State) save.DifficultyResult {
 			a.difficultySource = "calibrated memory"
 			return save.DifficultyResult{Difficulty: value, OK: true, Source: save.SourceMemory, Unlocked: save.HighestUnlockedDifficulty(st)}
 		}
+	}
+	if st == nil && fresh && goal >= 0 {
+		a.difficultySource = save.SourceNewCharacter.String()
+		return save.DifficultyResult{Difficulty: 0, OK: true, Source: save.SourceNewCharacter}
 	}
 	result := save.CurrentDifficulty(goal, -1, st)
 	a.difficultySource = result.Source.String()

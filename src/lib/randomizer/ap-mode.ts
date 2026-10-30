@@ -14,8 +14,10 @@
  *  - StartSkill is cleared. The normal pipeline picks one at random per class; a free
  *    skill outside Archipelago's control is exactly what this mode exists to prevent.
  *
- *  - Every class skill is reqlevel 1 with no prerequisites. Archipelago decides WHEN
- *    points arrive, not where they go, so the tree must accept a point anywhere.
+ *  - Every class skill is reqlevel 1. Archipelago decides WHEN points arrive, so a point
+ *    must be spendable whatever the character's level. Prerequisites stay: a Progressive
+ *    Skill Point is generic and the player chooses where it goes, so the tree's chains
+ *    only shape that choice, as in the public mod for the same seed.
  *
  *  - Monster and superunique rows (empty charclass) are left alone.
  *
@@ -275,19 +277,15 @@ export function applyApCharstats(headers: string[], rows: string[][]): void {
   }
 }
 
-/** skills.txt: every class skill accepts a point at clvl 1 with no prerequisite chain. */
+/** skills.txt: every class skill accepts a point at clvl 1. Prerequisites are kept. */
 export function applyApSkills(headers: string[], rows: string[][]): void {
   const classCol = headers.indexOf('charclass');
   const reqLvlCol = headers.indexOf('reqlevel');
-  const reqCols = ['reqskill1', 'reqskill2', 'reqskill3']
-    .map(n => headers.indexOf(n))
-    .filter(i => i !== -1);
   if (classCol === -1) return;
 
   for (const row of rows) {
     if (!row[classCol]) continue; // monster or superunique skill
     if (reqLvlCol !== -1 && row[reqLvlCol] !== '') row[reqLvlCol] = '1';
-    for (const c of reqCols) row[c] = '';
   }
 }
 

@@ -117,6 +117,7 @@ class TestGoals(unittest.TestCase):
                 self.assertIn(goal, locations((d, act), groups))
 
     def test_nothing_past_the_goal_is_a_location(self):
+        towns = ids.town_checks()  # never locations (test_no_town_is_a_check)
         for d, act in GOALS:
             names = set(locations((d, act)))
             for later_d in range(ids.DIFFICULTIES):
@@ -125,16 +126,35 @@ class TestGoals(unittest.TestCase):
                     quest = ids.quest_location_name(later_d, later_act, 0)
                     self.assertEqual(quest in names, not past, (d, act, later_d, later_act))
                     for wp in ids.waypoints_for_act(later_act):
-                        self.assertEqual(ids.waypoint_location_name(later_d, wp) in names, not past)
+                        name = ids.waypoint_location_name(later_d, wp)
+                        if name not in towns:
+                            self.assertEqual(name in names, not past)
             for index in range(ids.AREAS):
                 for area_d in range(ids.DIFFICULTIES):
                     past = area_d > d or (area_d == d and ids.area_act(index) > act)
-                    self.assertEqual(ids.area_location_name(area_d, index) in names, not past)
+                    name = ids.area_location_name(area_d, index)
+                    if name not in towns:
+                        self.assertEqual(name in names, not past)
 
     def test_a_longer_goal_never_has_fewer_locations(self):
         counts = [len(locations(goal)) for goal in GOALS]
         self.assertEqual(counts, sorted(counts))
         self.assertEqual(len(set(counts)), len(counts))
+
+    def test_no_town_is_a_check(self):
+        towns = ids.town_checks()
+        # Five towns, waypoint and area, on each of the three difficulties.
+        self.assertEqual(len(towns), 5 * 2 * ids.DIFFICULTIES)
+        self.assertIn("Normal WP: Rogue Encampment", towns)
+        self.assertIn("Hell Area: Harrogath", towns)
+        for goal in GOALS:
+            names = set(locations(goal))
+            self.assertFalse(towns & names)
+            self.assertFalse(any(n.endswith(": " + town) for n in names for town in ids.TOWNS))
+        # Their ids stay reserved: the full table still names them.
+        self.assertTrue(towns <= set(ids.all_location_names()))
+        # The rest of an act's waypoints are still checks.
+        self.assertIn("Nightmare WP: Cold Plains", locations((1, 0)))
 
     def test_check_groups_switch_off_independently(self):
         for goal in GOALS:

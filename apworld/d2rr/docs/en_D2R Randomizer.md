@@ -36,8 +36,8 @@ traps are untested. Everything arrives by itself while the companion app is runn
 ## What are the locations?
 
 - Completing a quest.
-- Activating a waypoint.
-- Entering an area for the first time.
+- Activating a waypoint (not a town's).
+- Entering an area for the first time (not a town).
 - Reaching a character level, up to about the level you would have at the goal.
 
 Each group except quests can be switched off.

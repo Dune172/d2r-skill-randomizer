@@ -49,6 +49,9 @@ const (
 	// SourceUnlocked means it was taken to be the highest difficulty the save proves is
 	// unlocked — correct while advancing, WRONG while farming a finished difficulty.
 	SourceUnlocked
+	// SourceNewCharacter means the character has never been saved in full, so it cannot
+	// have unlocked anything beyond Normal.
+	SourceNewCharacter
 )
 
 func (s DifficultySource) String() string {
@@ -61,6 +64,8 @@ func (s DifficultySource) String() string {
 		return "-difficulty override"
 	case SourceUnlocked:
 		return "highest unlocked (assumed)"
+	case SourceNewCharacter:
+		return "new character"
 	default:
 		return "unknown"
 	}

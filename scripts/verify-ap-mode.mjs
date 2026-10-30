@@ -11,7 +11,7 @@
  *                          a stat the game has created; levelling is what creates it
  *   StartSkill = ''        the normal pipeline hands every class a free starting skill
  *   reqlevel = 1           a point may go into any skill, in any order
- *   reqskill1..3 empty     same reason: no prerequisite chain to satisfy
+ *   prerequisites kept     the class's tree keeps its chains; each names a skill of the class
  *   30 slots, S00..S29     the client counts spent points over exactly these rows
  *   skillId correctness    skillId must index the row holding that skill
  *   no seasonal overlay    a room's mod must not change when the month does
@@ -161,7 +161,7 @@ async function verifyCase(c) {
     }
   }
 
-  // --- skills: every class row reachable at clvl 1, no prereqs ------------
+  // --- skills: every class row reachable at clvl 1, prerequisites kept ----
   const skRaw = read('global/excel/skills.txt');
   check(failures, skRaw !== null, 'skills.txt missing');
   if (!skRaw) return failures;
@@ -171,14 +171,19 @@ async function verifyCase(c) {
   const cReqLvl = col(sk.headers, 'reqlevel');
   const cReq = ['reqskill1', 'reqskill2', 'reqskill3'].map(n => col(sk.headers, n));
 
-  let badLvl = 0, badReq = 0;
+  let badLvl = 0, withReq = 0, badReq = 0;
+  const classOf = new Map(sk.rows.map(r => [r[cName], r[cClass]]));
   sk.rows.forEach(row => {
     if (!row[cClass]) return; // non-class row: left vanilla on purpose
     if (row[cReqLvl] !== '' && row[cReqLvl] !== '1') badLvl++;
-    if (cReq.some(i => row[i] !== '')) badReq++;
+    const reqs = cReq.map(i => row[i]).filter(Boolean);
+    if (row[cClass] === c.characterClass && reqs.length) withReq++;
+    // A prerequisite must be a skill of the same class, or the tree could never open.
+    if (reqs.some(name => classOf.get(name) !== row[cClass])) badReq++;
   });
   check(failures, badLvl === 0, `${badLvl} class rows have reqlevel not in {empty,1}`);
-  check(failures, badReq === 0, `${badReq} class rows still have a reqskill set`);
+  check(failures, withReq >= 10, `only ${withReq} of the class's skills have a prerequisite; the tree's chains are missing`);
+  check(failures, badReq === 0, `${badReq} class rows name a prerequisite outside their class`);
 
   // --- manifest <-> skills.txt agreement ----------------------------------
   const slots = manifest.classes?.[c.characterClass]?.slots ?? [];
