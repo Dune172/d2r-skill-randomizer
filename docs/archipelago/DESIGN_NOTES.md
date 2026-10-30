@@ -137,9 +137,10 @@ without leaving town).
 ## Decisions
 
 - **Points, not skills.** Archipelago decides when a point arrives; the player chooses
-  the skill and the game builds it. Consequently every class skill is level 1 with no
-  prerequisites in an AP mod, and the tree for AP seed N is the tree the public spoiler
-  shows for seed N.
+  the skill and the game builds it. Consequently every class skill is level 1 in an AP
+  mod, so a point is spendable whatever the character's level. Prerequisites are kept
+  (since 2026-10-30): a generic point is the player's to place, so the chains only shape
+  that choice. The tree for AP seed N is the tree the public spoiler shows for seed N.
 - **Targets, not increments.** Unspent points, stat points and keys are recomputed from
   the item counts every poll, so duplicates, reordering and full resyncs converge.
   One-shot effects (gold, traps) are owed until recorded as applied, and are

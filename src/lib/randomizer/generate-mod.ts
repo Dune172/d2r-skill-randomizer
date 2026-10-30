@@ -357,8 +357,8 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   const { reorderedRows, idMapping } = reorderSkillsRows(skillsTxt.rows, placements);
   skillsTxt.rows = reorderedRows;
 
-  // Archipelago: a point can go anywhere, so no class skill may be gated by level or
-  // prerequisite. After writeSkillsRows so it overrides whatever that wrote.
+  // Archipelago: points arrive whatever the character's level, so no class skill is
+  // gated by level (prerequisites stay). After writeSkillsRows so it overrides it.
   if (ap) applyApSkills(skillsTxt.headers, skillsTxt.rows);
 
   // Controller behavior is keyed by skills.txt row — move it with the skills.

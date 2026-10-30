@@ -20,8 +20,8 @@ export const maxDuration = 60;
  *
  * The manifest travels inside the zip, so the mod and its description cannot drift apart.
  *
- * Options that fight the Archipelago design are not exposed at all: prerequisites would
- * refuse out-of-order points, Race Mode replaces seven classes with filler, and a weekly
+ * Options that fight the Archipelago design are not exposed at all: Race Mode replaces
+ * seven classes with filler, and a weekly
  * challenge can rewrite the very tables AP mode pins. The client cannot ask for a
  * combination that would not work.
  */
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     // No season segment: an AP mod carries no seasonal overlay, so its key must not
     // change when the month does.
     const cacheKey = withApSegment(
-      makeCacheKey(seed, 1, 0, allActs, true, 'Corpsefire', false, true, false,
+      makeCacheKey(seed, 1, 0, allActs, true, 'Corpsefire', false, true, true,
         xpMultiplier, allActs, allDifficulties, 0, false, false, false, enemyShuffle, false, ''),
       `${characterClass}:${savepath}:${keyItems ? 'k' : ''}${pooledStats ? 'p' : ''}:${AP_CONTRACT_VERSION}`,
     );
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
         weeklyEnabled: false,      // weekly mutations can rewrite the tables AP mode pins
         weekNumber: 0,
         forgottenArts: false,      // disables skill trees altogether
-        enablePrereqs: false,      // points arrive in any order; a prereq chain would refuse them
+        enablePrereqs: true,       // points are generic: the player spends them, so the tree keeps its chains
         playersEnabled: false,
         playersCount: 1,
         playersActs: allActs,
