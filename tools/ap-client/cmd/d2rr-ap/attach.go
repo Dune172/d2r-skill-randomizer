@@ -24,6 +24,7 @@ func (a *app) pollGame(ctx context.Context) {
 			// running", and it hides the case that actually matters: attached-but-
 			// refused, where checks keep flowing from the save while no skill is ever
 			// granted. That looked exactly like a broken grant path.
+			a.reattaching = false
 			a.warnAttach(fmt.Sprintf("cannot attach to D2R: %v", err))
 			return
 		}
@@ -32,6 +33,7 @@ func (a *app) pollGame(ctx context.Context) {
 			err = setup.VerifyProcess(proc, a.man)
 		}
 		if err != nil {
+			a.reattaching = false
 			a.warnAttach(fmt.Sprintf("game verification: %v", err))
 			gc.Close()
 			return
@@ -137,7 +139,9 @@ func (a *app) pollGame(ctx context.Context) {
 }
 
 // offsetsResolved reports whether the UI block is known, which every write waits on,
-// and re-attaches every 30 s while it or the waypoint panel is not.
+// and re-attaches while it or the waypoint panel is not: after 30 s, then backing off
+// to at most every 10 minutes, and only a few times when just the waypoint panel is
+// missing (grants work then, and the save still reports waypoints).
 //
 // Without this an unknown D2R build looks exactly like a working client: checks keep
 // arriving from the save while QuitMenuOpen stays true forever and no grant is made.
@@ -145,6 +149,7 @@ func (a *app) offsetsResolved() bool {
 	ui, waypoints := a.gc.OffsetsResolved()
 	if ui && waypoints {
 		a.offsetsMissingSince = time.Time{}
+		a.offsetsRetries = 0
 		a.note("offsets", "")
 		return true
 	}
@@ -159,18 +164,39 @@ func (a *app) offsetsResolved() bool {
 		a.note("offsets", fmt.Sprintf("D2R build 0x%08x: the waypoint panel was not found, so "+
 			"waypoint checks wait for the save. %s", build, buildHint(build)))
 	}
-	if a.offsetsMissingSince.IsZero() {
-		a.offsetsMissingSince = time.Now()
-	} else if time.Since(a.offsetsMissingSince) > 30*time.Second {
-		// A fresh attach scans the module again, and a code page that had not run
-		// before may be readable now.
-		a.offsetsMissingSince = time.Time{}
-		a.reattaching = true
-		a.attached = false
-		a.detachGame()
-		return false
+	if !ui || a.offsetsRetries < maxWaypointOnlyRetries {
+		if a.offsetsMissingSince.IsZero() {
+			a.offsetsMissingSince = time.Now()
+		} else if time.Since(a.offsetsMissingSince) > reattachDelay(a.offsetsRetries) {
+			// A fresh attach scans the module again, and a code page that had not run
+			// before may be readable now. Forget everything learned from the old
+			// offsets: a quest layout calibrated on them must not be trusted after a
+			// rescan that may have missed (it would send checks never earned).
+			a.offsetsMissingSince = time.Time{}
+			a.offsetsRetries++
+			a.reattaching = true
+			a.resetPlayer()
+			a.detachGame()
+			return false
+		}
 	}
 	return ui
+}
+
+// maxWaypointOnlyRetries bounds re-attaching when only the waypoint panel is missing.
+const maxWaypointOnlyRetries = 3
+
+// reattachDelay is how long offsets stay missing before re-attach number n+1:
+// 30 s, then doubling, at most 10 minutes. Each re-attach rescans the whole module.
+func reattachDelay(n int) time.Duration {
+	d := 30 * time.Second
+	for i := 0; i < n && d < 10*time.Minute; i++ {
+		d *= 2
+	}
+	if d > 10*time.Minute {
+		d = 10 * time.Minute
+	}
+	return d
 }
 
 func buildHint(build uint32) string {

@@ -102,8 +102,12 @@ func doctor(args []string) int {
 			report["d2rBuild"] = fmt.Sprintf("0x%08x", build)
 			report["d2rBuildKnown"] = known
 			report["offsetsResolved"] = map[string]bool{"ui": ui, "waypoints": waypoints}
-			if !known {
-				issues = append(issues, "this D2R build has no measured offsets; grants may stay paused")
+			// An unknown build alone is not a problem when the pattern scan found both.
+			if !ui {
+				issues = append(issues, "the UI block was not found; nothing will be granted until it is (re-run doctor after the game has been on screen for a while)")
+			}
+			if !waypoints {
+				issues = append(issues, "the waypoint panel was not found; waypoint checks will come from the save instead")
 			}
 		}
 		if e == nil && m != nil {
@@ -125,7 +129,7 @@ func doctor(args []string) int {
 					cls, e := gc.ReadClass(player)
 					add(e)
 					report["classID"] = cls
-					if e == nil && ids.Classes[cls] != m.CharacterClass {
+					if e == nil && (cls < 0 || cls >= len(ids.Classes) || ids.Classes[cls] != m.CharacterClass) {
 						issues = append(issues, "loaded class differs from manifest")
 					}
 					if *character != "" && name != *character {

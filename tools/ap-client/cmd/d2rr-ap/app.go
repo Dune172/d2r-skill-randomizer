@@ -96,8 +96,9 @@ type app struct {
 	goalAct        int
 
 	// Retained so the mod fetch can be retried without another Connected packet.
-	slotData     map[string]any
-	lastSetupTry time.Time
+	slotData      map[string]any
+	lastSetupTry  time.Time
+	setupFailures int
 	// The mod zip and manifest from the last successful fetch, so a retry after a
 	// failed install does not ask the server to build the mod again.
 	fetchedZip []byte
@@ -133,6 +134,7 @@ type app struct {
 	// When the UI or waypoint offset was first seen unresolved, for the same reason, and
 	// whether the next attach is such a retry (and so not worth announcing).
 	offsetsMissingSince time.Time
+	offsetsRetries      int
 	reattaching         bool
 
 	// The confirmed in-memory quest layout, once the save has proved one. Zero value
