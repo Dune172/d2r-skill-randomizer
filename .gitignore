@@ -64,5 +64,8 @@ __pycache__/
 # Byte-identity baseline for verify-generate-mod-refactor.mjs: captured per refactor, stale after any pipeline or season change
 /scripts/fixtures/zip-entry-hashes.json
 
-# Built by scripts/build-apworld.mjs --public (the prebuild step)
-/public/archipelago/
+# Built by scripts/build-apworld.mjs --public (the prebuild step). The companion app is
+# the exception: scripts/publish-ap-client.mjs builds it and it is committed, because the
+# site build has no Go.
+/public/archipelago/*
+!/public/archipelago/d2rr-ap.exe
