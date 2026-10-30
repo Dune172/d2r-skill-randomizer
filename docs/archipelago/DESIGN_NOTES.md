@@ -84,8 +84,8 @@ without leaving town).
   both on a control mod with vanilla `op 28` left identical quest and waypoint bytes in
   the save, so the key gate's op 7 changes nothing the game records.
 - **Not run:** G1 step 4 (do learned skills work in combat), G4 (traps, DeathLink) and
-  G5 (a real room), which need leaving town; and the client running a room against the
-  game, which Windows Smart App Control blocked on the test PC.
+  G5 (a real room), which need leaving town. The client running a local room against the
+  game has been run in town; see KEYS_AND_RUNES.md.
 - **Cosmetic:** the Sigil shows as "Burning Dead Archipelago Sigil". The `hrt` monster
   part prefixes the monster's name.
 

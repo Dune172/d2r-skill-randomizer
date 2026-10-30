@@ -30,6 +30,19 @@ tables and a slot contract and a mismatched pair is refused when the client conn
    node scripts/verify-ap-room.mjs
    ```
 
+## The app on the page
+
+`/archipelago` serves `public/archipelago/d2rr-ap.exe`, which is committed. Rebuild it
+whenever the client changes, and commit it with the change:
+
+```bash
+node scripts/publish-ap-client.mjs
+```
+
+It stamps the build with the commit (`d2rr-ap.exe version`), and CI fails if the
+committed app speaks a different contract from the source. Deploying the site then ships
+it; no tag is needed for testers.
+
 ## Cutting it
 
 Push a tag named `archipelago-v` plus the world version:
