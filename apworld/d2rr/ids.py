@@ -69,17 +69,15 @@ TRAP_ITEMS: list[str] = [
 ]
 TRAP_ID_BASE = ITEM_BASE + 2010
 
-# Runes, delivered through the Archipelago Sigil in the Horadric Cube.
+# Runes. RESERVED: runes were taken out of the game on 2026-10-30 and are never placed.
+# Their names and ids stay defined so ids never move and the client's tables still agree
+# (scripts/verify-ap-ids.mjs). A later version may place them again under these ids.
 RUNE_NAMES: list[str] = [
     "El", "Eld", "Tir", "Nef", "Eth", "Ith", "Tal", "Ral", "Ort", "Thul", "Amn", "Sol",
     "Shael", "Dol", "Hel", "Io", "Lum", "Ko", "Fal", "Lem", "Pul", "Um", "Mal", "Ist",
     "Gul", "Vex", "Ohm", "Lo", "Sur", "Ber", "Jah", "Cham", "Zod",
 ]
 RUNE_ID_BASE = ITEM_BASE + 2100
-# The highest rune a goal on each difficulty can hand out: Hel, Ist, Zod.
-RUNE_CAP_BY_DIFFICULTY = [15, 24, 33]
-# Lem and above are worth hinting for.
-FIRST_USEFUL_RUNE = 19
 
 # A D2 character can hold 30 skills x 20 hard points. More points than that are
 # unspendable, so the pool never needs to exceed it.
@@ -405,8 +403,7 @@ def active_location_names(goal_difficulty: int, include_waypoints: bool = True,
 # ---------------------------------------------------------------------------------------
 
 def resolve_pool(locations: int, *, skill_points: int, starting_skill_points: int = 0,
-                 keys: int = 0, stat_bundles: int = 0, trap_percentage: int = 0,
-                 rune_percentage: int = 0) -> dict[str, int]:
+                 keys: int = 0, stat_bundles: int = 0, trap_percentage: int = 0) -> dict[str, int]:
     """Fit the item pool to the locations that exist, exactly.
 
     Archipelago requires one item per location. Asking for more than fits would surface
@@ -417,8 +414,8 @@ def resolve_pool(locations: int, *, skill_points: int, starting_skill_points: in
       skill points   as requested, capped by what a character can spend and by the
                      progression density limit, never below one
       stat points    as many bundles as still fit
-      filler         everything left over: a share of traps, a share of runes, and the
-                     rest alternating Training Fragments and Gold
+      filler         everything left over: a share of traps, and the rest alternating
+                     Training Fragments and Gold
 
     Starting skill points are part of the skill point total but are handed out at the
     start rather than placed, so they free their locations for filler.
@@ -433,8 +430,7 @@ def resolve_pool(locations: int, *, skill_points: int, starting_skill_points: in
     stats = min(stat_bundles, free)
     filler = free - stats
     traps = filler * trap_percentage // 100
-    runes = (filler - traps) * rune_percentage // 100
-    rest = filler - traps - runes
+    rest = filler - traps
     gold = rest // 3
     return {
         "keys": keys,
@@ -443,7 +439,6 @@ def resolve_pool(locations: int, *, skill_points: int, starting_skill_points: in
         "placed_skill_points": placed,
         "stat_bundles": stats,
         "traps": traps,
-        "runes": runes,
         "gold": gold,
         "fragments": rest - gold,
     }

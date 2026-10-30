@@ -49,7 +49,7 @@ to finish.
    starts the game with it. Play **Offline** and create a new character of the class in
    your options: the character must be created by this mod, so its save lands in the
    folder the app watches.
-4. Right-click the Draught of Attunement, and leave the app open while you play.
+4. Play, and leave the app open while you do. Your items arrive by themselves.
 
 One slot is bound to one character. If the mod changes (a new room, say), the app asks
 you to close the game, then reinstalls the mod and starts the game again.
@@ -61,11 +61,14 @@ location, and `-character Name` if the save folder holds several characters.
 
 ## Playing
 
-- Skill points arrive as unspent points. Open the skill tree and spend them anywhere.
-- Your first points become spendable after your first level-up.
-- Type into the client window to talk to the room. `!hint Progressive Skill Point` and
+- Skill points arrive as unspent points while the app is running, a second or two after
+  the room sends them. Open the skill tree and spend them anywhere. There is nothing to
+  drink or transmute, and points sent after you have spent your last one arrive too.
+- "You received X from Y" and "You sent X to Y" appear in the game, in a text box beside
+  the chat at the bottom left, in any display mode. The app's window shows them as well.
+- Type into the app's window to talk to the room. `!hint Progressive Skill Point` and
   the other `!` commands work as in any Archipelago client.
-- The client sends checks as you complete quests, activate waypoints, enter areas and
+- The app sends checks as you complete quests, activate waypoints, enter areas and
   gain levels, and reports the goal when your goal boss dies.
 
 ### After Normal
@@ -74,27 +77,19 @@ On Nightmare and Hell the client needs to know which difficulty you are playing,
 area checks correctly. Start it with `-difficulty 1` for Nightmare or `-difficulty 2` for
 Hell, and restart it with the right number if you go back to an easier difficulty.
 
-### Your starting items
+### Experimental items
 
-You start with an **Archipelago Sigil** and a **Draught of Attunement**. Right-click the
-Draught first thing: it gives the client somewhere to put your skill points, keys and
-runes. (Lost it? Transmute the Sigil alone in the Horadric Cube for another.)
+- **Horadric Keys**: they arrive by themselves while the app is running. Once you hold
+  enough, the Cube assembles the Horadric Staff and Khalim's Will as usual.
+- **Pooled stat points**: they arrive like skill points, as unspent points to put where
+  you like.
 
-- **Skill points with none left to spend.** The game removes the unspent-point counter
-  when you spend the last point. When more arrive, the client asks for a **Tonic of
-  Renewal**: put the Sigil alone in the Cube, transmute, and right-click the Tonic. A
-  level-up does the same.
-- **Horadric Keys** (experimental): nothing to do. Once you hold enough, the Cube
-  assembles the Horadric Staff and Khalim's Will as usual.
-- **Runes** (experimental): when the client says a rune is waiting, put the Sigil alone
-  in the Cube and transmute. Take the rune, then right-click the **Archipelago Receipt**
-  that came with it; that tells the client it arrived. If the Cube refuses a waiting
-  rune, restart the client with `-mail-flip`; if you lost a Receipt, restart it with
-  `-mail-skip`.
-- **Pooled stat points** (experimental) work like skill points, Tonic included.
+Keys and pooled stat points have been checked in the game in town, but not yet over a
+full run. Leave them off for a run that has to finish. Runes are not in the game for
+now.
 
-Keys, runes and pooled stat points have been checked in the game in town, but not yet
-over a full run. Leave them off for a run that has to finish.
+Now and then the game has no room on your character for something new yet. The app then
+waits, and what you were sent arrives after your next level-up, quest reward or item.
 
 ## Troubleshooting
 

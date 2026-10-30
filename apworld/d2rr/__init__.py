@@ -93,9 +93,10 @@ class D2RRWorld(World):
     item_name_groups = {
         "Skill Points": {ids.SKILL_POINT_ITEM},
         "Keys": {ids.HORADRIC_KEY_ITEM},
-        "Runes": {ids.rune_item_name(i) for i in range(len(ids.RUNE_NAMES))},
         "Traps": set(ids.TRAP_ITEMS),
     }
+    # The rune items keep their names and ids (ids.py) but are never placed, so they
+    # have no group: a hint for one could never succeed.
     location_name_groups = _location_groups()
 
     def __init__(self, multiworld, player: int):
@@ -125,7 +126,6 @@ class D2RRWorld(World):
             # One bundle for each level-up the goal expects.
             stat_bundles=ids.level_cap(self.goal_difficulty, self.goal_act) - 1 if pooled_stats else 0,
             trap_percentage=self.options.trap_percentage.value,
-            rune_percentage=self.options.rune_percentage.value,
         )
 
     def _active_location_names(self) -> list[str]:
@@ -218,24 +218,15 @@ class D2RRWorld(World):
             classification = ItemClassification.progression
         elif name in ids.TRAP_ITEMS:
             classification = ItemClassification.trap
-        elif name == ids.STAT_POINTS_ITEM or name in self._useful_runes:
+        elif name == ids.STAT_POINTS_ITEM:
             classification = ItemClassification.useful
         else:
+            # Gold, Training Fragments, and the reserved rune names, which are never placed.
             classification = ItemClassification.filler
         return D2RRItem(name, classification, self.item_name_to_id[name], self.player)
 
-    _useful_runes = frozenset(
-        ids.rune_item_name(i) for i in range(ids.FIRST_USEFUL_RUNE, len(ids.RUNE_NAMES)))
-
     def get_filler_item_name(self) -> str:
         return ids.TRAINING_FRAGMENT_ITEM
-
-    def _random_rune(self) -> str:
-        """Low runes are common and high runes rare, as in the game, and a goal never
-        hands out a rune the difficulty it ends on could not drop."""
-        cap = ids.RUNE_CAP_BY_DIFFICULTY[self.goal_difficulty]
-        weights = [1.0 / (i + 1) ** 1.3 for i in range(cap)]
-        return ids.rune_item_name(self.random.choices(range(cap), weights)[0])
 
     def create_items(self) -> None:
         pool = self.pool
@@ -247,7 +238,6 @@ class D2RRWorld(World):
             + [ids.HORADRIC_KEY_ITEM] * pool["keys"]
             + [ids.STAT_POINTS_ITEM] * pool["stat_bundles"]
             + [self.random.choice(ids.TRAP_ITEMS) for _ in range(pool["traps"])]
-            + [self._random_rune() for _ in range(pool["runes"])]
             + [ids.GOLD_ITEM] * pool["gold"]
             + [ids.TRAINING_FRAGMENT_ITEM] * pool["fragments"]
         )

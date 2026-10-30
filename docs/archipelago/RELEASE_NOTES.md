@@ -35,11 +35,14 @@ and create a new offline character of your class.
 
 ## Known limits
 
-- Horadric Keys, pooled stat points and runes are experimental and off by default: checked
-  in the game in town, not yet over a full run. Traps and DeathLink are untested.
-- Drink the Draught of Attunement you start with first. When you have spent every skill
-  point and more arrive, the client asks for a Tonic of Renewal from the Sigil.
-- This release changes the mod contract to 4: the client and the site must be updated
+- Horadric Keys and pooled stat points are experimental and off by default: checked in
+  the game in town, not yet over a full run. Traps and DeathLink are untested.
+- Skill points, stat points and keys now arrive by themselves while the client is
+  running. The Draught of Attunement, the Tonic of Renewal and the Archipelago Sigil are
+  gone, and so are runes and the Rune Percentage option. An old YAML that still sets it
+  generates with a warning, and the setting is ignored.
+- What you receive and send is shown in the game, in a text box beside the chat.
+- This release changes the mod contract to 5: the client and the site must be updated
   together.
 - On Nightmare and Hell, start the client with `-difficulty 1` or `-difficulty 2`.
 - The client is unsigned, and it reads and writes the game's memory. Some antivirus

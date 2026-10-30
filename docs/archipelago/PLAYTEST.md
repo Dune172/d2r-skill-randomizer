@@ -20,20 +20,20 @@ Offline only. The client refuses to act while the game is on Battle.net.
 
 ## Results so far
 
-From `DESIGN_NOTES.md` (D2R 3.3.93847, 2026-10-29, in town only):
+From `DESIGN_NOTES.md` (D2R 3.3.93847, in town only):
 
 | Gate | Result |
 |---|---|
-| G1 skill points | **Pass in town**, once both copies of the player are written. `probe -set` and the client now do that. Combat (step 4) not run. |
-| G2 creating a stat | **Pass in town** with player spell 4: the Draught creates 5, 368 and 369 on both copies, on a fresh character too. |
-| G3 Cube recipes | **Pass in town**: runes are delivered once per offer and the Receipt acknowledges. |
-| G6 Tonic of Renewal | **Pass in town**: brewed only on the client's request (369 = 200), and it brings back an emptied pool. |
-| Key gates | **Pass in town** on the real recipes, with test-only recipes supplying the quest parts. |
+| G1 skill points | **Pass in town** (2026-10-29), once both copies of the player are written. `probe -set` and the client now do that. Combat (step 4) not run. |
+| G2 adding a stat | **Pass in town** (2026-10-30): `probe -insert` gave a fresh Paladin 3 skill points and 2 stat points, spendable at once and kept after Save and Exit. Stat points need the combined list written as well as the base list. |
+| G3 key gates | **Pass in town** (2026-10-29) on the real recipes, with test-only recipes supplying the quest parts. |
 | G4 traps, DeathLink | Not run (outside town). |
 | G5 a real room | Not run (outside town). |
 
-Keys, pooled stat points and runes are marked experimental until a full run (G5) has
-been played with them. Details are in `KEYS_AND_RUNES.md`.
+The Draught, Sigil, Receipt and Tonic gates of 2026-10-29 were retired on 2026-10-30
+with the potions and runes themselves; `KEYS_AND_RUNES.md` keeps them as a record.
+Keys and pooled stat points are marked experimental until a full run (G5) has been
+played with them.
 
 ## Setup
 
@@ -61,10 +61,11 @@ node scripts/dev-cold-cache.mjs          # http://localhost:3210; leave it runni
 
 In a second terminal, ask it for an Archipelago mod. Pick any seed, a class, and a save
 folder name (letters, digits, `-`, `_`); the save folder keeps the test character apart
-from your real ones. `keyItems` turns on the Horadric Key recipes that G3 looks at.
+from your real ones. `keyItems` turns on the Horadric Key recipes that G3 looks at, and
+`contractVersion` must equal `AP_CONTRACT_VERSION` in `src/lib/randomizer/ap-mode.ts`.
 
 ```powershell
-$body = @{ seed = 987002; contractVersion = 3; characterClass = 'pal';
+$body = @{ seed = 987002; contractVersion = 5; characterClass = 'pal';
            savepath = 'ap_gate_pal'; options = @{ keyItems = $true } } | ConvertTo-Json
 Invoke-WebRequest -Method Post -Uri http://localhost:3210/api/archipelago/mod `
   -ContentType application/json -Body $body -OutFile dist\ap_gate.zip
@@ -92,11 +93,11 @@ Windows keeps your Saved Games folder).
 
 ### 3. Make the characters
 
-- **A fresh character** (in town): create a new character of the mod's class. It
-  starts with an Archipelago Sigil, a Draught of Attunement and a Horadric Cube. G2 and
+- **A fresh character** (in town): create a new character of the mod's class. G2 and
   G3 use it.
-- **A character with an unspent skill point.** G1 needs the skill-point stat to exist,
-  and the game creates it only when the character gets a point. Either:
+- **A character with an unspent skill point.** G1 needs the skill-point stat to exist.
+  Either:
+  - *in town:* give the fresh character one with `probe -insert 5=1` (G2 step 2); or
   - *in town:* with D2R closed, copy a level 2 or higher save that still has an unspent
     skill point into the mod's save folder (every file named `<Character>.*`). D2R reads
     saves only at startup. Any class works for G1; or
@@ -117,8 +118,8 @@ character's class against the mod. If `d2rBuildKnown` is false after a D2R patch
 follow "After a D2R patch" in `DESIGN_NOTES.md` before the gates: without the UI offset
 the client grants nothing.
 
-Stat ids used below: 5 skill points, 6 life, 8 mana, 10 stamina, 14 gold, and on current
-mods 368 Horadric Keys (count + 1) and 369 mailbox (a mod's manifest lists its own under
+Stat ids used below: 4 stat points, 5 skill points, 6 life, 8 mana, 10 stamina, 14 gold,
+and on current mods 368 Horadric Keys (count + 1; a mod's manifest lists its own under
 `tables.stats`).
 
 ## G1: is a written skill point honoured?
@@ -154,58 +155,37 @@ writes that copy only. If a copy other than `gameCopy` makes the points real, th
 client is finding the wrong copy; if none does, writing from outside the game no longer
 works on this build and nothing below is worth running.
 
-## G2: can the mod create a stat for the client to write?
+## G2: can the client add a stat the character does not have?
 
-**In town**, with the fresh character:
+**In town**, with the fresh character, on a mod with pooled stat points:
 
-1. `dist\d2rr-ap.exe probe`: stats 5, 368 and 369 are absent.
-2. Put the **Sigil alone** in the Cube and transmute: expect a second **Draught** and the
-   Sigil back (the brew for a missing mail stat).
-3. Right-click a **Draught of Attunement**, then `probe` and `probe -game`.
+1. `dist\d2rr-ap.exe probe`: stats 4 and 5 are absent. `baseStatList` shows how many
+   of the array's slots are used.
+2. `dist\d2rr-ap.exe probe -insert 5=3 -insert 4=2`. This adds the entries to both the
+   base and the combined stat list, on both copies of the character, as the client does.
+3. Open the skill tree and the character panel: 3 skill points and 2 stat points to
+   spend. Spend them, then `probe` and `probe -game`: the skills are learned on the
+   game's copy.
+4. Save and Exit, re-enter, `probe`: the skills and attributes are still there.
 
-**Pass:** 368 is 1, 369 is 256 and 5 is 1 on both copies, no attribute changed, and all
-three are still there after Save and Exit and re-entering.
+**Pass:** all four. Points then arrive with nothing for the player to do, including
+after the pool has been spent to zero.
 
-**Fail:** the Draught does nothing, or adds to a random attribute (as player spell 8 did
-before 2026-10-29), or the stats are gone after re-entering. Keys and runes then need
-another way to create the stat (a starter save is the fallback).
+**`the stat list has no free slot`:** the game's array is full (a fresh character used
+14 and 16 of 19 when this was measured). That is a known limit, not a failure: the
+client waits until the game grows the array on a level-up, quest reward or item. Try
+again after one.
 
-## G3: does a Cube recipe obey a stat?
+## G3: do the key gates hold?
 
-**In town**, the same character after G2, Cube open, the Sigil alone in it.
+**In town**, on a mod with `keyItems`. Keys are stat 368, stored as count + 1, and the
+client adds it like any other stat (`probe -insert 368=1` for none, `probe -set 368=3`
+for two). The Horadric Staff recipe needs 368 at 3 or more, Khalim's Will at 6 or more.
+Their parts cannot be had in town; to try the real recipes anyway, add test-only rows to
+the installed copy of the mod's `cubemain.txt` that turn starting items into the parts
+(see `KEYS_AND_RUNES.md`), then transmute the parts at one key below and at the gate.
 
-1. With 369 at 256 (after the Draught) and then at 1 (`probe -set 369=1`, idle),
-   transmute: expect **nothing** both times.
-2. `dist\d2rr-ap.exe probe -set 369=2`, transmute. Expect an **El Rune**, the other Sigil
-   and an **Archipelago Receipt**.
-3. Transmute the Sigil alone **again** without using the Receipt. Expect **nothing**:
-   the exactly-once guarantee depends on the Cube refusing here.
-4. Right-click the Receipt, then `probe`. Stat 369 should read 3.
-5. `dist\d2rr-ap.exe probe -set 369=8`, transmute. Expect an **Eld Rune** (offer 8 is
-   the Eld for the second Sigil, the one now held).
-
-**Pass:** all five. Runes then work.
-
-**Key gates** use the same mechanism: the Horadric Staff recipe needs stat 368 at 3 or
-more, Khalim's Will at 6 or more. Their parts cannot be had in town; to try the real
-recipes anyway, add test-only rows to the installed copy of the mod's `cubemain.txt`
-that turn starting items into the parts (see `KEYS_AND_RUNES.md`), then transmute the
-parts at one key below and at the gate.
-
-## G6: does the Tonic bring back an empty pool?
-
-Same character, in town. Step 3 needs a mod with pooled stat points.
-
-1. Spend the last unspent skill point in the tree. `probe` and `probe -game`: stat 5 is
-   gone from both copies.
-2. `dist\d2rr-ap.exe probe -set 369=200` (the request the client writes when a pool is
-   missing and points are owed), transmute the Sigil alone: expect a **Tonic of
-   Renewal** and the Sigil back. Right-click it. `probe` and `probe -game`: 5 is 1 on
-   both, the point spends, and the skill is still learned after Save and Exit.
-3. With pooled stat points, the same Tonic brings stat 4 back as 1.
-
-**Pass:** all three. Points sent while a pool is empty then arrive after one Tonic. At
-any other value of 369 the Sigil must not brew a Tonic (G3 step 1).
+**Pass:** each recipe refuses one key below its gate and works at it.
 
 ## G4: traps and DeathLink
 
@@ -241,6 +221,9 @@ write; record which happens so the docs can say so.
    mod and starts D2R.
 3. Create a new character of the room's class and play to the goal. Watch that:
    - points arrive and match the client's log, and skills bought with them work;
+   - points sent after you spend your last one arrive too;
+   - "You received X from Y" and "You sent X to Y" appear in the box beside the chat,
+     in windowed and fullscreen modes;
    - checks reach the room as you complete quests, take waypoints, enter areas and level;
    - after Save and Exit and a client restart, nothing is granted twice;
    - on a level-up, the point the game hands out is taken back within a second;
