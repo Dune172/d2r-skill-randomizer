@@ -173,6 +173,11 @@ without leaving town).
   server listed that location for the slot, which covers short goals and disabled check
   groups without the client re-deriving them.
 - **No Monster Shrine trap.** It needs the game's own code to run. Traps are stat writes.
+- **Towns are never checks**, on any difficulty: neither the town nor its waypoint
+  (`ids.TOWNS`). A character begins each act standing in its town with the waypoint
+  active, so they paid out points for nothing; a new character had two before it could
+  move, and they landed at the game's next save, reading as random. The ids stay
+  reserved.
 - **Only areas a run passes through are checks.** The cow level (open only after Baal),
   the Pandemonium event and the Colossal Summit are left out: an item placed there would
   be stranded. Areas are named as the game shows them, not as `levels.txt` does.

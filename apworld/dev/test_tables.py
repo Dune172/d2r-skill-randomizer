@@ -136,14 +136,20 @@ class TestGoals(unittest.TestCase):
         self.assertEqual(counts, sorted(counts))
         self.assertEqual(len(set(counts)), len(counts))
 
-    def test_nothing_a_new_character_already_has_is_a_location(self):
-        free = ids.free_at_start()
-        self.assertEqual(free, {"Normal WP: Rogue Encampment", "Normal Area: Rogue Encampment"})
+    def test_no_town_is_a_check(self):
+        towns = ids.town_checks()
+        # Five towns, waypoint and area, on each of the three difficulties.
+        self.assertEqual(len(towns), 5 * 2 * ids.DIFFICULTIES)
+        self.assertIn("Normal WP: Rogue Encampment", towns)
+        self.assertIn("Hell Area: Harrogath", towns)
         for goal in GOALS:
-            self.assertFalse(free & set(locations(goal)))
+            names = set(locations(goal))
+            self.assertFalse(towns & names)
+            self.assertFalse(any(n.endswith(": " + town) for n in names for town in ids.TOWNS))
         # Their ids stay reserved: the full table still names them.
-        self.assertTrue(free <= set(ids.all_location_names()))
-        self.assertIn("Nightmare WP: Rogue Encampment", locations((1, 0)))
+        self.assertTrue(towns <= set(ids.all_location_names()))
+        # The rest of an act's waypoints are still checks.
+        self.assertIn("Nightmare WP: Cold Plains", locations((1, 0)))
 
     def test_check_groups_switch_off_independently(self):
         for goal in GOALS:

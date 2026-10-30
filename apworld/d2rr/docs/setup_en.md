@@ -69,7 +69,8 @@ location, and `-character Name` if the save folder holds several characters.
 - Type into the app's window to talk to the room. `!hint Progressive Skill Point` and
   the other `!` commands work as in any Archipelago client.
 - The app sends checks as you complete quests, activate waypoints, enter areas and
-  gain levels, and reports the goal when your goal boss dies.
+  gain levels, and reports the goal when your goal boss dies. Towns are never checks,
+  neither the town nor its waypoint.
 
 ### After Normal
 
