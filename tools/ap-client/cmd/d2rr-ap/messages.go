@@ -72,11 +72,13 @@ func (a *app) showMessages() {
 		a.messageRetry = time.Now().Add(5 * time.Second)
 		addr, err := a.gc.FindWidget(name)
 		if err != nil {
-			a.note("messages", "in-game messages are off: "+err.Error())
+			// Normal for a moment while the game builds its screen; the note says so.
+			a.note("messages", "in-game messages: waiting for the game's message box ("+err.Error()+")")
 			a.messageBox = 0
 			return
 		}
 		a.messageBox, a.messageShown, a.messageOK = addr, "", false
+		a.note("messages", "in-game messages are on")
 	}
 	if a.messageOK && text == a.messageShown {
 		return

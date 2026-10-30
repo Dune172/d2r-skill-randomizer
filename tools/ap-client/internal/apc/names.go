@@ -30,17 +30,25 @@ type ItemEvent struct {
 	Other string
 	// Received is true for an item that came to this slot, false for one this slot sent.
 	Received bool
+	// Location is where this slot found it, when this slot was the finder; empty for an
+	// item another player found.
+	Location string
 }
 
-// Text is the line a player reads.
+// Text is the line a player reads. Where this slot found it is said too, so an item
+// that arrives a moment after the check that earned it still makes sense.
 func (e ItemEvent) Text() string {
+	where := ""
+	if e.Location != "" {
+		where = " (" + e.Location + ")"
+	}
 	switch {
 	case e.Received && e.Other == "":
-		return "You found your " + e.Item
+		return "You found your " + e.Item + where
 	case e.Received:
 		return "You received " + e.Item + " from " + e.Other
 	default:
-		return "You sent " + e.Item + " to " + e.Other
+		return "You sent " + e.Item + " to " + e.Other + where
 	}
 }
 
@@ -66,13 +74,18 @@ func (n *nameTable) itemEvent(p map[string]any) (ItemEvent, bool) {
 		}
 		return fmt.Sprintf("player %d", slot)
 	}
+	// A location belongs to the finder's game, which is this slot's whenever it is named.
+	where := ""
+	if loc, ok := toInt64(item["location"]); ok && finder == n.me {
+		where = n.locations[n.games[n.me]][loc]
+	}
 	switch {
 	case receiving == n.me && finder == n.me:
-		return ItemEvent{Item: name, Received: true}, true
+		return ItemEvent{Item: name, Received: true, Location: where}, true
 	case receiving == n.me:
 		return ItemEvent{Item: name, Other: who(finder), Received: true}, true
 	default:
-		return ItemEvent{Item: name, Other: who(receiving)}, true
+		return ItemEvent{Item: name, Other: who(receiving), Location: where}, true
 	}
 }
 
