@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     const keyItems = body.options?.keyItems === true;
+    const pooledStats = body.options?.pooledStats === true;
     const xpMultiplier = Math.min(3, Math.max(1, Math.trunc(Number(body.options?.xpMultiplier)) || 1));
     const enemyShuffle = body.options?.monsterShuffle === true;
     const allActs = [1, 2, 3, 4, 5];
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
     const cacheKey = withApSegment(
       makeCacheKey(seed, 1, 0, allActs, true, 'Corpsefire', false, true, false,
         xpMultiplier, allActs, allDifficulties, 0, false, false, false, enemyShuffle, false, ''),
-      `${characterClass}:${savepath}:${keyItems ? 'k' : ''}:${AP_CONTRACT_VERSION}`,
+      `${characterClass}:${savepath}:${keyItems ? 'k' : ''}${pooledStats ? 'p' : ''}:${AP_CONTRACT_VERSION}`,
     );
 
     const respond = ({ zip, manifest }: Built) =>
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
         openActs: DEFAULT_OPEN_ACTS,  // its saves and quest changes are not part of AP mode
         mutationIds: [],
         customMutations: [],
-        ap: { characterClass: characterClass as ClassCode, savepath, keyItems },
+        ap: { characterClass: characterClass as ClassCode, savepath, keyItems, pooledStats },
       });
       if (!manifest) throw new Error('Archipelago mode produced no manifest');
 

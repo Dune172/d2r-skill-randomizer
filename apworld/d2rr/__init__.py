@@ -283,6 +283,7 @@ class D2RRWorld(World):
             # Passed straight through to /api/archipelago/mod.
             "mod_options": {
                 "keyItems": self.pool["keys"] > 0,
+                "pooledStats": self.pool["stat_bundles"] > 0,
                 "xpMultiplier": self.options.xp_multiplier.value,
                 "monsterShuffle": bool(self.options.monster_shuffle),
             },

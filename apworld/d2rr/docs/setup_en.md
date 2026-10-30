@@ -69,15 +69,27 @@ On Nightmare and Hell the client needs to know which difficulty you are playing,
 area checks correctly. Start it with `-difficulty 1` for Nightmare or `-difficulty 2` for
 Hell, and restart it with the right number if you go back to an easier difficulty.
 
-### Experimental items
+### Your starting items
 
-Horadric Keys, pooled stat points and runes do not work in this preview, so leave them
-off. The Archipelago Sigil, Draught of Attunement and Receipt in your starting inventory
-belong to them and do nothing useful yet.
+You start with an **Archipelago Sigil** and a **Draught of Attunement**. Right-click the
+Draught first thing: it gives the client somewhere to put your skill points, keys and
+runes. (Lost it? Transmute the Sigil alone in the Horadric Cube for another.)
 
-Skill points you receive while you have none unspent wait until your next level-up or
-quest reward: the game removes the unspent-point entry at zero, and only those create it
-again.
+- **Skill points with none left to spend.** The game removes the unspent-point counter
+  when you spend the last point. When more arrive, the client asks for a **Tonic of
+  Renewal**: put the Sigil alone in the Cube, transmute, and right-click the Tonic. A
+  level-up does the same.
+- **Horadric Keys** (experimental): nothing to do. Once you hold enough, the Cube
+  assembles the Horadric Staff and Khalim's Will as usual.
+- **Runes** (experimental): when the client says a rune is waiting, put the Sigil alone
+  in the Cube and transmute. Take the rune, then right-click the **Archipelago Receipt**
+  that came with it; that tells the client it arrived. If the Cube refuses a waiting
+  rune, restart the client with `-mail-flip`; if you lost a Receipt, restart it with
+  `-mail-skip`.
+- **Pooled stat points** (experimental) work like skill points, Tonic included.
+
+Keys, runes and pooled stat points have been checked in the game in town, but not yet
+over a full run. Leave them off for a run that has to finish.
 
 ## Troubleshooting
 

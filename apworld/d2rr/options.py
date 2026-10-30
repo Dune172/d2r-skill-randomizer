@@ -122,9 +122,8 @@ class KeyItems(Toggle):
     Khalim's Will until you hold 5. So Duriel and Mephisto wait on items that may be in
     anyone's world. You still collect the staff and Khalim's relics as usual.
 
-    NOT WORKING in this preview: the key count lives in a stat that only a Draught of
-    Attunement could create, and the game ignores the Draught's stats. With this on, the
-    Staff and Khalim's Will cannot be assembled. Leave it off.
+    Drink the Draught of Attunement you start with first: it creates the stat that holds
+    your key count. Checked in the game in town; a full run with it has not been played.
     """
     display_name = "Horadric Keys"
     default = 0
@@ -137,8 +136,9 @@ class StatPoints(Choice):
     pooled: level-ups and quests grant none. Stat Points items, each worth five, are
     placed in the multiworld instead, one for every level the goal expects you to reach.
 
-    NOT WORKING in this preview: the game drops the stat point entry when it reaches
-    zero, and the client cannot create it again. Leave this on vanilla.
+    When you have spent every point and more arrive, the client asks for a Tonic of
+    Renewal: transmute the Archipelago Sigil alone in the Horadric Cube and drink it.
+    Checked in the game in town; a full run with it has not been played.
     """
     display_name = "Stat Points"
     option_vanilla = 0
@@ -153,8 +153,7 @@ class RunePercentage(Range):
     the Horadric Cube, transmute, then use the Archipelago Receipt that comes out with
     the rune. Higher runes are rarer and only appear on higher goal difficulties.
 
-    NOT WORKING in this preview: the mailbox stat cannot be created and the Receipt
-    cannot acknowledge a delivery, so no rune would arrive. Leave this at 0.
+    Checked in the game in town; a full run with it has not been played.
     """
     display_name = "Rune Percentage"
     range_start = 0

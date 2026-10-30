@@ -27,6 +27,10 @@ type Mailbox struct {
 	// Attuned is what a Draught of Attunement adds. Any value at or above it means the
 	// stat was just (re)created and carries no information.
 	Attuned uint32
+	// TonicRequest, when on the stat, lets either Sigil brew a Tonic of Renewal, which
+	// recreates an emptied point pool. The client writes it only while a pool is missing
+	// and points are owed, so a Tonic cannot be brewed at will. 0 for mods without one.
+	TonicRequest uint32
 	// Entries in the order they should be offered.
 	Entries []MailEntry
 }
@@ -48,8 +52,11 @@ type MailStep struct {
 	// only AFTER Write has succeeded: recording first and then failing to write would
 	// leave the acknowledgement on the stat to be counted a second time.
 	Delivered int64
-	// Offer is what is on the stat once Write has been applied: an offer, or 0 for idle.
+	// Offer is what is on the stat once Write has been applied: an offer, or 0 for idle
+	// or a Tonic request.
 	Offer uint32
+	// Tonic reports that the Tonic request is on the stat once Write has been applied.
+	Tonic bool
 }
 
 // Step decides the mail stat's next value.
@@ -57,8 +64,9 @@ type MailStep struct {
 // value is what the stat holds now. current is the offer the client last put up, or 0
 // if it does not know (it has just started). sigil is which Sigil the player holds: it
 // starts at 0 and every delivery swaps it. pending reports how many copies of an item
-// are still owed.
-func (m Mailbox) Step(value, current uint32, sigil int, pending func(itemID int64) int) MailStep {
+// are still owed. wantTonic asks for a Tonic of Renewal: it goes ahead of the next rune,
+// but never replaces a rune the player may be collecting right now.
+func (m Mailbox) Step(value, current uint32, sigil int, pending func(itemID int64) int, wantTonic bool) MailStep {
 	owed := func(e MailEntry) int { return pending(e.ItemID) }
 	usable := func(offer uint32) bool {
 		e, ok := m.byOffer(offer)
@@ -91,22 +99,29 @@ func (m Mailbox) Step(value, current uint32, sigil int, pending func(itemID int6
 		return MailStep{Offer: current}
 	}
 
-	// Otherwise decide what should be on the stat: the first thing owed, under the
-	// Sigil the player holds now, else idle.
+	// Otherwise decide what should be on the stat: a Tonic request if one is wanted, else
+	// the first thing owed under the Sigil the player holds now, else idle.
 	want := m.Idle
-	for _, e := range m.Entries {
-		n := owed(e)
-		if e.ItemID == delivered {
-			n--
-		}
-		if e.Sigil == sigil && n > 0 {
-			want = e.Offer
-			break
+	if wantTonic && m.TonicRequest != 0 {
+		want = m.TonicRequest
+	} else {
+		for _, e := range m.Entries {
+			n := owed(e)
+			if e.ItemID == delivered {
+				n--
+			}
+			if e.Sigil == sigil && n > 0 {
+				want = e.Offer
+				break
+			}
 		}
 	}
 
 	step := MailStep{Delivered: delivered}
-	if want != m.Idle {
+	switch {
+	case want == m.TonicRequest && m.TonicRequest != 0:
+		step.Tonic = true
+	case want != m.Idle:
 		step.Offer = want
 	}
 	if value != want {

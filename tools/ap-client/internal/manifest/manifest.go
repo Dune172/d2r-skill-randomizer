@@ -19,7 +19,7 @@ import (
 
 // ContractVersion is the manifest shape this client understands. The server rejects a
 // mismatch rather than serving something we would misread.
-const ContractVersion = 3
+const ContractVersion = 4
 
 type Slot struct {
 	SlotID    string `json:"slotId"`
@@ -62,12 +62,17 @@ type Tables struct {
 		Keys int `json:"keys"`
 		Mail int `json:"mail"`
 	} `json:"stats"`
-	Sigils      []string   `json:"sigils"`
-	Attunement  string     `json:"attunement"`
-	Receipt     string     `json:"receipt"`
-	MailIdle    uint32     `json:"mailIdle"`
-	MailAttuned uint32     `json:"mailAttuned"`
-	Mail        []MailItem `json:"mail"`
+	Sigils     []string `json:"sigils"`
+	Attunement string   `json:"attunement"`
+	Receipt    string   `json:"receipt"`
+	// Tonic recreates an emptied point pool. A Sigil brews one only while the mail stat
+	// holds TonicRequest, which the client writes when a pool is missing and points are
+	// owed.
+	Tonic        string     `json:"tonic"`
+	TonicRequest uint32     `json:"tonicRequest"`
+	MailIdle     uint32     `json:"mailIdle"`
+	MailAttuned  uint32     `json:"mailAttuned"`
+	Mail         []MailItem `json:"mail"`
 	// KeyGates is present only when the quest recipes are locked.
 	KeyGates *struct {
 		HoradricStaff int `json:"horadricStaff"`

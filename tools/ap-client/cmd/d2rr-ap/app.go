@@ -60,6 +60,9 @@ type app struct {
 	// (0 when idle or not yet known).
 	mailbox   grants.Mailbox
 	mailOffer uint32
+	// Whether a point pool is missing while points are owed; either asks the mailbox for
+	// a Tonic of Renewal.
+	needSkillPool, needStatPool bool
 	// -mail-flip / -mail-skip were given and have not been carried out yet.
 	flipMail bool
 	skipMail bool

@@ -82,12 +82,18 @@ func (a *app) applySkillPoints(player uintptr) {
 		a.warnAttach("setting skill points: " + err.Error())
 		return
 	}
+	a.mu.Lock()
+	a.needSkillPool = !existed && want > 0 // asks the mailbox for a Tonic (applyMail)
+	a.mu.Unlock()
+	if !existed && want == 0 {
+		a.clearAttachWarning() // nothing owed, so nothing to write to yet
+		return
+	}
 	if !existed {
-		// Normal on a fresh character: the game creates the entry on the first
-		// level-up. Worth saying once, because "no skills are arriving" otherwise
-		// looks identical to a broken client.
-		a.warnAttach("waiting for the game to create the skill-point stat (it appears on your " +
-			"first level-up, or when you right-click the Draught of Attunement)")
+		// Normal on a fresh character, and whenever the player has spent the pool to zero
+		// (the game then drops the entry). Worth saying, because "no skills are arriving"
+		// otherwise looks identical to a broken client.
+		a.warnAttach(a.poolHint(player, "skill-point"))
 		return
 	}
 	a.clearAttachWarning()

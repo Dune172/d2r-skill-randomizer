@@ -18,6 +18,11 @@
  *   same tree as the seed  Archipelago seed N plays the tree public seed N shows
  *   custom stats           ap_keys and ap_mail exist, are saved, and survive at zero
  *   Sigil and Draught      every class starts with both; the Draught creates the stats
+ *   player spell 4         the Draught, Receipt and Tonic use spell 4 with no duration,
+ *                          the only spell that adds its stat columns permanently
+ *   Tonic                  brewed only on the client's request; recreates the skill-point
+ *                          pool, and the stat-point pool only
+ *                          when stat points are pooled
  *   mailbox recipes        each deliverable has its own offer code per Sigil; the one
  *                          recipe alive for an offer returns the OTHER Sigil and a
  *                          Receipt, so an offer is delivered exactly once
@@ -51,6 +56,7 @@ const CASES = [
   { seed: 808,  characterClass: 'war', savepath: 'ap_test_war' },
   { seed: 1234, characterClass: 'pal', savepath: 'ap_test_pal_keys', options: { keyItems: true } },
   { seed: 55,   characterClass: 'ass', savepath: 'ap_test_ass_keys', options: { keyItems: true, xpMultiplier: 2, monsterShuffle: true } },
+  { seed: 1234, characterClass: 'pal', savepath: 'ap_test_pal_pooled', options: { keyItems: true, pooledStats: true } },
 ];
 
 function parseTsv(text) {
@@ -207,6 +213,9 @@ async function verifyCase(c) {
       `${name}: manifest id ${id}, row ${isc.rows.indexOf(row)}, *ID ${iscCell(row, '*ID')}`);
     check(failures, iscCell(row, 'Saved') === '1' && iscCell(row, 'keepzero') === '1',
       `${name} must be saved and kept at zero`);
+    // Room for two hoarded Draughts drunk together (512).
+    check(failures, Number(iscCell(row, 'CSvBits')) >= 10 && Number(iscCell(row, 'Send Bits')) >= 10,
+      `${name} needs at least 10 bits`);
   }
   for (const name of ['statpts', 'newskills']) {
     check(failures, iscCell(iscRow(name), 'keepzero') === '1', `${name} must be kept at zero`);
@@ -218,18 +227,43 @@ async function verifyCase(c) {
   const statsOf = code => [1, 2, 3].map(n => miscCell(miscRow(code), `stat${n}`)).filter(Boolean);
   const sigils = tables.sigils ?? [];
   check(failures, sigils.length === 2 && sigils[0] !== sigils[1], 'the mailbox needs two different Sigils');
-  for (const code of [...sigils, tables.attunement, tables.receipt]) {
+  for (const code of [...sigils, tables.attunement, tables.receipt, tables.tonic]) {
     const row = miscRow(code);
     check(failures, row !== undefined, `${code} missing from misc.txt`);
     // A Sigil that right-click-converts into a potion would destroy the mailbox.
     check(failures, miscCell(row, 'Transmogrify') === '0' && miscCell(row, 'spawnable') === '0',
       `${code} still transmutes itself or spawns`);
+    check(failures, miscCell(row, 'belt') === '0' && miscCell(row, 'autobelt') === '0', `${code} can go in the belt`);
   }
-  for (const name of ['ap_keys', 'ap_mail', 'newskills']) {
-    check(failures, statsOf(tables.attunement).includes(name), `the Draught does not create ${name}`);
+  // The Draught: one key-stat point (keys + 1), the attunement value on the mailbox, and
+  // one skill point, which the client then writes to its target.
+  const calcOf = (code, stat) => {
+    const n = [1, 2, 3].find(i => miscCell(miscRow(code), `stat${i}`) === stat);
+    return n ? miscCell(miscRow(code), `calc${n}`) : undefined;
+  };
+  for (const [name, calc] of [['ap_keys', '1'], ['ap_mail', String(tables.mailAttuned)], ['newskills', '1']]) {
+    check(failures, calcOf(tables.attunement, name) === calc,
+      `the Draught adds ${calcOf(tables.attunement, name)} to ${name}, expected ${calc}`);
   }
   check(failures, statsOf(tables.receipt).join() === 'ap_mail', 'the Receipt must add to ap_mail and nothing else');
   check(failures, miscCell(miscRow(tables.receipt), 'calc1') === '1', 'the Receipt must add exactly one');
+  // Spell 8 ignores the stat columns (measured on D2R 3.3); spell 4 adds them, and only
+  // permanently when there is no duration.
+  for (const code of [tables.attunement, tables.receipt, tables.tonic]) {
+    check(failures, miscCell(miscRow(code), 'pSpell') === '4' && !miscCell(miscRow(code), 'len')
+      && miscCell(miscRow(code), 'useable') === '1', `${code} is not a usable spell 4 item with no duration`);
+  }
+  // The Tonic's base item has no name string in the game, so the mod must ship one.
+  const names = JSON.parse((read('/strings/item-names.json') ?? '[]').replace(/^﻿/, ''));
+  const tonicName = names.find(e => e.Key === tables.tonic);
+  check(failures, tonicName?.enUS === 'Tonic of Renewal' && tonicName.id >= 40000
+    && names.filter(e => e.id === tonicName.id).length === 1,
+    `the Tonic (${tables.tonic}) has no unique name string`);
+  const tonicStats = c.options?.pooledStats === true ? 'newskills,statpts' : 'newskills';
+  check(failures, statsOf(tables.tonic).join() === tonicStats, `the Tonic adds ${statsOf(tables.tonic).join()}, expected ${tonicStats}`);
+  for (const name of statsOf(tables.tonic)) {
+    check(failures, calcOf(tables.tonic, name) === '1', `the Tonic adds ${calcOf(tables.tonic, name)} to ${name}, expected 1`);
+  }
 
   if (csRaw) {
     const cs = parseTsv(csRaw);
@@ -264,18 +298,31 @@ async function verifyCase(c) {
       && cubeCell(recipe[0], 'output c') === tables.receipt,
       `mail recipe for ${m.item} under offer ${m.offer} is missing or mis-keyed`);
   }
+  // The Tonic request is even like an offer, clear of every offer and acknowledgement,
+  // and below the attunement value.
+  const lastAck = Math.max(...(tables.mail ?? []).map(m => m.offer + 1));
+  check(failures, tables.tonicRequest % 2 === 0 && tables.tonicRequest > lastAck && tables.tonicRequest < tables.mailAttuned,
+    `Tonic request ${tables.tonicRequest} collides with the mail values`);
   for (const [item, held] of perItem) {
     check(failures, held.slice().sort().join() === '0,1', `${item} is not offered once for each Sigil`);
   }
   for (const sigil of sigils) {
     const recipes = cube.rows.filter(r => cubeCell(r, 'input 1') === sigil && cubeCell(r, 'numinputs') === '1');
-    check(failures, recipes.length === perItem.size + 1,
-      `${recipes.length} recipes take ${sigil} alone, expected one per deliverable plus the Draught`);
-    // Recipes are tried in file order, so the Draught must be the last one for its Sigil.
-    const last = recipes[recipes.length - 1];
-    check(failures, last && cubeCell(last, 'output') === tables.attunement && cubeCell(last, 'op') === '8'
-      && cubeCell(last, 'value') === String(tables.mailIdle) && cubeCell(last, 'output b') === sigil,
-      `the Draught recipe for ${sigil} is missing, mis-keyed or not last`);
+    check(failures, recipes.length === perItem.size + 2,
+      `${recipes.length} recipes take ${sigil} alone, expected one per deliverable plus the Draught and the Tonic`);
+    // The brews come after the mail: the Draught while ap_mail does not exist (<= 0), and
+    // the Tonic only while the client has put the Tonic request on it (== request), so it
+    // cannot be brewed at will. Neither hands out a Receipt.
+    const [draught, tonic] = recipes.slice(-2);
+    check(failures, draught && cubeCell(draught, 'output') === tables.attunement && cubeCell(draught, 'op') === '8'
+      && cubeCell(draught, 'param') === mailStat && cubeCell(draught, 'value') === '0' && cubeCell(draught, 'output b') === sigil,
+      `the Draught recipe for ${sigil} is missing, mis-keyed or out of order`);
+    check(failures, tonic && cubeCell(tonic, 'output') === tables.tonic && cubeCell(tonic, 'op') === '10'
+      && cubeCell(tonic, 'param') === mailStat && cubeCell(tonic, 'value') === String(tables.tonicRequest) && cubeCell(tonic, 'output b') === sigil,
+      `the Tonic recipe for ${sigil} is missing, mis-keyed or not last`);
+    for (const brew of [draught, tonic]) {
+      check(failures, brew && !cubeCell(brew, 'output c'), `a brew recipe for ${sigil} also hands out ${brew && cubeCell(brew, 'output c')}`);
+    }
   }
 
   const baseRow = csRaw && parseTsv(csRaw);

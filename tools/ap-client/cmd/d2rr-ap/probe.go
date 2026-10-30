@@ -53,14 +53,20 @@ func (w *statWrites) Set(s string) error {
 //	d2rr-ap probe -set 5=3             write 3 unspent skill points (stat id 5) to both
 //	                                   copies of the character, as the client does
 //	d2rr-ap probe -unit 0x1F2A -set 5=3   write to that one unit only
+//	d2rr-ap probe -game                list the game's own copy instead of the display copy
 func probe(args []string) int {
 	f := flag.NewFlagSet("probe", flag.ContinueOnError)
 	unitFlag := f.String("unit", "", "unit address to inspect or write (default: the player)")
 	copies := f.Bool("copies", false, "scan memory for other copies of the player unit")
+	gameCopy := f.Bool("game", false, "list the game's own copy of the character (the one its rules read)")
 	asJSON := f.Bool("json", false, "machine-readable output")
 	var writes statWrites
 	f.Var(&writes, "set", "overwrite a base stat: id=value (repeatable)")
 	if err := f.Parse(args); err != nil {
+		return 2
+	}
+	if *gameCopy && *unitFlag != "" {
+		fmt.Println("ERROR: -game and -unit both choose which unit to list; give one")
 		return 2
 	}
 
@@ -99,7 +105,7 @@ func probe(args []string) int {
 
 	// The game's own copy of the character, which its rules read. Without -unit, -set
 	// writes it and the display copy together, as the client does.
-	if *unitFlag == "" && len(writes) > 0 {
+	if *unitFlag == "" && (len(writes) > 0 || *gameCopy) {
 		if sim, err := gc.SimulationCopy(player); err == nil {
 			report["gameCopy"] = fmt.Sprintf("0x%x", sim)
 		} else {
@@ -130,6 +136,16 @@ func probe(args []string) int {
 	}
 	if len(writeResults) > 0 {
 		report["writes"] = writeResults
+	}
+
+	if *gameCopy && *unitFlag == "" {
+		sim, err := gc.SimulationCopy(player)
+		if err != nil {
+			fmt.Println("ERROR: finding the game's copy:", err)
+			return 1
+		}
+		target = sim
+		report["unit"] = fmt.Sprintf("0x%x", target)
 	}
 
 	type statRow struct {
