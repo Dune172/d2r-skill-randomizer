@@ -65,11 +65,14 @@ type Tables struct {
 	Sigils     []string `json:"sigils"`
 	Attunement string   `json:"attunement"`
 	Receipt    string   `json:"receipt"`
-	// Tonic is brewed from a Sigil while the mailbox is idle and recreates the point pools.
-	Tonic       string     `json:"tonic"`
-	MailIdle    uint32     `json:"mailIdle"`
-	MailAttuned uint32     `json:"mailAttuned"`
-	Mail        []MailItem `json:"mail"`
+	// Tonic recreates an emptied point pool. A Sigil brews one only while the mail stat
+	// holds TonicRequest, which the client writes when a pool is missing and points are
+	// owed.
+	Tonic        string     `json:"tonic"`
+	TonicRequest uint32     `json:"tonicRequest"`
+	MailIdle     uint32     `json:"mailIdle"`
+	MailAttuned  uint32     `json:"mailAttuned"`
+	Mail         []MailItem `json:"mail"`
 	// KeyGates is present only when the quest recipes are locked.
 	KeyGates *struct {
 		HoradricStaff int `json:"horadricStaff"`

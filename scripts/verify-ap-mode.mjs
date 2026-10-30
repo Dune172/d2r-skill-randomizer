@@ -20,7 +20,8 @@
  *   Sigil and Draught      every class starts with both; the Draught creates the stats
  *   player spell 4         the Draught, Receipt and Tonic use spell 4 with no duration,
  *                          the only spell that adds its stat columns permanently
- *   Tonic                  recreates the skill-point pool, and the stat-point pool only
+ *   Tonic                  brewed only on the client's request; recreates the skill-point
+ *                          pool, and the stat-point pool only
  *                          when stat points are pooled
  *   mailbox recipes        each deliverable has its own offer code per Sigil; the one
  *                          recipe alive for an offer returns the OTHER Sigil and a
@@ -212,6 +213,9 @@ async function verifyCase(c) {
       `${name}: manifest id ${id}, row ${isc.rows.indexOf(row)}, *ID ${iscCell(row, '*ID')}`);
     check(failures, iscCell(row, 'Saved') === '1' && iscCell(row, 'keepzero') === '1',
       `${name} must be saved and kept at zero`);
+    // Room for two hoarded Draughts drunk together (512).
+    check(failures, Number(iscCell(row, 'CSvBits')) >= 10 && Number(iscCell(row, 'Send Bits')) >= 10,
+      `${name} needs at least 10 bits`);
   }
   for (const name of ['statpts', 'newskills']) {
     check(failures, iscCell(iscRow(name), 'keepzero') === '1', `${name} must be kept at zero`);
@@ -229,9 +233,17 @@ async function verifyCase(c) {
     // A Sigil that right-click-converts into a potion would destroy the mailbox.
     check(failures, miscCell(row, 'Transmogrify') === '0' && miscCell(row, 'spawnable') === '0',
       `${code} still transmutes itself or spawns`);
+    check(failures, miscCell(row, 'belt') === '0' && miscCell(row, 'autobelt') === '0', `${code} can go in the belt`);
   }
-  for (const name of ['ap_keys', 'ap_mail', 'newskills']) {
-    check(failures, statsOf(tables.attunement).includes(name), `the Draught does not create ${name}`);
+  // The Draught: one key-stat point (keys + 1), the attunement value on the mailbox, and
+  // one skill point, which the client then writes to its target.
+  const calcOf = (code, stat) => {
+    const n = [1, 2, 3].find(i => miscCell(miscRow(code), `stat${i}`) === stat);
+    return n ? miscCell(miscRow(code), `calc${n}`) : undefined;
+  };
+  for (const [name, calc] of [['ap_keys', '1'], ['ap_mail', String(tables.mailAttuned)], ['newskills', '1']]) {
+    check(failures, calcOf(tables.attunement, name) === calc,
+      `the Draught adds ${calcOf(tables.attunement, name)} to ${name}, expected ${calc}`);
   }
   check(failures, statsOf(tables.receipt).join() === 'ap_mail', 'the Receipt must add to ap_mail and nothing else');
   check(failures, miscCell(miscRow(tables.receipt), 'calc1') === '1', 'the Receipt must add exactly one');
@@ -249,6 +261,9 @@ async function verifyCase(c) {
     `the Tonic (${tables.tonic}) has no unique name string`);
   const tonicStats = c.options?.pooledStats === true ? 'newskills,statpts' : 'newskills';
   check(failures, statsOf(tables.tonic).join() === tonicStats, `the Tonic adds ${statsOf(tables.tonic).join()}, expected ${tonicStats}`);
+  for (const name of statsOf(tables.tonic)) {
+    check(failures, calcOf(tables.tonic, name) === '1', `the Tonic adds ${calcOf(tables.tonic, name)} to ${name}, expected 1`);
+  }
 
   if (csRaw) {
     const cs = parseTsv(csRaw);
@@ -283,6 +298,11 @@ async function verifyCase(c) {
       && cubeCell(recipe[0], 'output c') === tables.receipt,
       `mail recipe for ${m.item} under offer ${m.offer} is missing or mis-keyed`);
   }
+  // The Tonic request is even like an offer, clear of every offer and acknowledgement,
+  // and below the attunement value.
+  const lastAck = Math.max(...(tables.mail ?? []).map(m => m.offer + 1));
+  check(failures, tables.tonicRequest % 2 === 0 && tables.tonicRequest > lastAck && tables.tonicRequest < tables.mailAttuned,
+    `Tonic request ${tables.tonicRequest} collides with the mail values`);
   for (const [item, held] of perItem) {
     check(failures, held.slice().sort().join() === '0,1', `${item} is not offered once for each Sigil`);
   }
@@ -290,15 +310,19 @@ async function verifyCase(c) {
     const recipes = cube.rows.filter(r => cubeCell(r, 'input 1') === sigil && cubeCell(r, 'numinputs') === '1');
     check(failures, recipes.length === perItem.size + 2,
       `${recipes.length} recipes take ${sigil} alone, expected one per deliverable plus the Draught and the Tonic`);
-    // Recipes are tried in file order, so the brews come after the mail: the Draught while
-    // ap_mail does not exist (<= 0), then the Tonic while it is idle.
+    // The brews come after the mail: the Draught while ap_mail does not exist (<= 0), and
+    // the Tonic only while the client has put the Tonic request on it (== request), so it
+    // cannot be brewed at will. Neither hands out a Receipt.
     const [draught, tonic] = recipes.slice(-2);
     check(failures, draught && cubeCell(draught, 'output') === tables.attunement && cubeCell(draught, 'op') === '8'
       && cubeCell(draught, 'param') === mailStat && cubeCell(draught, 'value') === '0' && cubeCell(draught, 'output b') === sigil,
       `the Draught recipe for ${sigil} is missing, mis-keyed or out of order`);
-    check(failures, tonic && cubeCell(tonic, 'output') === tables.tonic && cubeCell(tonic, 'op') === '8'
-      && cubeCell(tonic, 'param') === mailStat && cubeCell(tonic, 'value') === String(tables.mailIdle) && cubeCell(tonic, 'output b') === sigil,
+    check(failures, tonic && cubeCell(tonic, 'output') === tables.tonic && cubeCell(tonic, 'op') === '10'
+      && cubeCell(tonic, 'param') === mailStat && cubeCell(tonic, 'value') === String(tables.tonicRequest) && cubeCell(tonic, 'output b') === sigil,
       `the Tonic recipe for ${sigil} is missing, mis-keyed or not last`);
+    for (const brew of [draught, tonic]) {
+      check(failures, brew && !cubeCell(brew, 'output c'), `a brew recipe for ${sigil} also hands out ${brew && cubeCell(brew, 'output c')}`);
+    }
   }
 
   const baseRow = csRaw && parseTsv(csRaw);

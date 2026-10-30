@@ -65,6 +65,10 @@ func probe(args []string) int {
 	if err := f.Parse(args); err != nil {
 		return 2
 	}
+	if *gameCopy && *unitFlag != "" {
+		fmt.Println("ERROR: -game and -unit both choose which unit to list; give one")
+		return 2
+	}
 
 	gc, err := game.Attach()
 	if err != nil {

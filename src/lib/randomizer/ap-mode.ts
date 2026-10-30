@@ -49,14 +49,17 @@
  * Both custom stats hold their value PLUS ONE, so they are never zero: the game drops
  * zero-valued stats from a character, and the client can only write an entry that exists.
  *
- * HOW A STAT ENTRY COMES TO EXIST. Player spell 4 (the vanilla "Healing Potion" spell)
- * adds each statN/calcN of the item to the drinker's base stats, permanently when `len`
- * is empty. It is the one data-driven way to create an entry, and three items use it:
+ * HOW A STAT ENTRY COMES TO EXIST. Player spell 4 (in vanilla only on the unused Full
+ * Healing and Full Mana potions, `hpf`/`mpf`) adds each statN/calcN of the item to the
+ * drinker's base stats, permanently when `len` is empty. It is the one data-driven way
+ * to create an entry, and three items use it:
  *
  *  - the Draught of Attunement creates ap_keys, ap_mail and the skill-point pool;
  *  - the Receipt adds one to ap_mail;
  *  - the Tonic of Renewal recreates the skill-point pool (and, with pooled stat points,
  *    the stat-point pool) after the player has spent it to zero and the game dropped it.
+ *    A Sigil brews one only while ap_mail holds TONIC_REQUEST, which the client writes
+ *    when a pool is missing and points are owed, so a Tonic cannot be brewed at will.
  *
  * Measured on D2R 3.3 (2026-10-29): the Draught created 5, 368 and 369 on both copies of
  * the character, the Receipt moved 369 from an offer to offer + 1, and all of it survived
@@ -120,6 +123,11 @@ const MAIL_IDLE = 1;
  * never as that item's acknowledgement.
  */
 const MAIL_ATTUNED = 256;
+/**
+ * What the client writes to the mail stat to let a Sigil brew a Tonic of Renewal. Even,
+ * like an offer, above every offer and acknowledgement and below MAIL_ATTUNED.
+ */
+const TONIC_REQUEST = 200;
 
 const RUNE_NAMES = [
   'El', 'Eld', 'Tir', 'Nef', 'Eth', 'Ith', 'Tal', 'Ral', 'Ort', 'Thul', 'Amn', 'Sol',
@@ -150,8 +158,9 @@ export interface ApTables {
   sigils: string[];
   attunement: string;
   receipt: string;
-  /** Brewed from a Sigil while the mailbox is idle; recreates the point pools. */
+  /** Recreates an emptied point pool. Brewed from a Sigil only while the mail stat holds tonicRequest. */
   tonic: string;
+  tonicRequest: number;
   mailIdle: number;
   mailAttuned: number;
   mail: ApMailItem[];
@@ -224,9 +233,10 @@ export function applyApTables(args: {
 }): ApTables {
   const { ap, itemstatcost, misc, cubemain, charstats, itemNames } = args;
 
-  // The game drops a stat from the character when it reaches zero unless told to keep
-  // it. The client writes these pools constantly, and an entry that vanishes every time
-  // the last point is spent cannot be written until something recreates it.
+  // Meant to keep these entries alive at zero, so the client always has one to write.
+  // Measured on D2R 3.3: it does NOT for base stats, so the game still drops a spent
+  // pool; the Tonic of Renewal is what brings it back. Kept as harmless, in case a later
+  // patch honours it.
   for (const name of ['statpts', 'newskills', 'gold']) {
     setCells(itemstatcost, findRow(itemstatcost, 'Stat', name), { keepzero: '1' });
   }
@@ -235,8 +245,9 @@ export function applyApTables(args: {
   const stats = { keys: firstId, mail: firstId + 1 };
   for (const [name, id] of [['ap_keys', stats.keys], ['ap_mail', stats.mail]] as const) {
     if (itemstatcost.rows.some(r => r[0] === name)) throw new Error(`apMode: stat ${name} already exists`);
+    // 10 bits (up to 1023): two Draughts hoarded and drunk together put 512 on ap_mail.
     appendRow(itemstatcost, {
-      Stat: name, '*ID': String(id), 'Send Bits': '9', Saved: '1', CSvSigned: '0', CSvBits: '9',
+      Stat: name, '*ID': String(id), 'Send Bits': '10', Saved: '1', CSvSigned: '0', CSvBits: '10',
       keepzero: '1', '*eol': '0',
     });
   }
@@ -246,7 +257,9 @@ export function applyApTables(args: {
     setCells(misc, findRow(misc, 'code', code), {
       // Never from a shop or a drop, worthless to a vendor, and no vanilla right-click
       // behaviour: monster parts would otherwise transmute themselves into a potion.
-      spawnable: '0', cost: '0', Transmogrify: '0', TMogType: 'xxx',
+      // Not beltable either: an item fed to the mercenary from the belt would be used
+      // up without the player, and a Receipt used that way loses its delivery.
+      spawnable: '0', cost: '0', Transmogrify: '0', TMogType: 'xxx', belt: '0', autobelt: '0',
       spelldesc: '', spelldescstr: '', state: '', len: '',
       stat1: '', calc1: '', stat2: '', calc2: '', stat3: '', calc3: '',
       ...cells,
@@ -302,6 +315,9 @@ export function applyApTables(args: {
   const mail: ApMailItem[] = MAILBOX_ITEMS.flatMap((entry, i) =>
     SIGIL_CODES.map((_, sigil) => ({ offer: 2 * (i * SIGIL_CODES.length + sigil + 1), sigil, ...entry })));
   if (mail[mail.length - 1].offer + 1 >= MAIL_ATTUNED) throw new Error('apMode: mail offers reach the attunement value');
+  if (TONIC_REQUEST <= mail[mail.length - 1].offer + 1 || TONIC_REQUEST >= MAIL_ATTUNED || TONIC_REQUEST % 2) {
+    throw new Error('apMode: the Tonic request must be even, above every offer and below the attunement value');
+  }
   const playerBaseStatEquals = '10';
   const playerBaseStatAtMost = '8';
   const playerBaseStatAtLeast = '7';
@@ -315,10 +331,11 @@ export function applyApTables(args: {
       output: entry.item, 'output b': returned, 'output c': RECEIPT_CODE, '*eol': '0',
     });
   }
-  // With nothing waiting, a Sigil brews: a Draught while the mail stat does not exist yet
-  // (the starting one was lost before it was drunk), a Tonic once it does. Recipes are
-  // tried in file order, so the Draught (ap_mail <= 0) is checked before the Tonic
-  // (ap_mail <= idle). Both come after the mail and keep the Sigil they were given.
+  // A Sigil also brews, keeping the Sigil it was given:
+  //  - a Draught while the mail stat does not exist yet (the starting Draught was lost
+  //    before it was drunk). Once it exists it never reads 0 again (value + 1);
+  //  - a Tonic only while the client has put TONIC_REQUEST on the stat, so the point
+  //    pools cannot be refilled at will with the client off.
   for (const sigil of SIGIL_CODES) {
     appendRow(cubemain, {
       description: `Archipelago: brew a Draught of Attunement (${sigil})`, enabled: '1', version: '100',
@@ -327,7 +344,7 @@ export function applyApTables(args: {
     });
     appendRow(cubemain, {
       description: `Archipelago: brew a Tonic of Renewal (${sigil})`, enabled: '1', version: '100',
-      op: playerBaseStatAtMost, param: String(stats.mail), value: String(MAIL_IDLE),
+      op: playerBaseStatEquals, param: String(stats.mail), value: String(TONIC_REQUEST),
       numinputs: '1', 'input 1': sigil, output: TONIC_CODE, 'output b': sigil, '*eol': '0',
     });
   }
@@ -345,7 +362,8 @@ export function applyApTables(args: {
   }
 
   return {
-    stats, sigils: [...SIGIL_CODES], attunement: ATTUNEMENT_CODE, receipt: RECEIPT_CODE, tonic: TONIC_CODE,
+    stats, sigils: [...SIGIL_CODES], attunement: ATTUNEMENT_CODE, receipt: RECEIPT_CODE,
+    tonic: TONIC_CODE, tonicRequest: TONIC_REQUEST,
     mailIdle: MAIL_IDLE, mailAttuned: MAIL_ATTUNED, mail, keyGates, baseAttributes,
   };
 }

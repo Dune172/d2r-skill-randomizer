@@ -98,14 +98,16 @@ func (a *app) applyStatPoints(player uintptr, classBase int) {
 		want = 0
 	}
 	existed, err := a.view().SetPlayerStat(player, stat.StatPoints, uint32(want))
+	a.mu.Lock()
+	a.needStatPool = err == nil && !existed && want > 0 // asks the mailbox for a Tonic
+	a.mu.Unlock()
 	switch {
 	case err != nil:
 		a.note("stat", "setting stat points: "+err.Error())
 	case !existed && want == 0:
 		a.note("stat", "") // nothing owed, so nothing to write to yet
 	case !existed:
-		a.note("stat", "waiting for the game to create the stat-point stat: put the Archipelago Sigil alone "+
-			"in the Horadric Cube, transmute, and right-click the Tonic of Renewal it makes")
+		a.note("stat", a.poolHint(player, "stat-point"))
 	default:
 		a.note("stat", fmt.Sprintf("stat points: %d unspent (%d sent, %d spent)", want, sent, spent))
 	}
@@ -129,6 +131,29 @@ func (a *app) applyKeys(player uintptr, keyStat stat.ID) {
 	default:
 		a.note("keys", fmt.Sprintf("Horadric Keys: %d held (the Horadric Staff needs %d, Khalim's Will %d)",
 			keys, ids.KeysForHoradricStaff, ids.KeysForKhalimsWill))
+	}
+}
+
+// poolHint says how to get an entry back for an emptied point pool: from whether the
+// mail stat exists now, and whether a rune was on offer at the last poll.
+func (a *app) poolHint(player uintptr, what string) string {
+	a.mu.Lock()
+	offer, man := a.mailOffer, a.man
+	a.mu.Unlock()
+	mailExists := false
+	if man != nil {
+		_, mailExists, _ = a.view().BaseStat(player, stat.ID(man.Tables.Stats.Mail))
+	}
+	switch {
+	case !mailExists:
+		return "waiting for the game to create the " + what + " stat: right-click the Draught of Attunement in " +
+			"your inventory (if it is gone, transmute the Archipelago Sigil alone in the Horadric Cube for another)"
+	case offer != 0:
+		return "waiting for the " + what + " stat: collect the rune waiting in the mailbox first (the Archipelago " +
+			"Sigil alone in the Horadric Cube, then right-click the Receipt); a Tonic of Renewal comes next"
+	default:
+		return "waiting for the " + what + " stat: put the Archipelago Sigil alone in the Horadric Cube, transmute, " +
+			"and right-click the Tonic of Renewal it makes"
 	}
 }
 
@@ -172,6 +197,9 @@ func (a *app) applyMail(player uintptr) {
 	if err != nil {
 		return
 	}
+	a.mu.Lock()
+	wantTonic := a.needSkillPool || a.needStatPool
+	a.mu.Unlock()
 	if !exists {
 		if owed > 0 {
 			a.note("mail", attuneHint(fmt.Sprintf("%d waiting rune(s)", owed)))
@@ -204,7 +232,7 @@ func (a *app) applyMail(player uintptr) {
 		}
 	}
 
-	step := box.Step(value, current, sigil, a.session.Pending)
+	step := box.Step(value, current, sigil, a.session.Pending, wantTonic)
 	if step.Write != 0 {
 		if _, err := a.view().SetPlayerStat(player, mailStat, step.Write); err != nil {
 			a.note("mail", "updating the mailbox: "+err.Error())
@@ -222,6 +250,11 @@ func (a *app) applyMail(player uintptr) {
 	a.mailOffer = step.Offer
 	a.mu.Unlock()
 
+	if step.Tonic {
+		// The point code's own warning says what to do; nothing more to add here.
+		a.note("mail", "")
+		return
+	}
 	if step.Offer == 0 {
 		a.note("mail", "")
 		return
@@ -393,7 +426,7 @@ func (a *app) note(topic, message string) {
 
 // mailboxFor builds the mail table from the manifest, in rune order.
 func mailboxFor(tables manifest.Tables) grants.Mailbox {
-	box := grants.Mailbox{Idle: tables.MailIdle, Attuned: tables.MailAttuned}
+	box := grants.Mailbox{Idle: tables.MailIdle, Attuned: tables.MailAttuned, TonicRequest: tables.TonicRequest}
 	codes := map[string]int{}
 	for i := range ids.RuneNames {
 		codes[fmt.Sprintf("r%02d", i+1)] = i
