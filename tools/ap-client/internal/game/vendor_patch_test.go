@@ -103,8 +103,13 @@ func TestEveryScriptPatchIsChecked(t *testing.T) {
 		t.Skipf("patch script not present (%v)", err)
 	}
 	var inScript []string
-	for _, m := range regexp.MustCompile(`(?m)^\s+name: '([^']+)',\s*$`).FindAllStringSubmatch(string(raw), -1) {
+	// Either quote style, so a name written with double quotes cannot slip past.
+	for _, m := range regexp.MustCompile(`(?m)^\s+name: ['"]([^'"]+)['"],\s*$`).FindAllStringSubmatch(string(raw), -1) {
 		inScript = append(inScript, m[1])
+	}
+	// One name per patch: an entry whose name was not read is a patch nobody checks.
+	if files := regexp.MustCompile(`(?m)^\s+file: `).FindAllString(string(raw), -1); len(files) != len(inScript) {
+		t.Fatalf("%d patches in the script but %d names were read", len(files), len(inScript))
 	}
 	var inTest []string
 	for _, p := range vendorPatches {

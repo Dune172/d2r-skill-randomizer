@@ -9,23 +9,22 @@
  * `internal/game/vendor_patch_test.go` asserts the markers are present, so `go test ./...`
  * now catches the same mistake instead of leaving it for the game to find.
  *
- * The three fixes, all upstream bugs rather than local preferences:
+ * Every patch is listed in `patches` below, each with a comment saying why. The script
+ * checks that every anchor is present before writing anything, so a d2go update that
+ * moves one leaves the vendor tree untouched rather than half patched. They fall into
+ * four groups:
  *
- *  1. getProcessMemory issued ONE ReadProcessMemory across the whole ~40 MB module.
- *     Windows fails the entire call with ERROR_PARTIAL_COPY if any page in the range is
- *     unreadable, so it returned (nil, err) — and calculateOffsets discards that error.
- *
- *  2. findPattern looped to p.moduleBaseSize rather than len(memory), so the nil slice
- *     from (1) became an index-out-of-range panic instead of "not found".
- *
- *  3. The D2GS_SendPacket scan repeated bug (1) per-module, so it skipped D2R.exe and
- *     reported "pattern not found in any module".
- *
- * The fourth is an ADDITION rather than a fix: two accessors exposing the module base
- * and the resolved offsets. Upstream reaches those only through GetData(), which also
- * walks monsters, objects and the inventory and panics on an empty slice between game
- * states. The client needs two specific globals -- the live waypoint panel and the UI
- * flag block -- and nothing else.
+ *  - Reading the module safely: getProcessMemory read the whole ~40 MB module in ONE
+ *    ReadProcessMemory, which fails entirely on any unreadable page; findPattern then
+ *    indexed past the resulting nil slice; the D2GS_SendPacket scan repeated the first
+ *    bug per module.
+ *  - Accessors the client needs (the module base and the resolved offsets) without
+ *    GetData(), which also walks monsters, objects and the inventory and panics on an
+ *    empty slice between game states.
+ *  - D2R 3.3 (build 3.3.93847): the shared-stash inventory lookup, the moved state
+ *    bitfield, extra UI patterns, per-build measured offsets keyed by PE timestamp, a
+ *    throttled rescan, and keeping 0 for an offset that was not found.
+ *  - Guards against reading through an unresolved offset.
  *
  *   node scripts/patch-d2go.mjs
  */

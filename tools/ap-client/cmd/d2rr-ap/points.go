@@ -99,7 +99,11 @@ func (a *app) applySkillPoints(player uintptr) {
 	if changed {
 		logf("skill points: %d unspent (%d sent, %d spent, %d excess, %d overspent)", want, sent, spent, balance.Excess, balance.Debt)
 	}
+	// A note, not warnAttach: clearAttachWarning above resets warnAttach's throttle on
+	// every poll, so a warning here would be logged every 400 ms.
 	if balance.Debt > 0 {
-		a.warnAttach(fmt.Sprintf("%d points were spent beyond the AP entitlement; future grants pay down that balance", balance.Debt))
+		a.note("debt", fmt.Sprintf("%d points were spent beyond the AP entitlement; future grants pay down that balance", balance.Debt))
+	} else {
+		a.note("debt", "")
 	}
 }

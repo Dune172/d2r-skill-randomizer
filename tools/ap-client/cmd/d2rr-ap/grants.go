@@ -111,7 +111,10 @@ func (a *app) applyStatPoints(player uintptr, classBase int) {
 // applyKeys holds the key stat at the number of Horadric Keys received, plus one.
 func (a *app) applyKeys(player uintptr, keyStat stat.ID) {
 	keys := a.session.Count(ids.HoradricKeyItemID)
-	if keys == 0 && !a.keyItems {
+	a.mu.Lock()
+	keyItems := a.keyItems // set by applySlotData on the connection's goroutine
+	a.mu.Unlock()
+	if keys == 0 && !keyItems {
 		return
 	}
 	existed, err := a.view().SetPlayerStat(player, keyStat, uint32(keys+1))

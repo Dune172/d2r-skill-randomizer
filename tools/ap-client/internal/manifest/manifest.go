@@ -181,7 +181,7 @@ const (
 )
 
 // manifestPath is where the site puts the manifest: <modName>/d2rr-ap-manifest.json.
-var manifestPath = regexp.MustCompile(`^([A-Za-z0-9_-]+)/d2rr-ap-manifest.json$`)
+var manifestPath = regexp.MustCompile(`^([A-Za-z0-9_-]+)/d2rr-ap-manifest\.json$`)
 
 // FromZip extracts the manifest from a mod zip in memory.
 //

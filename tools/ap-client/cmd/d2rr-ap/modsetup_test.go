@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/apc"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
 )
 
 func TestSaveDirDefaultsToTheModsFolder(t *testing.T) {
@@ -64,7 +65,7 @@ func testModZip(t *testing.T) []byte {
 		slots[i] = slot{fmt.Sprintf("pal:S%02d", i), fmt.Sprintf("Skill%d", i), 100 + i}
 	}
 	raw, err := json.Marshal(map[string]any{
-		"contractVersion": 3, "pipelineVersion": 1, "seed": 1234,
+		"contractVersion": manifest.ContractVersion, "pipelineVersion": 1, "seed": 1234,
 		"modName": "seed1234", "savepath": "ap_1234_pal", "characterClass": "pal",
 		"classes": map[string]any{"pal": map[string]any{"slots": slots}},
 		"tables": map[string]any{"stats": map[string]any{"keys": 368, "mail": 369},

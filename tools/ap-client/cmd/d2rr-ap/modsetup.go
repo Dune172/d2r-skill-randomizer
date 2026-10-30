@@ -63,6 +63,8 @@ func (a *app) ensureMod(slotData map[string]any) error {
 		if err := man.MatchRoom(seed, class, savepath); err != nil {
 			return err
 		}
+		// Kept from here on, so not even a failure to save the zip costs another build.
+		a.fetchedZip, a.fetchedMan = zipBytes, man
 		if err := os.MkdirAll(a.modOut, 0755); err != nil {
 			return err
 		}
@@ -70,7 +72,6 @@ func (a *app) ensureMod(slotData map[string]any) error {
 		if err := os.WriteFile(out, zipBytes, 0o644); err != nil {
 			return fmt.Errorf("writing mod zip: %w", err)
 		}
-		a.fetchedZip, a.fetchedMan = zipBytes, man
 		logf("mod written to %s", out)
 		if !a.installMod {
 			logf(`INSTALL: rerun with -install (or -launch) to install and verify the downloaded mod:`)
@@ -85,6 +86,7 @@ func (a *app) ensureMod(slotData map[string]any) error {
 		return err
 	}
 	a.setupOK = true
+	a.fetchedZip, a.fetchedMan = nil, nil // a.man holds what is still needed
 	return nil
 }
 
@@ -113,7 +115,8 @@ func (a *app) useManifest(man *manifest.Manifest) error {
 		man.Seed, man.CharacterClass, man.Savepath)
 	logf("watching saves in %s", saveDir)
 	if !strings.EqualFold(saveDir, expectedSaveDir) {
-		logf("  (from -save-dir; this mod's own save folder is %s)", expectedSaveDir)
+		logf("WARNING: watching %s because of -save-dir; this mod's own save folder is %s.", saveDir, expectedSaveDir)
+		logf("         Checks are read from the bound character's save there, so make sure it is this slot's.")
 	}
 
 	// A missing save folder is the difference between "no checks yet" and "checks will
@@ -159,9 +162,10 @@ func (a *app) retrySetup() {
 	a.mu.Lock()
 	sd := a.slotData
 	last := a.lastSetupTry
+	failures := a.setupFailures
 	a.mu.Unlock()
 
-	if sd == nil || time.Since(last) < 5*time.Second {
+	if sd == nil || time.Since(last) < setupRetryDelay(failures) {
 		return
 	}
 	a.mu.Lock()
@@ -169,8 +173,30 @@ func (a *app) retrySetup() {
 	a.mu.Unlock()
 
 	if err := a.ensureMod(sd); err != nil {
-		a.warnAttach(fmt.Sprintf("cannot prepare the mod (retrying): %v", err))
+		a.mu.Lock()
+		a.setupFailures++
+		a.mu.Unlock()
+		a.warnAttach(fmt.Sprintf("cannot set up this slot's mod yet (retrying in %s): %v",
+			setupRetryDelay(failures+1), err))
+		return
 	}
+	a.mu.Lock()
+	a.setupFailures = 0
+	a.mu.Unlock()
+}
+
+// setupRetryDelay spaces out setup retries: 5 s, doubling after each failure, at most
+// 2 minutes. A failed fetch can mean the server is down or busy, and each try asks it
+// to build a whole mod.
+func setupRetryDelay(failures int) time.Duration {
+	d := 5 * time.Second
+	for i := 0; i < failures && d < 2*time.Minute; i++ {
+		d *= 2
+	}
+	if d > 2*time.Minute {
+		d = 2 * time.Minute
+	}
+	return d
 }
 
 func (a *app) prepareInstall(data []byte, m *manifest.Manifest) error {
