@@ -147,7 +147,10 @@ func TestTheRoomsPooledStatsReachTheModRequest(t *testing.T) {
 		w.Write(testModZip(t))
 	}))
 	defer server.Close()
-	a := &app{baseURL: server.URL, modOut: t.TempDir(), saveDirFlag: t.TempDir()}
+	a := &app{
+		baseURL: server.URL, modOut: t.TempDir(), saveDirFlag: t.TempDir(),
+		session: apc.PendingSession(t.TempDir(), "Slot"), lastSeen: map[string]bool{},
+	}
 	slotData := map[string]any{
 		"d2rr_seed": float64(1234), "character_class": "pal", "savepath": "ap_1234_pal",
 		"stat_points_pooled": true, "mod_options": map[string]any{"keyItems": true},

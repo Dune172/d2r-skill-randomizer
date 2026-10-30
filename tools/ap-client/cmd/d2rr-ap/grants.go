@@ -132,7 +132,7 @@ func (a *app) applyKeys(player uintptr, keyStat stat.ID) {
 	case err != nil:
 		a.note("keys", "setting Horadric Keys: "+err.Error())
 	case !existed:
-		a.note("keys", attuneHint("your Horadric Keys"))
+		a.note("keys", fmt.Sprintf("%d Horadric Key(s) wait for the Draught of Attunement", keys))
 	default:
 		a.note("keys", fmt.Sprintf("Horadric Keys: %d held (the Horadric Staff needs %d, Khalim's Will %d)",
 			keys, ids.KeysForHoradricStaff, ids.KeysForKhalimsWill))
@@ -160,11 +160,6 @@ func (a *app) poolHint(player uintptr, what string) string {
 		return "waiting for the " + what + " stat: put the Archipelago Sigil alone in the Horadric Cube, transmute, " +
 			"and right-click the Tonic of Renewal it makes"
 	}
-}
-
-func attuneHint(what string) string {
-	return "cannot deliver " + what + " yet: right-click the Draught of Attunement in your inventory " +
-		"(transmute the Archipelago Sigil alone in the Horadric Cube for another)"
 }
 
 // applyMail runs the rune mailbox: put up the next rune that is owed, and record a rune
@@ -207,7 +202,7 @@ func (a *app) applyMail(player uintptr) {
 	a.mu.Unlock()
 	if !exists {
 		if owed > 0 {
-			a.note("mail", attuneHint(fmt.Sprintf("%d waiting rune(s)", owed)))
+			a.note("mail", fmt.Sprintf("%d rune(s) wait for the Draught of Attunement", owed))
 		}
 		return
 	}
