@@ -220,7 +220,12 @@ func (a *app) prepareInstall(data []byte, m *manifest.Manifest) error {
 	if e != nil {
 		return e
 	}
-	if e = setup.VerifyInstalled(root, m); e != nil {
+	e = setup.VerifyInstalled(root, m)
+	if e == nil && len(data) > 0 && !setup.MatchesArchive(root, data, m) {
+		// Same room and manifest, different files: the mod was rebuilt with a fix.
+		e = errors.New("this room's mod has been updated")
+	}
+	if e != nil {
 		if len(data) == 0 {
 			file := a.localManifest
 			if file == "" || !strings.EqualFold(filepath.Ext(file), ".zip") {
