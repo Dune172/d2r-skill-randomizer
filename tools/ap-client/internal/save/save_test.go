@@ -248,3 +248,28 @@ func TestRejectsNonSaveData(t *testing.T) {
 		t.Error("expected an error for a short buffer, got nil")
 	}
 }
+
+// A character D2R has just created is saved as a 403-byte header until the game first
+// saves it in full. Parse rejects it; ReadFileName still finds the name.
+func TestANewCharactersHeaderOnlySaveNamesTheCharacter(t *testing.T) {
+	stub := make([]byte, 403)
+	binary.LittleEndian.PutUint32(stub[0:4], magic)
+	copy(stub[nameOffset:], "Etester")
+	path := filepath.Join(t.TempDir(), "Etester.d2s")
+	if err := os.WriteFile(path, stub, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Parse(stub); err == nil {
+		t.Fatal("a header-only save has no quests to read; Parse must refuse it")
+	}
+	name, err := ReadFileName(path)
+	if err != nil || name != "Etester" {
+		t.Fatalf("got %q %v, want Etester", name, err)
+	}
+	if err := os.WriteFile(path, stub[:100], 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ReadFileName(path); err == nil {
+		t.Fatal("accepted a file too short to hold a name")
+	}
+}

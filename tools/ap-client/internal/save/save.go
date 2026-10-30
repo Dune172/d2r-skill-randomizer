@@ -153,6 +153,27 @@ func ParseFile(path string) (*State, error) {
 	return st, nil
 }
 
+// ReadFileName reads only the character name from a save's header.
+//
+// A character D2R has just created is saved as a header alone (403 bytes, measured on
+// 3.3) until the game first saves it in full, which can be many minutes later. Parse
+// rejects that file, but its header already names the character, which is all binding a
+// slot to it needs. It has no quests or waypoints yet, so there are no checks to miss.
+func ReadFileName(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	if len(data) < nameOffset+16 || binary.LittleEndian.Uint32(data[0:4]) != magic {
+		return "", fmt.Errorf("%s: not a D2R save header", path)
+	}
+	name := readName(data)
+	if name == "" {
+		return "", fmt.Errorf("%s: no character name in the header", path)
+	}
+	return name, nil
+}
+
 // CheckIDs returns every location this save proves is checked, as stable ids.
 func (s *State) CheckIDs() []string {
 	ids := make([]string, 0, len(s.CompletedQuests)+len(s.ActiveWaypoints))

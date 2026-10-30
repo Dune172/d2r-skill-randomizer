@@ -121,17 +121,12 @@ func (a *app) useManifest(man *manifest.Manifest) error {
 	}
 
 	// A missing save folder is the difference between "no checks yet" and "checks will
-	// NEVER be detected", and the two look identical in the log. The usual cause is an
-	// installed mod whose modinfo savepath differs from the one this manifest describes
-	// — for example a mod downloaded from the /archipelago page, which uses its own
-	// savepath field. Say so plainly rather than sitting silent forever.
+	// NEVER be detected" (an installed mod saving somewhere else), and the two look
+	// identical in the log. The first is the normal start of a game, so say it calmly
+	// and point at doctor for the second.
 	if _, err := os.Stat(saveDir); os.IsNotExist(err) {
-		logf("NOTE: that folder does not exist yet.")
-		logf("      Normal if you have not created the character. But if you HAVE, the")
-		logf("      installed mod is saving somewhere else — check the savepath in")
-		logf("      <D2R>\\mods\\%s\\%s.mpq\\modinfo.json and either reinstall the mod",
-			man.ModName, man.ModName)
-		logf("      this client downloaded, or restart with -save-dir <that folder>.")
+		logf("  (that folder appears when you create your character with this mod; if you")
+		logf("   already have and nothing is detected, run \"d2rr-ap doctor\")")
 	}
 
 	a.recomputeDesired()
