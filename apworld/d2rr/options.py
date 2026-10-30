@@ -172,6 +172,17 @@ class XPMultiplier(Range):
     default = 1
 
 
+class OpenActs(Toggle):
+    """Acts II and III are open from the start, as with Open Acts on the D2R Randomizer
+    site. The app makes your character with Lut Gholein's and Kurast Docks' waypoints
+    active, so you load it instead of creating one. Duriel and Mephisto still need their
+    quests (and Horadric Keys, when those are on); Acts IV and V open as in the base game.
+
+    Off: the acts open in order, and you create your character yourself."""
+    display_name = "Open Acts"
+    default = 1
+
+
 class MonsterShuffle(Toggle):
     """Shuffle which monsters appear in which areas, as on the D2R Randomizer site."""
     display_name = "Monster Shuffle"
@@ -203,6 +214,7 @@ class D2RROptions(PerGameCommonOptions):
     trap_percentage: TrapPercentage
     xp_multiplier: XPMultiplier
     monster_shuffle: MonsterShuffle
+    open_acts: OpenActs
     death_link: D2RRDeathLink
 
 
@@ -210,7 +222,7 @@ OPTION_GROUPS = [
     OptionGroup("Goal", [CharacterClass, GoalDifficulty, GoalBoss]),
     OptionGroup("Skill Points", [SkillPoints, StartingSkillPoints, LogicDifficulty]),
     OptionGroup("Checks", [IncludeWaypoints, IncludeAreas, IncludeLevelMilestones]),
-    OptionGroup("The Mod", [XPMultiplier, MonsterShuffle]),
+    OptionGroup("The Mod", [OpenActs, XPMultiplier, MonsterShuffle]),
     OptionGroup("Experimental", [KeyItems, StatPoints, TrapPercentage, D2RRDeathLink]),
 ]
 

@@ -167,11 +167,18 @@ class D2RRWorld(World):
                 target = region(region_name)
                 target.locations.append(D2RRLocation(self.player, name, location_id, target))
 
+        # Open Acts: Acts II and III are entered from Act I of the same difficulty, not
+        # each from the end of the act before. Act IV still follows Mephisto's lair.
+        open_acts = bool(self.options.open_acts)
         previous = region("Menu")
         for d in range(self.goal_difficulty + 1):
+            act_one: Region | None = None
             for act in range(ids.acts_in(d, self.goal_difficulty, self.goal_act)):
                 here = region(self._region_name(d, act))
-                previous.connect(here, None, rules.can_enter_act(self, d, act))
+                source = act_one if open_acts and act in (1, 2) and act_one is not None else previous
+                source.connect(here, None, rules.can_enter_act(self, d, act))
+                if act == 0:
+                    act_one = here
                 previous = here
 
                 # Act II and Act III each end in a lair behind a Cube recipe; the next
@@ -270,11 +277,13 @@ class D2RRWorld(World):
             "stat_points_per_item": ids.STAT_POINTS_PER_ITEM,
             "horadric_keys": self.pool["keys"],
             "death_link": bool(self.options.death_link),
+            "open_acts": bool(self.options.open_acts),
             # Passed straight through to /api/archipelago/mod.
             "mod_options": {
                 "keyItems": self.pool["keys"] > 0,
                 "pooledStats": self.pool["stat_bundles"] > 0,
                 "xpMultiplier": self.options.xp_multiplier.value,
                 "monsterShuffle": bool(self.options.monster_shuffle),
+                "openActs": bool(self.options.open_acts),
             },
         }

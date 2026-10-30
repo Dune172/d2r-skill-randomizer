@@ -100,3 +100,30 @@ class TestNightmareDiablo(D2RRTestBase):
         self.assertIn(rules.boss_event_name(ids.BAAL_ACT, 0), names)
         self.assertIn(rules.boss_event_name(3, 1), names)
         self.assertNotIn(ids.quest_location_name(1, 4, 0), names)
+
+
+class TestOpenActs(D2RRTestBase):
+    """Open Acts (the default): Act III is entered from Act I, so it needs no keys."""
+    options = {"key_items": True, "goal_boss": "baal", "open_acts": True}
+
+    def test_act_three_does_not_wait_for_duriel(self) -> None:
+        travincal = ids.quest_location_name(0, 2, 4)  # The Blackened Temple
+        duriel = ids.quest_location_name(0, 1, 5)
+        mephisto = ids.quest_location_name(0, 2, 5)
+        self.collect(self.get_items_by_name(ids.SKILL_POINT_ITEM))
+        self.assertTrue(self.can_reach_location(travincal))
+        self.assertFalse(self.can_reach_location(duriel))
+        self.assertFalse(self.can_reach_location(mephisto))
+
+
+class TestClosedActs(D2RRTestBase):
+    """Without Open Acts, Act III follows Duriel's lair, and with it the Horadric Staff."""
+    options = {"key_items": True, "goal_boss": "baal", "open_acts": False}
+
+    def test_act_three_waits_for_the_staff(self) -> None:
+        travincal = ids.quest_location_name(0, 2, 4)
+        keys = self.get_items_by_name(ids.HORADRIC_KEY_ITEM)
+        self.collect(self.get_items_by_name(ids.SKILL_POINT_ITEM))
+        self.assertFalse(self.can_reach_location(travincal))
+        self.collect(keys[:ids.KEYS_FOR_HORADRIC_STAFF])
+        self.assertTrue(self.can_reach_location(travincal))
