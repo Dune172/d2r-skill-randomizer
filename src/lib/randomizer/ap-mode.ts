@@ -1,5 +1,6 @@
 /**
- * ap-mode.ts — Archipelago mode: the table invariants and the client manifest.
+ * ap-mode.ts — Archipelago mode: the table invariants, the chat-panel message box and
+ * the client manifest.
  *
  * In an Archipelago mod the multiworld is the only source of skill points. The companion
  * client (tools/ap-client) writes the character's unspent-point count, the player spends
@@ -8,8 +9,7 @@
  * The invariants that follow from that:
  *
  *  - SkillsPerLevel stays at 1. Levelling is not meant to grant anything (the client
- *    writes the count back down), but the stat list is SPARSE: a character that has
- *    never held a skill point has no entry for the client to write.
+ *    writes the count back down); it is simply left at a value that cannot surprise it.
  *
  *  - StartSkill is cleared. The normal pipeline picks one at random per class; a free
  *    skill outside Archipelago's control is exactly what this mode exists to prevent.
@@ -23,48 +23,33 @@
  * uses in memory, so the client can tell the character's own hard points from anything
  * else in the skill list. It is built after reorderSkillsRows has settled the row order.
  *
- * ITEMS THE CLIENT CANNOT CONJURE. The client can change the value of a stat the game
- * already holds; it cannot create an item. Two data-only mechanisms turn a stat into
- * something physical, and both lean on cubemain.txt's `op` column, which lets a recipe
- * require a value of one of the player's stats:
+ * THE CLIENT CREATES ITS OWN STAT ENTRIES. A character's stat list is sparse: the game
+ * drops a stat whose value reaches zero, and a fresh character has no entry for most of
+ * them. The client inserts the entries it needs into the live stat list itself (proved on
+ * D2R 3.3, 2026-10-30): the skill-point pool, the stat-point pool when stat points are
+ * pooled, and the key stat below. So the mod ships no potions, no starting items and no
+ * delivery recipes; every item the earlier contracts repurposed is vanilla again.
  *
- *  - Keys. The vanilla Horadric Staff and Khalim's Will recipes are made to require a
- *    count held in the custom stat `ap_keys`. Until the multiworld has sent enough
- *    Progressive Horadric Keys the Cube refuses, so Duriel and Mephisto stay shut.
+ *  - Keys. The custom stat `ap_keys` holds the number of Progressive Horadric Keys the
+ *    multiworld has sent PLUS ONE, so a character holding none still has a nonzero entry.
+ *    With `keyItems`, the vanilla Horadric Staff and Khalim's Will recipes require it
+ *    through cubemain.txt's `op` column (a recipe may require a value of one of the
+ *    player's stats); until enough keys arrive the Cube refuses, so Duriel and Mephisto
+ *    stay shut.
  *
- *  - The mailbox. The character starts with an Archipelago Sigil. When an item is
- *    waiting, the client sets `ap_mail` to that item's offer code, and exactly one
- *    recipe (the Sigil alone, `ap_mail` == offer) produces the item.
+ *  - Pooled stat points (`pooledStats`) need nothing from the tables: the client holds
+ *    the stat-point pool at what the multiworld sent minus what was spent, which takes
+ *    back what a level-up grants. `baseAttributes` in the manifest is how it counts
+ *    what was spent.
  *
- *    The client cannot see the Cube, so the recipes themselves make delivery exactly-once:
- *      at most once  - there are two Sigils, and every item has a separate offer code
- *                      for each. A recipe takes one Sigil and returns the OTHER, so once
- *                      it has fired, the offer on the stat no longer matches the Sigil
- *                      in the player's hands and cannot fire again.
- *      at least once - it also returns a Receipt. Using the Receipt adds one to
- *                      `ap_mail`, which the client can see: offer + 1 means delivered.
- *    The client knows which Sigil the player holds by counting deliveries, and offers
- *    the next item under that Sigil's code. Offers are even, acknowledgements odd.
- *
- * Both custom stats hold their value PLUS ONE, so they are never zero: the game drops
- * zero-valued stats from a character, and the client can only write an entry that exists.
- *
- * HOW A STAT ENTRY COMES TO EXIST. Player spell 4 (in vanilla only on the unused Full
- * Healing and Full Mana potions, `hpf`/`mpf`) adds each statN/calcN of the item to the
- * drinker's base stats, permanently when `len` is empty. It is the one data-driven way
- * to create an entry, and three items use it:
- *
- *  - the Draught of Attunement creates ap_keys, ap_mail and the skill-point pool;
- *  - the Receipt adds one to ap_mail;
- *  - the Tonic of Renewal recreates the skill-point pool (and, with pooled stat points,
- *    the stat-point pool) after the player has spent it to zero and the game dropped it.
- *    A Sigil brews one only while ap_mail holds TONIC_REQUEST, which the client writes
- *    when a pool is missing and points are owed, so a Tonic cannot be brewed at will.
- *
- * Measured on D2R 3.3 (2026-10-29): the Draught created 5, 368 and 369 on both copies of
- * the character, the Receipt moved 369 from an offer to offer + 1, and all of it survived
- * Save and Exit. Spell 8, used before, ignores the stat columns entirely.
+ * MESSAGES. Every AP mod ships the game's chat panel layouts (HUDMessagePanel, legacy and
+ * HD) with one extra text box, `ArchipelagoMessages`, as the panel's first child. Its
+ * text is AP_MESSAGE_CAPACITY spaces: the game allocates a buffer that size for the
+ * string, which the client later overwrites in place with "You received ..." lines.
+ * The vanilla layouts live in data/archipelago/layouts (see the README there).
  */
+import fs from 'fs';
+import path from 'path';
 import { SkillPlacement, ClassCode } from './types';
 import { CLASS_DEFS } from './config';
 import { PIPELINE_VERSION } from './pipeline-version';
@@ -76,7 +61,15 @@ import { PIPELINE_VERSION } from './pipeline-version';
  * code: in development that looks like "my change did nothing", and in production it
  * would hand clients a manifest that disagrees with the mod.
  */
-export const AP_CONTRACT_VERSION = 4;
+export const AP_CONTRACT_VERSION = 5;
+
+/** Name of the text box the mod adds to the chat panel for Archipelago messages. */
+export const AP_MESSAGE_BOX = 'ArchipelagoMessages';
+/**
+ * Length of the box's placeholder text, all spaces. The game sizes the box's text buffer
+ * from it, and the client writes at most this many bytes into that buffer.
+ */
+export const AP_MESSAGE_CAPACITY = 600;
 
 export interface ApModeOptions {
   /** The class this Archipelago slot plays. */
@@ -86,8 +79,9 @@ export interface ApModeOptions {
   /** Lock the Horadric Staff and Khalim's Will recipes behind Progressive Horadric Keys. */
   keyItems: boolean;
   /**
-   * Stat points come only from the multiworld, so the Tonic recreates the stat-point pool
-   * too. Without this it must not: nothing would take the free stat point back.
+   * Stat points come only from the multiworld: level-ups grant none that the player keeps,
+   * because the client holds the stat-point pool at what was sent minus what was spent.
+   * No table changes; it is part of the slot's options (and the zip cache key).
    */
   pooledStats?: boolean;
 }
@@ -96,80 +90,19 @@ type Table = { headers: string[]; rows: string[][] };
 
 const CLASS_NAMES = Object.fromEntries(CLASS_DEFS.map(d => [d.code, d.name])) as Record<ClassCode, string>;
 
-/**
- * Unused vanilla items repurposed here. All five already have inventory and HD art, and
- * none of them drops or is sold in the unmodded game.
- */
-const SIGIL_CODES = ['hrt', 'sol'] as const; // "Heart" and "Soul", monster parts
-const ATTUNEMENT_CODE = 'elx';               // "Elixir"
-const RECEIPT_CODE = 'hrb';                  // "Herb"
-const TONIC_CODE = 'mpf';                    // "Full Mana Potion", already a spell 4 item
-
-/**
- * String ids for names the base game lacks (the Tonic's item, `mpf`, has none). Ids are
- * global across every strings file: 40000+ are the pipeline's books, 41000+ its synergy
- * lines, and no vanilla string in data/local/strings reaches 40000.
- */
-const AP_STRING_ID_BASE = 42000;
-
 /** Keys needed before each quest recipe opens. Progressive, in the order the game needs them. */
 export const AP_KEY_GATES = { horadricStaff: 2, khalimsWill: 5 } as const;
 
-/** The mail stat's value when nothing is waiting. */
-const MAIL_IDLE = 1;
-/**
- * What a Draught of Attunement adds to the mail stat. Far above every offer and
- * acknowledgement, so a Draught drunk while an item is waiting reads as "re-attuned",
- * never as that item's acknowledgement.
- */
-const MAIL_ATTUNED = 256;
-/**
- * What the client writes to the mail stat to let a Sigil brew a Tonic of Renewal. Even,
- * like an offer, above every offer and acknowledgement and below MAIL_ATTUNED.
- */
-const TONIC_REQUEST = 200;
-
-const RUNE_NAMES = [
-  'El', 'Eld', 'Tir', 'Nef', 'Eth', 'Ith', 'Tal', 'Ral', 'Ort', 'Thul', 'Amn', 'Sol',
-  'Shael', 'Dol', 'Hel', 'Io', 'Lum', 'Ko', 'Fal', 'Lem', 'Pul', 'Um', 'Mal', 'Ist',
-  'Gul', 'Vex', 'Ohm', 'Lo', 'Sur', 'Ber', 'Jah', 'Cham', 'Zod',
-];
-
-/** Everything deliverable through the mailbox. A position here is the item's identity. */
-const MAILBOX_ITEMS = RUNE_NAMES.map((name, i) => ({
-  item: `r${String(i + 1).padStart(2, '0')}`,
-  name: `${name} Rune`,
-}));
-
-export interface ApMailItem {
-  /** What the client writes into the mail stat to offer this item. Even; offer + 1 acknowledges it. */
-  offer: number;
-  /** Which Sigil (index into `sigils`) the recipe for this offer takes. It returns the other. */
-  sigil: number;
-  /** misc.txt item code the recipe produces. */
-  item: string;
-  name: string;
-}
-
 /** What applyApTables added to the mod, for the manifest. */
 export interface ApTables {
-  /** itemstatcost.txt ids of the custom stats. `keys` stores the key count plus one. */
-  stats: { keys: number; mail: number };
-  sigils: string[];
-  attunement: string;
-  receipt: string;
-  /** Recreates an emptied point pool. Brewed from a Sigil only while the mail stat holds tonicRequest. */
-  tonic: string;
-  tonicRequest: number;
-  /** Whether the Tonic also restores the stat-point pool (stat points pooled). */
-  tonicStatPoints: boolean;
-  mailIdle: number;
-  mailAttuned: number;
-  mail: ApMailItem[];
+  /** itemstatcost.txt id of the custom key stat; stores the key count plus one. */
+  stats: { keys: number };
   /** Present only when the quest recipes are locked. */
   keyGates?: { horadricStaff: number; khalimsWill: number };
   /** The class's starting strength + dexterity + energy + vitality, for counting spent stat points. */
   baseAttributes: number;
+  /** Name of the text box the mod adds to the chat panel (HUDMessagePanel) for Archipelago messages. */
+  messageBox: string;
 }
 
 export interface ApSlot {
@@ -221,139 +154,42 @@ function findRow(table: Table, key: string, value: string): string[] {
 }
 
 /**
- * Add the custom stats, the Sigils and their recipes, and optionally the key gates.
+ * Add the key stat and, optionally, the key gates; read the class's base attributes.
  *
- * Mutates every table passed in. `itemNames` is the parsed item-names.json.
+ * Mutates `itemstatcost` and `cubemain`; only reads `charstats`.
  */
 export function applyApTables(args: {
   ap: ApModeOptions;
   itemstatcost: Table;
-  misc: Table;
   cubemain: Table;
   charstats: Table;
-  itemNames: { Key: string; [locale: string]: string | number }[];
 }): ApTables {
-  const { ap, itemstatcost, misc, cubemain, charstats, itemNames } = args;
+  const { ap, itemstatcost, cubemain, charstats } = args;
 
-  // Meant to keep these entries alive at zero, so the client always has one to write.
-  // Measured on D2R 3.3: it does NOT for base stats, so the game still drops a spent
-  // pool; the Tonic of Renewal is what brings it back. Kept as harmless, in case a later
-  // patch honours it.
+  // Meant to keep these entries alive at zero. Measured on D2R 3.3: it does NOT for base
+  // stats, so the game still drops a spent pool and the client recreates it. Kept as
+  // harmless, in case a later patch honours it.
   for (const name of ['statpts', 'newskills', 'gold']) {
     setCells(itemstatcost, findRow(itemstatcost, 'Stat', name), { keepzero: '1' });
   }
 
-  const firstId = itemstatcost.rows.length;
-  const stats = { keys: firstId, mail: firstId + 1 };
-  for (const [name, id] of [['ap_keys', stats.keys], ['ap_mail', stats.mail]] as const) {
-    if (itemstatcost.rows.some(r => r[0] === name)) throw new Error(`apMode: stat ${name} already exists`);
-    // 10 bits (up to 1023): two Draughts hoarded and drunk together put 512 on ap_mail.
-    appendRow(itemstatcost, {
-      Stat: name, '*ID': String(id), 'Send Bits': '10', Saved: '1', CSvSigned: '0', CSvBits: '10',
-      keepzero: '1', '*eol': '0',
-    });
-  }
-
-  let nextStringId = AP_STRING_ID_BASE;
-  const repurpose = (code: string, name: string, cells: Record<string, string>) => {
-    setCells(misc, findRow(misc, 'code', code), {
-      // Never from a shop or a drop, worthless to a vendor, and no vanilla right-click
-      // behaviour: monster parts would otherwise transmute themselves into a potion.
-      // Not beltable either: an item fed to the mercenary from the belt would be used
-      // up without the player, and a Receipt used that way loses its delivery.
-      spawnable: '0', cost: '0', Transmogrify: '0', TMogType: 'xxx', belt: '0', autobelt: '0',
-      spelldesc: '', spelldescstr: '', state: '', len: '',
-      stat1: '', calc1: '', stat2: '', calc2: '', stat3: '', calc3: '',
-      ...cells,
-    });
-    let entry = itemNames.find(e => e.Key === code);
-    if (!entry) {
-      // Every locale the file carries, so no language falls back to a missing string.
-      const locales = Object.keys(itemNames[0] ?? {}).filter(f => f !== 'id' && f !== 'Key');
-      if (locales.length === 0) throw new Error(`apMode: no item name ${code}, and no locales to add one`);
-      entry = { id: nextStringId++, Key: code };
-      itemNames.push(entry);
-      for (const locale of locales) entry[locale] = name;
-    }
-    for (const field of Object.keys(entry)) {
-      if (field !== 'id' && field !== 'Key') entry[field] = name;
-    }
-  };
-  // Player spell 4 adds each calc to its stat, permanently while `len` is empty (repurpose
-  // clears it). That is how a stat entry the client can write comes to exist, and how the
-  // Receipt signals a delivery. Spell 8 looks similar in the tables and ignores them.
-  const addsToStats = { useable: '1', pSpell: '4' };
-  for (const code of SIGIL_CODES) repurpose(code, 'Archipelago Sigil', { useable: '0', pSpell: '-1' });
-  repurpose(ATTUNEMENT_CODE, 'Draught of Attunement', {
-    ...addsToStats,
-    stat1: 'ap_keys', calc1: '1', stat2: 'ap_mail', calc2: String(MAIL_ATTUNED), stat3: 'newskills', calc3: '1',
-  });
-  repurpose(RECEIPT_CODE, 'Archipelago Receipt', { ...addsToStats, stat1: 'ap_mail', calc1: '1' });
-  // One point in each pool the client manages. The client writes the pool straight back
-  // to its target, so all the Tonic really gives is an entry to write to.
-  repurpose(TONIC_CODE, 'Tonic of Renewal', {
-    ...addsToStats, stat1: 'newskills', calc1: '1',
-    ...(ap.pooledStats ? { stat2: 'statpts', calc2: '1' } : {}),
+  // D2R indexes stats by row, so the new stat's id is the row it lands on.
+  const stats = { keys: itemstatcost.rows.length };
+  if (itemstatcost.rows.some(r => r[0] === 'ap_keys')) throw new Error('apMode: stat ap_keys already exists');
+  appendRow(itemstatcost, {
+    Stat: 'ap_keys', '*ID': String(stats.keys), 'Send Bits': '10', Saved: '1', CSvSigned: '0', CSvBits: '10',
+    keepzero: '1', '*eol': '0',
   });
 
-  // Every class starts with a Sigil and one Draught.
-  for (const row of charstats.rows) {
-    if (!row[0] || row[0] === 'Expansion') continue;
-    for (const code of [SIGIL_CODES[0], ATTUNEMENT_CODE]) {
-      const slot = Array.from({ length: 10 }, (_, i) => i + 1)
-        .find(n => ['', '0'].includes(row[column(charstats, `item${n}`)]));
-      if (!slot) throw new Error(`apMode: ${row[0]} has no free starting-item slot for ${code}`);
-      setCells(charstats, row, {
-        [`item${slot}`]: code, [`item${slot}loc`]: '', [`item${slot}count`]: '1', [`item${slot}quality`]: '2',
-      });
-    }
-  }
   const classRow = charstats.rows.find(r => r[0] === CLASS_NAMES[ap.characterClass]);
   if (!classRow) throw new Error(`apMode: no charstats row for ${ap.characterClass}`);
   const baseAttributes = ['str', 'dex', 'int', 'vit']
     .reduce((sum, name) => sum + Number(classRow[column(charstats, name)]), 0);
 
-  // Two offers per item, one for each Sigil: 2, 4, 6, ... with the acknowledgements between.
-  const mail: ApMailItem[] = MAILBOX_ITEMS.flatMap((entry, i) =>
-    SIGIL_CODES.map((_, sigil) => ({ offer: 2 * (i * SIGIL_CODES.length + sigil + 1), sigil, ...entry })));
-  if (mail[mail.length - 1].offer + 1 >= MAIL_ATTUNED) throw new Error('apMode: mail offers reach the attunement value');
-  if (TONIC_REQUEST <= mail[mail.length - 1].offer + 1 || TONIC_REQUEST >= MAIL_ATTUNED || TONIC_REQUEST % 2) {
-    throw new Error('apMode: the Tonic request must be even, above every offer and below the attunement value');
-  }
-  const playerBaseStatEquals = '10';
-  const playerBaseStatAtMost = '8';
-  const playerBaseStatAtLeast = '7';
-  for (const entry of mail) {
-    const taken = SIGIL_CODES[entry.sigil];
-    const returned = SIGIL_CODES[1 - entry.sigil];
-    appendRow(cubemain, {
-      description: `Archipelago mail: ${entry.name} (${taken})`, enabled: '1', version: '100',
-      op: playerBaseStatEquals, param: String(stats.mail), value: String(entry.offer),
-      numinputs: '1', 'input 1': taken,
-      output: entry.item, 'output b': returned, 'output c': RECEIPT_CODE, '*eol': '0',
-    });
-  }
-  // A Sigil also brews, keeping the Sigil it was given:
-  //  - a Draught while the mail stat does not exist yet (the starting Draught was lost
-  //    before it was drunk). Once it exists it never reads 0 again (value + 1);
-  //  - a Tonic only while the client has put TONIC_REQUEST on the stat, so the point
-  //    pools cannot be refilled at will with the client off.
-  for (const sigil of SIGIL_CODES) {
-    appendRow(cubemain, {
-      description: `Archipelago: brew a Draught of Attunement (${sigil})`, enabled: '1', version: '100',
-      op: playerBaseStatAtMost, param: String(stats.mail), value: '0',
-      numinputs: '1', 'input 1': sigil, output: ATTUNEMENT_CODE, 'output b': sigil, '*eol': '0',
-    });
-    appendRow(cubemain, {
-      description: `Archipelago: brew a Tonic of Renewal (${sigil})`, enabled: '1', version: '100',
-      op: playerBaseStatEquals, param: String(stats.mail), value: String(TONIC_REQUEST),
-      numinputs: '1', 'input 1': sigil, output: TONIC_CODE, 'output b': sigil, '*eol': '0',
-    });
-  }
-
   let keyGates: ApTables['keyGates'];
   if (ap.keyItems) {
     keyGates = { ...AP_KEY_GATES };
+    const playerBaseStatAtLeast = '7';
     const gate = (output: string, keys: number) => {
       const rows = cubemain.rows.filter(r => r[column(cubemain, 'output')] === output && r[column(cubemain, 'enabled')] === '1');
       if (rows.length !== 1) throw new Error(`apMode: expected one recipe producing ${output}, found ${rows.length}`);
@@ -363,11 +199,68 @@ export function applyApTables(args: {
     gate('qf2', keyGates.khalimsWill);   // Khalim's Flail + Eye + Heart + Brain
   }
 
-  return {
-    stats, sigils: [...SIGIL_CODES], attunement: ATTUNEMENT_CODE, receipt: RECEIPT_CODE,
-    tonic: TONIC_CODE, tonicRequest: TONIC_REQUEST, tonicStatPoints: ap.pooledStats === true,
-    mailIdle: MAIL_IDLE, mailAttuned: MAIL_ATTUNED, mail, keyGates, baseAttributes,
-  };
+  return { stats, keyGates, baseAttributes, messageBox: AP_MESSAGE_BOX };
+}
+
+/** Where each chat layout lands under the mod's data/ folder, and its message box. */
+const AP_MESSAGE_LAYOUTS = [
+  { file: 'hudmessagepanel.json', rect: { x: 20, y: 250, width: 560, height: 160 } },   // legacy graphics
+  { file: 'hudmessagepanelhd.json', rect: { x: 60, y: 850, width: 1700, height: 450 } }, // HD
+] as const;
+
+/**
+ * The chat panel layouts with the Archipelago message box, keyed by path under data/.
+ *
+ * The vanilla files have trailing commas, so they are not parsed and re-serialised: the
+ * box is inserted as text right after the top-level panel's `"children": [`, and every
+ * other byte of the game's file is kept.
+ */
+export function buildApLayoutFiles(dataDir: string): Map<string, Buffer> {
+  const files = new Map<string, Buffer>();
+  for (const { file, rect } of AP_MESSAGE_LAYOUTS) {
+    const source = fs.readFileSync(path.join(dataDir, 'archipelago', 'layouts', file), 'utf8');
+    const marker = '"children": [';
+    // Depth of every marker: 1 means a key of the root object (the panel itself).
+    const topLevel: number[] = [];
+    let depth = 0;
+    let inString = false;
+    for (let i = 0; i < source.length; i++) {
+      const ch = source[i];
+      if (inString) {
+        if (ch === '\\') i++;
+        else if (ch === '"') inString = false;
+        continue;
+      }
+      if (depth === 1 && source.startsWith(marker, i)) topLevel.push(i);
+      if (ch === '"') inString = true;
+      else if (ch === '{' || ch === '[') depth++;
+      else if (ch === '}' || ch === ']') depth--;
+    }
+    if (topLevel.length !== 1 || topLevel[0] !== source.indexOf(marker)) {
+      throw new Error(`apMode: ${file} has ${topLevel.length} top-level "children" arrays, or the first is nested`);
+    }
+    const eol = source.includes('\r\n') ? '\r\n' : '\n';
+    const box = {
+      type: 'TextBoxWidget', name: AP_MESSAGE_BOX,
+      fields: {
+        rect,
+        text: ' '.repeat(AP_MESSAGE_CAPACITY),
+        style: {
+          pointSize: '$MediumFontSize',
+          fontColor: { r: 255, g: 255, b: 255, a: 255 },
+          fontFace: 'BlizzardGlobal',
+          alignment: { h: 'left', v: 'bottom' },
+          options: { newlineHandling: 'standard', lineWrap: true },
+          dropShadow: '$DefaultDropShadow',
+        },
+      },
+    };
+    const lines = JSON.stringify(box, null, 4).split('\n').map(line => `        ${line}`);
+    const at = topLevel[0] + marker.length;
+    const layout = source.slice(0, at) + eol + lines.join(eol) + ',' + source.slice(at);
+    files.set(`global/ui/layouts/${file}`, Buffer.from(layout, 'utf8'));
+  }
+  return files;
 }
 
 /** charstats.txt: levelling keeps creating the skill-point stat; no class starts with a skill. */
