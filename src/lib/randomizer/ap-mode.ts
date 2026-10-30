@@ -161,6 +161,8 @@ export interface ApTables {
   /** Recreates an emptied point pool. Brewed from a Sigil only while the mail stat holds tonicRequest. */
   tonic: string;
   tonicRequest: number;
+  /** Whether the Tonic also restores the stat-point pool (stat points pooled). */
+  tonicStatPoints: boolean;
   mailIdle: number;
   mailAttuned: number;
   mail: ApMailItem[];
@@ -363,7 +365,7 @@ export function applyApTables(args: {
 
   return {
     stats, sigils: [...SIGIL_CODES], attunement: ATTUNEMENT_CODE, receipt: RECEIPT_CODE,
-    tonic: TONIC_CODE, tonicRequest: TONIC_REQUEST,
+    tonic: TONIC_CODE, tonicRequest: TONIC_REQUEST, tonicStatPoints: ap.pooledStats === true,
     mailIdle: MAIL_IDLE, mailAttuned: MAIL_ATTUNED, mail, keyGates, baseAttributes,
   };
 }

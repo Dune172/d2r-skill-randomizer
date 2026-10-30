@@ -68,11 +68,14 @@ type Tables struct {
 	// Tonic recreates an emptied point pool. A Sigil brews one only while the mail stat
 	// holds TonicRequest, which the client writes when a pool is missing and points are
 	// owed.
-	Tonic        string     `json:"tonic"`
-	TonicRequest uint32     `json:"tonicRequest"`
-	MailIdle     uint32     `json:"mailIdle"`
-	MailAttuned  uint32     `json:"mailAttuned"`
-	Mail         []MailItem `json:"mail"`
+	Tonic        string `json:"tonic"`
+	TonicRequest uint32 `json:"tonicRequest"`
+	// TonicStatPoints: the Tonic restores the stat-point pool too. Without it, a Tonic
+	// cannot help an empty stat pool, so the client must not ask for one for that.
+	TonicStatPoints bool       `json:"tonicStatPoints"`
+	MailIdle        uint32     `json:"mailIdle"`
+	MailAttuned     uint32     `json:"mailAttuned"`
+	Mail            []MailItem `json:"mail"`
 	// KeyGates is present only when the quest recipes are locked.
 	KeyGates *struct {
 		HoradricStaff int `json:"horadricStaff"`

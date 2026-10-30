@@ -492,3 +492,25 @@ func TestAGameThatIgnoresTheKillFallsBackToOneLife(t *testing.T) {
 		t.Fatal("a fallback was reported to the room as a death")
 	}
 }
+
+// An empty stat pool asks for a Tonic only from a mod whose Tonic restores stat points.
+// From any other mod the request could never be met, and it would hold up every rune.
+func TestAnEmptyStatPoolAsksForATonicOnlyWhenItHelps(t *testing.T) {
+	for _, helps := range []bool{false, true} {
+		char := freshCharacter()
+		delete(char.stats, stat.StatPoints)
+		a, _ := grantApp(t, char, ids.StatPointsItemID, rune_("El"))
+		a.statPointsPooled = true
+		a.mailbox.TonicRequest = 200
+		a.man.Tables.TonicStatPoints = helps
+		poll(a)
+		poll(a)
+		want := uint32(2) // the El Rune, offered under the first Sigil
+		if helps {
+			want = 200
+		}
+		if char.stats[mailStat] != want {
+			t.Fatalf("Tonic restores stat points: %v; mail stat %d, want %d", helps, char.stats[mailStat], want)
+		}
+	}
+}

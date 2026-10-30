@@ -133,3 +133,30 @@ func TestSetupRetryReusesTheFetchedMod(t *testing.T) {
 		t.Fatalf("a mod for another seed came from the cache (requests %d)", n)
 	}
 }
+
+// A room that pools stat points asks for a mod whose Tonic restores them, even when its
+// apworld predates "pooledStats" in mod_options.
+func TestTheRoomsPooledStatsReachTheModRequest(t *testing.T) {
+	var asked map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Options map[string]any `json:"options"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		asked = body.Options
+		w.Write(testModZip(t))
+	}))
+	defer server.Close()
+	a := &app{baseURL: server.URL, modOut: t.TempDir(), saveDirFlag: t.TempDir()}
+	slotData := map[string]any{
+		"d2rr_seed": float64(1234), "character_class": "pal", "savepath": "ap_1234_pal",
+		"stat_points_pooled": true, "mod_options": map[string]any{"keyItems": true},
+	}
+	_ = a.ensureMod(slotData)
+	if asked["pooledStats"] != true || asked["keyItems"] != true {
+		t.Fatalf("the mod request carried %v", asked)
+	}
+	if _, ok := slotData["mod_options"].(map[string]any)["pooledStats"]; ok {
+		t.Fatal("the room's own slot data must not be changed")
+	}
+}

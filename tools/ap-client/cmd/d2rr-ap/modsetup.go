@@ -32,7 +32,17 @@ func (a *app) ensureMod(slotData map[string]any) error {
 	if !ok || seedNum != float64(seed) || seed < 1 || class == "" || savepath == "" {
 		return fmt.Errorf("room omitted seed, class or save folder")
 	}
-	options, _ := slotData["mod_options"].(map[string]any)
+	options := map[string]any{}
+	if fromRoom, ok := slotData["mod_options"].(map[string]any); ok {
+		for k, v := range fromRoom {
+			options[k] = v
+		}
+	}
+	// The room's own setting decides, so an apworld that predates "pooledStats" in its
+	// mod options still gets a mod whose Tonic restores stat points.
+	if boolFromSlotData(slotData, "stat_points_pooled", false) {
+		options["pooledStats"] = true
+	}
 	if existing != nil {
 		if err := existing.MatchRoom(seed, class, savepath); err != nil {
 			return err

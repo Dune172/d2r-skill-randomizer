@@ -99,13 +99,18 @@ func (a *app) applyStatPoints(player uintptr, classBase int) {
 	}
 	existed, err := a.view().SetPlayerStat(player, stat.StatPoints, uint32(want))
 	a.mu.Lock()
-	a.needStatPool = err == nil && !existed && want > 0 // asks the mailbox for a Tonic
+	// Asks the mailbox for a Tonic, but only from a mod whose Tonic restores stat points:
+	// otherwise the request could never be met and would hold up the runes behind it.
+	tonicHelps := a.man != nil && a.man.Tables.TonicStatPoints
+	a.needStatPool = err == nil && !existed && want > 0 && tonicHelps
 	a.mu.Unlock()
 	switch {
 	case err != nil:
 		a.note("stat", "setting stat points: "+err.Error())
 	case !existed && want == 0:
 		a.note("stat", "") // nothing owed, so nothing to write to yet
+	case !existed && !tonicHelps:
+		a.note("stat", fmt.Sprintf("%d stat point(s) wait for your next level-up (this mod's Tonic restores only skill points)", want))
 	case !existed:
 		a.note("stat", a.poolHint(player, "stat-point"))
 	default:
