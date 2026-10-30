@@ -172,28 +172,73 @@ func Parse(data []byte) (*Manifest, error) {
 	return &m, nil
 }
 
+// Size limits for what the client reads. A mod zip is a few MB; the caps only stop a
+// broken or hostile server from making the client allocate without bound.
+const (
+	maxModZipBytes   = 256 << 20
+	maxManifestBytes = 4 << 20
+	maxErrorBytes    = 64 << 10
+)
+
+// manifestPath is where the site puts the manifest: <modName>/d2rr-ap-manifest.json.
+var manifestPath = regexp.MustCompile(`^([A-Za-z0-9_-]+)/d2rr-ap-manifest\.json$`)
+
 // FromZip extracts the manifest from a mod zip in memory.
+//
+// Only <modName>/d2rr-ap-manifest.json counts, and only for the mod the manifest names,
+// so a file of the same name deeper in the zip cannot stand in for it.
 func FromZip(data []byte) (*Manifest, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return nil, fmt.Errorf("reading mod zip: %w", err)
 	}
+	var found *zip.File
+	var folder string
 	for _, f := range zr.File {
-		if !strings.HasSuffix(f.Name, "d2rr-ap-manifest.json") {
+		m := manifestPath.FindStringSubmatch(f.Name)
+		if m == nil {
 			continue
 		}
-		rc, err := f.Open()
-		if err != nil {
-			return nil, err
+		if found != nil {
+			return nil, fmt.Errorf("the mod zip has more than one d2rr-ap-manifest.json")
 		}
-		defer rc.Close()
-		raw, err := io.ReadAll(rc)
-		if err != nil {
-			return nil, err
-		}
-		return Parse(raw)
+		found, folder = f, m[1]
 	}
-	return nil, fmt.Errorf("no d2rr-ap-manifest.json in the mod zip")
+	if found == nil {
+		return nil, fmt.Errorf("no <mod>/d2rr-ap-manifest.json in the mod zip")
+	}
+	if found.UncompressedSize64 > maxManifestBytes {
+		return nil, fmt.Errorf("d2rr-ap-manifest.json is too large (%d bytes)", found.UncompressedSize64)
+	}
+	rc, err := found.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+	raw, err := readLimited(rc, maxManifestBytes)
+	if err != nil {
+		return nil, fmt.Errorf("reading d2rr-ap-manifest.json: %w", err)
+	}
+	m, err := Parse(raw)
+	if err != nil {
+		return nil, err
+	}
+	if m.ModName != folder {
+		return nil, fmt.Errorf("the manifest names mod %q but sits in folder %q", m.ModName, folder)
+	}
+	return m, nil
+}
+
+// readLimited reads all of r, failing rather than truncating past max bytes.
+func readLimited(r io.Reader, max int64) ([]byte, error) {
+	raw, err := io.ReadAll(io.LimitReader(r, max+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(raw)) > max {
+		return nil, fmt.Errorf("more than %d bytes", max)
+	}
+	return raw, nil
 }
 
 // LoadFile reads a manifest from a .json file or from a mod .zip.
@@ -255,12 +300,13 @@ func Fetch(req FetchRequest) (zipBytes []byte, m *Manifest, err error) {
 	}
 	defer resp.Body.Close()
 
-	payload, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, err
-	}
 	if resp.StatusCode != http.StatusOK {
+		payload, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrorBytes))
 		return nil, nil, fmt.Errorf("mod request failed (%d): %s", resp.StatusCode, errorBody(payload))
+	}
+	payload, err := readLimited(resp.Body, maxModZipBytes)
+	if err != nil {
+		return nil, nil, fmt.Errorf("reading the mod: %w", err)
 	}
 
 	man, err := FromZip(payload)

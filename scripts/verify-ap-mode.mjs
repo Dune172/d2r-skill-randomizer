@@ -114,6 +114,11 @@ async function verifyCase(c) {
     `manifest class ${manifest.characterClass} != ${c.characterClass}`);
   check(failures, manifest.savepath === c.savepath,
     `manifest savepath ${manifest.savepath} != ${c.savepath}`);
+  // The client installs the mod folder and refuses anything outside it, so an AP zip
+  // carries nothing else (no launcher shortcut).
+  const outside = entries.map(e => e.entryName.replace(/\\/g, '/'))
+    .filter(name => !name.startsWith(`${manifest.modName}/`));
+  check(failures, outside.length === 0, `entries outside ${manifest.modName}/: ${outside.join(', ')}`);
 
   // --- modinfo savepath isolation -----------------------------------------
   const modinfo = read('modinfo.json');

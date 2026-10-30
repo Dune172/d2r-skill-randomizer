@@ -140,9 +140,13 @@ export function buildZip(contents: ZipContents): Buffer {
     }
   }
 
-  // Cache the complete download, including its seed/mode-specific launcher.
-  zip.addFile(`D2R Randomizer ${contents.seed}.lnk`,
-    createD2RShortcut(m, contents.seed >>> 0, contents.raceMode));
+  // Cache the complete download, including its seed/mode-specific launcher. An
+  // Archipelago mod has none: its companion client installs the mod folder and starts
+  // the game itself, and only accepts what belongs in that folder.
+  if (!contents.apManifestJson) {
+    zip.addFile(`D2R Randomizer ${contents.seed}.lnk`,
+      createD2RShortcut(m, contents.seed >>> 0, contents.raceMode));
+  }
 
   // Beside the .mpq folder, not inside it: it is for the companion client, not the game.
   if (contents.apManifestJson) {

@@ -1,3 +1,5 @@
+//go:build windows
+
 package game
 
 import (
@@ -75,8 +77,15 @@ const QuestBlockSize = 96
 //
 // This is the CURRENT DIFFICULTY only — unlike the save, which stores all three — so it
 // carries no difficulty of its own and must be paired with one from elsewhere.
+//
+// Nil when the quest pattern was not found. A missed scan leaves the offset at 0 + 1,
+// which points at the PE header, and its bytes would read as completed quests.
 func (c *Client) QuestBytes() []byte {
-	base := c.gr.ModuleBase() + c.gr.Offsets().Quests
+	off := c.gr.Offsets().Quests
+	if off <= 1 {
+		return nil
+	}
+	base := c.gr.ModuleBase() + off
 	return c.proc.ReadBytesFromMemory(base, QuestBlockSize)
 }
 

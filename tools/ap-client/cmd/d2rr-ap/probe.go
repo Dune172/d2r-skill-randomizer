@@ -1,3 +1,5 @@
+//go:build windows
+
 package main
 
 import (
@@ -8,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
 	"github.com/hectorgimenez/d2go/pkg/data/stat"
-	"github.com/swannysoft/d2rr-ap-client/internal/game"
 )
 
 // statWrites collects repeated -set id=value flags.
@@ -40,7 +42,8 @@ func (w *statWrites) Set(s string) error {
 }
 
 // probe inspects the loaded character without a room or a manifest, and can overwrite
-// base stat values on request.
+// base stat values on request. It is a playtest tool (see docs/archipelago/PLAYTEST.md);
+// nobody needs it to play.
 //
 // It exists to answer one question after every D2R patch: is a value this client writes
 // honoured by the game's rules, or only displayed? Read-only unless -set is given.

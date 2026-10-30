@@ -1,3 +1,5 @@
+//go:build windows
+
 package main
 
 import (
@@ -6,7 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/save"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/save"
 )
 
 // saves prints the location checks visible in D2R save files.

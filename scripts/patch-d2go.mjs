@@ -9,23 +9,22 @@
  * `internal/game/vendor_patch_test.go` asserts the markers are present, so `go test ./...`
  * now catches the same mistake instead of leaving it for the game to find.
  *
- * The three fixes, all upstream bugs rather than local preferences:
+ * Every patch is listed in `patches` below, each with a comment saying why. The script
+ * checks that every anchor is present before writing anything, so a d2go update that
+ * moves one leaves the vendor tree untouched rather than half patched. They fall into
+ * four groups:
  *
- *  1. getProcessMemory issued ONE ReadProcessMemory across the whole ~40 MB module.
- *     Windows fails the entire call with ERROR_PARTIAL_COPY if any page in the range is
- *     unreadable, so it returned (nil, err) — and calculateOffsets discards that error.
- *
- *  2. findPattern looped to p.moduleBaseSize rather than len(memory), so the nil slice
- *     from (1) became an index-out-of-range panic instead of "not found".
- *
- *  3. The D2GS_SendPacket scan repeated bug (1) per-module, so it skipped D2R.exe and
- *     reported "pattern not found in any module".
- *
- * The fourth is an ADDITION rather than a fix: two accessors exposing the module base
- * and the resolved offsets. Upstream reaches those only through GetData(), which also
- * walks monsters, objects and the inventory and panics on an empty slice between game
- * states. The client needs two specific globals -- the live waypoint panel and the UI
- * flag block -- and nothing else.
+ *  - Reading the module safely: getProcessMemory read the whole ~40 MB module in ONE
+ *    ReadProcessMemory, which fails entirely on any unreadable page; findPattern then
+ *    indexed past the resulting nil slice; the D2GS_SendPacket scan repeated the first
+ *    bug per module.
+ *  - Accessors the client needs (the module base and the resolved offsets) without
+ *    GetData(), which also walks monsters, objects and the inventory and panics on an
+ *    empty slice between game states.
+ *  - D2R 3.3 (build 3.3.93847): the shared-stash inventory lookup, the moved state
+ *    bitfield, extra UI patterns, per-build measured offsets keyed by PE timestamp, a
+ *    throttled rescan, and keeping 0 for an offset that was not found.
+ *  - Guards against reading through an unresolved offset.
  *
  *   node scripts/patch-d2go.mjs
  */
@@ -261,6 +260,23 @@ func calculateOffsets(process *Process) Offset {`,
     skipIf: s => s.includes('var knownBuildOffsets'),
   },
   {
+    file: 'offset.go',
+    name: 'exported build identity',
+    find: 'func calculateOffsets(process *Process) Offset {',
+    replace: `// D2RR PATCH: exported so the client can tell a user whether this D2R build has
+// measured offsets, and name the build when it does not.
+func (p *Process) PETimestamp() uint32 { return peTimestamp(p) }
+
+// D2RR PATCH: whether knownBuildOffsets has an entry for this PE TimeDateStamp.
+func KnownBuild(timestamp uint32) bool {
+	_, ok := knownBuildOffsets[timestamp]
+	return ok
+}
+
+func calculateOffsets(process *Process) Offset {`,
+    skipIf: s => s.includes('func KnownBuild('),
+  },
+  {
     file: 'game_reader.go',
     name: 'offset rescan timestamp',
     find: '\tcachedObjects   []data.Object\n}',
@@ -390,26 +406,43 @@ function main() {
     process.exit(2);
   }
 
+  // Apply every patch in memory first, and write only if all of them found their anchor.
+  // Writing as we went would leave the vendor tree half-patched when a later anchor is
+  // missing, which is the state the vendor tests exist to catch.
+  const sources = new Map();
+  const read = name => {
+    if (!sources.has(name)) sources.set(name, fs.readFileSync(path.join(memDir, name), 'utf-8'));
+    return sources.get(name);
+  };
+  const changed = new Set();
+  const missing = [];
   let applied = 0, already = 0;
   for (const p of patches) {
-    const file = path.join(memDir, p.file);
-    let src = fs.readFileSync(file, 'utf-8');
-
+    const src = read(p.file);
     if (p.skipIf ? p.skipIf(src) : src.includes(p.replace)) {
       already++;
       console.log(`  already applied: ${p.file} — ${p.name}`);
       continue;
     }
     if (!src.includes(p.find)) {
-      console.error(`\nCannot apply "${p.name}" to ${p.file}: the upstream code does not match.`);
-      console.error('d2go changed. Re-derive the patch before trusting the client.');
-      process.exit(1);
+      missing.push(p);
+      continue;
     }
-    fs.writeFileSync(file, src.replace(p.find, p.replace));
+    sources.set(p.file, src.replace(p.find, p.replace));
+    changed.add(p.file);
     applied++;
-    console.log(`  applied: ${p.file} — ${p.name}`);
+    console.log(`  applying: ${p.file} — ${p.name}`);
   }
 
+  if (missing.length > 0) {
+    for (const p of missing) {
+      console.error(`\nCannot apply "${p.name}" to ${p.file}: the upstream code does not match.`);
+    }
+    console.error('\nd2go changed. Nothing was written. Re-derive the patches before trusting the client.');
+    process.exit(1);
+  }
+
+  for (const name of changed) fs.writeFileSync(path.join(memDir, name), sources.get(name));
   console.log(`\n${applied} patch(es) applied, ${already} already present.`);
   if (applied > 0) console.log('Rebuild the client: go build ./...');
 }

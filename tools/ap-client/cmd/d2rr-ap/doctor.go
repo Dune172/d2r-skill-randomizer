@@ -1,14 +1,16 @@
+//go:build windows
+
 package main
 
 import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/swannysoft/d2rr-ap-client/internal/apc"
-	"github.com/swannysoft/d2rr-ap-client/internal/game"
-	"github.com/swannysoft/d2rr-ap-client/internal/ids"
-	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
-	"github.com/swannysoft/d2rr-ap-client/internal/setup"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/apc"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/setup"
 	"os"
 	"path/filepath"
 )
@@ -87,11 +89,28 @@ func doctor(args []string) int {
 	}
 	if !setup.GameRunning() {
 		issues = append(issues, "D2R is not running; live checks are unavailable")
-	} else if m != nil {
+	} else {
 		gc, e := game.Attach()
 		add(e)
 		if e == nil {
 			defer gc.Close()
+			// The build decides whether the UI and waypoint offsets come from measured
+			// values or only from pattern scans, which can miss on an unknown build.
+			build := gc.BuildTimestamp()
+			known := game.KnownBuild(build)
+			ui, waypoints := gc.OffsetsResolved()
+			report["d2rBuild"] = fmt.Sprintf("0x%08x", build)
+			report["d2rBuildKnown"] = known
+			report["offsetsResolved"] = map[string]bool{"ui": ui, "waypoints": waypoints}
+			// An unknown build alone is not a problem when the pattern scan found both.
+			if !ui {
+				issues = append(issues, "the UI block was not found; nothing will be granted until it is (re-run doctor after the game has been on screen for a while)")
+			}
+			if !waypoints {
+				issues = append(issues, "the waypoint panel was not found; waypoint checks will come from the save instead")
+			}
+		}
+		if e == nil && m != nil {
 			proc, e := setup.Inspect(gc.PID())
 			add(e)
 			if e == nil {
@@ -110,7 +129,7 @@ func doctor(args []string) int {
 					cls, e := gc.ReadClass(player)
 					add(e)
 					report["classID"] = cls
-					if e == nil && ids.Classes[cls] != m.CharacterClass {
+					if e == nil && (cls < 0 || cls >= len(ids.Classes) || ids.Classes[cls] != m.CharacterClass) {
 						issues = append(issues, "loaded class differs from manifest")
 					}
 					if *character != "" && name != *character {
@@ -156,7 +175,7 @@ func doctor(args []string) int {
 		raw, _ := json.MarshalIndent(report, "", "  ")
 		fmt.Println(string(raw))
 	} else {
-		for _, key := range []string{"roomContract", "manifestContract", "gameDirectory", "manifest", "saveDirectory", "processID", "character", "classID", "session", "spentHardPoints", "pointBalance", "pointStatExists", "actualUnspent", "difficultyCandidates", "difficultyCalibrated", "difficultyLayout", "difficultyProfile", "clientStatus"} {
+		for _, key := range []string{"roomContract", "manifestContract", "gameDirectory", "manifest", "saveDirectory", "d2rBuild", "d2rBuildKnown", "offsetsResolved", "processID", "character", "classID", "session", "spentHardPoints", "pointBalance", "pointStatExists", "actualUnspent", "difficultyCandidates", "difficultyCalibrated", "difficultyLayout", "difficultyProfile", "clientStatus"} {
 			if val, ok := report[key]; ok {
 				raw, _ := json.Marshal(val)
 				fmt.Printf("%s: %s\n", key, raw)

@@ -1,11 +1,17 @@
-// obsdebug re-derives d2go offsets after a D2R patch. Run it with a character loaded.
-// See "After a D2R patch" in docs/archipelago/DESIGN_NOTES.md for the method.
+//go:build windows
+
+// obsdebug is a developer tool, not part of the client release: it re-derives d2go
+// offsets after a D2R patch. Run it with a character loaded. See "After a D2R patch" in
+// docs/archipelago/DESIGN_NOTES.md for the method.
 //
-//	obsdebug pieces           call each GetData piece and report panics
+//	obsdebug [pieces]         call each GetData piece and report panics
 //	obsdebug units            dump player units and layout candidates
 //	obsdebug snap <file>      save the D2R.exe module image
-//	obsdebug diff <a> <b>     list bytes that went 0 -> nonzero from a to b
+//	obsdebug diff <a> <b>     list bytes that went 0 -> 1..4 from snapshot a to b (no game needed)
+//	obsdebug pat              try the waypoint and UI patterns, and show a fresh reader's offsets
 //	obsdebug wp               search the module for the Act I waypoint area list
+//	obsdebug items            list the inventory
+//	obsdebug objs             list objects around the player
 package main
 
 import (
@@ -66,40 +72,41 @@ func readModule(pid uint32) (memory.ModuleInfo, []byte) {
 	return m, buf
 }
 
+// subcommands maps each subcommand to the number of arguments it takes.
+var subcommands = map[string]int{
+	"pieces": 0, "units": 0, "snap": 1, "diff": 2, "pat": 0, "wp": 0, "items": 0, "objs": 0,
+}
+
 func main() {
+	cmd, args := "pieces", []string{}
+	if len(os.Args) > 1 {
+		cmd, args = os.Args[1], os.Args[2:]
+	}
+	if n, ok := subcommands[cmd]; !ok || len(args) != n {
+		fmt.Fprintln(os.Stderr, "usage: obsdebug [pieces | units | snap <file> | diff <a> <b> | pat | wp | items | objs]")
+		os.Exit(2)
+	}
+	if cmd == "diff" {
+		os.Exit(diffSnapshots(args[0], args[1]))
+	}
+
 	proc, err := memory.NewProcess()
 	if err != nil {
 		fmt.Println("no D2R:", err)
-		return
+		os.Exit(1)
 	}
 	gr := memory.NewGameReader(proc)
-	cmd := "pieces"
-	if len(os.Args) > 1 {
-		cmd = os.Args[1]
-	}
 	switch cmd {
 	case "units":
 		dumpUnits(gr)
 		scanLayout(gr)
 	case "snap":
 		_, buf := readModule(proc.GetPID())
-		if err := os.WriteFile(os.Args[2], buf, 0o644); err != nil {
-			panic(err)
+		if err := os.WriteFile(args[0], buf, 0o644); err != nil {
+			fmt.Println("ERROR:", err)
+			os.Exit(1)
 		}
 		fmt.Printf("saved %d bytes\n", len(buf))
-	case "diff":
-		a, _ := os.ReadFile(os.Args[2])
-		b, _ := os.ReadFile(os.Args[3])
-		n := 0
-		for i := range a {
-			if i < len(b) && a[i] == 0 && b[i] != 0 && b[i] <= 4 {
-				if true {
-					fmt.Printf("+%#x: 0 -> %d\n", i, b[i])
-				}
-				n++
-			}
-		}
-		fmt.Println("total", n)
 	case "pat":
 		m, buf := readModule(proc.GetPID())
 		p := proc.FindPattern(buf, "\x48\x89\x05\x00\x00\x00\x00\x0F\x11\x00", "xxx????xxx")
@@ -135,7 +142,7 @@ func main() {
 				fmt.Printf("act I wp list at module+%#x: % x\n", i, buf[i:i+0x48])
 			}
 		}
-	default:
+	case "pieces":
 		raw := gr.GetRawPlayerUnits()
 		mp := raw.GetMainPlayer()
 		fmt.Printf("main player %q at %#x, %d raw units\n", mp.Name, mp.Address, len(raw))
@@ -148,4 +155,28 @@ func main() {
 		try("Waypoints", func() any { return pu.AvailableWaypoints })
 		try("GetData", func() any { return gr.GetData().PlayerUnit.Name })
 	}
+}
+
+// diffSnapshots lists the offsets whose byte went from 0 to a small value (1..4) between
+// two module snapshots, which is how a flag set by a UI action is found.
+func diffSnapshots(before, after string) int {
+	a, err := os.ReadFile(before)
+	if err != nil {
+		fmt.Println("ERROR:", err)
+		return 1
+	}
+	b, err := os.ReadFile(after)
+	if err != nil {
+		fmt.Println("ERROR:", err)
+		return 1
+	}
+	n := 0
+	for i := range a {
+		if i < len(b) && a[i] == 0 && b[i] != 0 && b[i] <= 4 {
+			fmt.Printf("+%#x: 0 -> %d\n", i, b[i])
+			n++
+		}
+	}
+	fmt.Println("total", n)
+	return 0
 }

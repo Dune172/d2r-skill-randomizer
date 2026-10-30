@@ -1,3 +1,5 @@
+//go:build windows
+
 package game
 
 import (
@@ -29,7 +31,11 @@ const (
 // standing in. Standing on a waypoint is not the same as having activated it, and the
 // difference is a check sent one step early that can never be taken back.
 func (c *Client) AvailableWaypointAreaIDs() []int {
-	base := c.gr.ModuleBase() + c.gr.Offsets().WaypointsOffset
+	offset := c.gr.Offsets().WaypointsOffset
+	if offset == 0 {
+		return nil // unresolved: module+0 is the PE header, not a waypoint panel
+	}
+	base := c.gr.ModuleBase() + offset
 	buf := c.proc.ReadBytesFromMemory(base, waypointPanelSize)
 	if len(buf) < waypointPanelSize {
 		return nil
@@ -59,7 +65,11 @@ const UIBufferSize = 0x16D
 // unknown is which index means what. Diff this across a known UI action (open the quit
 // menu, close it) and the byte that flips is the answer.
 func (c *Client) UIBuffer() []byte {
-	base := c.gr.ModuleBase() + c.gr.Offsets().UI - 0xA
+	offset := c.gr.Offsets().UI
+	if offset == 0 {
+		return nil // unresolved: reading module+0-0xA would not be the UI block
+	}
+	base := c.gr.ModuleBase() + offset - 0xA
 	buf := make([]byte, UIBufferSize)
 	if err := c.proc.ReadIntoBuffer(base, buf); err != nil {
 		return nil

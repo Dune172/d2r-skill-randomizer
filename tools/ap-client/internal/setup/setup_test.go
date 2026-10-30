@@ -1,3 +1,5 @@
+//go:build windows
+
 package setup
 
 import (
@@ -11,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
 	"golang.org/x/sys/windows"
 )
 
@@ -199,5 +201,23 @@ func TestGeneratedArchive(t *testing.T) {
 	}
 	if e = VerifyInstalled(root, m); e != nil {
 		t.Fatal(e)
+	}
+}
+
+// The site's mod downloads carry a launcher shortcut beside the mod folder: it is
+// skipped, not installed, and not a reason to refuse the zip.
+func TestALauncherShortcutBesideTheModIsSkipped(t *testing.T) {
+	root := t.TempDir()
+	m := testManifest(t)
+	if _, e := Install(root, testZip(t, m, "D2R Randomizer 1234.lnk"), m); e != nil {
+		t.Fatalf("a top-level shortcut must not block the install: %v", e)
+	}
+	if _, e := os.Stat(filepath.Join(root, "mods", "D2R Randomizer 1234.lnk")); !os.IsNotExist(e) {
+		t.Fatal("the shortcut was installed")
+	}
+	for _, name := range []string{"notes.txt", "sub/D2R.lnk"} {
+		if _, e := Install(t.TempDir(), testZip(t, m, name), m); e == nil {
+			t.Fatalf("accepted %q outside the mod folder", name)
+		}
 	}
 }

@@ -1,3 +1,5 @@
+//go:build windows
+
 package main
 
 import (
@@ -5,11 +7,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/grants"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
 	"github.com/hectorgimenez/d2go/pkg/data/stat"
-	"github.com/swannysoft/d2rr-ap-client/internal/game"
-	"github.com/swannysoft/d2rr-ap-client/internal/grants"
-	"github.com/swannysoft/d2rr-ap-client/internal/ids"
-	"github.com/swannysoft/d2rr-ap-client/internal/manifest"
 )
 
 const (
@@ -20,9 +22,11 @@ const (
 	killGrace = 3 * time.Second
 )
 
-// gameView is the part of the running game the grant code reads and writes. The real one
-// is *game.Client; tests substitute a character made of a map.
+// gameView is the part of the running game the grant and skill-point code reads and
+// writes. The real one is *game.Client; tests substitute a character made of a map.
 type gameView interface {
+	SpentSkillPoints(player uintptr, classSkillIDs map[int]bool) (int, error)
+	SetUnspentSkillPoints(player uintptr, n int) (bool, error)
 	BaseStat(unit uintptr, id stat.ID) (uint32, bool, error)
 	SetPlayerStat(player uintptr, id stat.ID, value uint32) (bool, error)
 	SpentStatPoints(player uintptr, classBase int) (int, error)
@@ -107,7 +111,10 @@ func (a *app) applyStatPoints(player uintptr, classBase int) {
 // applyKeys holds the key stat at the number of Horadric Keys received, plus one.
 func (a *app) applyKeys(player uintptr, keyStat stat.ID) {
 	keys := a.session.Count(ids.HoradricKeyItemID)
-	if keys == 0 && !a.keyItems {
+	a.mu.Lock()
+	keyItems := a.keyItems // set by applySlotData on the connection's goroutine
+	a.mu.Unlock()
+	if keys == 0 && !keyItems {
 		return
 	}
 	existed, err := a.view().SetPlayerStat(player, keyStat, uint32(keys+1))

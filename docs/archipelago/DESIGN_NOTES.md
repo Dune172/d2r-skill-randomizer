@@ -64,7 +64,7 @@ without leaving town).
   the Sigil alone produced a Draught and the Sigil back: the brew recipe (op 8, 369 ≤ 1)
   fired and the El Rune recipe listed before it (op 10, 369 = 2) did not. The rest of
   G3 needs a 369 entry, which nothing can create yet (see G2).
-- **Not run (needs leaving town):** G1 step 3 (do learned skills work in combat), G4
+- **Not run (needs leaving town):** G1 step 4 (do learned skills work in combat), G4
   (traps, DeathLink) and G5 (a real room).
 - **Cosmetic:** the Sigil shows as "Burning Dead Archipelago Sigil". The `hrt` monster
   part prefixes the monster's name.
@@ -72,7 +72,7 @@ without leaving town).
 ## Believed, not yet run in the game
 
 - **Learned skills work in combat.** The skills above were learned by the game's own
-  code, unlike the earlier nodes built in memory, so this is likely; G1 step 3 settles it.
+  code, unlike the earlier nodes built in memory, so this is likely; G1 step 4 settles it.
 - **Emptying the life pool kills.** Unknown either way; the client checks and falls
   back.
 
