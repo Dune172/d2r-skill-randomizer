@@ -86,6 +86,11 @@ export interface ApModeOptions {
    * No table changes; it is part of the slot's options (and the zip cache key).
    */
   pooledStats?: boolean;
+  /**
+   * Acts II and III open from the start, through the Open Acts starter save the mod ships
+   * for this class (no starting skill: every point is Archipelago's). No quest shuffle.
+   */
+  openActs?: boolean;
 }
 
 type Table = { headers: string[]; rows: string[][] };
@@ -105,6 +110,12 @@ export interface ApTables {
   baseAttributes: number;
   /** Name of the text box the mod adds to the chat panel (HUDMessagePanel) for Archipelago messages. */
   messageBox: string;
+  /**
+   * With Open Acts: the slot's ready-made character, a path inside the mod folder
+   * ("starter-saves/Paladin.d2s"). The client copies it into the save folder before the
+   * game starts, so the player loads it rather than making one. Null without Open Acts.
+   */
+  starterSave: string | null;
 }
 
 export interface ApSlot {
@@ -201,7 +212,7 @@ export function applyApTables(args: {
     gate('qf2', keyGates.khalimsWill);   // Khalim's Flail + Eye + Heart + Brain
   }
 
-  return { stats, keyGates, baseAttributes, messageBox: AP_MESSAGE_BOX };
+  return { stats, keyGates, baseAttributes, messageBox: AP_MESSAGE_BOX, starterSave: null };
 }
 
 /** Where each chat layout lands under the mod's data/ folder, and its message box. */

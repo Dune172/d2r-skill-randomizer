@@ -17,7 +17,10 @@
  *   no seasonal overlay    a room's mod must not change when the month does
  *   same tree as the seed  Archipelago seed N plays the tree public seed N shows
  *   contract 5 tables      stats.keys, keyGates (only with keyItems), baseAttributes and
- *                          messageBox, and nothing else
+ *                          messageBox, starterSave, and nothing else
+ *   Open Acts              with openActs, one ready-made character for the class with
+ *                          Acts II and III open, no skill points, no quest done; without,
+ *                          no character and starterSave null
  *   key stat               ap_keys exists at the manifest's id, is saved and survives at
  *                          zero; it is the only stat the mod adds
  *   no potions             no class starts with the old Sigils, Draught, Receipt or Tonic,
@@ -67,6 +70,8 @@ const CASES = [
   { seed: 1234, characterClass: 'pal', savepath: 'ap_test_pal_keys', options: { keyItems: true } },
   { seed: 55,   characterClass: 'ass', savepath: 'ap_test_ass_keys', options: { keyItems: true, xpMultiplier: 2, monsterShuffle: true } },
   { seed: 1234, characterClass: 'pal', savepath: 'ap_test_pal_pooled', options: { keyItems: true, pooledStats: true } },
+  { seed: 1234, characterClass: 'pal', savepath: 'ap_test_pal_open', options: { openActs: true } },
+  { seed: 7,    characterClass: 'ama', savepath: 'ap_test_ama_open', options: { openActs: true, keyItems: true } },
 ];
 
 function parseTsv(text) {
@@ -217,11 +222,37 @@ async function verifyCase(c) {
   // --- the key stat and the key gates -----------------------------------------
   const tables = manifest.tables ?? {};
   check(failures, JSON.stringify(Object.keys(tables).sort())
-    === JSON.stringify(['baseAttributes', 'messageBox', 'stats', ...(c.options?.keyItems ? ['keyGates'] : [])].sort()),
+    === JSON.stringify(['baseAttributes', 'messageBox', 'starterSave', 'stats', ...(c.options?.keyItems ? ['keyGates'] : [])].sort()),
     `manifest tables has keys ${Object.keys(tables).sort().join()}, expected exactly the contract-5 shape`);
   check(failures, JSON.stringify(Object.keys(tables.stats ?? {})) === '["keys"]',
     `manifest tables.stats has ${Object.keys(tables.stats ?? {}).join()}, expected only keys`);
   check(failures, tables.messageBox === MESSAGE_BOX, `manifest messageBox "${tables.messageBox}" != ${MESSAGE_BOX}`);
+
+  // --- Open Acts: the ready-made character ---------------------------------
+  const starters = zip.getEntries().filter(e => e.entryName.startsWith(`${manifest.modName}/starter-saves/`) && e.entryName.endsWith('.d2s'));
+  if (c.options?.openActs) {
+    check(failures, starters.length === 1, `${starters.length} starter saves, expected the class's one`);
+    check(failures, tables.starterSave === starters[0]?.entryName.slice(manifest.modName.length + 1),
+      `manifest starterSave "${tables.starterSave}" does not name the shipped save`);
+    const save = starters[0]?.getData();
+    if (save) {
+      const word = (d, w) => save.readUInt16LE(403 + 10 + d * 96 + w * 2);
+      // Words 7 and 15 are "traveled to Act II / III"; quest words (what the client reads
+      // as checks) must all be untouched, or a new character would report quests done.
+      const questWords = [[1, 6], [9, 14], [17, 22], [25, 27], [33, 38]].flatMap(([a, b]) => Array.from({ length: b - a + 1 }, (_, i) => a + i));
+      for (let d = 0; d < 3; d++) {
+        check(failures, word(d, 7) !== 0 && word(d, 15) !== 0, `difficulty ${d}: Acts II and III are not open`);
+        check(failures, questWords.every(w => word(d, w) === 0), `difficulty ${d}: the starter save has a quest marked done`);
+      }
+      // The skill section ("if") follows the stats ("gf"), which follow the waypoints.
+      const skills = save.indexOf(Buffer.from('if'), save.indexOf(Buffer.from('gf'), 781));
+      check(failures, skills > 0 && save.subarray(skills + 2, skills + 32).every(b => b === 0),
+        "the starter save has a skill point spent: every point must be Archipelago's");
+      check(failures, save[21] === 0, 'the starter save has progressed past Normal');
+    }
+  } else {
+    check(failures, starters.length === 0 && tables.starterSave === null, 'a mod without Open Acts ships a character');
+  }
 
   const isc = parseTsv(read('global/excel/itemstatcost.txt') ?? '');
   const iscRow = name => isc.rows.find(r => r[0] === name);
