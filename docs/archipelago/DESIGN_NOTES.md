@@ -173,6 +173,14 @@ without leaving town).
   server listed that location for the slot, which covers short goals and disabled check
   groups without the client re-deriving them.
 - **No Monster Shrine trap.** It needs the game's own code to run. Traps are stat writes.
+- **Open Acts** (apworld option, on by default): the mod ships the site's Open Acts
+  starter save for the slot's class (Acts II and III open on every difficulty, no
+  starting skill, no quest-item shuffle) and the client copies it into an empty save
+  folder before it starts the game. The save sets only the "traveled to Act II / III"
+  words (7 and 15), which sit between the quest words the client reads, so no quest or
+  goal registers early. Logic enters Acts II and III from Act I of the same difficulty;
+  Act IV still follows Mephisto's lair. A full save from the start also means checks never
+  wait for the game's first save.
 - **Towns are never checks**, on any difficulty: neither the town nor its waypoint
   (`ids.TOWNS`). A character begins each act standing in its town with the waypoint
   active, so they paid out points for nothing; a new character had two before it could
