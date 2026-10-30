@@ -75,6 +75,7 @@ A build takes from seconds to a minute. The zip holds the mod folder, `seed<seed
 ```powershell
 $d2r = 'C:\Program Files (x86)\Diablo II Resurrected'   # your D2R folder
 Expand-Archive dist\ap_gate.zip -DestinationPath dist\ap_gate
+New-Item -ItemType Directory -Force "$d2r\mods" | Out-Null   # a fresh install has none
 Copy-Item -Recurse dist\ap_gate\seed987002 "$d2r\mods\"
 ```
 
@@ -110,11 +111,13 @@ dist\d2rr-ap.exe doctor -manifest dist\ap_gate.zip
 `d2rBuild` names the D2R executable, `d2rBuildKnown` says whether the client has
 measured offsets for it, and `offsetsResolved` should show both `ui` and `waypoints`
 true. With `-manifest` it also checks the installed mod against the zip and the loaded
-character's class against the mod. If `d2rBuildKnown` is false after a D2R patch, follow "After a D2R patch" in
-`DESIGN_NOTES.md` before the gates: without the UI offset the client grants nothing.
+character's class against the mod. If `d2rBuildKnown` is false after a D2R patch,
+follow "After a D2R patch" in `DESIGN_NOTES.md` before the gates: without the UI offset
+the client grants nothing.
 
-Stat ids used below: 4 stat points, 5 skill points, 6 life, 8 mana, 10 stamina, 14 gold,
-368 Horadric Keys (count + 1), 369 mailbox.
+Stat ids used below: 5 skill points, 6 life, 8 mana, 10 stamina, 14 gold, and on current
+mods 368 Horadric Keys (count + 1) and 369 mailbox (a mod's manifest lists its own under
+`tables.stats`).
 
 ## G1: is a written skill point honoured?
 
@@ -178,7 +181,8 @@ yet**. Once a mechanism exists:
    the other Sigil and an **Archipelago Receipt**.
 3. Transmute the Sigil alone **again** without using the Receipt. Expect **nothing**:
    the exactly-once guarantee depends on the Cube refusing here.
-4. Right-click the Receipt, then `probe`. Stat 369 should read 3.
+4. Right-click the Receipt, then `probe`. Stat 369 should read 3. **Known to fail on
+   3.3** with the Receipt as built today: it uses the same spell as the Draught (see G2).
 5. `dist\d2rr-ap.exe probe -set 369=8`, transmute. Expect an **Eld Rune** (offer 8 is
    the Eld for the second Sigil, the one now held).
 
