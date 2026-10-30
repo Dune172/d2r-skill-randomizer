@@ -38,8 +38,8 @@ func (a *app) ensureMod(slotData map[string]any) error {
 			options[k] = v
 		}
 	}
-	// The room's own setting decides, so an apworld that predates "pooledStats" in its
-	// mod options still gets a mod whose Tonic restores stat points.
+	// The room's own setting decides, so the mod request (and its cache key) matches the
+	// room even from an apworld that predates "pooledStats" in its mod options.
 	if boolFromSlotData(slotData, "stat_points_pooled", false) {
 		options["pooledStats"] = true
 	}
@@ -118,8 +118,6 @@ func (a *app) useManifest(man *manifest.Manifest) error {
 	a.class = man.CharacterClass
 	a.saveDir = saveDir
 	a.classSkillIDs = classIDs
-	a.mailbox = mailboxFor(man.Tables)
-	a.mailOffer = 0
 	a.mu.Unlock()
 
 	logf("manifest: seed %d, class %s, savepath %s",

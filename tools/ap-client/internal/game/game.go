@@ -2,8 +2,9 @@
 
 // Package game reads D2R state and reconciles the character's Archipelago grants.
 //
-// The client never builds game structures of its own. It reads the player unit, and its
-// only writes are to values in stat entries the game already created.
+// The client never builds game structures of its own. It reads the player unit, writes
+// stat values, adds a missing stat entry only in space the game already allocated for
+// it, and writes text into the mod's own message box in the buffer the game gave it.
 package game
 
 import (

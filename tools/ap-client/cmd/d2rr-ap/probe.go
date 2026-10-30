@@ -54,14 +54,19 @@ func (w *statWrites) Set(s string) error {
 //	                                   copies of the character, as the client does
 //	d2rr-ap probe -unit 0x1F2A -set 5=3   write to that one unit only
 //	d2rr-ap probe -game                list the game's own copy instead of the display copy
+//	d2rr-ap probe -insert 5=3          add an entry the character does not have (both copies)
 func probe(args []string) int {
 	f := flag.NewFlagSet("probe", flag.ContinueOnError)
 	unitFlag := f.String("unit", "", "unit address to inspect or write (default: the player)")
 	copies := f.Bool("copies", false, "scan memory for other copies of the player unit")
 	gameCopy := f.Bool("game", false, "list the game's own copy of the character (the one its rules read)")
 	asJSON := f.Bool("json", false, "machine-readable output")
+	panels := f.Bool("panels", false, "list the game's UI tree and exit")
+	dumpLists := f.Bool("dump-lists", false, "print every stat array in the unit's stat container (playtest)")
 	var writes statWrites
 	f.Var(&writes, "set", "overwrite a base stat: id=value (repeatable)")
+	var inserts statWrites
+	f.Var(&inserts, "insert", "give the character a stat it has no entry for: id=value (repeatable; both copies)")
 	if err := f.Parse(args); err != nil {
 		return 2
 	}
@@ -79,6 +84,12 @@ func probe(args []string) int {
 	if gc.IsOnline() {
 		fmt.Println("ERROR: D2R is online. This tool only works on offline characters.")
 		return 1
+	}
+	if *panels {
+		for _, p := range gc.Panels() {
+			fmt.Printf("%v 0x%x %s %q\n", p.Visible, p.Addr, p.Path, p.Text)
+		}
+		return 0
 	}
 	player := gc.PlayerUnit()
 	if player == 0 {
@@ -105,7 +116,7 @@ func probe(args []string) int {
 
 	// The game's own copy of the character, which its rules read. Without -unit, -set
 	// writes it and the display copy together, as the client does.
-	if *unitFlag == "" && (len(writes) > 0 || *gameCopy) {
+	if *unitFlag == "" && (len(writes) > 0 || len(inserts) > 0 || *gameCopy) {
 		if sim, err := gc.SimulationCopy(player); err == nil {
 			report["gameCopy"] = fmt.Sprintf("0x%x", sim)
 		} else {
@@ -132,6 +143,18 @@ func probe(args []string) int {
 			writeResults = append(writeResults, fmt.Sprintf("stat %d: no entry to write", w.id))
 		default:
 			writeResults = append(writeResults, fmt.Sprintf("stat %d = %d", w.id, w.value))
+		}
+	}
+	for _, w := range inserts {
+		if *unitFlag != "" {
+			fmt.Println("ERROR: -insert writes both copies; it does not take -unit")
+			return 2
+		}
+		if err := gc.GivePlayerStat(player, w.id, w.value, 0); err != nil {
+			failed = true
+			writeResults = append(writeResults, fmt.Sprintf("insert stat %d: %v", w.id, err))
+		} else {
+			writeResults = append(writeResults, fmt.Sprintf("inserted stat %d = %d", w.id, w.value))
 		}
 	}
 	if len(writeResults) > 0 {
@@ -163,6 +186,14 @@ func probe(args []string) int {
 		stats = append(stats, statRow{e.Layer, int(e.ID), e.Value})
 	}
 	report["baseStats"] = stats
+	if *dumpLists {
+		gc.DumpStatContainer(target)
+	}
+	if h, err := gc.BaseStatList(target); err == nil {
+		report["baseStatList"] = map[string]any{"count": h.Count, "capacity": h.Capacity, "array": fmt.Sprintf("0x%x", h.Array)}
+	} else {
+		report["baseStatListError"] = err.Error()
+	}
 
 	if nodes, err := gc.Skills(target); err == nil {
 		skills := map[string]int{}

@@ -43,6 +43,8 @@ type Handler struct {
 	OnItems func(session *Session)
 	// OnPrint surfaces server chat/log lines.
 	OnPrint func(text string)
+	// OnItemEvent fires for an item sent to or from this slot, as well as OnPrint.
+	OnItemEvent func(ItemEvent)
 	// OnDeathLink fires when another player's death arrives. Only called once DeathLink
 	// has been enabled, and never for a death this client sent.
 	OnDeathLink func(source, cause string)
@@ -224,7 +226,7 @@ func (c *Conn) handle(ctx context.Context, p map[string]any) error {
 		}
 		c.mu.Lock()
 		c.locations = known
-		c.names.setPlayers(p["players"], p["slot_info"], team)
+		c.names.setPlayers(p["players"], p["slot_info"], team, slot)
 		c.mu.Unlock()
 		// Fold the server's view in, then send OURS in full. Locations checked while
 		// disconnected exist only locally, and a delta would strand them permanently.
@@ -363,6 +365,14 @@ func (c *Conn) handle(ctx context.Context, p map[string]any) error {
 			c.mu.Unlock()
 			if text != "" {
 				c.handler.OnPrint(text)
+			}
+		}
+		if c.handler.OnItemEvent != nil {
+			c.mu.Lock()
+			event, ok := c.names.itemEvent(p)
+			c.mu.Unlock()
+			if ok {
+				c.handler.OnItemEvent(event)
 			}
 		}
 	}

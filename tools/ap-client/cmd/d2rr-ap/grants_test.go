@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,17 +17,19 @@ import (
 )
 
 const (
-	keyStat  = stat.ID(368)
-	mailStat = stat.ID(369)
-	blood    = 2  // Blood Moor
-	town     = 1  // Rogue Encampment
-	paladin  = 85 // starting strength + dexterity + energy + vitality
+	keyStat = stat.ID(368)
+	blood   = 2  // Blood Moor
+	town    = 1  // Rogue Encampment
+	paladin = 85 // starting strength + dexterity + energy + vitality
 )
 
 // fakeCharacter is a character made of a map: the stats it has entries for, where it
-// stands, and whether it is dead. A stat with no entry cannot be written, as in the game.
+// stands, and whether it is dead. A stat with no entry cannot be written, as in the game;
+// GivePlayerStat creates one while the stat list has room.
 type fakeCharacter struct {
-	stats  map[stat.ID]uint32
+	stats map[stat.ID]uint32
+	// room is how many entries can still be created; -1 is no limit.
+	room   int
 	area   int
 	level  int
 	dead   bool
@@ -68,6 +71,22 @@ func (f *fakeCharacter) SetPlayerStat(_ uintptr, id stat.ID, value uint32) (bool
 	return true, nil
 }
 
+func (f *fakeCharacter) GivePlayerStat(p uintptr, id stat.ID, value uint32, spare int) error {
+	if _, ok := f.stats[id]; ok {
+		_, err := f.SetPlayerStat(p, id, value)
+		return err
+	}
+	if f.room >= 0 && f.room < 1+spare {
+		return game.ErrNoRoom
+	}
+	if f.room > 0 {
+		f.room--
+	}
+	f.stats[id] = value
+	f.writes++
+	return nil
+}
+
 func (f *fakeCharacter) SpentStatPoints(uintptr, int) (int, error) {
 	total := 0
 	for _, id := range []stat.ID{stat.Strength, stat.Energy, stat.Dexterity, stat.Vitality} {
@@ -95,11 +114,11 @@ func (f *fakeCharacter) Progress() (game.Progress, bool) {
 }
 
 func freshCharacter() *fakeCharacter {
-	return &fakeCharacter{area: blood, level: 10, stats: map[stat.ID]uint32{
+	return &fakeCharacter{area: blood, level: 10, room: -1, stats: map[stat.ID]uint32{
 		stat.Strength: 25, stat.Energy: 15, stat.Dexterity: 20, stat.Vitality: 25,
 		stat.StatPoints: 0, stat.SkillPoints: 0, stat.Gold: 500,
 		stat.Life: 60 * game.VitalOne, stat.Mana: 20 * game.VitalOne, stat.Stamina: 90 * game.VitalOne,
-		keyStat: 1, mailStat: 1,
+		keyStat: 1,
 	}}
 }
 
@@ -117,22 +136,13 @@ func grantApp(t *testing.T, char *fakeCharacter, items ...int64) (*app, *[]strin
 	if _, err := session.ApplyReceivedItems(0, received); err != nil {
 		t.Fatal(err)
 	}
-	tables := manifest.Tables{MailIdle: 1, MailAttuned: 256, BaseAttributes: paladin}
-	tables.Stats.Keys, tables.Stats.Mail = int(keyStat), int(mailStat)
-	for i := range ids.RuneNames {
-		for sigil := 0; sigil < 2; sigil++ {
-			tables.Mail = append(tables.Mail, manifest.MailItem{
-				Offer: uint32(2 * (i*2 + sigil + 1)), Sigil: sigil,
-				Item: "r" + string(rune('0'+(i+1)/10)) + string(rune('0'+(i+1)%10)), Name: ids.RuneItemName(i),
-			})
-		}
-	}
+	tables := manifest.Tables{BaseAttributes: paladin, MessageBox: "ArchipelagoMessages"}
+	tables.Stats.Keys = int(keyStat)
 	deaths := &[]string{}
 	a := &app{
 		session: session, fakeGame: char, lastSeen: map[string]bool{},
-		man:     &manifest.Manifest{Tables: tables},
-		mailbox: mailboxFor(tables),
-		conn:    apc.NewConn("127.0.0.1", 1, "Slot", "", session, apc.Handler{}),
+		man:  &manifest.Manifest{Tables: tables},
+		conn: apc.NewConn("127.0.0.1", 1, "Slot", "", session, apc.Handler{}),
 	}
 	a.sendDeath = func(_ context.Context, cause string) error {
 		*deaths = append(*deaths, cause)
@@ -142,8 +152,6 @@ func grantApp(t *testing.T, char *fakeCharacter, items ...int64) (*app, *[]strin
 }
 
 func poll(a *app) { a.applyGrants(context.Background(), 0x1000) }
-
-func rune_(name string) int64 { return ids.ItemNames()[name+" Rune"] }
 
 func TestPooledStatPointsAreHeldAtSentMinusSpent(t *testing.T) {
 	char := freshCharacter()
@@ -197,127 +205,71 @@ func TestKeysAreHeldAtCountPlusOne(t *testing.T) {
 	if char.stats[keyStat] != 3 {
 		t.Fatalf("two keys must read 3 (the Horadric Staff recipe's threshold): %d", char.stats[keyStat])
 	}
-	// A Draught drunk later bumps it; the next poll puts it back.
+	// Anything else that moves it is put back on the next poll.
 	char.stats[keyStat]++
 	poll(a)
 	if char.stats[keyStat] != 3 {
-		t.Fatalf("after a Draught: %d", char.stats[keyStat])
+		t.Fatalf("after a stray change: %d", char.stats[keyStat])
 	}
 }
 
-func TestAMissingKeyStatIsNotWrittenAndNothingBreaks(t *testing.T) {
+// A fresh character has no key stat: the client creates it, with no potion to drink.
+func TestAMissingKeyStatIsCreated(t *testing.T) {
 	char := freshCharacter()
 	delete(char.stats, keyStat)
-	delete(char.stats, mailStat)
-	a, _ := grantApp(t, char, ids.HoradricKeyItemID, rune_("El"))
+	a, _ := grantApp(t, char, ids.HoradricKeyItemID)
+	poll(a)
+	if char.stats[keyStat] != 2 {
+		t.Fatalf("one key must create the stat at 2, got %d (present %v)", char.stats[keyStat], char.stats[keyStat] != 0)
+	}
+}
+
+// Pooled stat points on a character with no pool yet, or one spent to zero, arrive anyway.
+func TestAnEmptiedStatPoolIsRecreated(t *testing.T) {
+	char := freshCharacter()
+	delete(char.stats, stat.StatPoints)
+	a, _ := grantApp(t, char, ids.StatPointsItemID)
+	a.statPointsPooled = true
+	poll(a)
+	if v, ok := char.stats[stat.StatPoints]; !ok || v != 5 {
+		t.Fatalf("stat points: %d (entry %v), want 5", v, ok)
+	}
+}
+
+// Nothing owed and no entry: nothing is created.
+func TestNothingOwedCreatesNothing(t *testing.T) {
+	char := freshCharacter()
+	delete(char.stats, stat.StatPoints)
+	a, _ := grantApp(t, char)
+	a.statPointsPooled = true
+	poll(a)
+	if _, ok := char.stats[stat.StatPoints]; ok {
+		t.Fatal("an empty stat-point pool was created with nothing to put in it")
+	}
+}
+
+// A full stat list cannot take a new entry; the grant waits, loses nothing, and lands
+// once the game has made room.
+func TestAFullStatListWaitsAndLosesNothing(t *testing.T) {
+	char := freshCharacter()
+	char.room = 0
+	delete(char.stats, keyStat)
+	delete(char.stats, stat.Gold)
+	a, _ := grantApp(t, char, ids.HoradricKeyItemID, ids.GoldItemID)
 	poll(a)
 	if _, ok := char.stats[keyStat]; ok {
-		t.Fatal("the client created a stat entry")
+		t.Fatal("a key stat appeared in a full list")
 	}
-	if a.session.Pending(rune_("El")) != 1 {
-		t.Fatal("a rune was recorded as delivered with no mailbox to deliver it")
+	if a.session.Pending(ids.GoldItemID) != 1 {
+		t.Fatal("gold was recorded as handed over with nowhere to put it")
 	}
-}
-
-// The whole rune delivery, as the player and the client take turns.
-func TestRunesAreDeliveredOneAtATimeAndExactlyOnce(t *testing.T) {
-	char := freshCharacter()
-	a, _ := grantApp(t, char, rune_("El"), rune_("El"), rune_("Tir"))
-	el, tir := rune_("El"), rune_("Tir")
-
+	if got := a.notes["keys"]; !strings.Contains(got, "make room") {
+		t.Fatalf("the wait should be explained, got %q", got)
+	}
+	char.room = -1
 	poll(a)
-	if char.stats[mailStat] != 2 { // El, first Sigil
-		t.Fatalf("first offer: %d", char.stats[mailStat])
-	}
-	poll(a)
-	poll(a)
-	if a.session.Pending(el) != 2 {
-		t.Fatal("an offer that merely stands was recorded as delivered")
-	}
-
-	char.stats[mailStat]++ // the player transmutes and uses the Receipt
-	poll(a)
-	if a.session.Pending(el) != 1 || char.stats[mailStat] != 4 { // El again, second Sigil
-		t.Fatalf("after the first Receipt: pending %d, stat %d", a.session.Pending(el), char.stats[mailStat])
-	}
-
-	char.stats[mailStat] += 256 // a Draught, mid-offer: not an acknowledgement
-	poll(a)
-	if a.session.Pending(el) != 1 || char.stats[mailStat] != 4 {
-		t.Fatalf("a Draught was read as a Receipt: pending %d, stat %d", a.session.Pending(el), char.stats[mailStat])
-	}
-
-	char.stats[mailStat]++
-	poll(a)
-	if a.session.Pending(el) != 0 || char.stats[mailStat] != 10 { // Tir is r03: offers 10 and 12
-		t.Fatalf("after the second Receipt: pending %d, stat %d", a.session.Pending(el), char.stats[mailStat])
-	}
-
-	char.stats[mailStat]++
-	poll(a)
-	if a.session.Pending(tir) != 0 || char.stats[mailStat] != 1 {
-		t.Fatalf("after the last Receipt: pending %d, stat %d", a.session.Pending(tir), char.stats[mailStat])
-	}
-	poll(a)
-	if char.stats[mailStat] != 1 {
-		t.Fatal("an idle mailbox was rewritten")
-	}
-}
-
-func TestARestartMidOfferNeitherLosesNorRepeatsARune(t *testing.T) {
-	char := freshCharacter()
-	a, _ := grantApp(t, char, rune_("El"))
-	poll(a)
-	char.stats[mailStat]++ // Receipt used while the client was down
-
-	// A new client process: same session on disk, same character, no memory of the offer.
-	again, _ := grantApp(t, char)
-	again.session = a.session
-	again.mailOffer = 0
-	poll(again)
-	if again.session.Pending(rune_("El")) != 0 || char.stats[mailStat] != 1 {
-		t.Fatalf("pending %d, stat %d", again.session.Pending(rune_("El")), char.stats[mailStat])
-	}
-	poll(again)
-	if again.session.AppliedTotal(rune_("El")) != 1 {
-		t.Fatal("the acknowledgement was counted twice")
-	}
-}
-
-func TestMailSkipRecordsALostReceipt(t *testing.T) {
-	char := freshCharacter()
-	a, _ := grantApp(t, char, rune_("El"), rune_("Eld"))
-	poll(a)
-	a.skipMail = true
-	poll(a)
-	if a.session.Pending(rune_("El")) != 0 {
-		t.Fatal("the skipped rune is still owed")
-	}
-	if char.stats[mailStat] != 8 { // Eld is r02: offer 8 is for the second Sigil, now in hand
-		t.Fatalf("the next rune must be offered for the other Sigil: %d", char.stats[mailStat])
-	}
-	a.skipMail = true
-	char.stats[mailStat] = 1 // nothing on offer
-	a.mailOffer = 0
-	before := a.session.AppliedTotal(rune_("El"), rune_("Eld"))
-	a.session.MarkApplied(rune_("Eld"), 1)
-	poll(a)
-	if a.session.AppliedTotal(rune_("El"), rune_("Eld")) != before+1 {
-		t.Fatal("-mail-skip with nothing on offer changed something")
-	}
-}
-
-func TestMailFlipOffersForTheOtherSigil(t *testing.T) {
-	char := freshCharacter()
-	a, _ := grantApp(t, char, rune_("El"))
-	poll(a)
-	if char.stats[mailStat] != 2 {
-		t.Fatalf("%d", char.stats[mailStat])
-	}
-	a.flipMail = true
-	poll(a)
-	if char.stats[mailStat] != 4 {
-		t.Fatalf("after -mail-flip: %d", char.stats[mailStat])
+	if char.stats[keyStat] != 2 || a.session.Pending(ids.GoldItemID) != 0 || char.stats[stat.Gold] == 0 {
+		t.Fatalf("after room: keys %d, gold %d pending %d", char.stats[keyStat], char.stats[stat.Gold], a.session.Pending(ids.GoldItemID))
 	}
 }
 
@@ -332,13 +284,14 @@ func TestGoldIsHandedOverOnceEach(t *testing.T) {
 	}
 }
 
-func TestGoldWaitsForSomewhereToPutIt(t *testing.T) {
+// A character carrying no gold has no gold stat; the gold arrives anyway.
+func TestGoldArrivesWithNoGoldHeld(t *testing.T) {
 	char := freshCharacter()
 	delete(char.stats, stat.Gold)
 	a, _ := grantApp(t, char, ids.GoldItemID)
 	poll(a)
-	if a.session.Pending(ids.GoldItemID) != 1 {
-		t.Fatal("gold was recorded as handed over with no gold stat to write")
+	if a.session.Pending(ids.GoldItemID) != 0 || char.stats[stat.Gold] == 0 {
+		t.Fatalf("gold %d, pending %d", char.stats[stat.Gold], a.session.Pending(ids.GoldItemID))
 	}
 }
 
@@ -493,24 +446,20 @@ func TestAGameThatIgnoresTheKillFallsBackToOneLife(t *testing.T) {
 	}
 }
 
-// An empty stat pool asks for a Tonic only from a mod whose Tonic restores stat points.
-// From any other mod the request could never be met, and it would hold up every rune.
-func TestAnEmptyStatPoolAsksForATonicOnlyWhenItHelps(t *testing.T) {
-	for _, helps := range []bool{false, true} {
-		char := freshCharacter()
-		delete(char.stats, stat.StatPoints)
-		a, _ := grantApp(t, char, ids.StatPointsItemID, rune_("El"))
-		a.statPointsPooled = true
-		a.mailbox.TonicRequest = 200
-		a.man.Tables.TonicStatPoints = helps
-		poll(a)
-		poll(a)
-		want := uint32(2) // the El Rune, offered under the first Sigil
-		if helps {
-			want = 200
-		}
-		if char.stats[mailStat] != want {
-			t.Fatalf("Tonic restores stat points: %v; mail stat %d, want %d", helps, char.stats[mailStat], want)
-		}
+// With one free slot left, gold waits so a point pool or the key stat can have it.
+func TestGoldLeavesTheLastSlotForPoints(t *testing.T) {
+	char := freshCharacter()
+	char.room = 1
+	delete(char.stats, keyStat)
+	delete(char.stats, stat.Gold)
+	a, _ := grantApp(t, char, ids.GoldItemID)
+	poll(a)
+	if _, ok := char.stats[stat.Gold]; ok || a.session.Pending(ids.GoldItemID) != 1 {
+		t.Fatal("gold took the last free slot")
+	}
+	a2, _ := grantApp(t, char, ids.HoradricKeyItemID)
+	poll(a2)
+	if char.stats[keyStat] != 2 {
+		t.Fatalf("the key stat should take the last slot: %d", char.stats[keyStat])
 	}
 }

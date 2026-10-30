@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
+	"github.com/hectorgimenez/d2go/pkg/data/stat"
 )
 
 // recomputeDesired derives the point entitlement from the authoritative item stream.
@@ -82,23 +83,19 @@ func (a *app) applySkillPoints(player uintptr) {
 		a.warnAttach("setting skill points: " + err.Error())
 		return
 	}
-	a.mu.Lock()
-	a.needSkillPool = !existed && want > 0 // asks the mailbox for a Tonic (applyMail)
-	a.mu.Unlock()
 	if !existed && want == 0 {
 		a.clearAttachWarning() // nothing owed, so nothing to write to yet
 		return
 	}
 	if !existed {
-		// Logged again once the pool is back, whatever its value then.
-		a.mu.Lock()
-		a.lastPointsWritten = -1
-		a.mu.Unlock()
-		// Normal on a fresh character, and whenever the player has spent the pool to zero
-		// (the game then drops the entry). Worth saying, because "no skills are arriving"
-		// otherwise looks identical to a broken client.
-		a.warnAttach(a.poolHint(player, "skill-point"))
-		return
+		// A fresh character has no pool, and the game drops one spent to zero: create it.
+		if err := a.view().GivePlayerStat(player, stat.SkillPoints, uint32(want), 0); err != nil {
+			a.mu.Lock()
+			a.lastPointsWritten = -1 // logged again once the points land
+			a.mu.Unlock()
+			a.warnAttach(waitingForRoom(fmt.Sprintf("%d skill point(s)", want), err))
+			return
+		}
 	}
 	a.clearAttachWarning()
 

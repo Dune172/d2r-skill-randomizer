@@ -137,56 +137,42 @@ func TestNoPointsOwedNeedsNoPool(t *testing.T) {
 	delete(char.stats, stat.SkillPoints)
 	pollPoints(a)
 	pollPoints(a)
-	if a.needSkillPool || a.lastAttachWarn != "" {
-		t.Fatalf("nothing owed: no Tonic and no warning, got need=%v warn=%q", a.needSkillPool, a.lastAttachWarn)
+	if _, ok := char.stats[stat.SkillPoints]; ok || a.lastAttachWarn != "" {
+		t.Fatalf("nothing owed: no pool and no warning, got warn=%q", a.lastAttachWarn)
 	}
 }
 
-// The pool spent to zero and dropped by the game, with points owed: the mailbox asks
-// for a Tonic, and goes back to idle once the Tonic has recreated the entry.
-func TestAnEmptiedPoolRequestsATonic(t *testing.T) {
+// The pool spent to zero and dropped by the game (or never made, on a fresh character),
+// with points owed: the client creates it, with nothing for the player to do.
+func TestAnEmptiedPoolIsRecreated(t *testing.T) {
 	a, char := pointsApp(t, 5, 3)
-	a.mailbox.TonicRequest = 200
 	delete(char.stats, stat.SkillPoints)
 	pollPoints(a)
 	pollPoints(a)
-	if !a.needSkillPool {
-		t.Fatal("points owed and no entry: a Tonic is needed")
+	if v, ok := char.stats[stat.SkillPoints]; !ok || v != 2 {
+		t.Fatalf("unspent %d (entry %v), want 2", v, ok)
 	}
-	a.applyMail(0x1000)
-	if char.stats[mailStat] != 200 {
-		t.Fatalf("the mailbox should hold the Tonic request, got %d", char.stats[mailStat])
-	}
-	if !strings.Contains(a.lastAttachWarn, "Tonic of Renewal") {
-		t.Fatalf("the player must be told to brew a Tonic: %q", a.lastAttachWarn)
-	}
-
-	// The Tonic is drunk: one point, which the client corrects to the target.
-	char.stats[stat.SkillPoints] = 1
-	pollPoints(a)
-	if a.needSkillPool || char.stats[stat.SkillPoints] != 2 {
-		t.Fatalf("after the Tonic: need=%v unspent=%d, want false and 2", a.needSkillPool, char.stats[stat.SkillPoints])
-	}
-	a.applyMail(0x1000)
-	if char.stats[mailStat] != 1 {
-		t.Fatalf("the request must be withdrawn once the pool exists, got %d", char.stats[mailStat])
+	if a.lastAttachWarn != "" {
+		t.Fatalf("no warning once the points are there, got %q", a.lastAttachWarn)
 	}
 }
 
-// Without the mail stat, the hint is the Draught; with a rune on offer, it is the rune.
-func TestThePoolHintFollowsTheMailbox(t *testing.T) {
-	a, char := pointsApp(t, 5, 0)
-	delete(char.stats, mailStat)
-	if h := a.poolHint(0x1000, "skill-point"); !strings.Contains(h, "Draught of Attunement") {
-		t.Fatalf("no mail stat yet: %q", h)
+// A full stat list: the points wait, the player is told why, and they land later.
+func TestPointsWaitForRoomInTheStatList(t *testing.T) {
+	a, char := pointsApp(t, 5, 3)
+	delete(char.stats, stat.SkillPoints)
+	char.room = 0
+	pollPoints(a)
+	pollPoints(a)
+	if _, ok := char.stats[stat.SkillPoints]; ok {
+		t.Fatal("a pool appeared in a full list")
 	}
-	char.stats[mailStat] = 2
-	a.mailOffer = 2
-	if h := a.poolHint(0x1000, "skill-point"); !strings.Contains(h, "rune waiting") {
-		t.Fatalf("a rune on offer: %q", h)
+	if !strings.Contains(a.lastAttachWarn, "make room") {
+		t.Fatalf("the wait should be explained, got %q", a.lastAttachWarn)
 	}
-	a.mailOffer = 0
-	if h := a.poolHint(0x1000, "skill-point"); !strings.Contains(h, "Tonic of Renewal") {
-		t.Fatalf("idle mailbox: %q", h)
+	char.room = -1
+	pollPoints(a)
+	if char.stats[stat.SkillPoints] != 2 {
+		t.Fatalf("after room: %d", char.stats[stat.SkillPoints])
 	}
 }

@@ -9,7 +9,6 @@ import (
 
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/apc"
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
-	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/grants"
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/save"
 )
@@ -56,16 +55,13 @@ type app struct {
 	keyItems         bool
 	deathLink        bool
 
-	// The rune mailbox, from the manifest, and the offer currently on the mail stat
-	// (0 when idle or not yet known).
-	mailbox   grants.Mailbox
-	mailOffer uint32
-	// Whether a point pool is missing while points are owed; either asks the mailbox for
-	// a Tonic of Renewal.
-	needSkillPool, needStatPool bool
-	// -mail-flip / -mail-skip were given and have not been carried out yet.
-	flipMail bool
-	skipMail bool
+	// Items sent to and from this slot, shown in the game's message box until they
+	// expire, and what the box shows now.
+	messages     []shownMessage
+	messageBox   uintptr
+	messageShown string
+	messageOK    bool
+	messageRetry time.Time
 
 	// Test seams: a character made of a map, and a death that goes nowhere.
 	fakeGame  gameView
