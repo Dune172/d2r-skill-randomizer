@@ -149,9 +149,10 @@ export default function ArchipelagoPage() {
               address and the name from your player file.
             </MiniStep>
             <MiniStep n={3}>
-              The app downloads your game&apos;s mod, installs it and starts Diablo II. Choose{' '}
-              <span className="text-[#c8942a]">Offline</span> and create a <span className="text-[#c8942a]">new
-              character</span> of the class in your player file.
+              The app downloads your game&apos;s mod, installs it, makes your character and starts Diablo II.
+              Choose <span className="text-[#c8942a]">Offline</span> and load the character it made, with Acts II
+              and III already open. (With Open Acts off, create a <span className="text-[#c8942a]">new
+              character</span> of your class instead.)
             </MiniStep>
             <MiniStep n={4}>
               Play, and keep the app open: it sends your checks, and your items arrive by themselves. There is

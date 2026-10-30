@@ -8,6 +8,10 @@ Paladin's tree might hold Teeth, Fire Wall and Multiple Shot.
 
 It is an offline, single-player mod. It cannot be used on Battle.net.
 
+With Open Acts (on by default), Acts II and III are open from the start: the companion app
+makes your character with Lut Gholein's and Kurast Docks' waypoints active. Duriel and
+Mephisto still need their quests, and Acts IV and V open as in the base game.
+
 ## What does randomization do in a multiworld?
 
 Your skill tree is shuffled by the mod. What the multiworld controls is **when you get

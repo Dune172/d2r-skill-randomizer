@@ -77,6 +77,8 @@ export async function POST(request: NextRequest) {
     const pooledStats = body.options?.pooledStats === true;
     const xpMultiplier = Math.min(3, Math.max(1, Math.trunc(Number(body.options?.xpMultiplier)) || 1));
     const enemyShuffle = body.options?.monsterShuffle === true;
+    // Acts II and III open from the start, through a ready-made character (see ApModeOptions).
+    const openActs = body.options?.openActs === true;
     const allActs = [1, 2, 3, 4, 5];
     const allDifficulties = [1, 2, 3];
 
@@ -85,7 +87,7 @@ export async function POST(request: NextRequest) {
     const cacheKey = withApSegment(
       makeCacheKey(seed, 1, 0, allActs, true, 'Corpsefire', false, true, true,
         xpMultiplier, allActs, allDifficulties, 0, false, false, false, enemyShuffle, false, ''),
-      `${characterClass}:${savepath}:${keyItems ? 'k' : ''}${pooledStats ? 'p' : ''}:${AP_CONTRACT_VERSION}`,
+      `${characterClass}:${savepath}:${keyItems ? 'k' : ''}${pooledStats ? 'p' : ''}${openActs ? 'o' : ''}:${AP_CONTRACT_VERSION}`,
     );
 
     const respond = ({ zip, manifest }: Built) =>
@@ -133,10 +135,11 @@ export async function POST(request: NextRequest) {
         xpDifficulties: allDifficulties,
         raceMode: false,           // would replace seven classes with Prayer filler
         enemyShuffle,
-        openActs: DEFAULT_OPEN_ACTS,  // its saves and quest changes are not part of AP mode
+        // The starter save only: the quest shuffle is not part of AP mode.
+        openActs: openActs ? { ...DEFAULT_OPEN_ACTS, acts: [2, 3] } : DEFAULT_OPEN_ACTS,
         mutationIds: [],
         customMutations: [],
-        ap: { characterClass: characterClass as ClassCode, savepath, keyItems, pooledStats },
+        ap: { characterClass: characterClass as ClassCode, savepath, keyItems, pooledStats, openActs },
       });
       if (!manifest) throw new Error('Archipelago mode produced no manifest');
 

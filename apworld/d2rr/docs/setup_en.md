@@ -45,10 +45,11 @@ to finish.
 
    Windows may warn about an unrecognised app the first time: choose **More info**, then
    **Run anyway**.
-3. The app downloads the mod for your slot, installs it into the game's `mods` folder and
-   starts the game with it. Play **Offline** and create a new character of the class in
-   your options: the character must be created by this mod, so its save lands in the
-   folder the app watches.
+3. The app downloads the mod for your slot, installs it into the game's `mods` folder,
+   makes your character and starts the game. Play **Offline** and load that character:
+   Acts II and III are already open (the Open Acts option, on by default). With Open Acts
+   off, create a new character of the class in your options instead; it must be created
+   with this mod, so its save lands in the folder the app watches.
 4. Play, and leave the app open while you do. Your items arrive by themselves.
 
 One slot is bound to one character. If the mod changes (a new room, say), the app asks

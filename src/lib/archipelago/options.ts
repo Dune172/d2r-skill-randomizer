@@ -10,7 +10,7 @@
 export const AP_GAME_NAME = 'D2R Randomizer';
 
 /** Versions the page states. Kept beside the options so one check covers both. */
-export const AP_WORLD_VERSION = '0.3.1';
+export const AP_WORLD_VERSION = '0.4.0';
 export const AP_MINIMUM_ARCHIPELAGO = '0.6.7';
 
 interface BaseOption {
@@ -84,6 +84,10 @@ export const AP_OPTIONS: ApOption[] = [
   {
     key: 'include_level_milestones', label: 'Level checks', group: 'Checks', type: 'toggle', default: true,
     help: 'Reaching each character level is a check, up to about the level you have at the goal.',
+  },
+  {
+    key: 'open_acts', label: 'Open Acts', group: 'The Mod', type: 'toggle', default: true,
+    help: 'Acts II and III are open from the start. The app makes your character for you, so you load it instead of creating one.',
   },
   {
     key: 'xp_multiplier', label: 'Experience multiplier', group: 'The Mod', type: 'range', min: 1, max: 3, default: 1,

@@ -136,9 +136,14 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
 
   // AP mode rebuilds itemstatcost, misc and cubemain from the vanilla files, which would
   // silently undo any feature that also edits them. The AP route never asks for these.
+  // Open Acts' quest shuffle edits objects and treasure classes; its open acts alone are a
+  // starter save and nothing else, which AP mode uses (ApModeOptions.openActs).
   if (ap && (weeklyEnabled || forgottenArts || classBuild || raceMode || mutationIds.length
-    || openActs.acts.length || openActs.shuffle)) {
-    throw new Error('Archipelago mode cannot be combined with challenges, mutations, Open Acts, Race Mode or a Class Builder build');
+    || openActs.shuffle)) {
+    throw new Error('Archipelago mode cannot be combined with challenges, mutations, the quest shuffle, Race Mode or a Class Builder build');
+  }
+  if (ap && openActs.acts.length && !ap.openActs) {
+    throw new Error('Archipelago mode opens acts only through ApModeOptions.openActs');
   }
 
   const rng = createRNG(seed);
@@ -927,18 +932,23 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
       : 'D2RRandomizer') + mutationSavepathSuffix(customMutations);
   const openActsFiles = buildOpenActsFiles({
     dataDir: DATA_DIR, seed, modName, savepath, settings: openActs, shuffle: openActsShuffle,
-    startWithCube: startingHoradricCube, raceClassCode: raceMode ? pickRaceClassCode(seed) : null,
+    // An Archipelago slot plays one class: only its character is made.
+    startWithCube: startingHoradricCube,
+    raceClassCode: raceMode ? pickRaceClassCode(seed) : ap ? ap.characterClass : null,
     charstats, skills: skillsTxt,
   });
   // Archipelago: the key stat, the optional key gates and the chat-panel message box.
-  // Challenges, Forgotten Arts, mutations and Open Acts are all refused with AP mode (see
-  // the top of generateMod), so each table can start from the vanilla file.
+  // Challenges, Forgotten Arts, mutations and the quest shuffle are all refused with AP
+  // mode (see the top of generateMod), so each table can start from the vanilla file.
   let apTables: ApTables | undefined;
   let apLayoutFiles: Map<string, Buffer> | undefined;
   if (ap) {
     const itemstatcost = loadTxtFile('itemstatcost.txt');
     const cubemain = loadTxtFile('cubemain.txt');
     apTables = applyApTables({ ap, itemstatcost, cubemain, charstats });
+    const starter = [...(openActsFiles.starterSaves?.keys() ?? [])];
+    if (ap.openActs && starter.length !== 1) throw new Error(`apMode: Open Acts made ${starter.length} starter saves, expected 1`);
+    apTables.starterSave = ap.openActs ? `starter-saves/${starter[0]}` : null;
     itemStatCostTxt = serializeTxtFile(itemstatcost.headers, itemstatcost.rows);
     cubemainTxt = serializeTxtFile(cubemain.headers, cubemain.rows);
     apLayoutFiles = buildApLayoutFiles(DATA_DIR);
