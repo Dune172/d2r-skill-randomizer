@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -173,6 +174,12 @@ func (a *app) retrySetup() {
 	a.mu.Unlock()
 
 	if err := a.ensureMod(sd); err != nil {
+		if errors.Is(err, errGameRunning) {
+			// Waiting on the player, not on a server: keep checking every few seconds.
+			a.warnAttach("close Diablo II: Resurrected to install this room's mod; " +
+				"it is installed and the game started again as soon as it is closed")
+			return
+		}
 		a.mu.Lock()
 		a.setupFailures++
 		a.mu.Unlock()
@@ -184,6 +191,9 @@ func (a *app) retrySetup() {
 	a.setupFailures = 0
 	a.mu.Unlock()
 }
+
+// errGameRunning: the mod must be installed with the game closed.
+var errGameRunning = errors.New("close D2R before installing or replacing mod files")
 
 // setupRetryDelay spaces out setup retries: 5 s, doubling after each failure, at most
 // 2 minutes. A failed fetch can mean the server is down or busy, and each try asks it
@@ -219,7 +229,7 @@ func (a *app) prepareInstall(data []byte, m *manifest.Manifest) error {
 			}
 		}
 		if setup.GameRunning() {
-			return fmt.Errorf("close D2R before installing or replacing mod files")
+			return errGameRunning
 		}
 		dest, e := setup.Install(root, data, m)
 		if e != nil {

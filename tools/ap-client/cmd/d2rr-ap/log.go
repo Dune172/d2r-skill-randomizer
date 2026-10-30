@@ -52,5 +52,8 @@ func logf(format string, args ...any) {
 
 func fatal(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
+	if pauseOnExit {
+		waitForEnter()
+	}
 	os.Exit(1)
 }
