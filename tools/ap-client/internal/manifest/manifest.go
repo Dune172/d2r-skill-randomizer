@@ -60,6 +60,10 @@ type Tables struct {
 	// MessageBox names the text box the mod adds to the chat panel, where the client
 	// shows the items sent to and from this slot.
 	MessageBox string `json:"messageBox"`
+	// StarterSave, with Open Acts, is the slot's ready-made character inside the mod
+	// folder ("starter-saves/Paladin.d2s"). The client puts it in the save folder before
+	// the game starts. Empty without Open Acts (and from a site that predates it).
+	StarterSave string `json:"starterSave"`
 }
 
 // Slots returns the AP class's 30 slots, ordered S00..S29.
@@ -136,6 +140,11 @@ func validateTables(t *Tables) error {
 	}
 	if t.MessageBox != "" && !regexp.MustCompile(`^[A-Za-z0-9_]+$`).MatchString(t.MessageBox) {
 		return fmt.Errorf("manifest message box name is invalid")
+	}
+	// A character name: letters, at most one - or _ (D2R's rule), and nothing that could
+	// leave the starter-saves folder.
+	if t.StarterSave != "" && !regexp.MustCompile(`^starter-saves/[A-Za-z]+[-_]?[A-Za-z]+\.d2s$`).MatchString(t.StarterSave) {
+		return fmt.Errorf("manifest starter save path is invalid")
 	}
 	return nil
 }

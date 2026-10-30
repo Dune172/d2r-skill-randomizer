@@ -163,3 +163,41 @@ func TestTheRoomsPooledStatsReachTheModRequest(t *testing.T) {
 		t.Fatal("the room's own slot data must not be changed")
 	}
 }
+
+// Open Acts: the ready-made character goes into an empty save folder, and never over a
+// folder that already holds a character.
+func TestTheReadyMadeCharacterIsPlacedOnlyInAnEmptyFolder(t *testing.T) {
+	root, saves := t.TempDir(), t.TempDir()
+	m := &manifest.Manifest{ModName: "seed1234", Savepath: "ap_test"}
+	m.Tables.StarterSave = "starter-saves/Paladin.d2s"
+	src := filepath.Join(root, "mods", "seed1234", "starter-saves")
+	if err := os.MkdirAll(src, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(src, "Paladin.d2s"), []byte("ready"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a := &app{saveDirFlag: saves}
+	a.placeStarterSave(root, m)
+	if got, _ := os.ReadFile(filepath.Join(saves, "Paladin.d2s")); string(got) != "ready" {
+		t.Fatalf("the character was not placed: %q", got)
+	}
+
+	other := t.TempDir()
+	if err := os.WriteFile(filepath.Join(other, "Mine.d2s"), []byte("mine"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a = &app{saveDirFlag: other}
+	a.placeStarterSave(root, m)
+	if _, err := os.Stat(filepath.Join(other, "Paladin.d2s")); err == nil {
+		t.Fatal("a ready-made character was added beside the player's own")
+	}
+
+	m.Tables.StarterSave = ""
+	empty := t.TempDir()
+	a = &app{saveDirFlag: empty}
+	a.placeStarterSave(root, m)
+	if files, _ := filepath.Glob(filepath.Join(empty, "*")); len(files) != 0 {
+		t.Fatal("a character was placed without Open Acts")
+	}
+}

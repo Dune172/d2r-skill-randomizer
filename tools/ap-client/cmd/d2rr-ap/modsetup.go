@@ -246,6 +246,10 @@ func (a *app) prepareInstall(data []byte, m *manifest.Manifest) error {
 		logf("installed and verified %s", dest)
 	}
 	a.gameDir = root
+	// D2R reads the save folder only when it starts, so the character goes in first.
+	if !setup.GameRunning() {
+		a.placeStarterSave(root, m)
+	}
 	if a.launchGame && !setup.GameRunning() {
 		if e = setup.Launch(root, m); e != nil {
 			return e
@@ -254,6 +258,38 @@ func (a *app) prepareInstall(data []byte, m *manifest.Manifest) error {
 	}
 	a.launchGame = false
 	return nil
+}
+
+// placeStarterSave puts the slot's ready-made character (Open Acts) into the mod's save
+// folder, so the player loads it rather than making one. It never touches a folder that
+// already holds a character: the player's own game always wins.
+func (a *app) placeStarterSave(root string, m *manifest.Manifest) {
+	if m.Tables.StarterSave == "" {
+		return
+	}
+	dir, err := resolveSaveDir(a.saveDirFlag, defaultSaveDir(m.Savepath))
+	if err != nil {
+		return
+	}
+	if existing, _ := filepath.Glob(filepath.Join(dir, "*.d2s")); len(existing) > 0 {
+		return
+	}
+	src := filepath.Join(root, "mods", m.ModName, filepath.FromSlash(m.Tables.StarterSave))
+	data, err := os.ReadFile(src)
+	if err != nil {
+		logf("this room's ready-made character is missing (%v); create one in the game instead", err)
+		return
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		logf("could not make the save folder for your character: %v", err)
+		return
+	}
+	if err := os.WriteFile(filepath.Join(dir, filepath.Base(src)), data, 0o644); err != nil {
+		logf("could not put your character in place: %v", err)
+		return
+	}
+	logf("made your character %s: load it in Offline mode (Acts II and III are open)",
+		strings.TrimSuffix(filepath.Base(src), ".d2s"))
 }
 
 // defaultSaveDir is where D2R keeps the saves of a mod with this savepath.
