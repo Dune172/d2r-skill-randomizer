@@ -31,6 +31,8 @@ func main() {
 			os.Exit(probe(os.Args[2:]))
 		case "saves":
 			os.Exit(saves(os.Args[2:]))
+		case "version":
+			os.Exit(version())
 		}
 	}
 	var (
@@ -56,6 +58,22 @@ func main() {
 	)
 	flag.Usage = usage
 	flag.Parse()
+
+	// Without -slot, which is how a double-click starts it (and "d2rr-ap -difficulty 1"):
+	// ask for the room instead of failing, and play as if -launch had been given.
+	if *slot == "" {
+		pauseOnExit = true
+		choice, err := askRoom(*stateDir)
+		if err != nil {
+			fatal("%v", err)
+		}
+		*host, *port, *slot, *password = choice.Host, choice.Port, choice.Slot, choice.password
+		*gameDir = choice.GameDir
+		*launch = true
+		// Not the folder the app was double-clicked in (usually Downloads): the mod zip
+		// is about 50 MB and only needed until it is installed.
+		*modOut = filepath.Join(*stateDir, "mods")
+	}
 
 	if *diff < -1 || *diff > 2 {
 		fatal("-difficulty must be -1, 0, 1, or 2")
@@ -166,11 +184,14 @@ func main() {
 func usage() {
 	out := flag.CommandLine.Output()
 	fmt.Fprintf(out, `Usage:
+  d2rr-ap                          ask for the room and your name, then install the
+                                   mod, start the game and connect (what a double-click does)
   d2rr-ap -slot <name> [flags]     connect a character to an Archipelago room
 
 Subcommands:
   d2rr-ap doctor [flags]           check the install, the mod and the loaded character (read-only)
   d2rr-ap saves <folder|.d2s>      list the checks a save file holds (read-only)
+  d2rr-ap version                  print the build and the contract versions
   d2rr-ap probe [flags]            playtest tool: list or overwrite the loaded
                                    character's stats; not needed to play
 
@@ -184,7 +205,7 @@ Flags:
 // chat forwards typed lines to the room, so "!hint" and the other server commands work
 // from this window like any Archipelago client.
 func chat(ctx context.Context, conn *apc.Conn) {
-	lines := bufio.NewScanner(os.Stdin)
+	lines := bufio.NewScanner(console)
 	for lines.Scan() {
 		text := strings.TrimSpace(lines.Text())
 		if text == "" {

@@ -10,7 +10,7 @@
 export const AP_GAME_NAME = 'D2R Randomizer';
 
 /** Versions the page states. Kept beside the options so one check covers both. */
-export const AP_WORLD_VERSION = '0.1.0';
+export const AP_WORLD_VERSION = '0.2.0';
 export const AP_MINIMUM_ARCHIPELAGO = '0.6.7';
 
 interface BaseOption {

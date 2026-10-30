@@ -1,10 +1,12 @@
+import fs from 'fs';
+import path from 'path';
 import type { Metadata } from 'next';
-import YamlBuilder from './YamlBuilder';
+import PlayerFile from './PlayerFile';
 import { AP_MINIMUM_ARCHIPELAGO, AP_WORLD_VERSION } from '@/lib/archipelago/options';
 import { AP_CONTRACT_VERSION } from '@/lib/randomizer/ap-mode';
 
-// Nothing on this page is fetched: versions are baked in at build time, so a view never
-// reaches the origin.
+// Nothing on this page is fetched: versions and the app's size are read at build time,
+// so a view never reaches the origin.
 export const dynamic = 'force-static';
 
 const title = 'D2R Randomizer for Archipelago';
@@ -12,7 +14,8 @@ const description = 'Play D2R Randomizer in an Archipelago multiworld: skill poi
 
 /**
  * UNLISTED until launch: absent from the nav and from sitemap.ts, disallowed in
- * robots.ts, and noindex here. Reachable only by typing the URL.
+ * robots.ts, and noindex here. Reachable only by typing or sharing the URL, which is how
+ * testers get it.
  */
 export const metadata: Metadata = {
   title,
@@ -22,158 +25,213 @@ export const metadata: Metadata = {
 
 const ARCHIPELAGO_URL = 'https://archipelago.gg/';
 const ARCHIPELAGO_RELEASES = 'https://github.com/ArchipelagoMW/Archipelago/releases';
+const ARCHIPELAGO_UPLOADS = 'https://archipelago.gg/uploads';
+
+/** Committed by scripts/publish-ap-client.mjs; its size is shown on the download button. */
+const APP_FILE = '/archipelago/d2rr-ap.exe';
+function appSizeMb(): string | null {
+  try {
+    return (fs.statSync(path.join(process.cwd(), 'public', APP_FILE)).size / 1048576).toFixed(0);
+  } catch {
+    return null;
+  }
+}
 
 const code = 'text-[#a89858] break-all';
 const extLink = 'text-[#c8942a] underline underline-offset-4 hover:text-[#e0ac4a] transition-colors';
+const sectionLabel = 'font-cinzel text-[11px] tracking-[0.22em] uppercase text-[#c8942a]';
 const h2 = 'font-cinzel font-bold text-[#c8942a] text-lg tracking-[0.08em] mt-12 mb-5';
 
-function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+function StepHeading({ n, title, note }: { n: number; title: string; note?: string }) {
   return (
-    <li className="flex items-start gap-3">
-      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-[#c8942a] text-[#c8942a] text-xs font-bold flex-shrink-0 mt-0.5">
+    <div className="flex items-center gap-3 mb-4">
+      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-[#c8942a] text-[#c8942a] text-xs font-bold flex-shrink-0">
         {n}
       </span>
-      <div className="min-w-0 space-y-2">
-        <h3 className="font-cinzel text-[#c8942a] tracking-[0.06em] font-semibold">{title}</h3>
-        {children}
-      </div>
-    </li>
+      <h2 className="font-cinzel font-bold text-[#c8942a] tracking-[0.08em]">{title}</h2>
+      {note && <span className="text-xs text-[#a89060]">{note}</span>}
+    </div>
+  );
+}
+
+function MiniStep({ n, children }: { n: number | string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">
+        {n}
+      </span>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+function Divider() {
+  return (
+    <div className="flex items-center gap-3 my-6" aria-hidden="true">
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent to-[#4a1e14]" />
+      <span className="text-[#c8942a] text-xs">◆</span>
+      <div className="flex-1 h-px bg-gradient-to-l from-transparent to-[#4a1e14]" />
+    </div>
   );
 }
 
 export default function ArchipelagoPage() {
+  const size = appSizeMb();
   return (
     <main className="min-h-screen">
-      <section className="max-w-2xl mx-auto px-4 pt-12">
+      <section className="max-w-3xl mx-auto px-4 pt-12 pb-6 text-center">
+        <p className="inline-block rounded-full border border-[#7a3a1a] bg-[#2a1008]/60 px-3 py-0.5 mb-4 font-cinzel text-[10px] tracking-[0.25em] uppercase text-[#d0a070]">
+          Tester preview
+        </p>
         <h1 className="font-cinzel font-black tracking-[0.14em] text-3xl md:text-4xl text-[#c8942a] glow-gold uppercase mb-3">
           Archipelago
         </h1>
-        <p className="font-cinzel text-sm text-[#a87830] tracking-[0.06em] mb-8">
-          Your skill points, scattered across everyone&apos;s games
+        <p className="text-sm text-[#e8d5a0]/90 leading-relaxed max-w-xl mx-auto">
+          Play D2R Randomizer in an{' '}
+          <a href={ARCHIPELAGO_URL} target="_blank" rel="noopener noreferrer" className={extLink}>Archipelago</a>{' '}
+          multiworld. Your tree is shuffled as usual, but your skill points are items scattered across
+          everyone&apos;s games: quests, waypoints, new areas and levels send items to the others, and
+          theirs send points to you.
         </p>
+      </section>
 
-        <div className="rounded border border-[#7a3a1a] bg-[#2a1008]/50 p-4 mb-8">
-          <p className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#d0a070] mb-2">
-            Preview, not yet released
+      <section className="max-w-3xl mx-auto px-4">
+        <div className="rounded-lg border border-[#4a1e14] bg-[#0c0405]/80 p-4 md:p-6 panel-shadow">
+          <StepHeading n={1} title="Make your player file" />
+          <PlayerFile />
+
+          <Divider />
+
+          <StepHeading n={2} title="Get the app" note="Windows, once" />
+          <p className="text-sm text-[#e8d5a0]/90 leading-relaxed mb-4">
+            The app connects your offline character to the room, sets up this game&apos;s mod for you and
+            hands over the skill points other players find.
           </p>
-          <p className="text-sm text-[#e8d5a0] leading-relaxed">
-            Generating a multiworld and connecting to a room both work. Whether the game accepts the
-            skill points the client hands over has not been confirmed in a real playthrough yet. Until
-            it has, treat a run as a test rather than something to commit an evening to.
+          {size ? (
+            <a
+              href={APP_FILE} download
+              className="block w-full rounded py-3 text-center
+                font-cinzel font-bold tracking-[0.22em] text-sm uppercase text-[#c8d8f8]
+                bg-gradient-to-b from-[#121838] to-[#0a1028]
+                border border-[#283878]
+                hover:from-[#1a2448] hover:to-[#101830] hover:border-[#4858c0]
+                transition-all duration-200
+                shadow-[0_0_16px_rgba(40,56,120,0.30)] hover:shadow-[0_0_28px_rgba(72,88,192,0.42)]"
+            >
+              Download the app <span className="normal-case tracking-normal font-normal text-[#8898c8]">(d2rr-ap.exe, {size} MB)</span>
+            </a>
+          ) : (
+            <p className="rounded border border-[#5c1818] bg-[#1a0606]/60 p-3 text-sm text-[#e8a0a0]">
+              The app is not on this build of the site yet.
+            </p>
+          )}
+          <div className="mt-3 rounded border border-[#2a1508]/60 bg-[#080203]/40 p-3 text-xs text-[#c8a870] leading-relaxed space-y-1.5">
+            <p>
+              <span className="text-[#c8942a]">&ldquo;Windows protected your PC&rdquo;?</span> The app is new and not
+              code-signed, so Windows doesn&apos;t recognise it yet. Click <em>More info</em>, then <em>Run anyway</em>.
+            </p>
+            <p>
+              It reads and changes Diablo II&apos;s memory to deliver your points, which some antivirus
+              programs dislike. It only works offline and never touches a Battle.net game.
+            </p>
+          </div>
+
+          <Divider />
+
+          <StepHeading n={3} title="Connect and play" />
+          <div className="space-y-3 text-sm text-[#e8d5a0]/90 leading-relaxed">
+            <MiniStep n={1}>
+              Wait for the host to start the room and give you its <span className="text-[#c8942a]">address</span>,
+              which looks like <code className={code}>archipelago.gg:38281</code>.
+            </MiniStep>
+            <MiniStep n={2}>
+              <span className="text-[#c8942a]">Close Diablo II</span>, then double-click the app. Type in the room
+              address and the name from your player file.
+            </MiniStep>
+            <MiniStep n={3}>
+              The app downloads your game&apos;s mod, installs it and starts Diablo II. Choose{' '}
+              <span className="text-[#c8942a]">Offline</span> and create a <span className="text-[#c8942a]">new
+              character</span> of the class in your player file.
+            </MiniStep>
+            <MiniStep n={4}>
+              Right-click the <span className="text-[#c8942a]">Draught of Attunement</span> in your inventory, then
+              play. Keep the app open: it sends your checks and delivers your points.
+            </MiniStep>
+          </div>
+          <p className="mt-4 rounded p-3 bg-[#0a2010]/60 border border-[#2a5a2a] text-xs text-[#6abf6a] leading-relaxed">
+            ✓ If it worked, the app says <code className="text-[#8ad08a]">connected as &quot;YourName&quot;</code>,
+            and skill points appear in your tree as other players find them. Next time, double-click the app
+            and press Enter to rejoin the same room.
+          </p>
+          <p className="mt-3 text-xs text-[#a89060] leading-relaxed">
+            Type into the app&apos;s window to chat with the room; <code className={code}>!hint Progressive Skill Point</code>{' '}
+            and the other <code className={code}>!</code> commands work as in any Archipelago client.
           </p>
         </div>
+      </section>
 
-        <div className="space-y-4 text-sm text-[#e8d5a0]/90 leading-relaxed">
-          <p>
-            <a href={ARCHIPELAGO_URL} target="_blank" rel="noopener noreferrer" className={extLink}>Archipelago</a>{' '}
-            links many games into one randomizer: the thing you need may be sitting in somebody else&apos;s
-            game, and theirs in yours.
-          </p>
-          <p>
-            In D2R Randomizer your tree is shuffled as usual, but levelling gives you no skill points.
-            Each point is an item. Completing quests, activating waypoints, entering new areas and
-            gaining levels are your checks, and every check sends an item to whoever it belongs to. When
-            a point arrives for you, spend it anywhere in your tree.
-          </p>
-        </div>
-
-        <h2 className={h2}>What you need</h2>
-        <ul className="list-disc pl-5 space-y-2 text-sm text-[#e8d5a0]/90 leading-relaxed">
-          <li>Diablo II: Resurrected, able to start an <span className="text-[#c8942a]">offline</span> character.</li>
-          <li>
+      <section className="max-w-3xl mx-auto px-4 pb-16">
+        <h2 id="host" className={`${h2} scroll-mt-6`}>Hosting a game</h2>
+        <div className="space-y-3 text-sm text-[#e8d5a0]/90 leading-relaxed">
+          <MiniStep n={1}>
+            Install{' '}
             <a href={ARCHIPELAGO_RELEASES} target="_blank" rel="noopener noreferrer" className={extLink}>Archipelago</a>{' '}
-            {AP_MINIMUM_ARCHIPELAGO} or newer.
-          </li>
-          <li>
-            The apworld:{' '}
+            {AP_MINIMUM_ARCHIPELAGO} or newer, then download{' '}
             <a href="/archipelago/d2rr.apworld" download className={extLink}>d2rr.apworld</a>{' '}
-            <span className="text-[#a89060]">(version {AP_WORLD_VERSION})</span>.
-          </li>
-          <li>
-            The companion client, <code className={code}>d2rr-ap.exe</code>.{' '}
-            <span className="text-[#a89060]">
-              Not published yet: until release it is built from the repository with{' '}
-              <code className={code}>npm run ap:build</code>.
-            </span>
-          </li>
-        </ul>
-        <p className="mt-3 text-xs text-[#a89060]">
-          The apworld and the client must come from the same release. This site speaks mod contract{' '}
-          {AP_CONTRACT_VERSION}; a client built for another one is told so when it asks for a mod.
+            <span className="text-[#a89060]">(version {AP_WORLD_VERSION})</span> and double-click it to add D2R
+            Randomizer to Archipelago.
+          </MiniStep>
+          <MiniStep n={2}>
+            Put every player&apos;s file in Archipelago&apos;s <code className={code}>Players</code> folder (the
+            Launcher&apos;s <em>Browse Files</em> opens it) and click <em>Generate</em>.
+          </MiniStep>
+          <MiniStep n={3}>
+            Host the result: <em>Host</em> in the Launcher, or upload the file from Archipelago&apos;s{' '}
+            <code className={code}>output</code> folder to{' '}
+            <a href={ARCHIPELAGO_UPLOADS} target="_blank" rel="noopener noreferrer" className={extLink}>archipelago.gg</a>{' '}
+            to host it online. Share the room&apos;s address with everyone.
+          </MiniStep>
+        </div>
+        <p className="mt-4 text-xs text-[#a89060] leading-relaxed">
+          A first game: Andariel on Normal is about an hour and shows the whole loop.
         </p>
 
-        <h2 className={h2}>Setup</h2>
-        <ol className="space-y-8 text-sm text-[#e8d5a0]/90 leading-relaxed">
-          <Step n={1} title="Install the apworld">
-            <p>
-              Double-click <code className={code}>d2rr.apworld</code>, or use <em>Install APWorld</em> in the
-              Archipelago Launcher, then restart the Launcher.
-            </p>
-          </Step>
-          <Step n={2} title="Make your options file">
-            <p>
-              Use the builder below and download the YAML. The person generating the multiworld needs
-              one from every player.
-            </p>
-          </Step>
-          <Step n={3} title="Start the client with the game closed">
-            <p>Once the room is up, start the client with its address, port and your slot name:</p>
-            <p><code className={code}>d2rr-ap.exe -host archipelago.gg -port 12345 -slot YourName -launch</code></p>
-            <p>
-              <code className={code}>-launch</code> downloads the mod made for your slot, installs it into
-              the game&apos;s <code className={code}>mods</code> folder and starts the game with it.
-            </p>
-          </Step>
-          <Step n={4} title="Create a new offline character">
-            <p>
-              Choose <span className="text-[#c8942a]">Offline</span> and create a character of the class in
-              your options. It has to be a new character made under this mod.
-            </p>
-            <p className="rounded p-2 bg-[#0a2010]/60 border border-[#2a5a2a] text-[#6abf6a] text-xs">
-              ✓ If it worked, the client prints the character&apos;s name and starts sending checks as you play.
-            </p>
-          </Step>
-          <Step n={5} title="Play, and leave the client running">
-            <p>
-              Skill points arrive as unspent points in your tree. Type into the client window to talk to
-              the room; <code className={code}>!hint Progressive Skill Point</code> and the other{' '}
-              <code className={code}>!</code> commands work as in any Archipelago client.
-            </p>
-          </Step>
-        </ol>
-      </section>
-
-      <section className="max-w-5xl mx-auto px-4 pb-4">
-        <h2 className={`${h2} max-w-2xl mx-auto`}>Options builder</h2>
-        <YamlBuilder />
-      </section>
-
-      <section className="max-w-2xl mx-auto px-4 pb-16">
-        <h2 className={h2}>Good to know</h2>
-        <ul className="list-disc pl-5 space-y-2 text-sm text-[#e8d5a0]/90 leading-relaxed">
+        <h2 className={h2}>If something goes wrong</h2>
+        <ul className="space-y-3 text-sm text-[#e8d5a0]/90 leading-relaxed">
           <li>
-            <span className="text-[#c8942a]">Pick a short goal first.</span> Andariel on Normal is about
-            an hour and shows you the whole loop.
+            <span className="text-[#c8942a]">The app is waiting.</span> It says why about once a minute, for
+            example &ldquo;close Diablo II to install this room&apos;s mod&rdquo;. Do what it says; it carries on by itself.
           </li>
           <li>
-            <span className="text-[#c8942a]">One slot, one character.</span> The client binds your slot
-            to the first character it sees in the slot&apos;s save folder.
+            <span className="text-[#c8942a]">No skill points yet.</span> Drink the Draught of Attunement. When
+            you have spent every point and more arrive, the app asks you to put the Archipelago Sigil alone in
+            the Horadric Cube, transmute, and drink the Tonic of Renewal it makes.
           </li>
           <li>
-            <span className="text-[#c8942a]">After Normal,</span> start the client with{' '}
-            <code className={code}>-difficulty 1</code> for Nightmare or <code className={code}>-difficulty 2</code>{' '}
-            for Hell so area checks are filed under the right difficulty.
+            <span className="text-[#c8942a]">Diablo II isn&apos;t found.</span> The app asks for the folder that
+            holds <code className={code}>D2R.exe</code> and remembers it.
           </li>
           <li>
-            <span className="text-[#c8942a]">Something not arriving?</span> The client says why about once
-            a minute. <code className={code}>d2rr-ap.exe doctor</code> checks the installation and your
-            character and changes nothing.
+            <span className="text-[#c8942a]">Windows won&apos;t run the app at all.</span> Some PCs have
+            <em> Smart App Control</em> on, which blocks apps that are not code-signed. Use another PC for
+            now.
+          </li>
+          <li>
+            <span className="text-[#c8942a]">Playing Nightmare or Hell.</span> Start the app from a command
+            prompt as <code className={code}>d2rr-ap.exe -difficulty 1</code> (Nightmare) or{' '}
+            <code className={code}>-difficulty 2</code> (Hell), so area checks count for the right difficulty. It
+            still asks for the room as usual.
+          </li>
+          <li>
+            <span className="text-[#c8942a]">Still stuck?</span> With your character loaded, run{' '}
+            <code className={code}>d2rr-ap.exe doctor</code>: it checks the install and your character and changes
+            nothing. Send its output with your report.
           </li>
         </ul>
 
         <p className="mt-10 text-xs text-[#a89060]/80 leading-relaxed">
-          The mod is offline only, and the client refuses to touch the game while it is connected to
-          Battle.net. D2R Randomizer is not affiliated with Archipelago or Blizzard Entertainment.
+          Offline only. This site speaks mod contract {AP_CONTRACT_VERSION}; the app and the apworld on this page
+          always match it. D2R Randomizer is not affiliated with Archipelago or Blizzard Entertainment.
         </p>
       </section>
     </main>

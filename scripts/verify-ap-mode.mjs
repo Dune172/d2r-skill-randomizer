@@ -261,6 +261,9 @@ async function verifyCase(c) {
     `the Tonic (${tables.tonic}) has no unique name string`);
   const tonicStats = c.options?.pooledStats === true ? 'newskills,statpts' : 'newskills';
   check(failures, statsOf(tables.tonic).join() === tonicStats, `the Tonic adds ${statsOf(tables.tonic).join()}, expected ${tonicStats}`);
+  // The client asks for a Tonic for an empty stat pool only when the manifest says it helps.
+  check(failures, tables.tonicStatPoints === (c.options?.pooledStats === true),
+    `manifest tonicStatPoints is ${tables.tonicStatPoints}, but the Tonic adds ${statsOf(tables.tonic).join()}`);
   for (const name of statsOf(tables.tonic)) {
     check(failures, calcOf(tables.tonic, name) === '1', `the Tonic adds ${calcOf(tables.tonic, name)} to ${name}, expected 1`);
   }

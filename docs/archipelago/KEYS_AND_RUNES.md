@@ -122,12 +122,15 @@ real recipes could be tried in town. The same crafting on a control mod with key
 whose recipes keep vanilla `op 28`, left **byte-identical quest and waypoint data** in
 the save. So replacing op 28 with the key gate changes nothing the game records.
 
-**Still to run:** the client end to end. A local room (generated and hosted with
-Archipelago 0.6.7, start inventory 3 skill points, 2 keys, an El Rune and a stat-point
-bundle) connected and sent the items; the client fetched the room's mod. Installing it
-then found a bug, fixed on this branch: the mod zip carried a launcher shortcut beside
-the mod folder, which the installer refused. The rebuilt client was then blocked by
-Windows Smart App Control on the test PC, so the run stopped there.
+**The client end to end, in town.** A local room (generated and hosted with Archipelago
+0.6.7, start inventory 3 skill points, 2 keys, an El Rune and a stat-point bundle), joined
+by double-clicking the published app and typing the address and name. The app fetched,
+installed and launched the room's mod (and, when the mod changed, asked for the game to
+be closed and did it again). It bound a brand-new character, and after the Draught the
+character held the skill points and 3 keys. The Tonic brought back the stat points, the
+Sigil offered the El Rune and the Receipt confirmed it, and once every point was spent a
+point sent from the server made the app ask for a Tonic, which restored it. Out-of-town
+play (G1 step 4, G4, G5) is still to run.
 
 ## Decisions for you
 

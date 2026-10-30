@@ -90,6 +90,10 @@ func (a *app) applySkillPoints(player uintptr) {
 		return
 	}
 	if !existed {
+		// Logged again once the pool is back, whatever its value then.
+		a.mu.Lock()
+		a.lastPointsWritten = -1
+		a.mu.Unlock()
 		// Normal on a fresh character, and whenever the player has spent the pool to zero
 		// (the game then drops the entry). Worth saying, because "no skills are arriving"
 		// otherwise looks identical to a broken client.

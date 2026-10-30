@@ -27,6 +27,7 @@ on:
       - "src/lib/zip-builder.ts"
       - "src/lib/zip-cache.ts"
       - "scripts/patch-d2go.mjs"
+      - "public/archipelago/**"
       - ".github/workflows/archipelago.yml"
   pull_request:
     paths:
@@ -40,6 +41,7 @@ on:
       - "src/lib/zip-builder.ts"
       - "src/lib/zip-cache.ts"
       - "scripts/patch-d2go.mjs"
+      - "public/archipelago/**"
       - ".github/workflows/archipelago.yml"
 
 env:
@@ -92,6 +94,17 @@ jobs:
       - name: Formatting
         shell: bash
         run: test -z "$(gofmt -l cmd internal)"
+      # Testers download the app from the site (public/archipelago, see
+      # scripts/publish-ap-client.mjs), so the committed copy must speak the same
+      # contracts as the source, or the site and the app it serves refuse each other.
+      - name: The app on the site matches the source
+        shell: bash
+        run: |
+          want="$(go run ./cmd/d2rr-ap version | sed 's/build [^ ]* //')"
+          got="$(../../public/archipelago/d2rr-ap.exe version | sed 's/build [^ ]* //')"
+          echo "source:    $want"
+          echo "published: $got"
+          test "$want" = "$got"
 
   agreement:
     name: World, client and page agree

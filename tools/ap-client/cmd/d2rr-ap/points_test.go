@@ -105,7 +105,7 @@ func TestSkillPointsWaitForTheStatToExist(t *testing.T) {
 	delete(char.stats, stat.SkillPoints)
 	pollPoints(a)
 	pollPoints(a)
-	if _, ok := char.stats[stat.SkillPoints]; ok || a.lastPointsWritten != 0 {
+	if _, ok := char.stats[stat.SkillPoints]; ok || a.lastPointsWritten > 0 {
 		t.Fatal("wrote a stat the character does not have")
 	}
 	if a.lastAttachWarn == "" {

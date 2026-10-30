@@ -99,13 +99,18 @@ func (a *app) applyStatPoints(player uintptr, classBase int) {
 	}
 	existed, err := a.view().SetPlayerStat(player, stat.StatPoints, uint32(want))
 	a.mu.Lock()
-	a.needStatPool = err == nil && !existed && want > 0 // asks the mailbox for a Tonic
+	// Asks the mailbox for a Tonic, but only from a mod whose Tonic restores stat points:
+	// otherwise the request could never be met and would hold up the runes behind it.
+	tonicHelps := a.man != nil && a.man.Tables.TonicStatPoints
+	a.needStatPool = err == nil && !existed && want > 0 && tonicHelps
 	a.mu.Unlock()
 	switch {
 	case err != nil:
 		a.note("stat", "setting stat points: "+err.Error())
 	case !existed && want == 0:
 		a.note("stat", "") // nothing owed, so nothing to write to yet
+	case !existed && !tonicHelps:
+		a.note("stat", fmt.Sprintf("%d stat point(s) wait for your next level-up (this mod's Tonic restores only skill points)", want))
 	case !existed:
 		a.note("stat", a.poolHint(player, "stat-point"))
 	default:
@@ -127,7 +132,7 @@ func (a *app) applyKeys(player uintptr, keyStat stat.ID) {
 	case err != nil:
 		a.note("keys", "setting Horadric Keys: "+err.Error())
 	case !existed:
-		a.note("keys", attuneHint("your Horadric Keys"))
+		a.note("keys", fmt.Sprintf("%d Horadric Key(s) wait for the Draught of Attunement", keys))
 	default:
 		a.note("keys", fmt.Sprintf("Horadric Keys: %d held (the Horadric Staff needs %d, Khalim's Will %d)",
 			keys, ids.KeysForHoradricStaff, ids.KeysForKhalimsWill))
@@ -155,11 +160,6 @@ func (a *app) poolHint(player uintptr, what string) string {
 		return "waiting for the " + what + " stat: put the Archipelago Sigil alone in the Horadric Cube, transmute, " +
 			"and right-click the Tonic of Renewal it makes"
 	}
-}
-
-func attuneHint(what string) string {
-	return "cannot deliver " + what + " yet: right-click the Draught of Attunement in your inventory " +
-		"(transmute the Archipelago Sigil alone in the Horadric Cube for another)"
 }
 
 // applyMail runs the rune mailbox: put up the next rune that is owed, and record a rune
@@ -202,7 +202,7 @@ func (a *app) applyMail(player uintptr) {
 	a.mu.Unlock()
 	if !exists {
 		if owed > 0 {
-			a.note("mail", attuneHint(fmt.Sprintf("%d waiting rune(s)", owed)))
+			a.note("mail", fmt.Sprintf("%d rune(s) wait for the Draught of Attunement", owed))
 		}
 		return
 	}

@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -31,7 +32,17 @@ func (a *app) ensureMod(slotData map[string]any) error {
 	if !ok || seedNum != float64(seed) || seed < 1 || class == "" || savepath == "" {
 		return fmt.Errorf("room omitted seed, class or save folder")
 	}
-	options, _ := slotData["mod_options"].(map[string]any)
+	options := map[string]any{}
+	if fromRoom, ok := slotData["mod_options"].(map[string]any); ok {
+		for k, v := range fromRoom {
+			options[k] = v
+		}
+	}
+	// The room's own setting decides, so an apworld that predates "pooledStats" in its
+	// mod options still gets a mod whose Tonic restores stat points.
+	if boolFromSlotData(slotData, "stat_points_pooled", false) {
+		options["pooledStats"] = true
+	}
 	if existing != nil {
 		if err := existing.MatchRoom(seed, class, savepath); err != nil {
 			return err
@@ -120,17 +131,12 @@ func (a *app) useManifest(man *manifest.Manifest) error {
 	}
 
 	// A missing save folder is the difference between "no checks yet" and "checks will
-	// NEVER be detected", and the two look identical in the log. The usual cause is an
-	// installed mod whose modinfo savepath differs from the one this manifest describes
-	// — for example a mod downloaded from the /archipelago page, which uses its own
-	// savepath field. Say so plainly rather than sitting silent forever.
+	// NEVER be detected" (an installed mod saving somewhere else), and the two look
+	// identical in the log. The first is the normal start of a game, so say it calmly
+	// and point at doctor for the second.
 	if _, err := os.Stat(saveDir); os.IsNotExist(err) {
-		logf("NOTE: that folder does not exist yet.")
-		logf("      Normal if you have not created the character. But if you HAVE, the")
-		logf("      installed mod is saving somewhere else — check the savepath in")
-		logf("      <D2R>\\mods\\%s\\%s.mpq\\modinfo.json and either reinstall the mod",
-			man.ModName, man.ModName)
-		logf("      this client downloaded, or restart with -save-dir <that folder>.")
+		logf("  (that folder appears when you create your character with this mod; if you")
+		logf("   already have and nothing is detected, run \"d2rr-ap doctor\")")
 	}
 
 	a.recomputeDesired()
@@ -173,6 +179,12 @@ func (a *app) retrySetup() {
 	a.mu.Unlock()
 
 	if err := a.ensureMod(sd); err != nil {
+		if errors.Is(err, errGameRunning) {
+			// Waiting on the player, not on a server: keep checking every few seconds.
+			a.warnAttach("close Diablo II: Resurrected to install this room's mod; " +
+				"it is installed and the game started again as soon as it is closed")
+			return
+		}
 		a.mu.Lock()
 		a.setupFailures++
 		a.mu.Unlock()
@@ -184,6 +196,9 @@ func (a *app) retrySetup() {
 	a.setupFailures = 0
 	a.mu.Unlock()
 }
+
+// errGameRunning: the mod must be installed with the game closed.
+var errGameRunning = errors.New("close D2R before installing or replacing mod files")
 
 // setupRetryDelay spaces out setup retries: 5 s, doubling after each failure, at most
 // 2 minutes. A failed fetch can mean the server is down or busy, and each try asks it
@@ -219,7 +234,7 @@ func (a *app) prepareInstall(data []byte, m *manifest.Manifest) error {
 			}
 		}
 		if setup.GameRunning() {
-			return fmt.Errorf("close D2R before installing or replacing mod files")
+			return errGameRunning
 		}
 		dest, e := setup.Install(root, data, m)
 		if e != nil {

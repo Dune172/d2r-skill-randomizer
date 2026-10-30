@@ -27,7 +27,12 @@ func (a *app) warnAttach(reason string) {
 	if !quiet {
 		a.attachWarnedAt[reason] = time.Now()
 	}
+	// What is owed and not yet in the game: the last computed target once spending is
+	// known, otherwise everything received.
 	pending := a.pointsReceived - a.lastPointsWritten
+	if a.pointSampleOK {
+		pending = a.balance.Unspent
+	}
 	a.mu.Unlock()
 
 	if quiet {
@@ -52,5 +57,8 @@ func logf(format string, args ...any) {
 
 func fatal(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, format+"\n", args...)
+	if pauseOnExit {
+		waitForEnter()
+	}
 	os.Exit(1)
 }

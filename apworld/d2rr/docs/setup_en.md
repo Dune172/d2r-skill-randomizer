@@ -38,21 +38,26 @@ to finish.
 ## Joining a game
 
 1. Close Diablo II: Resurrected.
-2. Start the client with your room's address, port and slot name:
+2. Double-click `d2rr-ap.exe`. It asks for the room's address (for example
+   `archipelago.gg:12345`), your name in the room and the room's password, if it has
+   one. It finds the game on its own, or asks for its folder. Next time, press Enter to
+   rejoin the same room.
 
-   ```
-   d2rr-ap.exe -host archipelago.gg -port 12345 -slot YourName -launch
-   ```
+   Windows may warn about an unrecognised app the first time: choose **More info**, then
+   **Run anyway**.
+3. The app downloads the mod for your slot, installs it into the game's `mods` folder and
+   starts the game with it. Play **Offline** and create a new character of the class in
+   your options: the character must be created by this mod, so its save lands in the
+   folder the app watches.
+4. Right-click the Draught of Attunement, and leave the app open while you play.
 
-   `-launch` downloads the mod for your slot, installs it into the game's `mods` folder
-   and starts the game with it. Use `-install` to install without starting the game, and
-   `-game-dir` if the game is not in a standard location.
-3. Play **Offline** and create a new character of the class in your options. The client
-   prints the save folder it is watching; the character must be created by this mod, so
-   it lands there.
-4. Leave the client running while you play.
+One slot is bound to one character. If the mod changes (a new room, say), the app asks
+you to close the game, then reinstalls the mod and starts the game again.
 
-One slot is bound to one character. Use `-character Name` if the folder holds several.
+From a command prompt the same thing is
+`d2rr-ap.exe -host archipelago.gg -port 12345 -slot YourName -launch`, with `-install`
+to install without starting the game, `-game-dir` if the game is not in a standard
+location, and `-character Name` if the save folder holds several characters.
 
 ## Playing
 
@@ -93,7 +98,8 @@ over a full run. Leave them off for a run that has to finish.
 
 ## Troubleshooting
 
-Run `d2rr-ap.exe doctor -manifest <the downloaded mod zip>` with the game running and
+Run `d2rr-ap.exe doctor -manifest <the downloaded mod zip>` (from a command prompt) with
+the game running and
 your character loaded. It checks the installation, the character and the client's view
 of your points, and changes nothing.
 
@@ -102,5 +108,7 @@ of your points, and changes nothing.
   arriving.
 - **"incompatible room contract".** The apworld and the client are different versions.
   Update both and generate a new room; an existing room cannot be upgraded.
-- **The game says the mod is missing.** Start the client with `-install` and the game
-  closed, then start the game with the command the client prints.
+- **The game says the mod is missing.** Close the game and start the app again: it
+  installs the mod and starts the game with it.
+- **Windows blocked the app.** Smart App Control or antivirus software can block a new
+  download. Check that it came from d2rrandomizer.com, then allow it there.

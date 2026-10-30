@@ -100,7 +100,7 @@ func CurrentDifficulty(goalDifficulty, override int, st *State) DifficultyResult
 		return DifficultyResult{Difficulty: override, OK: true, Source: SourceOverride, Unlocked: unlocked}
 	}
 	if st == nil {
-		return DifficultyResult{Reason: "waiting for the bound character's save"}
+		return DifficultyResult{Reason: "waiting for the game to save your character, which it does soon after you start playing"}
 	}
 	if unlocked == 0 {
 		return DifficultyResult{Difficulty: 0, OK: true, Source: SourceSingleDifficulty}

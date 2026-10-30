@@ -25,7 +25,11 @@ func (a *app) pollGame(ctx context.Context) {
 			// refused, where checks keep flowing from the save while no skill is ever
 			// granted. That looked exactly like a broken grant path.
 			a.reattaching = false
-			a.warnAttach(fmt.Sprintf("cannot attach to D2R: %v", err))
+			if !setup.GameRunning() {
+				a.warnAttach("waiting for Diablo II: Resurrected to start")
+			} else {
+				a.warnAttach(fmt.Sprintf("cannot attach to D2R: %v", err))
+			}
 			return
 		}
 		proc, err := setup.Inspect(gc.PID())
@@ -72,18 +76,18 @@ func (a *app) pollGame(ctx context.Context) {
 		//
 		// A fresh attach re-runs the scan, so the recovery is simply to stop reusing
 		// the old one.
+		// Quietly: at the menu this happens every 10 s, and it is routine.
 		if a.noPlayerSince.IsZero() {
 			a.noPlayerSince = time.Now()
 		} else if time.Since(a.noPlayerSince) > 10*time.Second {
-			logf("no character after 10s; re-attaching in case the offsets resolved badly")
+			a.reattaching = true
 			a.gc.Close()
 			a.gc = nil
 			a.noPlayerSince = time.Time{}
 			return
 		}
 
-		a.warnAttach("attached to D2R but no character is loaded " +
-			"(you are at the menu, or the game is still loading)")
+		a.warnAttach("Diablo II is running: load your character in Offline mode to continue")
 		return
 	}
 	a.noPlayerSince = time.Time{}
@@ -237,7 +241,7 @@ func selectSave(dir, name string) (string, error) {
 func (a *app) characterSave(dir string) (string, error) {
 	name := a.session.CharacterName()
 	if name == "" {
-		return "", fmt.Errorf("enter the selected character to bind this slot before sending checks")
+		return "", fmt.Errorf("load your character in Offline mode to start (a new character of this room's class, made with this mod)")
 	}
 	if a.characterFlag != "" && name != a.characterFlag {
 		return "", fmt.Errorf("-character differs from this slot's saved character binding")
@@ -254,12 +258,14 @@ func (a *app) bindCurrentCharacter(name string) error {
 	if e != nil {
 		return e
 	}
-	st, e := save.ParseFile(path)
+	// A new character's save is a header only until the game first saves it in full,
+	// which can take many minutes; the header names the character, which is enough.
+	saved, e := save.ReadFileName(path)
 	if e != nil {
 		return fmt.Errorf("waiting for a readable character save: %w", e)
 	}
-	if st.Name != name {
-		return fmt.Errorf("selected save belongs to %s; enter that character", st.Name)
+	if saved != name {
+		return fmt.Errorf("selected save belongs to %s; enter that character", saved)
 	}
 	if e = a.session.BindCharacter(name); e != nil {
 		return e
