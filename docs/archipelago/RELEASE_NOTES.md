@@ -35,10 +35,12 @@ and create a new offline character of your class.
 
 ## Known limits
 
-- Horadric Keys, pooled stat points and runes do not work yet; leave them off. Traps and
-  DeathLink are off by default and untested in the game.
-- Skill points received while none are unspent wait for your next level-up or quest
-  reward.
+- Horadric Keys, pooled stat points and runes are experimental and off by default: checked
+  in the game in town, not yet over a full run. Traps and DeathLink are untested.
+- Drink the Draught of Attunement you start with first. When you have spent every skill
+  point and more arrive, the client asks for a Tonic of Renewal from the Sigil.
+- This release changes the mod contract to 4: the client and the site must be updated
+  together.
 - On Nightmare and Hell, start the client with `-difficulty 1` or `-difficulty 2`.
 - The client is unsigned, and it reads and writes the game's memory. Some antivirus
   software will warn about it.

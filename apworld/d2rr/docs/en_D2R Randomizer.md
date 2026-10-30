@@ -24,12 +24,15 @@ items, found by you and by everyone else.
 
 Experimental, each off unless you turn it on:
 
-- **Traps**: Mana Burn, Exhaustion, Brush with Death, Skill Lock and Gold Tax. Not yet
-  tested in the game.
+- **Progressive Horadric Key**: the Horadric Cube will not assemble the Horadric Staff
+  until you hold two, or Khalim's Will until you hold five. Duriel and Mephisto wait on
+  them.
+- **Stat Points**: five attribute points, replacing the five you would get per level.
+- **Runes**: collected through the Archipelago Sigil you start with.
+- **Traps**: Mana Burn, Exhaustion, Brush with Death, Skill Lock and Gold Tax.
 
-The options also list Progressive Horadric Keys, pooled Stat Points and Runes. These
-do not work in this preview: the game gives the mod no way to create the stats they
-need. Leave them off.
+Keys, Stat Points and Runes have been checked in the game in town but not yet over a
+full run; traps are untested.
 
 ## What are the locations?
 

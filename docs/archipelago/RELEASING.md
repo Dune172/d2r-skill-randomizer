@@ -16,6 +16,9 @@ tables and a slot contract and a mismatched pair is refused when the client conn
    (site) with `manifest.ContractVersion` (client) when the mod manifest changed.
 4. The site with the matching `/api/archipelago/mod` is deployed. The client's default
    server is d2rrandomizer.com, so a client released ahead of the site cannot fetch a mod.
+   The reverse holds too: once the site's `AP_CONTRACT_VERSION` moves, it answers 409 to
+   every client released before, so deploy the site and publish the matching client
+   together.
 5. Locally:
 
    ```bash

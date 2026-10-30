@@ -1,15 +1,15 @@
 # Archipelago: delivering keys, runes and pooled points
 
-Status: proposal with a working prototype (branch `claude/ap-keys-runes-delivery`).
-The options stay default off and labelled "not working" until you decide.
+Status: implemented on branch `claude/ap-keys-runes-delivery`, checked in town on D2R 3.3.
+The options stay default off and are labelled experimental until a full run is played.
 
 ## The short version
 
 The preview's blocker was that nothing could **create** the custom stats `ap_keys` (368)
 and `ap_mail` (369). The client can only change a stat entry that already exists.
 
-**Player spell 4 creates them.** It is the vanilla "Healing Potion" item spell, and it
-adds each `stat1..3` / `calc1..3` of the item to the drinker's base stats, permanently
+**Player spell 4 creates them.** It is the spell of the unused Full Healing and Full
+Mana potions, and it adds each `stat1..3` / `calc1..3` of the item to the drinker's base stats, permanently
 when `len` is empty. Spell 8, which the preview used, looks the same in `misc.txt` but
 ignores those columns. It adds one to a random attribute.
 
@@ -37,13 +37,14 @@ number fixed.
    `statpts` +1 when stat points are pooled. This fixes the "pool hits zero" limit for
    skill points and pooled stat points. The client then writes the pool straight back to
    its target, so the Tonic only provides an entry to write to.
-3. **Brew recipes, tried in file order after the mail recipes:**
+3. **Brew recipes, after the mail recipes:**
    - Sigil alone, `ap_mail` ≤ 0 (absent) → Draught + Sigil. This replaces a lost starting
-     Draught.
-   - Sigil alone, `ap_mail` ≤ 1 (idle) → Tonic + Sigil.
-
-   While a rune is on offer, the same Sigil delivers the rune instead. Once the Receipt
-   is drunk the mailbox is idle again and the next transmute brews a Tonic.
+     Draught. Once the mail stat exists it never reads 0 again (value + 1).
+   - Sigil alone, `ap_mail` = 200 → Tonic + Sigil. **200 is a request only the client
+     writes**: when a point pool is missing and points are owed. It goes ahead of the
+     next rune but never replaces a rune the player may be collecting, and the client
+     withdraws it once the pool exists again. A first version brewed a Tonic whenever
+     the mailbox was idle, which with the client off was unlimited free points.
 
 Cube `op` meanings, from D2MOO `PlrTrade.cpp`, all on the player's **base** stat: 7 is
 ≥, 8 is ≤, 9 is ≠ and 10 is =. An absent stat reads 0.
@@ -100,29 +101,37 @@ on the mod this branch generates (seed 987002, Paladin, `ap_gate_pal`, `keyItems
 | Drink the Tonic | `4=1` and `5=1` on both copies |
 | Spend that point, Save and Exit, re-enter | the skill (Death Mark) still learned; `4=1`, `368=1`, `369=1` kept |
 
-**Still to run:**
+**Done later the same day**, on mods generated from this branch with the client-requested
+Tonic (seed 987003, Paladin, keys and pooled stat points on), character Keytest:
 
-1. **Fresh character.** Create one: stats 5, 368 and 369 are absent; Sigil alone →
-   Draught (not a Tonic); drink it → `5=1`, `368=1`, `369=256`. This tests the op 8
-   ≤ 0 recipe, which D2MOO says matches an absent stat.
-2. **Spend the Tonic's stat point** in the character screen and see that it stays
-   (the entry itself was shown to come back and survive a save).
-3. **Client end to end.** Run `d2rr-ap` against a local room with runes and keys on,
-   send an El Rune and two keys: the client offers the rune, and after the Receipt it
-   logs "collected" and `368` reads 3. Needs a local Archipelago server; this PC has no
-   Python.
-4. **Key gate (needs Act II items).** Staff of Kings + Amulet of the Viper refuses at
-   `368=2` and transmutes at `368=3`. This uses op 7 (≥), the same mechanism as the
-   mail's op 10 (=) and the brew's op 8 (≤), both measured. Getting the two items means
-   leaving town, so this one is left for a normal playthrough. In town it could be
-   approximated with a test-only recipe on op 7 in a local copy of the mod.
+| Step | Result |
+|---|---|
+| Fresh character | stats 4, 5, 368 and 369 absent on both copies |
+| Sigil alone in the Cube (369 absent) | **Draught** + Sigil (the ≤ 0 recipe matches an absent stat) |
+| Drink the Draught | `5=1`, `368=1`, `369=256` on both copies; no attribute changed |
+| Sigil alone at `369=256`, then at `369=1` (idle) | nothing both times: no Tonic at will |
+| Spend the point | stat 5 dropped from both copies |
+| `probe -set 369=200` (the request), Sigil alone | **Tonic of Renewal** + Sigil |
+| Drink the Tonic | `5=1` and `4=1` on both copies |
+| Khalim's Will, real recipe, at 0 / 4 / 5 keys (`368` = 1 / 5 / 6) | refused / refused / **made** |
+| Horadric Staff, real recipe, at 1 / 2 keys (`368` = 2 / 3) | refused / **made** |
+
+The quest parts came from test-only recipes added to the installed copy of the mod (a
+starting potion and scrolls turned into the Staff, Amulet and Khalim's parts), so the
+real recipes could be tried in town. The same crafting on a control mod with keys off,
+whose recipes keep vanilla `op 28`, left **byte-identical quest and waypoint data** in
+the save. So replacing op 28 with the key gate changes nothing the game records.
+
+**Still to run:** the client end to end. A local room (generated and hosted with
+Archipelago 0.6.7, start inventory 3 skill points, 2 keys, an El Rune and a stat-point
+bundle) connected and sent the items; the client fetched the room's mod. Installing it
+then found a bug, fixed on this branch: the mod zip carried a launcher shortcut beside
+the mod folder, which the installer refused. The rebuilt client was then blocked by
+Windows Smart App Control on the test PC, so the run stopped there.
 
 ## Decisions for you
 
-1. **Adopt spell 4 + Tonic?** Recommended. It's small, data-only for keys and runes,
-   and fixes the zero-pool limit as well.
-2. **Relabel the options.** After checks 1–3 pass, change "not working in this preview"
-   to "experimental" in `src/lib/archipelago/options.ts`, `apworld/d2rr/options.py`,
-   `YamlBuilder.tsx` and the release notes. Still default off?
-3. **Tonic art.** `mpf` shows a large blue potion. That's fine to start with; a
+1. **Relabel the options.** Done on this branch: keys, runes and pooled stat points are
+   "experimental" (default off), like traps and DeathLink, rather than "not working".
+2. **Tonic art.** `mpf` shows a large blue potion. That's fine to start with; a
    custom icon would need an HD sprite.

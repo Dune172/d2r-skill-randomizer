@@ -25,13 +25,15 @@ From `DESIGN_NOTES.md` (D2R 3.3.93847, 2026-10-29, in town only):
 | Gate | Result |
 |---|---|
 | G1 skill points | **Pass in town**, once both copies of the player are written. `probe -set` and the client now do that. Combat (step 4) not run. |
-| G2 creating a stat | **Fails.** The Draught of Attunement does not create the stats. Cannot pass until keys and runes get a new mechanism. |
-| G3 Cube recipes | **Half.** A recipe does test the mail stat (step 1 passes). The rune half needs a mail stat entry, which nothing can create yet (see G2). |
+| G2 creating a stat | **Pass in town** with player spell 4: the Draught creates 5, 368 and 369 on both copies, on a fresh character too. |
+| G3 Cube recipes | **Pass in town**: runes are delivered once per offer and the Receipt acknowledges. |
+| G6 Tonic of Renewal | **Pass in town**: brewed only on the client's request (369 = 200), and it brings back an emptied pool. |
+| Key gates | **Pass in town** on the real recipes, with test-only recipes supplying the quest parts. |
 | G4 traps, DeathLink | Not run (outside town). |
 | G5 a real room | Not run (outside town). |
 
-Keys, pooled stat points and runes are marked "not working" in the options for this
-reason. Skill points, checks, gold, traps and DeathLink do not depend on G2.
+Keys, pooled stat points and runes are marked experimental until a full run (G5) has
+been played with them. Details are in `KEYS_AND_RUNES.md`.
 
 ## Setup
 
@@ -154,47 +156,41 @@ works on this build and nothing below is worth running.
 
 ## G2: can the mod create a stat for the client to write?
 
-**Known to fail** on 3.3: the Draught's spell ignores the stat columns. It cannot pass
-until keys and runes get a new mechanism (a starter save, say). Keep it for that
-mechanism, or to confirm a D2R patch did not change the answer.
-
 **In town**, with the fresh character:
 
 1. `dist\d2rr-ap.exe probe`: stats 5, 368 and 369 are absent.
-2. Right-click the **Draught of Attunement**, then `probe` again.
+2. Put the **Sigil alone** in the Cube and transmute: expect a second **Draught** and the
+   Sigil back (the brew for a missing mail stat).
+3. Right-click a **Draught of Attunement**, then `probe` and `probe -game`.
 
-**Pass:** 368 is 1, 369 is 256, 5 is 1. Save and Exit, re-enter, probe: 368 and 369
-are still there.
+**Pass:** 368 is 1, 369 is 256 and 5 is 1 on both copies, no attribute changed, and all
+three are still there after Save and Exit and re-entering.
 
-**Fail:** the Draught does nothing, or the stats are gone after re-entering. Keys and
-runes then need another way to create the stat (a starter save is the fallback).
-Passed on 2026-10-29 once the Draught used player spell 4 (see `KEYS_AND_RUNES.md`).
+**Fail:** the Draught does nothing, or adds to a random attribute (as player spell 8 did
+before 2026-10-29), or the stats are gone after re-entering. Keys and runes then need
+another way to create the stat (a starter save is the fallback).
 
 ## G3: does a Cube recipe obey a stat?
 
-**In town**, fresh character, Cube open.
+**In town**, the same character after G2, Cube open, the Sigil alone in it.
 
-1. Put the **Sigil alone** in the Cube and transmute. With 369 absent (or 1, idle), the
-   brew recipe fires: expect a second Draught and the Sigil back. **Passes on 3.3.**
-
-The rune half needs a 369 entry to write, which only G2 can create, so it **cannot pass
-yet**. Once a mechanism exists:
-
-1. `dist\d2rr-ap.exe probe -set 369=1` to set the mailbox idle (the running client does
-   this by itself; the Draught leaves it at 256). Put the **Sigil alone** in the Cube
-   and transmute. Expect a **Tonic of Renewal** and the Sigil back (a Draught comes only
-   while 369 is absent).
-2. `dist\d2rr-ap.exe probe -set 369=2`, transmute the Sigil alone. Expect an **El Rune**,
-   the other Sigil and an **Archipelago Receipt**.
+1. With 369 at 256 (after the Draught) and then at 1 (`probe -set 369=1`, idle),
+   transmute: expect **nothing** both times.
+2. `dist\d2rr-ap.exe probe -set 369=2`, transmute. Expect an **El Rune**, the other Sigil
+   and an **Archipelago Receipt**.
 3. Transmute the Sigil alone **again** without using the Receipt. Expect **nothing**:
    the exactly-once guarantee depends on the Cube refusing here.
-4. Right-click the Receipt, then `probe`. Stat 369 should read 3. **Known to fail on
-   3.3** with the Receipt as built today: it uses the same spell as the Draught (see G2).
+4. Right-click the Receipt, then `probe`. Stat 369 should read 3.
 5. `dist\d2rr-ap.exe probe -set 369=8`, transmute. Expect an **Eld Rune** (offer 8 is
    the Eld for the second Sigil, the one now held).
 
-**Pass:** all five. Runes then work, and so do key gates, which use the same mechanism:
-the Horadric Staff recipe needs stat 368 at 3 or more, Khalim's Will at 6 or more.
+**Pass:** all five. Runes then work.
+
+**Key gates** use the same mechanism: the Horadric Staff recipe needs stat 368 at 3 or
+more, Khalim's Will at 6 or more. Their parts cannot be had in town; to try the real
+recipes anyway, add test-only rows to the installed copy of the mod's `cubemain.txt`
+that turn starting items into the parts (see `KEYS_AND_RUNES.md`), then transmute the
+parts at one key below and at the gate.
 
 ## G6: does the Tonic bring back an empty pool?
 
@@ -202,12 +198,14 @@ Same character, in town. Step 3 needs a mod with pooled stat points.
 
 1. Spend the last unspent skill point in the tree. `probe` and `probe -game`: stat 5 is
    gone from both copies.
-2. `dist\d2rr-ap.exe probe -set 369=1`, transmute the Sigil alone, right-click the Tonic
-   of Renewal. `probe` and `probe -game`: 5 is 1 on both, the point spends, and the skill
-   is still learned after Save and Exit.
-3. The same with the last stat point: stat 4 comes back as 1.
+2. `dist\d2rr-ap.exe probe -set 369=200` (the request the client writes when a pool is
+   missing and points are owed), transmute the Sigil alone: expect a **Tonic of
+   Renewal** and the Sigil back. Right-click it. `probe` and `probe -game`: 5 is 1 on
+   both, the point spends, and the skill is still learned after Save and Exit.
+3. With pooled stat points, the same Tonic brings stat 4 back as 1.
 
-**Pass:** all three. Points sent while a pool is empty then arrive after one Tonic.
+**Pass:** all three. Points sent while a pool is empty then arrive after one Tonic. At
+any other value of 369 the Sigil must not brew a Tonic (G3 step 1).
 
 ## G4: traps and DeathLink
 
@@ -231,8 +229,8 @@ write; record which happens so the docs can say so.
 **Outside town.** Only after G1 passes.
 
 1. Generate a room in the Archipelago Launcher with a YAML from the `/archipelago` page
-   of the dev server (goal Andariel on Normal is enough; leave the "not working"
-   options off), and host it.
+   of the dev server (goal Andariel on Normal is enough; turn on whatever experimental
+   options you want to cover), and host it.
 2. With the game closed:
 
    ```powershell
@@ -254,8 +252,8 @@ write; record which happens so the docs can say so.
 
 For a gate that fails, keep the `probe` output before and after and a note of what the
 game showed. Add the results, with the D2R build from `doctor`, to "Gate results" in
-`DESIGN_NOTES.md`. An option moves from "not working" or experimental to supported only
-when its gate has passed.
+`DESIGN_NOTES.md`. An option moves from experimental to supported only when its gate,
+and a full run with it, has passed.
 
 ## The automated checks
 

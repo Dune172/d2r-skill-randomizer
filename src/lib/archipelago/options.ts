@@ -95,16 +95,16 @@ export const AP_OPTIONS: ApOption[] = [
   },
   {
     key: 'key_items', label: 'Horadric Keys', group: 'Experimental', type: 'toggle', default: false,
-    help: 'Not working in this preview: the game gives no way to create the key stat, so the Staff could never be assembled. Leave off.',
+    help: 'The Cube will not assemble the Horadric Staff (2 keys) or Khalim’s Will (5) until you hold enough keys from the multiworld. Drink your starting Draught of Attunement first.',
   },
   {
     key: 'stat_points', label: 'Stat points', group: 'Experimental', type: 'choice',
     choices: choice(['vanilla', 'pooled']), default: 'vanilla',
-    help: 'Not working in this preview: pooled points cannot be delivered once the stat point pool is empty. Leave on vanilla.',
+    help: 'Pooled: level-ups grant no attribute points; they are items in the multiworld instead. When your pool is empty, the client asks for a Tonic of Renewal from the Sigil.',
   },
   {
     key: 'rune_percentage', label: 'Rune percentage', group: 'Experimental', type: 'range', min: 0, max: 100, default: 0,
-    help: 'Not working in this preview: the rune mailbox cannot be set up in the game, so no rune would arrive. Leave at 0.',
+    help: 'Share of filler items that are runes, collected by transmuting the Archipelago Sigil alone in the Horadric Cube.',
   },
   {
     key: 'trap_percentage', label: 'Trap percentage', group: 'Experimental', type: 'range', min: 0, max: 100, default: 0,
