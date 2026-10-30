@@ -273,3 +273,29 @@ func TestANewCharactersHeaderOnlySaveNamesTheCharacter(t *testing.T) {
 		t.Fatal("accepted a file too short to hold a name")
 	}
 }
+
+// The header-only file D2R writes for a new character is recognised; a full save is not.
+func TestANewCharactersStubSaveIsRecognised(t *testing.T) {
+	dir := t.TempDir()
+	stub := make([]byte, 403)
+	binary.LittleEndian.PutUint32(stub[0:4], magic)
+	copy(stub[nameOffset:], "Freshling")
+	path := filepath.Join(dir, "Freshling.d2s")
+	if err := os.WriteFile(path, stub, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if !IsNewCharacter(path) {
+		t.Fatal("a header-only save is a new character")
+	}
+	full := append(append([]byte{}, stub...), []byte("Woo!")...)
+	full = append(full, make([]byte, 300)...)
+	if err := os.WriteFile(path, full, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if IsNewCharacter(path) {
+		t.Fatal("a save with a quest section is not a new character")
+	}
+	if IsNewCharacter(filepath.Join(dir, "missing.d2s")) {
+		t.Fatal("a missing file is not a new character")
+	}
+}

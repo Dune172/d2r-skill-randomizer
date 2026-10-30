@@ -113,7 +113,10 @@ type app struct {
 
 	// Latest parsed save, kept so area checks can resolve the current difficulty. The
 	// save is the only thing that proves which difficulties are even unlocked.
-	lastState    *save.State
+	lastState *save.State
+	// newCharacter: the bound save is still the header D2R writes at creation, so the
+	// character is on Normal (set by pollSave while the save cannot be parsed).
+	newCharacter bool
 	lastDiffWarn time.Time
 
 	// Difficulty the player told us they are on, or -1 to infer. Area checks need a

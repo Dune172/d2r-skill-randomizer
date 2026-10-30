@@ -24,8 +24,18 @@ func (a *app) pollSave(ctx context.Context) {
 	}
 	st, err := save.ParseFile(path)
 	if err != nil {
-		return // a save may be mid-flush
+		// A brand-new character's save is a bare header until the game first saves it,
+		// which can take many minutes. It is on Normal, which is all the area and waypoint
+		// checks need to know, so they need not wait.
+		fresh := save.IsNewCharacter(path)
+		a.mu.Lock()
+		a.newCharacter = fresh
+		a.mu.Unlock()
+		return // otherwise a save may be mid-flush
 	}
+	a.mu.Lock()
+	a.newCharacter = false
+	a.mu.Unlock()
 	if st.Name != a.session.CharacterName() {
 		a.warnAttach("save header does not match the bound character")
 		return
