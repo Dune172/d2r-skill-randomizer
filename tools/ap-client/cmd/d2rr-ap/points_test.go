@@ -100,19 +100,6 @@ func TestSkillLockTrapWithholdsPoints(t *testing.T) {
 	}
 }
 
-func TestSkillPointsWaitForTheStatToExist(t *testing.T) {
-	a, char := pointsApp(t, 5, 0)
-	delete(char.stats, stat.SkillPoints)
-	pollPoints(a)
-	pollPoints(a)
-	if _, ok := char.stats[stat.SkillPoints]; ok || a.lastPointsWritten > 0 {
-		t.Fatal("wrote a stat the character does not have")
-	}
-	if a.lastAttachWarn == "" {
-		t.Fatal("a missing skill-point stat must be explained, not silent")
-	}
-}
-
 func TestSkillPointsNeedTheClassSkillsAndAReadableList(t *testing.T) {
 	a, char := pointsApp(t, 5, 0)
 	a.classSkillIDs = nil

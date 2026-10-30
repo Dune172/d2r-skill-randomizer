@@ -95,6 +95,7 @@ func TestSparseStatDistinguishesMissingFromReadFailure(t *testing.T) {
 	m.u64(0x10000+offStatsListEx, 0x20000)
 	m.u64(0x20000+statBaseList, 0x30000)
 	m.u64(0x20000+statBaseList+statListCount, 1)
+	m.u64(0x20000+statBaseList+statListCapacity, 4)
 	if _, _, _, e := readBaseStat(m.read, 0x10000, stat.SkillPoints); e == nil {
 		t.Fatal("read failure hidden")
 	}
