@@ -1,7 +1,7 @@
 from .. import ids, rules
 from . import D2RRTestBase
 
-EVERYTHING = {"key_items": True, "stat_points": "pooled", "rune_percentage": 40, "trap_percentage": 15}
+EVERYTHING = {"key_items": True, "stat_points": "pooled", "trap_percentage": 15}
 
 
 class TestDefaults(D2RRTestBase):

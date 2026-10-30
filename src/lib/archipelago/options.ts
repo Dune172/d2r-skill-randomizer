@@ -10,7 +10,7 @@
 export const AP_GAME_NAME = 'D2R Randomizer';
 
 /** Versions the page states. Kept beside the options so one check covers both. */
-export const AP_WORLD_VERSION = '0.2.0';
+export const AP_WORLD_VERSION = '0.3.0';
 export const AP_MINIMUM_ARCHIPELAGO = '0.6.7';
 
 interface BaseOption {
@@ -95,16 +95,12 @@ export const AP_OPTIONS: ApOption[] = [
   },
   {
     key: 'key_items', label: 'Horadric Keys', group: 'Experimental', type: 'toggle', default: false,
-    help: 'The Cube will not assemble the Horadric Staff (2 keys) or Khalim’s Will (5) until you hold enough keys from the multiworld. Drink your starting Draught of Attunement first.',
+    help: 'The Cube will not assemble the Horadric Staff (2 keys) or Khalim’s Will (5) until you hold enough keys from the multiworld. Keys arrive automatically while the app is running.',
   },
   {
     key: 'stat_points', label: 'Stat points', group: 'Experimental', type: 'choice',
     choices: choice(['vanilla', 'pooled']), default: 'vanilla',
-    help: 'Pooled: level-ups grant no attribute points; they are items in the multiworld instead. When your pool is empty, the client asks for a Tonic of Renewal from the Sigil.',
-  },
-  {
-    key: 'rune_percentage', label: 'Rune percentage', group: 'Experimental', type: 'range', min: 0, max: 100, default: 0,
-    help: 'Share of filler items that are runes, collected by transmuting the Archipelago Sigil alone in the Horadric Cube.',
+    help: 'Pooled: level-ups grant no attribute points; they are items in the multiworld instead, and arrive automatically while the app is running.',
   },
   {
     key: 'trap_percentage', label: 'Trap percentage', group: 'Experimental', type: 'range', min: 0, max: 100, default: 0,

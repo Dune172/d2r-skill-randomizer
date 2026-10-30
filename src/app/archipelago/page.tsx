@@ -154,14 +154,15 @@ export default function ArchipelagoPage() {
               character</span> of the class in your player file.
             </MiniStep>
             <MiniStep n={4}>
-              Right-click the <span className="text-[#c8942a]">Draught of Attunement</span> in your inventory, then
-              play. Keep the app open: it sends your checks and delivers your points.
+              Play, and keep the app open: it sends your checks, and your items arrive by themselves. There is
+              nothing to drink or transmute.
             </MiniStep>
           </div>
           <p className="mt-4 rounded p-3 bg-[#0a2010]/60 border border-[#2a5a2a] text-xs text-[#6abf6a] leading-relaxed">
             ✓ If it worked, the app says <code className="text-[#8ad08a]">connected as &quot;YourName&quot;</code>,
-            and skill points appear in your tree as other players find them. Next time, double-click the app
-            and press Enter to rejoin the same room.
+            and skill points appear in your tree as other players find them. What you receive and send shows
+            up in the game, beside the chat. Next time, double-click the app and press Enter to rejoin the
+            same room.
           </p>
           <p className="mt-3 text-xs text-[#a89060] leading-relaxed">
             Type into the app&apos;s window to chat with the room; <code className={code}>!hint Progressive Skill Point</code>{' '}
@@ -203,9 +204,9 @@ export default function ArchipelagoPage() {
             example &ldquo;close Diablo II to install this room&apos;s mod&rdquo;. Do what it says; it carries on by itself.
           </li>
           <li>
-            <span className="text-[#c8942a]">No skill points yet.</span> Drink the Draught of Attunement. When
-            you have spent every point and more arrive, the app asks you to put the Archipelago Sigil alone in
-            the Horadric Cube, transmute, and drink the Tonic of Renewal it makes.
+            <span className="text-[#c8942a]">No skill points yet.</span> Points arrive a second or two after the
+            room sends them, while the app says connected and your character is in a game. Now and then the
+            game has to make room first; they then arrive after your next level-up, quest or item.
           </li>
           <li>
             <span className="text-[#c8942a]">Diablo II isn&apos;t found.</span> The app asks for the folder that

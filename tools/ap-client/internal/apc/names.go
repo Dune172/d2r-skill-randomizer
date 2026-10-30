@@ -19,6 +19,61 @@ type nameTable struct {
 	locations map[string]map[int64]string
 	players   map[int64]string // slot -> alias, on this client's team
 	games     map[int64]string // slot -> game
+	me        int64            // this client's slot
+}
+
+// ItemEvent is an item that moved to or from this slot: what a player wants to be told.
+type ItemEvent struct {
+	Item string
+	// Other is the other player: who sent it, or who it went to. Empty when this slot
+	// found one of its own items.
+	Other string
+	// Received is true for an item that came to this slot, false for one this slot sent.
+	Received bool
+}
+
+// Text is the line a player reads.
+func (e ItemEvent) Text() string {
+	switch {
+	case e.Received && e.Other == "":
+		return "You found your " + e.Item
+	case e.Received:
+		return "You received " + e.Item + " from " + e.Other
+	default:
+		return "You sent " + e.Item + " to " + e.Other
+	}
+}
+
+// itemEvent reads an ItemSend PrintJSON packet, reporting only one that concerns this slot.
+func (n *nameTable) itemEvent(p map[string]any) (ItemEvent, bool) {
+	if p["type"] != "ItemSend" {
+		return ItemEvent{}, false
+	}
+	receiving, okR := toInt64(p["receiving"])
+	item, _ := p["item"].(map[string]any)
+	id, okI := toInt64(item["item"])
+	finder, okF := toInt64(item["player"])
+	if !okR || !okI || !okF || (receiving != n.me && finder != n.me) {
+		return ItemEvent{}, false
+	}
+	name, ok := n.items[n.games[receiving]][id]
+	if !ok {
+		name = fmt.Sprintf("item %d", id)
+	}
+	who := func(slot int64) string {
+		if alias, ok := n.players[slot]; ok {
+			return alias
+		}
+		return fmt.Sprintf("player %d", slot)
+	}
+	switch {
+	case receiving == n.me && finder == n.me:
+		return ItemEvent{Item: name, Received: true}, true
+	case receiving == n.me:
+		return ItemEvent{Item: name, Other: who(finder), Received: true}, true
+	default:
+		return ItemEvent{Item: name, Other: who(receiving)}, true
+	}
 }
 
 func (n *nameTable) addGame(game string, pkg map[string]any) {
@@ -39,8 +94,8 @@ func (n *nameTable) addGame(game string, pkg map[string]any) {
 	n.locations[game] = invert(pkg["location_name_to_id"])
 }
 
-func (n *nameTable) setPlayers(players, slotInfo any, team int64) {
-	n.players, n.games = map[int64]string{}, map[int64]string{}
+func (n *nameTable) setPlayers(players, slotInfo any, team, me int64) {
+	n.players, n.games, n.me = map[int64]string{}, map[int64]string{}, me
 	for _, raw := range toSlice(players) {
 		p, _ := raw.(map[string]any)
 		slot, okSlot := toInt64(p["slot"])

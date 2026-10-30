@@ -142,26 +142,6 @@ func TestGoalIsTheQuestThatRecordsTheBossOnTheGoalDifficulty(t *testing.T) {
 	}
 }
 
-func TestMailboxMapsRuneCodesToTheirArchipelagoItems(t *testing.T) {
-	tables := manifest.Tables{MailIdle: 1, MailAttuned: 256, Mail: []manifest.MailItem{
-		{Offer: 2, Sigil: 0, Item: "r01", Name: "El Rune"},
-		{Offer: 4, Sigil: 1, Item: "r01", Name: "El Rune"},
-		{Offer: 132, Sigil: 1, Item: "r33", Name: "Zod Rune"},
-		{Offer: 140, Item: "zzz", Name: "Not a rune"},
-	}}
-	box := mailboxFor(tables)
-	if len(box.Entries) != 3 || box.Idle != 1 || box.Attuned != 256 {
-		t.Fatalf("%+v", box)
-	}
-	names := ids.ItemNames()
-	if box.Entries[0].ItemID != names["El Rune"] || box.Entries[1].ItemID != names["El Rune"] || box.Entries[2].ItemID != names["Zod Rune"] {
-		t.Fatalf("rune ids %+v", box.Entries)
-	}
-	if box.Entries[0].Sigil != 0 || box.Entries[1].Sigil != 1 || box.Entries[2].Sigil != 1 {
-		t.Fatalf("sigils %+v", box.Entries)
-	}
-}
-
 func TestChecksTheRoomDoesNotHaveAreNeverRecorded(t *testing.T) {
 	session, err := apc.NewSession(t.TempDir(), "room", "slot")
 	if err != nil {
@@ -173,35 +153,5 @@ func TestChecksTheRoomDoesNotHaveAreNeverRecorded(t *testing.T) {
 	a.sendChecks(context.Background(), []int64{10})
 	if len(session.AllChecks()) != 1 {
 		t.Fatalf("offline check was dropped: %v", session.AllChecks())
-	}
-}
-
-func TestTheSigilInHandFollowsDeliveriesAndCorrections(t *testing.T) {
-	dir := t.TempDir()
-	s := apc.PendingSession(dir, "Slot")
-	if err := s.Bind("seed", 0, 1); err != nil {
-		t.Fatal(err)
-	}
-	el, eld := ids.RuneIDBase, ids.RuneIDBase+1
-	if s.MailSigil(el, eld) != 0 {
-		t.Fatal("a new character holds the first Sigil")
-	}
-	s.MarkApplied(el, 1)
-	if s.MailSigil(el, eld) != 1 {
-		t.Fatal("one delivery swaps the Sigil")
-	}
-	s.MarkApplied(eld, 1)
-	if s.MailSigil(el, eld) != 0 {
-		t.Fatal("a second delivery swaps it back")
-	}
-	if err := s.FlipMail(); err != nil {
-		t.Fatal(err)
-	}
-	again := apc.PendingSession(dir, "Slot")
-	if err := again.Bind("seed", 0, 1); err != nil {
-		t.Fatal(err)
-	}
-	if again.MailSigil(el, eld) != 1 {
-		t.Fatal("a correction must survive a restart")
 	}
 }

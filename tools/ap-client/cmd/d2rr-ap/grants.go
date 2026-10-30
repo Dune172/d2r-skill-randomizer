@@ -4,13 +4,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
-	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/grants"
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
-	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
 	"github.com/hectorgimenez/d2go/pkg/data/stat"
 )
 
@@ -29,6 +28,9 @@ type gameView interface {
 	SetUnspentSkillPoints(player uintptr, n int) (bool, error)
 	BaseStat(unit uintptr, id stat.ID) (uint32, bool, error)
 	SetPlayerStat(player uintptr, id stat.ID, value uint32) (bool, error)
+	// GivePlayerStat sets a stat, creating its entry when the character has none and
+	// every list it goes in keeps spare free slots after it.
+	GivePlayerStat(player uintptr, id stat.ID, value uint32, spare int) error
 	SpentStatPoints(player uintptr, classBase int) (int, error)
 	Apply(player uintptr, effect game.TrapEffect) (bool, error)
 	IsDead(player uintptr) (bool, error)
@@ -42,12 +44,30 @@ func (a *app) view() gameView {
 	return a.gc
 }
 
+// setOrGive writes a stat the character should hold, creating its entry if the game has
+// not (a fresh character has no point pools, and the game drops a pool spent to zero).
+// A value of zero for a missing entry is left alone: there is nothing to hold.
+func (a *app) setOrGive(player uintptr, id stat.ID, value uint32, spare int) error {
+	existed, err := a.view().SetPlayerStat(player, id, value)
+	if err != nil || existed || value == 0 {
+		return err
+	}
+	return a.view().GivePlayerStat(player, id, value, spare)
+}
+
+// waitingForRoom says, in a player's terms, why a grant could not be added yet.
+func waitingForRoom(what string, err error) string {
+	if errors.Is(err, game.ErrNoRoom) {
+		return what + ": waiting for the game to make room in your character's stats (it does at your next level-up, quest reward or item pickup)"
+	}
+	return fmt.Sprintf("%s: %v", what, err)
+}
+
 // applyGrants gives the character everything beyond skill points: pooled stat points,
-// Horadric Keys, runes through the mailbox, gold, traps, and DeathLink.
+// Horadric Keys, gold, traps, and DeathLink.
 //
-// Every one of these is a change to the value of a stat the game already holds. Targets
-// (stat points, keys) are recomputed from the item counts each poll, so they converge
-// however the items arrived. One-shot effects (gold, traps, runes) are owed until
+// Targets (stat points, keys) are recomputed from the item counts each poll, so they
+// converge however the items arrived. One-shot effects (gold, traps) are owed until
 // recorded as applied, and are recorded only after the write has succeeded.
 func (a *app) applyGrants(ctx context.Context, player uintptr) {
 	a.mu.Lock()
@@ -62,7 +82,6 @@ func (a *app) applyGrants(ctx context.Context, player uintptr) {
 		a.applyStatPoints(player, man.Tables.BaseAttributes)
 	}
 	a.applyKeys(player, stat.ID(man.Tables.Stats.Keys))
-	a.applyMail(player)
 
 	prog, ok := a.view().Progress()
 	if !ok {
@@ -97,25 +116,11 @@ func (a *app) applyStatPoints(player uintptr, classBase int) {
 	if want < 0 {
 		want = 0
 	}
-	existed, err := a.view().SetPlayerStat(player, stat.StatPoints, uint32(want))
-	a.mu.Lock()
-	// Asks the mailbox for a Tonic, but only from a mod whose Tonic restores stat points:
-	// otherwise the request could never be met and would hold up the runes behind it.
-	tonicHelps := a.man != nil && a.man.Tables.TonicStatPoints
-	a.needStatPool = err == nil && !existed && want > 0 && tonicHelps
-	a.mu.Unlock()
-	switch {
-	case err != nil:
-		a.note("stat", "setting stat points: "+err.Error())
-	case !existed && want == 0:
-		a.note("stat", "") // nothing owed, so nothing to write to yet
-	case !existed && !tonicHelps:
-		a.note("stat", fmt.Sprintf("%d stat point(s) wait for your next level-up (this mod's Tonic restores only skill points)", want))
-	case !existed:
-		a.note("stat", a.poolHint(player, "stat-point"))
-	default:
-		a.note("stat", fmt.Sprintf("stat points: %d unspent (%d sent, %d spent)", want, sent, spent))
+	if err := a.setOrGive(player, stat.StatPoints, uint32(want), 0); err != nil {
+		a.note("stat", waitingForRoom(fmt.Sprintf("%d stat point(s)", want), err))
+		return
 	}
+	a.note("stat", fmt.Sprintf("stat points: %d unspent (%d sent, %d spent)", want, sent, spent))
 }
 
 // applyKeys holds the key stat at the number of Horadric Keys received, plus one.
@@ -127,145 +132,12 @@ func (a *app) applyKeys(player uintptr, keyStat stat.ID) {
 	if keys == 0 && !keyItems {
 		return
 	}
-	existed, err := a.view().SetPlayerStat(player, keyStat, uint32(keys+1))
-	switch {
-	case err != nil:
-		a.note("keys", "setting Horadric Keys: "+err.Error())
-	case !existed:
-		a.note("keys", fmt.Sprintf("%d Horadric Key(s) wait for the Draught of Attunement", keys))
-	default:
-		a.note("keys", fmt.Sprintf("Horadric Keys: %d held (the Horadric Staff needs %d, Khalim's Will %d)",
-			keys, ids.KeysForHoradricStaff, ids.KeysForKhalimsWill))
-	}
-}
-
-// poolHint says how to get an entry back for an emptied point pool: from whether the
-// mail stat exists now, and whether a rune was on offer at the last poll.
-func (a *app) poolHint(player uintptr, what string) string {
-	a.mu.Lock()
-	offer, man := a.mailOffer, a.man
-	a.mu.Unlock()
-	mailExists := false
-	if man != nil {
-		_, mailExists, _ = a.view().BaseStat(player, stat.ID(man.Tables.Stats.Mail))
-	}
-	switch {
-	case !mailExists:
-		return "waiting for the game to create the " + what + " stat: right-click the Draught of Attunement in " +
-			"your inventory (if it is gone, transmute the Archipelago Sigil alone in the Horadric Cube for another)"
-	case offer != 0:
-		return "waiting for the " + what + " stat: collect the rune waiting in the mailbox first (the Archipelago " +
-			"Sigil alone in the Horadric Cube, then right-click the Receipt); a Tonic of Renewal comes next"
-	default:
-		return "waiting for the " + what + " stat: put the Archipelago Sigil alone in the Horadric Cube, transmute, " +
-			"and right-click the Tonic of Renewal it makes"
-	}
-}
-
-// applyMail runs the rune mailbox: put up the next rune that is owed, and record a rune
-// as delivered when its Receipt has been used.
-func (a *app) applyMail(player uintptr) {
-	a.mu.Lock()
-	box := a.mailbox
-	current := a.mailOffer
-	a.mu.Unlock()
-	if len(box.Entries) == 0 {
+	if err := a.setOrGive(player, keyStat, uint32(keys+1), 0); err != nil {
+		a.note("keys", waitingForRoom(fmt.Sprintf("%d Horadric Key(s)", keys), err))
 		return
 	}
-	// Every rune appears twice in the table, once per Sigil.
-	runes := make([]int64, len(ids.RuneNames))
-	owed := 0
-	for i := range runes {
-		runes[i] = ids.RuneIDBase + int64(i)
-		owed += a.session.Pending(runes[i])
-	}
-	a.mu.Lock()
-	flip := a.flipMail
-	a.flipMail = false
-	a.mu.Unlock()
-	if flip {
-		if err := a.session.FlipMail(); err != nil {
-			logf("recording -mail-flip failed: %v", err)
-		} else {
-			logf("mailbox: now offering runes for the other Archipelago Sigil")
-		}
-	}
-	sigil := a.session.MailSigil(runes...)
-
-	mailStat := stat.ID(a.man.Tables.Stats.Mail)
-	value, exists, err := a.view().BaseStat(player, mailStat)
-	if err != nil {
-		return
-	}
-	a.mu.Lock()
-	wantTonic := a.needSkillPool || a.needStatPool
-	a.mu.Unlock()
-	if !exists {
-		if owed > 0 {
-			a.note("mail", fmt.Sprintf("%d rune(s) wait for the Draught of Attunement", owed))
-		}
-		return
-	}
-
-	// -mail-skip: the Receipt for the rune on offer is gone, so nothing will ever
-	// acknowledge it. Record it as collected; the Sigil was swapped when it was taken.
-	a.mu.Lock()
-	skip := a.skipMail
-	a.skipMail = false
-	a.mu.Unlock()
-	if skip {
-		offered := current
-		if offered == 0 {
-			offered = value
-		}
-		skipped := false
-		for _, e := range box.Entries {
-			if e.Offer == offered && e.Sigil == sigil && a.session.Pending(e.ItemID) > 0 {
-				if err := a.session.MarkApplied(e.ItemID, 1); err == nil {
-					logf("mailbox: %s recorded as collected (-mail-skip)", e.Name)
-					current, sigil, skipped = 0, 1-sigil, true
-				}
-			}
-		}
-		if !skipped {
-			logf("mailbox: -mail-skip found no rune on offer; nothing was changed")
-		}
-	}
-
-	step := box.Step(value, current, sigil, a.session.Pending, wantTonic)
-	if step.Write != 0 {
-		if _, err := a.view().SetPlayerStat(player, mailStat, step.Write); err != nil {
-			a.note("mail", "updating the mailbox: "+err.Error())
-			return
-		}
-	}
-	// Recorded only now that the stat has moved off the acknowledgement.
-	if step.Delivered != 0 {
-		if err := a.session.MarkApplied(step.Delivered, 1); err != nil {
-			logf("recording a delivered rune failed: %v", err)
-		}
-		logf("mailbox: %s collected", ids.RuneItemName(int(step.Delivered-ids.RuneIDBase)))
-	}
-	a.mu.Lock()
-	a.mailOffer = step.Offer
-	a.mu.Unlock()
-
-	if step.Tonic {
-		// The point code's own warning says what to do; nothing more to add here.
-		a.note("mail", "")
-		return
-	}
-	if step.Offer == 0 {
-		a.note("mail", "")
-		return
-	}
-	for _, e := range box.Entries {
-		if e.Offer == step.Offer {
-			a.note("mail", fmt.Sprintf("mailbox: %s is waiting (%d rune(s) owed). Put the Archipelago Sigil alone in "+
-				"the Horadric Cube and transmute, then right-click the Archipelago Receipt. "+
-				"(Cube refuses: restart with -mail-flip. Receipt lost: restart with -mail-skip.)", e.Name, owed))
-		}
-	}
+	a.note("keys", fmt.Sprintf("Horadric Keys: %d held (the Horadric Staff needs %d, Khalim's Will %d)",
+		keys, ids.KeysForHoradricStaff, ids.KeysForKhalimsWill))
 }
 
 // applyGold hands over owed Gold items, one a poll.
@@ -273,16 +145,14 @@ func (a *app) applyGold(player uintptr, level int) {
 	if a.session.Pending(ids.GoldItemID) == 0 {
 		return
 	}
-	current, exists, err := a.view().BaseStat(player, stat.Gold)
+	current, _, err := a.view().BaseStat(player, stat.Gold)
 	if err != nil {
 		return
 	}
-	if !exists {
-		a.note("gold", "gold is waiting: pick up any gold so the game has somewhere to put it")
-		return
-	}
 	next := game.GoldAfter(current, level)
-	if _, err := a.view().SetPlayerStat(player, stat.Gold, next); err != nil {
+	// Gold never takes the last free slot: a point pool spent to zero needs it back.
+	if err := a.setOrGive(player, stat.Gold, next, 1); err != nil {
+		a.note("gold", waitingForRoom("gold", err))
 		return
 	}
 	if err := a.session.MarkApplied(ids.GoldItemID, 1); err == nil {
@@ -422,21 +292,4 @@ func (a *app) note(topic, message string) {
 	if !same && message != "" {
 		logf("%s", message)
 	}
-}
-
-// mailboxFor builds the mail table from the manifest, in rune order.
-func mailboxFor(tables manifest.Tables) grants.Mailbox {
-	box := grants.Mailbox{Idle: tables.MailIdle, Attuned: tables.MailAttuned, TonicRequest: tables.TonicRequest}
-	codes := map[string]int{}
-	for i := range ids.RuneNames {
-		codes[fmt.Sprintf("r%02d", i+1)] = i
-	}
-	for _, m := range tables.Mail {
-		if index, ok := codes[m.Item]; ok {
-			box.Entries = append(box.Entries, grants.MailEntry{
-				Offer: m.Offer, Sigil: m.Sigil, ItemID: ids.RuneIDBase + int64(index), Name: m.Name,
-			})
-		}
-	}
-	return box
 }

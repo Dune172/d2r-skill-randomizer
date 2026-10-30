@@ -19,7 +19,7 @@ import (
 
 // ContractVersion is the manifest shape this client understands. The server rejects a
 // mismatch rather than serving something we would misread.
-const ContractVersion = 4
+const ContractVersion = 5
 
 type Slot struct {
 	SlotID    string `json:"slotId"`
@@ -43,39 +43,13 @@ type Manifest struct {
 	Tables Tables `json:"tables"`
 }
 
-// MailItem is one thing the mailbox can deliver.
-type MailItem struct {
-	// Offer is what the client writes into the mail stat to put the item up. Offers are
-	// even; the game answers with Offer+1 when the player uses the Receipt.
-	Offer uint32 `json:"offer"`
-	// Sigil is which of the two Sigils the recipe for this offer takes.
-	Sigil int    `json:"sigil"`
-	Item  string `json:"item"`
-	Name  string `json:"name"`
-}
-
 // Tables describes what the mod added so the client can turn stats into things.
 type Tables struct {
-	// Stats are the itemstatcost ids of the two custom stats. Keys stores the key count
-	// plus one; both are never zero, because the game drops a zero stat.
+	// Stats are the itemstatcost ids of the custom stats. Keys stores the key count plus
+	// one, so it is never zero (the game drops a zero stat).
 	Stats struct {
 		Keys int `json:"keys"`
-		Mail int `json:"mail"`
 	} `json:"stats"`
-	Sigils     []string `json:"sigils"`
-	Attunement string   `json:"attunement"`
-	Receipt    string   `json:"receipt"`
-	// Tonic recreates an emptied point pool. A Sigil brews one only while the mail stat
-	// holds TonicRequest, which the client writes when a pool is missing and points are
-	// owed.
-	Tonic        string `json:"tonic"`
-	TonicRequest uint32 `json:"tonicRequest"`
-	// TonicStatPoints: the Tonic restores the stat-point pool too. Without it, a Tonic
-	// cannot help an empty stat pool, so the client must not ask for one for that.
-	TonicStatPoints bool       `json:"tonicStatPoints"`
-	MailIdle        uint32     `json:"mailIdle"`
-	MailAttuned     uint32     `json:"mailAttuned"`
-	Mail            []MailItem `json:"mail"`
 	// KeyGates is present only when the quest recipes are locked.
 	KeyGates *struct {
 		HoradricStaff int `json:"horadricStaff"`
@@ -83,6 +57,9 @@ type Tables struct {
 	} `json:"keyGates,omitempty"`
 	// BaseAttributes is the class's starting strength+dexterity+energy+vitality.
 	BaseAttributes int `json:"baseAttributes"`
+	// MessageBox names the text box the mod adds to the chat panel, where the client
+	// shows the items sent to and from this slot.
+	MessageBox string `json:"messageBox"`
 }
 
 // Slots returns the AP class's 30 slots, ordered S00..S29.
@@ -149,21 +126,16 @@ func validate(m *Manifest) error {
 	return validateTables(&m.Tables)
 }
 
-// validateTables refuses a mailbox the client could misread: an offer that is odd, that
-// collides with idle or with another offer, or that reaches the attunement value.
+// validateTables refuses tables the client could misread.
 func validateTables(t *Tables) error {
-	if t.Stats.Keys < 16 || t.Stats.Mail < 16 || t.Stats.Keys == t.Stats.Mail || t.Stats.Keys > 510 || t.Stats.Mail > 510 {
-		return fmt.Errorf("manifest custom stat ids are invalid")
+	if t.Stats.Keys < 16 || t.Stats.Keys > 510 {
+		return fmt.Errorf("manifest custom stat id is invalid")
 	}
-	if t.MailIdle != 1 || t.MailAttuned < 4 || t.BaseAttributes < 1 {
-		return fmt.Errorf("manifest mailbox constants are invalid")
+	if t.BaseAttributes < 1 {
+		return fmt.Errorf("manifest base attributes are invalid")
 	}
-	seen := map[uint32]bool{}
-	for _, m := range t.Mail {
-		if m.Offer < 2 || m.Offer%2 != 0 || m.Offer+1 >= t.MailAttuned || seen[m.Offer] || m.Item == "" || m.Sigil < 0 || m.Sigil > 1 {
-			return fmt.Errorf("manifest mail offer %d for %q is invalid", m.Offer, m.Item)
-		}
-		seen[m.Offer] = true
+	if t.MessageBox != "" && !regexp.MustCompile(`^[A-Za-z0-9_]+$`).MatchString(t.MessageBox) {
+		return fmt.Errorf("manifest message box name is invalid")
 	}
 	return nil
 }

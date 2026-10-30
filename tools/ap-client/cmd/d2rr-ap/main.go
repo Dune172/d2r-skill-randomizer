@@ -51,8 +51,6 @@ func main() {
 		launch     = flag.Bool("launch", false, "install the mod and launch D2R")
 		statusFile = flag.String("status-file", "", "write a diagnostic JSON status snapshot to this path")
 		dryRun     = flag.Bool("dry-run", false, "do everything except write to the game")
-		mailFlip   = flag.Bool("mail-flip", false, "the Cube refuses a waiting rune: offer it for the other Archipelago Sigil instead")
-		mailSkip   = flag.Bool("mail-skip", false, "the Receipt for the waiting rune was lost: record that rune as collected")
 		diff       = flag.Int("difficulty", -1,
 			"current difficulty for live checks: 0 normal, 1 nightmare, 2 hell; -1 uses calibrated memory or unambiguous saves")
 	)
@@ -122,8 +120,6 @@ func main() {
 		lastSeen:           map[string]bool{},
 		goalDifficulty:     -1,
 		goalAct:            len(ids.GoalQuestIndex) - 1,
-		flipMail:           *mailFlip,
-		skipMail:           *mailSkip,
 		difficultyOverride: *diff,
 		baseURL:            *baseURL,
 		modOut:             *modOut,
@@ -159,7 +155,8 @@ func main() {
 		OnItems: func(s *apc.Session) {
 			app.recomputeDesired()
 		},
-		OnPrint: func(text string) { logf("%s", strings.TrimSpace(text)) },
+		OnPrint:     func(text string) { logf("%s", strings.TrimSpace(text)) },
+		OnItemEvent: app.addMessage,
 	})
 	app.conn = conn
 

@@ -55,6 +55,7 @@ export interface ZipContents {
   starterReadme?: string;           // how to install the starter characters
   mutationsJson?: string;           // mutations.json: the mutations the player picked
   apManifestJson?: string;          // Archipelago mode: what the companion client reads about this mod
+  apLayoutFiles?: Map<string, Buffer>; // Archipelago mode: chat-panel layouts with the message box, paths under data/
 }
 
 // Map sprite prefix to full folder name used in D2R mod paths
@@ -113,6 +114,11 @@ export function buildZip(contents: ZipContents): Buffer {
   }
   if (contents.globalSkillIcons) {
     for (const [relativePath, buffer] of contents.globalSkillIcons) {
+      zip.addFile(`${d}/data/${relativePath}`, buffer);
+    }
+  }
+  if (contents.apLayoutFiles) {
+    for (const [relativePath, buffer] of contents.apLayoutFiles) {
       zip.addFile(`${d}/data/${relativePath}`, buffer);
     }
   }

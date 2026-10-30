@@ -87,7 +87,7 @@ async function main() {
   fs.writeFileSync(path.join(players, 'solo.yaml'), [
     `name: ${SLOT}`, 'game: D2R Randomizer', 'D2R Randomizer:',
     '  character_class: paladin', '  goal_boss: duriel', '  key_items: true',
-    '  stat_points: pooled', '  rune_percentage: 30', '  trap_percentage: 10',
+    '  stat_points: pooled', '  trap_percentage: 10',
     '  xp_multiplier: 2', '  death_link: true', '',
   ].join('\n'));
 
@@ -136,7 +136,7 @@ async function main() {
     await step('items sent by the server are counted', async () => {
       await server.waitFor(/Solo.*(has joined|joined)/i, 'the server to see the client');
       for (const item of ['Progressive Skill Point', 'Progressive Skill Point', 'Training Fragment',
-        'Stat Points', 'Progressive Horadric Key', 'El Rune', 'Mana Burn Trap', 'Gold']) {
+        'Stat Points', 'Progressive Horadric Key', 'Mana Burn Trap', 'Gold']) {
         server.say(`/send ${SLOT} ${item}`);
       }
       // One starting point is precollected; two more were sent.
@@ -145,7 +145,7 @@ async function main() {
     });
     await step('server messages name items, not ids', async () => {
       const text = client.output();
-      if (!/Progressive Horadric Key/.test(text) || !/El Rune/.test(text)) throw new Error('item names missing from the log');
+      if (!/Progressive Horadric Key/.test(text) || !/Mana Burn Trap/.test(text)) throw new Error('item names missing from the log');
       if (/\b57220\d\d\b/.test(text.replace(/seed \d+/g, ''))) throw new Error('a raw item id was printed');
     });
     await step('chat typed into the client reaches the room', async () => {

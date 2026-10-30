@@ -53,7 +53,7 @@ import { seasonFilesForNow } from '@/lib/seasons/overlay';
 import { openActsSavepath, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 import { buildOpenActsFiles, runOpenActsShuffle } from '@/lib/randomizer/open-acts/generate';
 import type { OpenActsShuffle } from '@/lib/randomizer/open-acts/fill';
-import { ApModeOptions, ApManifest, ApTables, applyApCharstats, applyApSkills, applyApTables, buildApManifest } from '@/lib/randomizer/ap-mode';
+import { ApModeOptions, ApManifest, ApTables, applyApCharstats, applyApSkills, applyApTables, buildApLayoutFiles, buildApManifest } from '@/lib/randomizer/ap-mode';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -930,23 +930,18 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     startWithCube: startingHoradricCube, raceClassCode: raceMode ? pickRaceClassCode(seed) : null,
     charstats, skills: skillsTxt,
   });
-  // Archipelago: the custom stats, the Sigil and its recipes. Challenges, Forgotten Arts,
-  // mutations and Open Acts are all refused with AP mode (see the top of generateMod),
-  // so each table can start from the vanilla file.
+  // Archipelago: the key stat, the optional key gates and the chat-panel message box.
+  // Challenges, Forgotten Arts, mutations and Open Acts are all refused with AP mode (see
+  // the top of generateMod), so each table can start from the vanilla file.
   let apTables: ApTables | undefined;
+  let apLayoutFiles: Map<string, Buffer> | undefined;
   if (ap) {
     const itemstatcost = loadTxtFile('itemstatcost.txt');
-    const misc = loadTxtFile('misc.txt');
     const cubemain = loadTxtFile('cubemain.txt');
-    const itemNames = JSON.parse(
-      fs.readFileSync(path.join(DATA_DIR, 'local', 'strings', 'item-names.json'), 'utf8').replace(/^\uFEFF/, ''),
-    );
-    apTables = applyApTables({ ap, itemstatcost, misc, cubemain, charstats, itemNames });
+    apTables = applyApTables({ ap, itemstatcost, cubemain, charstats });
     itemStatCostTxt = serializeTxtFile(itemstatcost.headers, itemstatcost.rows);
-    miscTxt = serializeTxtFile(misc.headers, misc.rows);
     cubemainTxt = serializeTxtFile(cubemain.headers, cubemain.rows);
-    charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
-    itemNamesJson = '\uFEFF' + JSON.stringify(itemNames, null, 2).replace(/\n/g, '\r\n');
+    apLayoutFiles = buildApLayoutFiles(DATA_DIR);
   }
 
   // Shipped inside the zip, so the mod and the manifest describing it cannot drift apart.
@@ -1015,6 +1010,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
       ? JSON.stringify({ mutations: customMutations.map(id => ({ id, name: MUTATIONS[id].name })) }, null, 2)
       : undefined,
     apManifestJson: manifest ? JSON.stringify(manifest, null, 2) : undefined,
+    apLayoutFiles,
   });
 
   return { zip: zipBuffer, modName, savepath, manifest };

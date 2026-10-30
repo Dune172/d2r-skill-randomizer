@@ -42,11 +42,11 @@ const DEFAULTS = {
   character_class: 'paladin', goal_difficulty: 'normal', goal_boss: 'baal',
   skill_points: 110, starting_skill_points: 1, logic_difficulty: 'standard',
   include_waypoints: true, include_areas: true, include_level_milestones: true,
-  key_items: false, stat_points: 'vanilla', rune_percentage: 0, trap_percentage: 0,
+  key_items: false, stat_points: 'vanilla', trap_percentage: 0,
   xp_multiplier: 1, monster_shuffle: false, death_link: false,
 };
 const QUESTS_ONLY = { include_waypoints: false, include_areas: false, include_level_milestones: false };
-const EVERYTHING = { key_items: true, stat_points: 'pooled', rune_percentage: 40, trap_percentage: 15 };
+const EVERYTHING = { key_items: true, stat_points: 'pooled', trap_percentage: 15 };
 
 /**
  * Cases cover the combinations that actually differ rather than the full cross product:
@@ -86,7 +86,6 @@ function cases() {
   }
   out.push({ name: 'keys-only', key_items: true });
   out.push({ name: 'stats-pooled', stat_points: 'pooled' });
-  out.push({ name: 'runes-100', rune_percentage: 100, goal_difficulty: 'hell' });
   out.push({ name: 'traps-100', trap_percentage: 100 });
   out.push({ name: 'mod-options', xp_multiplier: 3, monster_shuffle: true, death_link: true });
   return out.map(c => ({ ...DEFAULTS, ...c }));
@@ -198,7 +197,7 @@ function audit(c, slot, spoiler, multi) {
   // On the smallest slots there may be no room left for optional items at all.
   const roomy = mine.length >= 60;
   if (roomy && (c.stat_points === 'pooled') !== has(/^Stat Points$/)) problems.push('stat point items do not match the option');
-  if (roomy && (c.rune_percentage > 0) !== has(/ Rune$/)) problems.push('rune items do not match the option');
+  if (has(/ Rune$/)) problems.push('a rune was placed (rune ids are reserved, never placed)');
   if (roomy && (c.trap_percentage > 0) !== has(/ Trap$/)) problems.push('trap items do not match the option');
   if (!has(/^Progressive Skill Point$/) && c.starting_skill_points === 0) problems.push('no skill point is placed');
 

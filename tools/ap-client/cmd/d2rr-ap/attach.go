@@ -129,6 +129,7 @@ func (a *app) pollGame(ctx context.Context) {
 	if a.gc.QuitMenuOpen() {
 		return
 	} // avoid writing during exit; there are no nodes to unlink
+	a.showMessages()
 	if !a.conn.Synchronized() {
 		a.warnAttach("waiting for the server's complete item replay before granting points")
 		return

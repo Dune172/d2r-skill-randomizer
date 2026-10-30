@@ -199,13 +199,12 @@ class TestGates(unittest.TestCase):
 class TestPoolSizing(unittest.TestCase):
     REQUESTS = [
         dict(skill_points=sp, starting_skill_points=start, keys=keys, stat_bundles=stats,
-             trap_percentage=traps, rune_percentage=runes)
+             trap_percentage=traps)
         for sp in (20, 110, 600)
         for start in (0, 5)
         for keys in (0, 2, 5)
         for stats in (0, 29, 74)
         for traps in (0, 10, 100)
-        for runes in (0, 30, 100)
     ]
 
     def sizes(self):
@@ -216,7 +215,7 @@ class TestPoolSizing(unittest.TestCase):
             for request in self.REQUESTS:
                 pool = ids.resolve_pool(count, **request)
                 placed = (pool["keys"] + pool["placed_skill_points"] + pool["stat_bundles"]
-                          + pool["traps"] + pool["runes"] + pool["gold"] + pool["fragments"])
+                          + pool["traps"] + pool["gold"] + pool["fragments"])
                 self.assertEqual(placed, count, (count, request, pool))
                 self.assertTrue(all(v >= 0 for v in pool.values()), (count, request, pool))
 
@@ -256,19 +255,22 @@ class TestPoolSizing(unittest.TestCase):
             pool = ids.resolve_pool(len(locations((d, ids.BAAL_ACT))), skill_points=110, starting_skill_points=1)
             self.assertEqual(pool["skill_points"], 110)
 
-    def test_percentages_split_the_filler(self):
-        pool = ids.resolve_pool(300, skill_points=100, trap_percentage=10, rune_percentage=50)
+    def test_the_trap_percentage_splits_the_filler(self):
+        pool = ids.resolve_pool(300, skill_points=100, trap_percentage=10)
         filler = 300 - 100
         self.assertEqual(pool["traps"], filler * 10 // 100)
-        self.assertEqual(pool["runes"], (filler - pool["traps"]) * 50 // 100)
-        everything = ids.resolve_pool(300, skill_points=100, trap_percentage=100, rune_percentage=100)
-        self.assertEqual((everything["traps"], everything["runes"], everything["gold"], everything["fragments"]),
-                         (filler, 0, 0, 0))
+        self.assertEqual(pool["gold"] + pool["fragments"], filler - pool["traps"])
+        everything = ids.resolve_pool(300, skill_points=100, trap_percentage=100)
+        self.assertEqual((everything["traps"], everything["gold"], everything["fragments"]), (filler, 0, 0))
 
-    def test_rune_caps_are_real_runes(self):
-        self.assertEqual([ids.RUNE_NAMES[cap - 1] for cap in ids.RUNE_CAP_BY_DIFFICULTY], ["Hel", "Ist", "Zod"])
-        self.assertEqual(ids.RUNE_NAMES[ids.FIRST_USEFUL_RUNE], "Lem")
+    def test_no_runes_are_placed(self):
+        self.assertNotIn("runes", ids.resolve_pool(300, skill_points=100, trap_percentage=10))
+
+    def test_the_reserved_rune_ids_stay_put(self):
+        # Never placed, but their ids are part of the contract with the client.
         self.assertEqual(len(ids.RUNE_NAMES), 33)
+        self.assertEqual(ids.rune_item_id(0), ids.RUNE_ID_BASE)
+        self.assertEqual(ids.rune_item_id(32), ids.RUNE_ID_BASE + 32)
 
 
 if __name__ == "__main__":

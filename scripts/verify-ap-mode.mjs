@@ -16,16 +16,16 @@
  *   skillId correctness    skillId must index the row holding that skill
  *   no seasonal overlay    a room's mod must not change when the month does
  *   same tree as the seed  Archipelago seed N plays the tree public seed N shows
- *   custom stats           ap_keys and ap_mail exist, are saved, and survive at zero
- *   Sigil and Draught      every class starts with both; the Draught creates the stats
- *   player spell 4         the Draught, Receipt and Tonic use spell 4 with no duration,
- *                          the only spell that adds its stat columns permanently
- *   Tonic                  brewed only on the client's request; recreates the skill-point
- *                          pool, and the stat-point pool only
- *                          when stat points are pooled
- *   mailbox recipes        each deliverable has its own offer code per Sigil; the one
- *                          recipe alive for an offer returns the OTHER Sigil and a
- *                          Receipt, so an offer is delivered exactly once
+ *   contract 5 tables      stats.keys, keyGates (only with keyItems), baseAttributes and
+ *                          messageBox, and nothing else
+ *   key stat               ap_keys exists at the manifest's id, is saved and survives at
+ *                          zero; it is the only stat the mod adds
+ *   no potions             no class starts with the old Sigils, Draught, Receipt or Tonic,
+ *                          their misc.txt rows (if shipped) are vanilla, and cubemain.txt
+ *                          is vanilla apart from the key gates
+ *   message box            both chat layouts ship with exactly one ArchipelagoMessages box,
+ *                          600 spaces of text, inserted as the panel's first child, every
+ *                          vanilla line kept
  *   key gates              only when asked for, and then on both quest recipes
  *
  * Non-class rows (monster/superunique, empty charclass) are deliberately NOT checked:
@@ -44,6 +44,16 @@ const CONTRACT_VERSION = Number(
     readFileSync(new URL('../src/lib/randomizer/ap-mode.ts', import.meta.url), 'utf8'),
   )[1],
 );
+
+const AP_MODE_SOURCE = readFileSync(new URL('../src/lib/randomizer/ap-mode.ts', import.meta.url), 'utf8');
+const MESSAGE_BOX = /AP_MESSAGE_BOX = '([^']+)'/.exec(AP_MODE_SOURCE)[1];
+const MESSAGE_CAPACITY = Number(/AP_MESSAGE_CAPACITY = (\d+)/.exec(AP_MODE_SOURCE)[1]);
+
+/** Items contracts 1-4 repurposed: the Sigils, the Draught, the Receipt and the Tonic. */
+const REMOVED_ITEMS = ['hrt', 'sol', 'elx', 'hrb', 'mpf'];
+
+const VANILLA = Object.fromEntries(['itemstatcost', 'cubemain', 'misc'].map(name =>
+  [name, parseTsv(readFileSync(new URL(`../data/txt/${name}.txt`, import.meta.url), 'utf8'))]));
 
 const CASES = [
   { seed: 1234, characterClass: 'pal', savepath: 'ap_test_pal' },
@@ -199,134 +209,91 @@ async function verifyCase(c) {
   check(failures, missing.length === 0,
     `slot ids are not the stable S00..S29 set; missing ${missing.slice(0, 4).join(', ')}`);
 
-  // --- custom stats, the Sigil, the mailbox and the key gates ---------------
+  // --- the key stat and the key gates -----------------------------------------
   const tables = manifest.tables ?? {};
+  check(failures, JSON.stringify(Object.keys(tables).sort())
+    === JSON.stringify(['baseAttributes', 'messageBox', 'stats', ...(c.options?.keyItems ? ['keyGates'] : [])].sort()),
+    `manifest tables has keys ${Object.keys(tables).sort().join()}, expected exactly the contract-5 shape`);
+  check(failures, JSON.stringify(Object.keys(tables.stats ?? {})) === '["keys"]',
+    `manifest tables.stats has ${Object.keys(tables.stats ?? {}).join()}, expected only keys`);
+  check(failures, tables.messageBox === MESSAGE_BOX, `manifest messageBox "${tables.messageBox}" != ${MESSAGE_BOX}`);
+
   const isc = parseTsv(read('global/excel/itemstatcost.txt') ?? '');
   const iscRow = name => isc.rows.find(r => r[0] === name);
   const iscCell = (row, name) => row?.[isc.headers.indexOf(name)];
-  for (const [name, id] of [['ap_keys', tables.stats?.keys], ['ap_mail', tables.stats?.mail]]) {
-    const row = iscRow(name);
-    check(failures, row !== undefined, `itemstatcost.txt has no ${name}`);
-    if (!row) continue;
-    // The id is the row's position: D2R indexes stats by row, whatever *ID says.
-    check(failures, isc.rows.indexOf(row) === id && iscCell(row, '*ID') === String(id),
-      `${name}: manifest id ${id}, row ${isc.rows.indexOf(row)}, *ID ${iscCell(row, '*ID')}`);
-    check(failures, iscCell(row, 'Saved') === '1' && iscCell(row, 'keepzero') === '1',
-      `${name} must be saved and kept at zero`);
-    // Room for two hoarded Draughts drunk together (512).
-    check(failures, Number(iscCell(row, 'CSvBits')) >= 10 && Number(iscCell(row, 'Send Bits')) >= 10,
-      `${name} needs at least 10 bits`);
+  {
+    const row = iscRow('ap_keys');
+    const id = tables.stats?.keys;
+    check(failures, row !== undefined, 'itemstatcost.txt has no ap_keys');
+    if (row) {
+      // The id is the row's position: D2R indexes stats by row, whatever *ID says.
+      check(failures, isc.rows.indexOf(row) === id && iscCell(row, '*ID') === String(id),
+        `ap_keys: manifest id ${id}, row ${isc.rows.indexOf(row)}, *ID ${iscCell(row, '*ID')}`);
+      check(failures, iscCell(row, 'Saved') === '1' && iscCell(row, 'keepzero') === '1',
+        'ap_keys must be saved and kept at zero');
+      check(failures, Number(iscCell(row, 'CSvBits')) >= 10 && Number(iscCell(row, 'Send Bits')) >= 10,
+        'ap_keys needs at least 10 bits');
+    }
   }
+  // ap_keys is the only stat the mod adds; the old mailbox stat is gone.
+  check(failures, iscRow('ap_mail') === undefined, 'itemstatcost.txt still has ap_mail');
+  check(failures, isc.rows.length === VANILLA.itemstatcost.rows.length + 1,
+    `itemstatcost.txt has ${isc.rows.length - VANILLA.itemstatcost.rows.length} rows beyond vanilla, expected 1 (ap_keys)`);
   for (const name of ['statpts', 'newskills']) {
     check(failures, iscCell(iscRow(name), 'keepzero') === '1', `${name} must be kept at zero`);
   }
 
-  const misc = parseTsv(read('global/excel/misc.txt') ?? '');
-  const miscRow = code => misc.rows.find(r => r[misc.headers.indexOf('code')] === code);
-  const miscCell = (row, name) => row?.[misc.headers.indexOf(name)];
-  const statsOf = code => [1, 2, 3].map(n => miscCell(miscRow(code), `stat${n}`)).filter(Boolean);
-  const sigils = tables.sigils ?? [];
-  check(failures, sigils.length === 2 && sigils[0] !== sigils[1], 'the mailbox needs two different Sigils');
-  for (const code of [...sigils, tables.attunement, tables.receipt, tables.tonic]) {
-    const row = miscRow(code);
-    check(failures, row !== undefined, `${code} missing from misc.txt`);
-    // A Sigil that right-click-converts into a potion would destroy the mailbox.
-    check(failures, miscCell(row, 'Transmogrify') === '0' && miscCell(row, 'spawnable') === '0',
-      `${code} still transmutes itself or spawns`);
-    check(failures, miscCell(row, 'belt') === '0' && miscCell(row, 'autobelt') === '0', `${code} can go in the belt`);
-  }
-  // The Draught: one key-stat point (keys + 1), the attunement value on the mailbox, and
-  // one skill point, which the client then writes to its target.
-  const calcOf = (code, stat) => {
-    const n = [1, 2, 3].find(i => miscCell(miscRow(code), `stat${i}`) === stat);
-    return n ? miscCell(miscRow(code), `calc${n}`) : undefined;
-  };
-  for (const [name, calc] of [['ap_keys', '1'], ['ap_mail', String(tables.mailAttuned)], ['newskills', '1']]) {
-    check(failures, calcOf(tables.attunement, name) === calc,
-      `the Draught adds ${calcOf(tables.attunement, name)} to ${name}, expected ${calc}`);
-  }
-  check(failures, statsOf(tables.receipt).join() === 'ap_mail', 'the Receipt must add to ap_mail and nothing else');
-  check(failures, miscCell(miscRow(tables.receipt), 'calc1') === '1', 'the Receipt must add exactly one');
-  // Spell 8 ignores the stat columns (measured on D2R 3.3); spell 4 adds them, and only
-  // permanently when there is no duration.
-  for (const code of [tables.attunement, tables.receipt, tables.tonic]) {
-    check(failures, miscCell(miscRow(code), 'pSpell') === '4' && !miscCell(miscRow(code), 'len')
-      && miscCell(miscRow(code), 'useable') === '1', `${code} is not a usable spell 4 item with no duration`);
-  }
-  // The Tonic's base item has no name string in the game, so the mod must ship one.
-  const names = JSON.parse((read('/strings/item-names.json') ?? '[]').replace(/^﻿/, ''));
-  const tonicName = names.find(e => e.Key === tables.tonic);
-  check(failures, tonicName?.enUS === 'Tonic of Renewal' && tonicName.id >= 40000
-    && names.filter(e => e.id === tonicName.id).length === 1,
-    `the Tonic (${tables.tonic}) has no unique name string`);
-  const tonicStats = c.options?.pooledStats === true ? 'newskills,statpts' : 'newskills';
-  check(failures, statsOf(tables.tonic).join() === tonicStats, `the Tonic adds ${statsOf(tables.tonic).join()}, expected ${tonicStats}`);
-  // The client asks for a Tonic for an empty stat pool only when the manifest says it helps.
-  check(failures, tables.tonicStatPoints === (c.options?.pooledStats === true),
-    `manifest tonicStatPoints is ${tables.tonicStatPoints}, but the Tonic adds ${statsOf(tables.tonic).join()}`);
-  for (const name of statsOf(tables.tonic)) {
-    check(failures, calcOf(tables.tonic, name) === '1', `the Tonic adds ${calcOf(tables.tonic, name)} to ${name}, expected 1`);
-  }
-
+  // --- the items the old contracts repurposed are vanilla again -------------
   if (csRaw) {
     const cs = parseTsv(csRaw);
     for (const row of cs.rows) {
       if (!row[0] || row[0] === 'Expansion') continue;
       const items = Array.from({ length: 10 }, (_, i) => row[cs.headers.indexOf(`item${i + 1}`)]);
-      for (const code of [sigils[0], tables.attunement, 'box']) {
-        check(failures, items.includes(code), `${row[0]} does not start with ${code}`);
-      }
+      const removed = items.filter(code => REMOVED_ITEMS.includes(code));
+      check(failures, removed.length === 0, `${row[0]} still starts with ${removed.join(', ')}`);
+      check(failures, items.includes('box'), `${row[0]} does not start with the Horadric Cube`);
     }
+  }
+  // misc.txt ships only when another feature edits it; if it does, these rows are vanilla.
+  const miscRaw = read('global/excel/misc.txt');
+  if (miscRaw) {
+    const misc = parseTsv(miscRaw);
+    const codeCol = col(misc.headers, 'code');
+    const vCodeCol = col(VANILLA.misc.headers, 'code');
+    for (const code of REMOVED_ITEMS) {
+      const shipped = misc.rows.find(r => r[codeCol] === code);
+      const vanilla = VANILLA.misc.rows.find(r => r[vCodeCol] === code);
+      const same = shipped && vanilla && misc.headers.every((h, i) =>
+        (shipped[i] ?? '') === (vanilla[VANILLA.misc.headers.indexOf(h)] ?? ''));
+      check(failures, same, `misc.txt row ${code} differs from vanilla`);
+    }
+  }
+  const namesRaw = read('/strings/item-names.json');
+  if (namesRaw) {
+    const names = JSON.parse(namesRaw.replace(/^﻿/, ''));
+    const leftover = names.filter(e => /Archipelago|Draught of Attunement|Tonic of Renewal/.test(e.enUS ?? '')
+      || e.id === 42000);
+    check(failures, leftover.length === 0, `item-names.json still names ${leftover.map(e => e.Key).join(', ')}`);
   }
 
+  // cubemain.txt is vanilla apart from the key gates: no mailbox, no brews.
   const cube = parseTsv(read('global/excel/cubemain.txt') ?? '');
   const cubeCell = (row, name) => row[cube.headers.indexOf(name)];
-  const mailStat = String(tables.stats?.mail);
-  const offers = new Set();
-  const perItem = new Map();
-  for (const m of tables.mail ?? []) {
-    // Offers even, acknowledgements odd, everything below what a Draught adds.
-    check(failures, m.offer % 2 === 0 && m.offer > tables.mailIdle && m.offer + 1 < tables.mailAttuned && !offers.has(m.offer),
-      `mail offer ${m.offer} for ${m.item} is out of range or duplicated`);
-    offers.add(m.offer);
-    perItem.set(m.item, [...(perItem.get(m.item) ?? []), m.sigil]);
-    // Exactly one recipe is alive for an offer, it takes that offer's Sigil, and it
-    // hands back the OTHER one, so the offer cannot be transmuted twice.
-    const recipe = cube.rows.filter(r => cubeCell(r, 'param') === mailStat && cubeCell(r, 'op') === '10'
-      && cubeCell(r, 'value') === String(m.offer));
-    check(failures, recipe.length === 1
-      && cubeCell(recipe[0], 'numinputs') === '1' && cubeCell(recipe[0], 'input 1') === sigils[m.sigil]
-      && cubeCell(recipe[0], 'output') === m.item
-      && cubeCell(recipe[0], 'output b') === sigils[1 - m.sigil]
-      && cubeCell(recipe[0], 'output c') === tables.receipt,
-      `mail recipe for ${m.item} under offer ${m.offer} is missing or mis-keyed`);
-  }
-  // The Tonic request is even like an offer, clear of every offer and acknowledgement,
-  // and below the attunement value.
-  const lastAck = Math.max(...(tables.mail ?? []).map(m => m.offer + 1));
-  check(failures, tables.tonicRequest % 2 === 0 && tables.tonicRequest > lastAck && tables.tonicRequest < tables.mailAttuned,
-    `Tonic request ${tables.tonicRequest} collides with the mail values`);
-  for (const [item, held] of perItem) {
-    check(failures, held.slice().sort().join() === '0,1', `${item} is not offered once for each Sigil`);
-  }
-  for (const sigil of sigils) {
-    const recipes = cube.rows.filter(r => cubeCell(r, 'input 1') === sigil && cubeCell(r, 'numinputs') === '1');
-    check(failures, recipes.length === perItem.size + 2,
-      `${recipes.length} recipes take ${sigil} alone, expected one per deliverable plus the Draught and the Tonic`);
-    // The brews come after the mail: the Draught while ap_mail does not exist (<= 0), and
-    // the Tonic only while the client has put the Tonic request on it (== request), so it
-    // cannot be brewed at will. Neither hands out a Receipt.
-    const [draught, tonic] = recipes.slice(-2);
-    check(failures, draught && cubeCell(draught, 'output') === tables.attunement && cubeCell(draught, 'op') === '8'
-      && cubeCell(draught, 'param') === mailStat && cubeCell(draught, 'value') === '0' && cubeCell(draught, 'output b') === sigil,
-      `the Draught recipe for ${sigil} is missing, mis-keyed or out of order`);
-    check(failures, tonic && cubeCell(tonic, 'output') === tables.tonic && cubeCell(tonic, 'op') === '10'
-      && cubeCell(tonic, 'param') === mailStat && cubeCell(tonic, 'value') === String(tables.tonicRequest) && cubeCell(tonic, 'output b') === sigil,
-      `the Tonic recipe for ${sigil} is missing, mis-keyed or not last`);
-    for (const brew of [draught, tonic]) {
-      check(failures, brew && !cubeCell(brew, 'output c'), `a brew recipe for ${sigil} also hands out ${brew && cubeCell(brew, 'output c')}`);
-    }
-  }
+  check(failures, cube.rows.length === VANILLA.cubemain.rows.length,
+    `cubemain.txt has ${cube.rows.length} recipes, vanilla has ${VANILLA.cubemain.rows.length}`);
+  const gated = new Set(['hst', 'qf2']);
+  let drifted = 0;
+  cube.rows.forEach((row, i) => {
+    const vanilla = VANILLA.cubemain.rows[i];
+    if (!vanilla) return;
+    const ignore = gated.has(cubeCell(row, 'output')) ? new Set(['op', 'param', 'value']) : new Set();
+    const same = cube.headers.every((h, j) => ignore.has(h)
+      || (row[j] ?? '') === (vanilla[VANILLA.cubemain.headers.indexOf(h)] ?? ''));
+    if (!same) drifted++;
+  });
+  check(failures, drifted === 0, `${drifted} cubemain.txt recipes differ from vanilla beyond the key gates`);
+  const apRecipes = cube.rows.filter(r => /Archipelago/i.test(cubeCell(r, 'description') ?? ''));
+  check(failures, apRecipes.length === 0, `${apRecipes.length} Archipelago recipes left in cubemain.txt, e.g. ${apRecipes[0] && cubeCell(apRecipes[0], 'description')}`);
 
   const baseRow = csRaw && parseTsv(csRaw);
   if (baseRow) {
@@ -347,6 +314,56 @@ async function verifyCase(c) {
         && cubeCell(recipe[0], 'value') === String(keys + 1), `${output} is not gated on ${keys} keys`);
     } else {
       check(failures, cubeCell(recipe[0], 'param') === '', `${output} is gated although keys are off`);
+    }
+  }
+
+  // --- the chat-panel message box ----------------------------------------------
+  for (const file of ['hudmessagepanel.json', 'hudmessagepanelhd.json']) {
+    const zipPath = `${manifest.modName}/${manifest.modName}.mpq/data/global/ui/layouts/${file}`;
+    const entry = entries.find(e => e.entryName.replace(/\\/g, '/') === zipPath);
+    check(failures, entry !== undefined, `${zipPath} missing from zip`);
+    if (!entry) continue;
+    const shipped = entry.getData().toString('utf-8');
+    const vanilla = readFileSync(new URL(`../data/archipelago/layouts/${file}`, import.meta.url), 'utf8');
+    // Every vanilla line kept, in order, with one contiguous block inserted.
+    const sl = shipped.split('\n');
+    const vl = vanilla.split('\n');
+    // The block goes right after the first "children": [, which is the panel's own: the
+    // vanilla file opens with the panel object and its fields, then its children.
+    const at = vl.findIndex(line => line.includes('"children": [')) + 1;
+    check(failures, at > 0 && /^ {4}"children": \[\r?$/.test(vl[at - 1]),
+      `${file}: the vanilla panel's own "children": [ is not where it was`);
+    const added = sl.length - vl.length;
+    const kept = at > 0 && added > 0 && vl.slice(0, at).every((line, i) => sl[i] === line)
+      && vl.slice(at).every((line, i) => sl[at + added + i] === line);
+    check(failures, kept, `${file}: the vanilla lines are not all preserved around one block after the panel's "children": [`);
+    if (!kept) continue;
+    let box;
+    try {
+      box = JSON.parse(sl.slice(at, at + added).join('\n').trim().replace(/,$/, ''));
+    } catch (err) {
+      failures.push(`${file}: the inserted block is not one JSON object (${err.message})`);
+      continue;
+    }
+    check(failures, box.type === 'TextBoxWidget' && box.name === MESSAGE_BOX,
+      `${file}: inserted ${box.type} "${box.name}", expected TextBoxWidget "${MESSAGE_BOX}"`);
+    check(failures, box.fields?.text === ' '.repeat(MESSAGE_CAPACITY),
+      `${file}: text is ${JSON.stringify(box.fields?.text)?.length - 2} characters, expected ${MESSAGE_CAPACITY} spaces`);
+    const rect = file.endsWith('hd.json') ? { x: 60, y: 850, width: 1700, height: 450 } : { x: 20, y: 250, width: 560, height: 160 };
+    check(failures, JSON.stringify(box.fields?.rect) === JSON.stringify(rect), `${file}: rect ${JSON.stringify(box.fields?.rect)}`);
+    const style = box.fields?.style ?? {};
+    check(failures, style.pointSize === '$MediumFontSize' && style.fontFace === 'BlizzardGlobal'
+      && style.alignment?.h === 'left' && style.alignment?.v === 'bottom' && style.options?.lineWrap === true
+      && style.options?.newlineHandling === 'standard' && style.dropShadow === '$DefaultDropShadow'
+      && JSON.stringify(style.fontColor) === '{"r":255,"g":255,"b":255,"a":255}', `${file}: style differs from the tested box`);
+    const occurrences = shipped.split(`"${MESSAGE_BOX}"`).length - 1;
+    check(failures, occurrences === 1, `${file}: ${occurrences} ${MESSAGE_BOX} widgets, expected 1`);
+    // And the whole file still reads as the game's panel, with the box first.
+    try {
+      const panel = JSON.parse(shipped.replace(/,(\s*[}\]])/g, '$1'));
+      check(failures, panel.children?.[0]?.name === MESSAGE_BOX, `${file}: the box is not the panel's first child`);
+    } catch (err) {
+      failures.push(`${file}: does not parse once trailing commas are dropped (${err.message})`);
     }
   }
 

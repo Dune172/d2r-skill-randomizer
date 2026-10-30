@@ -1,6 +1,12 @@
 # Archipelago: delivering keys, runes and pooled points
 
-Status: implemented on branch `claude/ap-keys-runes-delivery`, checked in town on D2R 3.3.
+> **Removed on 2026-10-30.** Runes, and the Sigil / Draught / Tonic / Receipt delivery
+> described here, were taken out: testers found the potion flow unfun. The client now
+> creates the stat entries itself, so skill points, pooled stat points and Horadric Keys
+> arrive directly while it runs (see "Direct delivery" in `DESIGN_NOTES.md`). The rune
+> item ids stay reserved and are never placed. Everything below is kept as a record.
+
+Status (historical): implemented on branch `claude/ap-keys-runes-delivery`, checked in town on D2R 3.3.
 The options stay default off and are labelled experimental until a full run is played.
 
 ## The short version

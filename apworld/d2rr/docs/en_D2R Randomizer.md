@@ -28,11 +28,10 @@ Experimental, each off unless you turn it on:
   until you hold two, or Khalim's Will until you hold five. Duriel and Mephisto wait on
   them.
 - **Stat Points**: five attribute points, replacing the five you would get per level.
-- **Runes**: collected through the Archipelago Sigil you start with.
 - **Traps**: Mana Burn, Exhaustion, Brush with Death, Skill Lock and Gold Tax.
 
-Keys, Stat Points and Runes have been checked in the game in town but not yet over a
-full run; traps are untested.
+Keys and Stat Points have been checked in the game in town but not yet over a full run;
+traps are untested. Everything arrives by itself while the companion app is running.
 
 ## What are the locations?
 
@@ -50,7 +49,8 @@ difficulty of your choice. Earlier difficulties are played in full first.
 
 ## What does another player's item look like?
 
-Nothing appears in the game. The companion client prints what you found and for whom.
+Nothing drops in the game. A line such as "You sent Progressive Skill Point to Alice"
+appears in a text box beside the chat, and the companion app's window shows it too.
 
 ## What do I need?
 

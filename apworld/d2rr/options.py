@@ -122,8 +122,8 @@ class KeyItems(Toggle):
     Khalim's Will until you hold 5. So Duriel and Mephisto wait on items that may be in
     anyone's world. You still collect the staff and Khalim's relics as usual.
 
-    Drink the Draught of Attunement you start with first: it creates the stat that holds
-    your key count. Checked in the game in town; a full run with it has not been played.
+    Keys arrive automatically while the companion app is running; there is nothing to do.
+    The gates were checked in the game in town; a full run with them has not been played.
     """
     display_name = "Horadric Keys"
     default = 0
@@ -136,28 +136,13 @@ class StatPoints(Choice):
     pooled: level-ups and quests grant none. Stat Points items, each worth five, are
     placed in the multiworld instead, one for every level the goal expects you to reach.
 
-    When you have spent every point and more arrive, the client asks for a Tonic of
-    Renewal: transmute the Archipelago Sigil alone in the Horadric Cube and drink it.
-    Checked in the game in town; a full run with it has not been played.
+    Pooled points arrive automatically while the companion app is running, as unspent
+    points to put where you like. Checked in the game in town; a full run with it has not
+    been played.
     """
     display_name = "Stat Points"
     option_vanilla = 0
     option_pooled = 1
-    default = 0
-
-
-class RunePercentage(Range):
-    """EXPERIMENTAL. Share of filler items that are runes.
-
-    A rune arrives through the Archipelago Sigil you start with: put the Sigil alone in
-    the Horadric Cube, transmute, then use the Archipelago Receipt that comes out with
-    the rune. Higher runes are rarer and only appear on higher goal difficulties.
-
-    Checked in the game in town; a full run with it has not been played.
-    """
-    display_name = "Rune Percentage"
-    range_start = 0
-    range_end = 100
     default = 0
 
 
@@ -215,7 +200,6 @@ class D2RROptions(PerGameCommonOptions):
     include_level_milestones: IncludeLevelMilestones
     key_items: KeyItems
     stat_points: StatPoints
-    rune_percentage: RunePercentage
     trap_percentage: TrapPercentage
     xp_multiplier: XPMultiplier
     monster_shuffle: MonsterShuffle
@@ -227,7 +211,7 @@ OPTION_GROUPS = [
     OptionGroup("Skill Points", [SkillPoints, StartingSkillPoints, LogicDifficulty]),
     OptionGroup("Checks", [IncludeWaypoints, IncludeAreas, IncludeLevelMilestones]),
     OptionGroup("The Mod", [XPMultiplier, MonsterShuffle]),
-    OptionGroup("Experimental", [KeyItems, StatPoints, RunePercentage, TrapPercentage, D2RRDeathLink]),
+    OptionGroup("Experimental", [KeyItems, StatPoints, TrapPercentage, D2RRDeathLink]),
 ]
 
 OPTION_PRESETS = {

@@ -8,7 +8,7 @@ What was decided, what was measured, and what is still only believed.
 |---|---|---|
 | Mod | `src/lib/randomizer/ap-mode.ts`, `POST /api/archipelago/mod` | A D2RR mod in which the multiworld is the only source of skill points, plus the tables that turn stats into things. |
 | apworld | `apworld/d2rr/` | Items, locations, logic and options for Archipelago's generator. |
-| Client | `tools/ap-client/` | Reads checks from the save and the running game; grants by changing stat values. |
+| Client | `tools/ap-client/` | Reads checks from the save and the running game; grants by changing or adding stat entries; shows item messages in the game. |
 
 The apworld generates offline and never talks to the client, so the two share fixed id
 tables (`scripts/verify-ap-ids.mjs`). The mod tells the client about itself through a
@@ -37,7 +37,45 @@ manifest inside the zip.
   pattern scan that runs past a short buffer, and the same read bug in the packet
   scanner.
 
+## Direct delivery (2026-10-30, D2R 3.3.93847, in town only)
+
+Testers found the potion flow (Draught, Tonic, Sigil, Receipt) unfun, so the client now
+creates stat entries itself and the potions, the Sigil, the mailbox and runes are gone.
+The 2026-10-29 results below are kept as a record of how the old flow was proven.
+
+- **The client can add a stat entry the character does not have**, inside space the
+  game already allocated. A unit's stat container holds a base list (container
+  `+0x30`) and a combined list (container `+0xE8`), each an `{array, count, capacity}`
+  header. Spending stat points checks the combined list, so the client writes both.
+- **Measured** with a fresh Paladin in town (`probe -insert`): inserted 3 skill points
+  and 2 stat points. The skill points were spendable at once and learned on the game's
+  copy of the character. The stat points needed the combined list too; with it they
+  were spendable at once. All of it survived Save and Exit.
+- **Free slots are needed.** The arrays had 14 of 19 and 16 of 19 slots used on a fresh
+  character. The client never allocates; see Known limits. With keys and pooled stat
+  points on, the skill pool, the stat pool and the key stat fill the game copy's base
+  list exactly (19 of 19), so the client:
+  - checks every list a new entry needs, on both copies, before writing any of them, so
+    a full list never leaves a stat half made;
+  - writes the combined value equal to the base value, never moved by a difference, so
+    a retry cannot add up (a first build did, and ran gold and skill points away in the
+    combined list while the base list was full);
+  - lets gold take a slot only if one stays free after it, so a skill pool the player
+    spends to zero (which frees its slot) can always come back.
+- **End to end, in town** (local Archipelago 0.6.7 room, apworld 0.3.0, a fresh Paladin,
+  no potions): the starting skill point, sent skill points, stat points and a Horadric
+  Key all arrived; stat points were spendable at once; a skill pool spent to zero came
+  back when the next point arrived; "You found your ..." lines appeared bottom left and
+  cleared after about 12 seconds.
+- **In-game messages.** "You received X from Y" and "You sent X to Y" appear in a text
+  box the mod adds to the chat layout, bottom left, in any display mode. The client
+  writes the text and the game redraws it in place. Color codes are not interpreted in
+  that box, so the text is white.
+
 ## Gate results (2026-10-29, D2R 3.3.93847, in town only)
+
+Superseded on 2026-10-30 for everything about the Draught, the Tonic, the Sigil and
+runes (see above). G1 and the key gates still describe the current design.
 
 Mod: seed 987002, Paladin, keys on. Characters: a fresh Paladin, and a level 2
 Barbarian save with one unspent skill point (the only way to get a `newskills` entry
@@ -54,7 +92,7 @@ without leaving town).
 - **`keepzero` does not keep a base stat at zero.** `newskills` had `keepzero` set and
   the entry still disappeared from both copies when the last point was spent. Once the
   pool is empty, the client has nothing to write until a level-up or quest creates the
-  entry again.
+  entry again. (Since 2026-10-30 the client re-creates the entry itself.)
 - **G2 fails: player spell 8 ignores the stat columns.** The Draught of Attunement
   (spell 8, `stat1..3` = `ap_keys`, `ap_mail`, `newskills`) was used up and gave +1 to a
   random attribute (Dexterity the first time, Vitality the second), the same as an
@@ -104,7 +142,7 @@ without leaving town).
   shows for seed N.
 - **Targets, not increments.** Unspent points, stat points and keys are recomputed from
   the item counts every poll, so duplicates, reordering and full resyncs converge.
-  One-shot effects (gold, traps, runes) are owed until recorded as applied, and are
+  One-shot effects (gold, traps) are owed until recorded as applied, and are
   recorded only after the write lands, because a repeat is the harmless direction.
 - **Every write goes to both copies of the character.** `SetPlayerStat` writes the
   game's own copy first, then the display copy. The game's copy is found by scanning
@@ -112,19 +150,22 @@ without leaving town).
   is cached per player unit, and must be the only candidate; `probe -copies` still does
   the full scan.
 - **Custom stats store value + 1** so they are never zero.
-- **Stat entries come from player spell 4 items.** The Draught creates the custom stats
-  and the skill-point pool, the Receipt acknowledges a rune, and a Tonic of Renewal
-  recreates a point pool the player has spent to zero. The Sigil brews a Tonic only
-  while the mail stat holds the request value the client writes for a missing pool, so
-  pools cannot be refilled at will.
+- **The client creates missing stat entries itself** (since 2026-10-30). When the
+  character has no entry for unspent skill points, stat points or the key count, the
+  client adds one to the game's own stat array, in a free slot the game already
+  allocated, in both the base and the combined list and on both copies of the
+  character. This replaced the Draught of Attunement, the Tonic of Renewal and the
+  Archipelago Sigil, so a player has nothing to drink or transmute, and points sent
+  while the pool is empty simply arrive.
 - **Keys gate recipes, not items.** Making a quest item is not possible from outside the
   game; refusing to combine the ones the player found is a one-line table change.
-- **The mailbox.** One recipe is alive per offer; it takes the Sigil the player holds
-  and returns the other, so it cannot fire twice. A Receipt whose use the client can see
-  (stat + 1) is the acknowledgement. The client tracks which Sigil is held by counting
-  deliveries. The state machine is `internal/grants/mail.go` and is tested exhaustively.
-  `-mail-flip` corrects the client's idea of which Sigil is held, and `-mail-skip`
-  records a rune whose Receipt was lost.
+- **No runes for now** (2026-10-30). Delivering an item needed the Sigil mailbox, which
+  went with the potions. The rune item names and ids stay reserved in the id tables and
+  are never placed, so ids do not move if runes come back.
+- **Item messages in the game.** The mod adds a text box to the chat layout; the client
+  writes "You received X from Y" / "You sent X to Y" into it, and the game redraws the
+  text in place. Color codes are not interpreted there, so the text is plain white. The
+  client's own window shows the same lines.
 - **No seasonal overlay in AP mods**, and the zip is cached on disk only: a room's mod
   must not change with the month, and one-off 47 MB zips must not evict public seeds.
 - **The room decides which locations exist.** The client sends a check only if the
@@ -137,17 +178,14 @@ without leaving town).
 
 ## Known limits
 
-- Horadric Keys, pooled stat points and runes are experimental: every in-town check
-  in `KEYS_AND_RUNES.md` passes, but no full run has been played with them.
-- Skill points received while none are unspent wait until the player drinks a Tonic of
-  Renewal (or levels up): the game removes the entry at zero. The client asks for the
-  Tonic by writing a request value to the mail stat; with the client off, none can be
-  brewed.
-- Draughts can be hoarded before the first one is drunk (the Sigil brews one while the
-  mail stat is absent). Each gives one skill point the client then corrects, so with
-  the client running it is harmless; with it off it is early access, paid back from
-  later grants as debt.
-
+- Horadric Keys and pooled stat points are experimental: checked in town, but no full
+  run has been played with them.
+- An entry can only be added when the game's stat array has a free slot (measured 14
+  and 16 of 19 used on a fresh character). When it is full, the client waits for the
+  game to grow it, which happens the next time the game adds a stat of its own (a
+  level-up, a quest reward, an item), and delivers then.
+- Items arrive only while the client is running; nothing in the game can collect them
+  without it.
 - Level-up and quest points can be spent in the fraction of a second before the client
   takes them back, and freely if the client is not running. It is a single-player game;
   this is accounting, not enforcement.

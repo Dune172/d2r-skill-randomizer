@@ -165,7 +165,7 @@ export default function PlayerFile() {
               </legend>
               {group === 'Experimental' && (
                 <p className="text-xs text-[#d0a070] leading-relaxed mb-4">
-                  Horadric Keys, pooled stat points and runes have been checked in the game in town but
+                  Horadric Keys and pooled stat points have been checked in the game in town but
                   not over a full run; traps and DeathLink are untested. Leave these off for a run that
                   has to finish.
                 </p>
