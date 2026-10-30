@@ -136,6 +136,15 @@ class TestGoals(unittest.TestCase):
         self.assertEqual(counts, sorted(counts))
         self.assertEqual(len(set(counts)), len(counts))
 
+    def test_nothing_a_new_character_already_has_is_a_location(self):
+        free = ids.free_at_start()
+        self.assertEqual(free, {"Normal WP: Rogue Encampment", "Normal Area: Rogue Encampment"})
+        for goal in GOALS:
+            self.assertFalse(free & set(locations(goal)))
+        # Their ids stay reserved: the full table still names them.
+        self.assertTrue(free <= set(ids.all_location_names()))
+        self.assertIn("Nightmare WP: Rogue Encampment", locations((1, 0)))
+
     def test_check_groups_switch_off_independently(self):
         for goal in GOALS:
             full = set(locations(goal))

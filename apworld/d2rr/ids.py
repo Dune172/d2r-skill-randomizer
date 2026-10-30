@@ -371,6 +371,18 @@ def level_milestone_region(clvl: int, goal_difficulty: int,
     return None
 
 
+# Checks every character completes before it can move: the Rogue Encampment on Normal is
+# where a new character stands, and its waypoint is already active. As locations they
+# were points handed out for nothing, and they reached the player late, whenever the game
+# next saved, so they read as random. They keep their ids (ids never move) and are simply
+# never made locations. On Nightmare and Hell the same places are earned.
+def free_at_start() -> set[str]:
+    return {
+        waypoint_location_name(0, WAYPOINT_NAMES.index("Rogue Encampment")),
+        area_location_name(0, AREA_LABELS.index("Rogue Encampment")),
+    }
+
+
 def active_location_names(goal_difficulty: int, include_waypoints: bool = True,
                           include_areas: bool = True, include_levels: bool = True,
                           goal_act: int = BAAL_ACT) -> list[str]:
@@ -395,7 +407,8 @@ def active_location_names(goal_difficulty: int, include_waypoints: bool = True,
     if include_levels:
         for clvl in range(LEVEL_MIN, level_cap(goal_difficulty, goal_act) + 1):
             out.append(level_location_name(clvl))
-    return out
+    free = free_at_start()
+    return [name for name in out if name not in free]
 
 
 # ---------------------------------------------------------------------------------------
