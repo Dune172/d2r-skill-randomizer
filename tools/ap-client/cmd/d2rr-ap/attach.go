@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -82,7 +83,7 @@ func (a *app) pollGame(ctx context.Context) {
 			return
 		}
 
-		a.warnAttach("Diablo II is running: load your character in Offline mode to continue")
+		a.warnAttach(loadCharacterMsg)
 		return
 	}
 	a.noPlayerSince = time.Time{}
@@ -320,7 +321,7 @@ func selectSave(dir, name string) (string, error) {
 func (a *app) characterSave(dir string) (string, error) {
 	name := a.session.CharacterName()
 	if name == "" {
-		return "", fmt.Errorf("load your character in Offline mode to start (a new character of this room's class, made with this mod)")
+		return "", errors.New(loadCharacterMsg)
 	}
 	if a.characterFlag != "" && name != a.characterFlag {
 		return "", fmt.Errorf("-character differs from this slot's saved character binding")
@@ -367,3 +368,8 @@ func (a *app) resetPlayer() {
 	a.warnedNoLayout = false
 	a.lastState = nil
 }
+
+// loadCharacterMsg is said while no character is bound and none is loaded. The game
+// side and the save side both wait on it, so they share the words and it prints once.
+const loadCharacterMsg = "load this room's character in Offline mode (the one the app made, or one of the " +
+	"room's class created with this mod)"
