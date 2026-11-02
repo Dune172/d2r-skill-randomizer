@@ -521,3 +521,31 @@ func pruneBackups(dest string, keep int) {
 		old = old[1:]
 	}
 }
+
+// RunningMod names the mod a running D2R.exe was started with (its -mod argument), or ""
+// when it has none.
+func RunningMod() (string, error) {
+	pids, _ := gamePIDs()
+	if len(pids) == 0 {
+		return "", fmt.Errorf("D2R is not running")
+	}
+	p, err := Inspect(pids[0])
+	if err != nil {
+		return "", err
+	}
+	return modArgument(p.CommandLine)
+}
+
+// modArgument reads -mod's value from a command line.
+func modArgument(commandLine string) (string, error) {
+	args, err := windows.DecomposeCommandLine(commandLine)
+	if err != nil {
+		return "", err
+	}
+	for i := 1; i+1 < len(args); i++ {
+		if strings.EqualFold(args[i], "-mod") {
+			return args[i+1], nil
+		}
+	}
+	return "", nil
+}

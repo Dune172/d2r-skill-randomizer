@@ -320,3 +320,16 @@ func TestOnlyTheNewestModBackupIsKept(t *testing.T) {
 		t.Fatalf("kept %v", left)
 	}
 }
+
+func TestModArgument(t *testing.T) {
+	for line, want := range map[string]string{
+		`"C:\Program Files (x86)\Diablo II Resurrected\D2R.exe" -mod seed1234 -txt`: "seed1234",
+		`D2R.exe -txt -MOD seed9`: "seed9",
+		`D2R.exe`:                 "",
+		`D2R.exe -mod`:            "",
+	} {
+		if got, err := modArgument(line); err != nil || got != want {
+			t.Errorf("%s: got %q %v, want %q", line, got, err, want)
+		}
+	}
+}

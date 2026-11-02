@@ -152,7 +152,7 @@ func (a *app) chooseDifficulty(arg string) {
 		default:
 			source := a.difficultySource
 			if source == "" {
-				source = "not worked out yet (no character loaded)"
+				source = "no character loaded yet"
 			}
 			logf("area checks: the app works it out (%s). Type /difficulty normal, nightmare or hell to set it", source)
 		}
