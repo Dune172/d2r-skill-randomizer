@@ -10,7 +10,7 @@
 export const AP_GAME_NAME = 'D2R Randomizer';
 
 /** Versions the page states. Kept beside the options so one check covers both. */
-export const AP_WORLD_VERSION = '0.4.0';
+export const AP_WORLD_VERSION = '0.4.1';
 export const AP_MINIMUM_ARCHIPELAGO = '0.6.7';
 
 interface BaseOption {
@@ -48,12 +48,12 @@ export const AP_OPTIONS: ApOption[] = [
     key: 'character_class', label: 'Character class', group: 'Goal', type: 'choice',
     choices: choice(['amazon', 'sorceress', 'necromancer', 'paladin', 'barbarian', 'druid', 'assassin', 'warlock']),
     default: 'paladin',
-    help: 'The class you will create. Its tree is shuffled by the mod like every other.',
+    help: 'The class you play. Its tree is shuffled by the mod like every other.',
   },
   {
     key: 'goal_difficulty', label: 'Goal difficulty', group: 'Goal', type: 'choice',
     choices: choice(['normal', 'nightmare', 'hell']), default: 'normal',
-    help: 'Earlier difficulties are played in full first.',
+    help: 'Earlier difficulties are played in full first. Past Normal, type /difficulty in the app when you change difficulty.',
   },
   {
     key: 'goal_boss', label: 'Goal boss', group: 'Goal', type: 'choice',

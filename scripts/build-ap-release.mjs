@@ -66,7 +66,11 @@ function main() {
   fs.copyFileSync(path.join(repoRoot, 'dist', 'd2rr.apworld'), path.join(outDir, 'd2rr.apworld'));
 
   if (!process.argv.includes('--no-exe')) {
-    execFileSync('go', ['build', '-trimpath', '-o', path.join(outDir, 'd2rr-ap.exe'), './cmd/d2rr-ap'], {
+    // Stamped like the page's copy (publish-ap-client.mjs), so `d2rr-ap.exe version`
+    // names the commit in a bug report whichever download it came from.
+    const buildID = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim();
+    execFileSync('go', ['build', '-trimpath', '-ldflags', `-s -w -X main.buildID=${buildID}`,
+      '-o', path.join(outDir, 'd2rr-ap.exe'), './cmd/d2rr-ap'], {
       cwd: path.join(repoRoot, 'tools', 'ap-client'),
       env: { ...process.env, GOOS: 'windows', GOARCH: 'amd64', CGO_ENABLED: '0' },
       stdio: 'inherit',

@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     if (Number(body.contractVersion) !== AP_CONTRACT_VERSION) {
       return NextResponse.json({
         error: `Contract version mismatch: client sent ${body.contractVersion ?? 'nothing'}, ` +
-               `server speaks ${AP_CONTRACT_VERSION}. Update the client and the apworld.`,
+               `server speaks ${AP_CONTRACT_VERSION}. Download the app again from /archipelago.`,
         serverContractVersion: AP_CONTRACT_VERSION,
       }, { status: 409 });
     }
