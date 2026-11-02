@@ -10,7 +10,7 @@
 export const AP_GAME_NAME = 'D2R Randomizer';
 
 /** Versions the page states. Kept beside the options so one check covers both. */
-export const AP_WORLD_VERSION = '0.5.0';
+export const AP_WORLD_VERSION = '0.5.1';
 export const AP_MINIMUM_ARCHIPELAGO = '0.6.7';
 
 interface BaseOption {
@@ -74,6 +74,11 @@ export const AP_OPTIONS: ApOption[] = [
     help: 'How many points the logic expects you to hold before each later act.',
   },
   {
+    key: 'stat_points', label: 'Stat points', group: 'Skill Points', type: 'choice',
+    choices: choice(['vanilla', 'pooled']), default: 'pooled',
+    help: 'Pooled: level-ups grant no attribute points; they are items in the multiworld instead, and arrive automatically while the app is running. Vanilla: five per level, as usual.',
+  },
+  {
     key: 'include_waypoints', label: 'Waypoint checks', group: 'Checks', type: 'toggle', default: true,
     help: 'Activating a waypoint is a check.',
   },
@@ -100,11 +105,6 @@ export const AP_OPTIONS: ApOption[] = [
   {
     key: 'key_items', label: 'Horadric Keys', group: 'Experimental', type: 'toggle', default: false,
     help: 'The Cube will not assemble the Horadric Staff (2 keys) or Khalim’s Will (5) until you hold enough keys from the multiworld. Keys arrive automatically while the app is running.',
-  },
-  {
-    key: 'stat_points', label: 'Stat points', group: 'Experimental', type: 'choice',
-    choices: choice(['vanilla', 'pooled']), default: 'vanilla',
-    help: 'Pooled: level-ups grant no attribute points; they are items in the multiworld instead, and arrive automatically while the app is running.',
   },
   {
     key: 'trap_percentage', label: 'Trap percentage', group: 'Experimental', type: 'range', min: 0, max: 100, default: 0,

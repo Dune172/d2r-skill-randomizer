@@ -50,8 +50,8 @@ Push a tag named `archipelago-v` plus the world version (the release job fails i
 differ):
 
 ```bash
-git tag archipelago-v0.5.0
-git push origin archipelago-v0.5.0
+git tag archipelago-v0.5.1
+git push origin archipelago-v0.5.1
 ```
 
 The `Archipelago` workflow tests the world on Python 3.11 to 3.13 inside a checkout of

@@ -164,3 +164,17 @@ class TestFillerIsGold(D2RRTestBase):
         self.assertNotIn(ids.TRAINING_FRAGMENT_ITEM, names)
         self.assertGreater(names.count(ids.GOLD_ITEM), 0)
         self.assertEqual(self.world.get_filler_item_name(), ids.GOLD_ITEM)
+
+
+class TestStatPointsArePooledByDefault(D2RRTestBase):
+    def test_default_places_stat_points_and_tells_the_mod(self) -> None:
+        self.assertGreater(len(self.get_items_by_name(ids.STAT_POINTS_ITEM)), 0)
+        self.assertTrue(self.world.fill_slot_data()["mod_options"]["pooledStats"])
+
+
+class TestVanillaStatPoints(D2RRTestBase):
+    options = {"stat_points": "vanilla"}
+
+    def test_vanilla_places_no_stat_points(self) -> None:
+        self.assertEqual(self.get_items_by_name(ids.STAT_POINTS_ITEM), [])
+        self.assertFalse(self.world.fill_slot_data()["mod_options"]["pooledStats"])

@@ -39,8 +39,10 @@ need it. The full guide ships inside the apworld.
 
 ## Known limits
 
-- Horadric Keys and pooled stat points are experimental and off by default. Traps and
-  DeathLink have not been tried in the game.
+- Pooled stat points are on by default and Horadric Keys are off; both are checked in
+  town but not over a full run. Traps and DeathLink have not been tried in the game.
+- A skill still takes at most one point per level past its requirement. The game
+  enforces that in its own code, so points that arrive early wait.
 - The app is unsigned, and it reads and writes the game's memory, so Windows SmartScreen
   and some antivirus software warn about it. PCs with Smart App Control on may refuse to
   run it.
