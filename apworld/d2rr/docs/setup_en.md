@@ -28,7 +28,7 @@ D2R Randomizer:
   goal_boss: baal
   skill_points: 110
   starting_skill_points: 1
-  xp_multiplier: 2
+  xp_multiplier: 3
 ```
 
 `goal_boss: andariel` on Normal is about an hour and suits a first try. Everything
@@ -67,8 +67,11 @@ The app also runs from a command prompt:
 ## Playing
 
 - Skill points arrive as unspent points while the app is running, a second or two after
-  the room sends them. Open the skill tree and spend them anywhere. There is nothing to
+  the room sends them. Open the skill tree and spend them on any skill your level allows
+  (skills keep their usual level requirements). Levelling up gives none. There is nothing to
   drink or transmute, and points sent after you have spent your last one arrive too.
+  Points arrive while the game is the active window; while you are in another window
+  (the app's, say) they wait, and arrive when you click back into the game.
 - "You received X from Y" and "You sent X to Y" appear in the game, in a text box beside
   the chat at the bottom left, in any display mode. The app's window shows them as well.
 - Type into the app's window to talk to the room. `!hint Progressive Skill Point` and

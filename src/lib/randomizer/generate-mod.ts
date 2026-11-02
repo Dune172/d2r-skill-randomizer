@@ -53,7 +53,7 @@ import { seasonFilesForNow } from '@/lib/seasons/overlay';
 import { openActsSavepath, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 import { buildOpenActsFiles, runOpenActsShuffle } from '@/lib/randomizer/open-acts/generate';
 import type { OpenActsShuffle } from '@/lib/randomizer/open-acts/fill';
-import { ApModeOptions, ApManifest, ApTables, applyApCharstats, applyApSkills, applyApTables, buildApLayoutFiles, buildApManifest } from '@/lib/randomizer/ap-mode';
+import { ApModeOptions, ApManifest, ApTables, applyApCharstats, applyApTables, buildApLayoutFiles, buildApManifest } from '@/lib/randomizer/ap-mode';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -362,10 +362,6 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   const { reorderedRows, idMapping } = reorderSkillsRows(skillsTxt.rows, placements);
   skillsTxt.rows = reorderedRows;
 
-  // Archipelago: points arrive whatever the character's level, so no class skill is
-  // gated by level (prerequisites stay). After writeSkillsRows so it overrides it.
-  if (ap) applyApSkills(skillsTxt.headers, skillsTxt.rows);
-
   // Controller behavior is keyed by skills.txt row — move it with the skills.
   const controllerSkillSettingsJson = buildControllerSkillSettings(vanillaRowNames, idMapping, substitutes);
 
@@ -602,7 +598,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     }
 
     // Archipelago: after the StartSkill pick above, which would hand out a free skill.
-    if (ap) applyApCharstats(charstats.headers, charstats.rows);
+    if (ap) applyApCharstats(charstats.headers, charstats.rows, ap);
 
     charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
   }

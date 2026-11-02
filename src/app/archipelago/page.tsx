@@ -215,8 +215,10 @@ export default function ArchipelagoPage() {
           </li>
           <li>
             <span className="text-[#c8942a]">No skill points yet.</span> Points arrive a second or two after the
-            room sends them, while the app says connected and your character is in a game. Now and then the
-            game has to make room first; they then arrive after your next level-up, quest or item.
+            room sends them, while the app says connected, your character is in a game and the game is the
+            active window (click back into it after typing in the app). Now and then the game has to make room
+            first; they then arrive after your next level-up, quest or item. Levelling up itself gives none,
+            and a skill still needs its usual character level.
           </li>
           <li>
             <span className="text-[#c8942a]">Diablo II isn&apos;t found.</span> The app asks for the folder that

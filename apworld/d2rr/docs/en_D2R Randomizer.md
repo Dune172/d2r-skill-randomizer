@@ -21,10 +21,10 @@ items, found by you and by everyone else.
 ## What are the items?
 
 - **Progressive Skill Point**: one unspent skill point. You choose where it goes, and
-  the game builds the skill when you spend it. Every class skill can take a point from
-  level 1, in any order.
-- **Training Fragment**: filler. Every five are worth one bonus skill point.
-- **Gold**: filler.
+  the game builds the skill when you spend it. Skills keep their usual level
+  requirements (1, 6, 12, 18, 24 and 30 by row), so a point that arrives early waits
+  until you are old enough for the skill you want.
+- **Gold**: filler, scaled to your level.
 
 Experimental, each off unless you turn it on:
 

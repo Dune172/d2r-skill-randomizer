@@ -8,16 +8,23 @@
  *
  * The invariants that follow from that:
  *
- *  - SkillsPerLevel stays at 1. Levelling is not meant to grant anything (the client
- *    writes the count back down); it is simply left at a value that cannot surprise it.
+ *  - SkillsPerLevel is 0. Levelling grants no skill point: they all come from the
+ *    multiworld. (It used to stay at 1 so the game would create the stat for the client
+ *    to write; the client creates the stat itself now, and a point granted by a level-up
+ *    could be spent before the client took it back.) Quest rewards still grant points,
+ *    which the game hard-codes; the client takes those back.
+ *
+ *  - StatPerLevel is 0 when stat points are pooled, for the same reason. Otherwise
+ *    level-ups grant stat points as usual.
  *
  *  - StartSkill is cleared. The normal pipeline picks one at random per class; a free
  *    skill outside Archipelago's control is exactly what this mode exists to prevent.
  *
- *  - Every class skill is reqlevel 1. Archipelago decides WHEN points arrive, so a point
- *    must be spendable whatever the character's level. Prerequisites stay: a Progressive
- *    Skill Point is generic and the player chooses where it goes, so the tree's chains
- *    only shape that choice, as in the public mod for the same seed.
+ *  - Skill level requirements are the normal ones (reqlevel by row: 1, 6, 12, 18, 24,
+ *    30, as writeSkillsRows sets them). A point that arrives early waits until the
+ *    character is old enough for the skill. Prerequisites stay: a Progressive Skill Point
+ *    is generic and the player chooses where it goes, so the tree's chains only shape
+ *    that choice, as in the public mod for the same seed.
  *
  *  - Monster and superunique rows (empty charclass) are left alone.
  *
@@ -63,7 +70,7 @@ import { PIPELINE_VERSION } from './pipeline-version';
  * code: in development that looks like "my change did nothing", and in production it
  * would hand clients a manifest that disagrees with the mod.
  */
-export const AP_CONTRACT_VERSION = 5;
+export const AP_CONTRACT_VERSION = 6;
 
 /** Name of the text box the mod adds to the chat panel for Archipelago messages. */
 export const AP_MESSAGE_BOX = 'ArchipelagoMessages';
@@ -276,27 +283,19 @@ export function buildApLayoutFiles(dataDir: string): Map<string, Buffer> {
   return files;
 }
 
-/** charstats.txt: levelling keeps creating the skill-point stat; no class starts with a skill. */
-export function applyApCharstats(headers: string[], rows: string[][]): void {
+/**
+ * charstats.txt: levelling grants no skill points, nor stat points when they are pooled;
+ * no class starts with a skill.
+ */
+export function applyApCharstats(headers: string[], rows: string[][], ap: ApModeOptions): void {
   const splCol = headers.indexOf('SkillsPerLevel');
+  const statCol = headers.indexOf('StatPerLevel');
   const startCol = headers.indexOf('StartSkill');
   for (const row of rows) {
     if (!row[0] || row[0] === 'Expansion') continue;
-    // Forced rather than left alone, so the client can rely on the stat being created.
-    if (splCol !== -1) row[splCol] = '1';
+    if (splCol !== -1) row[splCol] = '0';
+    if (ap.pooledStats && statCol !== -1) row[statCol] = '0';
     if (startCol !== -1) row[startCol] = '';
-  }
-}
-
-/** skills.txt: every class skill accepts a point at clvl 1. Prerequisites are kept. */
-export function applyApSkills(headers: string[], rows: string[][]): void {
-  const classCol = headers.indexOf('charclass');
-  const reqLvlCol = headers.indexOf('reqlevel');
-  if (classCol === -1) return;
-
-  for (const row of rows) {
-    if (!row[classCol]) continue; // monster or superunique skill
-    if (reqLvlCol !== -1 && row[reqLvlCol] !== '') row[reqLvlCol] = '1';
   }
 }
 
