@@ -1,11 +1,29 @@
 # Deploy reference
 
-Reference configs for running D2R Randomizer on the Hostinger VPS. These are not auto-applied by the repo — copy them to the server and wire up as notes below describe.
+## How the site deploys
 
-## Files
+Production runs on Hostinger's managed Node.js hosting, behind Cloudflare (live
+responses carry `platform: hostinger` and `Server: cloudflare`). **Merging to `main`
+deploys it.** Hostinger builds the new `main` with `npm run build`, whose `prebuild` step
+also packages the apworld into `public/archipelago`, then restarts the app. There is
+no manual step and no staging site: whatever lands on `main` is live within a few
+minutes (PR #12 was live about two minutes after its merge on 2026-11-02).
 
-- [`deploy/nginx.conf`](nginx.conf) — Reverse proxy + TLS + compression + edge cache. Install at `/etc/nginx/sites-available/d2rrandomizer`, symlink into `sites-enabled`, reload nginx.
-- [`../ecosystem.config.js`](../ecosystem.config.js) — PM2 config. Single instance (in-memory state requires it), sensible restart policy, thread-pool env vars.
+So test before merging, not after. Environment variables (`STATE_DIR`, the AdSense
+settings below) are set in the hosting panel (hPanel), not in the repo, and a change
+to them needs a redeploy or restart to take effect.
+
+After a deploy:
+
+1. `curl https://d2rrandomizer.com/api/health`. `uptime` restarts from zero, and
+   `counter` should carry on from its value before the deploy. A counter back near
+   zero means the state directory moved: see "Persistent state" below.
+2. Anything the change was meant to ship is live. For Archipelago, the version
+   `/archipelago` shows is `world_version` in `apworld/d2rr/archipelago.json`, and the
+   app it serves has the same SHA-256 as `public/archipelago/d2rr-ap.exe` on `main`.
+
+The app must run as a single instance: the in-memory zip cache index, generation queue
+and rate limiter assume one process.
 
 ## Persistent state (STATE_DIR)
 
@@ -50,30 +68,11 @@ Per-file overrides (`COUNTER_FILE`, `LEADERBOARD_FILE`, `TRAFFIC_STATS_FILE`,
 To restore the generation total after a loss:
 `STATE_DIR=/your/state/dir node scripts/set-counter.mjs 5679`
 
-Note: with PM2, `pm2 reload` does **not** re-read env from `ecosystem.config.js`.
-Use `pm2 reload ecosystem.config.js --update-env` when env vars change.
+## CDN
 
-## Prerequisites
-
-1. PM2 installed globally: `npm i -g pm2`
-2. `pm2 install pm2-logrotate` once, so `~/.pm2/logs` doesn't fill disk
-3. nginx installed, TLS cert via Let's Encrypt (`certbot --nginx -d d2rrandomizer.com -d www.d2rrandomizer.com`)
-4. Cloudflare (optional): proxy DNS and cache static assets, with API caching bypassed. If using Hostinger managed hosting, disable Hostinger CDN and ensure Cloudflare points to the hosting origin, not Hostinger CDN. Use only one CDN; see the 429 notes below.
-
-## Deploy flow
-
-```bash
-# from local repo
-git push
-
-# on VPS
-cd /var/www/d2rrandomizer
-git pull
-npm ci --production=false
-npm run build
-pm2 reload d2rr              # zero-downtime reload if ecosystem already loaded
-# first time only: pm2 start ecosystem.config.js && pm2 save
-```
+Use only one CDN. With Cloudflare in front, Hostinger's CDN must be off and Cloudflare
+must point at the hosting origin, not at a Hostinger CDN address; see the 429 notes
+below. Cloudflare should cache static assets and bypass `/api/`.
 
 ## AdSense
 
@@ -129,10 +128,42 @@ Local regression check: `node --test scripts/verify-generation-retries.mjs`.
 
 ## Stress test against live
 
-From a different machine (not the VPS — you'd bottleneck on its network):
+From your own machine, never from the production host:
 
 ```bash
 TARGET=https://d2rrandomizer.com node stress/autocannon-preview.mjs
 ```
 
 The randomize/burst scripts are safer against a staging copy first — a concurrent burst against prod can trip the queue's 503 branch for real users.
+
+## Self-hosting on a VPS (reference)
+
+Production no longer runs this way; this is kept for running the site on a server of
+your own. None of it is applied automatically.
+
+- [`nginx.conf`](nginx.conf): reverse proxy, TLS, compression and edge cache. Install
+  at `/etc/nginx/sites-available/d2rrandomizer`, symlink into `sites-enabled`, reload
+  nginx.
+- [`../ecosystem.config.js`](../ecosystem.config.js): PM2 config. A single instance,
+  a restart policy and thread-pool settings.
+
+Prerequisites:
+
+1. PM2 installed globally: `npm i -g pm2`
+2. `pm2 install pm2-logrotate` once, so `~/.pm2/logs` doesn't fill the disk
+3. nginx, with a Let's Encrypt certificate
+   (`certbot --nginx -d d2rrandomizer.com -d www.d2rrandomizer.com`)
+
+Deploying:
+
+```bash
+cd /var/www/d2rrandomizer
+git pull
+npm ci --production=false
+npm run build
+pm2 reload d2rr              # zero-downtime reload once the ecosystem is loaded
+# first time only: pm2 start ecosystem.config.js && pm2 save
+```
+
+`pm2 reload` does **not** re-read env from `ecosystem.config.js`; use
+`pm2 reload ecosystem.config.js --update-env` when env vars change.

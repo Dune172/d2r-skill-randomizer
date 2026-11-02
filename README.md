@@ -240,9 +240,9 @@ Good first contributions:
 
 ## Deployment
 
-The production server runs on a Hostinger VPS with PM2 and nginx. See [`deploy/README.md`](deploy/README.md) for the full setup guide including nginx config, PM2 config, TLS setup, and the deploy flow.
+Production runs on Hostinger's managed Node.js hosting behind Cloudflare, and **merging to `main` deploys it** within a few minutes: there is no manual step and no staging site. See [`deploy/README.md`](deploy/README.md) for what to check after a deploy, where persistent state lives, the CDN and 429 notes, and a reference setup for self-hosting on a VPS.
 
-The app runs as a **single PM2 instance** — the in-memory ZIP cache, generation queue, and rate limiter all require single-instance state.
+The app must run as a **single instance**: the in-memory ZIP cache, generation queue, and rate limiter all require single-instance state.
 
 ### Health check
 

@@ -17,8 +17,9 @@ tables and a slot contract and a mismatched pair is refused when the client conn
 4. The site with the matching `/api/archipelago/mod` is deployed. The client's default
    server is d2rrandomizer.com, so a client released ahead of the site cannot fetch a mod.
    The reverse holds too: once the site's `AP_CONTRACT_VERSION` moves, it answers 409 to
-   every client released before, so deploy the site and publish the matching client
-   together.
+   every client released before, so the site and the matching client must ship
+   together. Merging to `main` deploys the site with the committed client in one go
+   (see `deploy/README.md`), so commit both in the same PR.
 5. Locally:
 
    ```bash
@@ -40,8 +41,8 @@ node scripts/publish-ap-client.mjs
 ```
 
 It stamps the build with the commit (`d2rr-ap.exe version`), and CI fails if the
-committed app speaks a different contract from the source. Deploying the site then ships
-it; no tag is needed for testers.
+committed app speaks a different contract from the source. Merging to `main` deploys the
+site, which ships it; no tag is needed for testers.
 
 ## Cutting it
 
