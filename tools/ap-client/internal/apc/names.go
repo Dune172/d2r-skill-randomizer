@@ -53,7 +53,8 @@ func (e ItemEvent) Text() string {
 }
 
 // itemEvent reads an ItemSend PrintJSON packet, reporting only one that concerns this slot.
-// ItemCheat, an item the host gave with /send, counts too: it comes from slot 0.
+// ItemCheat, an item taken with !getitem where the room allows it, counts too: it
+// comes from slot 0. (A host's console /send is plain text, shown only in the window.)
 func (n *nameTable) itemEvent(p map[string]any) (ItemEvent, bool) {
 	if p["type"] != "ItemSend" && p["type"] != "ItemCheat" {
 		return ItemEvent{}, false

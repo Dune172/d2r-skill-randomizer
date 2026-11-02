@@ -52,7 +52,7 @@ func TestOtherPlayersItemsAndOtherMessagesAreNotShown(t *testing.T) {
 	}
 }
 
-// An item the host gives with /send arrives as ItemCheat from slot 0.
+// An item taken with !getitem arrives as ItemCheat from slot 0.
 func TestHostSentItemsAreShown(t *testing.T) {
 	n := roomNames()
 	p := itemSend(1, 0, 100)
