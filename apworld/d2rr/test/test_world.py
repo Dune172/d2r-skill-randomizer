@@ -127,3 +127,30 @@ class TestClosedActs(D2RRTestBase):
         self.assertFalse(self.can_reach_location(travincal))
         self.collect(keys[:ids.KEYS_FOR_HORADRIC_STAFF])
         self.assertTrue(self.can_reach_location(travincal))
+
+
+class TestUniversalTrackerRebuildsTheSlot(D2RRTestBase):
+    options = {"goal_difficulty": "nightmare", "goal_boss": "mephisto", "include_areas": False,
+               "logic_difficulty": "strict", "open_acts": False, **EVERYTHING}
+
+    def test_slot_data_restores_the_options_that_shape_the_slot(self) -> None:
+        world = self.world
+        slot_data = world.fill_slot_data()
+        locations = world._active_location_names()
+        # Scramble what slot_data must restore, as a regeneration without the YAML would.
+        world.options.goal_difficulty.value = 0
+        world.options.goal_boss.value = ids.BAAL_ACT
+        world.options.include_areas.value = 1
+        world.options.logic_difficulty.value = 0
+        world.options.open_acts.value = 1
+        world.options.key_items.value = 0
+        world.options.stat_points.value = world.options.stat_points.option_vanilla
+
+        world.use_tracker_slot_data(world.interpret_slot_data(slot_data))
+        world.goal_difficulty = world.options.goal_difficulty.value
+        world.goal_act = world.options.goal_boss.value
+        self.assertEqual(world._active_location_names(), locations)
+        self.assertEqual(world.options.logic_difficulty.value, 2)
+        self.assertFalse(world.options.open_acts.value)
+        self.assertTrue(world.options.key_items.value)
+        self.assertEqual(world.options.stat_points.value, world.options.stat_points.option_pooled)

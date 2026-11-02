@@ -146,7 +146,8 @@ export default function ArchipelagoPage() {
             </MiniStep>
             <MiniStep n={2}>
               <span className="text-[#c8942a]">Close Diablo II</span>, then double-click the app. Type in the room
-              address and the name from your player file.
+              address, the name from your player file (exactly; capital letters count) and the room&apos;s
+              password, if the host set one. Every player in a room needs a different name.
             </MiniStep>
             <MiniStep n={3}>
               The app downloads your game&apos;s mod, installs it, makes your character and starts Diablo II.
@@ -167,7 +168,15 @@ export default function ArchipelagoPage() {
           </p>
           <p className="mt-3 text-xs text-[#a89060] leading-relaxed">
             Type into the app&apos;s window to chat with the room; <code className={code}>!hint Progressive Skill Point</code>{' '}
-            and the other <code className={code}>!</code> commands work as in any Archipelago client.
+            and the other <code className={code}>!</code> commands work as in any Archipelago client, and{' '}
+            <code className={code}>/help</code> lists the app&apos;s own.
+          </p>
+          <p className="mt-3 text-xs text-[#a89060] leading-relaxed">
+            <span className="text-[#c8942a]">Going past Normal?</span> The game doesn&apos;t tell the app which
+            difficulty you&apos;re on. When you start Nightmare or Hell, type{' '}
+            <code className={code}>/difficulty nightmare</code> or <code className={code}>/difficulty hell</code>{' '}
+            in the app&apos;s window. Once is usually enough: after that it can tell by itself. If it can&apos;t, it
+            says so, and you type it again whenever you change difficulty.
           </p>
         </div>
       </section>
@@ -219,15 +228,30 @@ export default function ArchipelagoPage() {
             now.
           </li>
           <li>
-            <span className="text-[#c8942a]">Playing Nightmare or Hell.</span> Start the app from a command
-            prompt as <code className={code}>d2rr-ap.exe -difficulty 1</code> (Nightmare) or{' '}
-            <code className={code}>-difficulty 2</code> (Hell), so area checks count for the right difficulty. It
-            still asks for the room as usual.
+            <span className="text-[#c8942a]">&ldquo;Area checks paused&rdquo;.</span> You have unlocked more than one
+            difficulty and the app can&apos;t tell which you&apos;re on. Type{' '}
+            <code className={code}>/difficulty normal</code>, <code className={code}>nightmare</code> or{' '}
+            <code className={code}>hell</code> in its window.
           </li>
           <li>
-            <span className="text-[#c8942a]">Still stuck?</span> With your character loaded, run{' '}
-            <code className={code}>d2rr-ap.exe doctor</code>: it checks the install and your character and changes
-            nothing. Send its output with your report.
+            <span className="text-[#c8942a]">&ldquo;The room has no player named&hellip;&rdquo;</span> The name must
+            match your player file exactly. The app asks again; the address is kept.
+          </li>
+          <li>
+            <span className="text-[#c8942a]">No answer from the room.</span> archipelago.gg rooms go to sleep when
+            nobody is connected and can wake on a new port. Open the room&apos;s page again, then restart the app
+            with the address it shows now.
+          </li>
+          <li>
+            <span className="text-[#c8942a]">&ldquo;This app is out of date&rdquo;.</span> Download the app again
+            from this page.
+          </li>
+          <li>
+            <span className="text-[#c8942a]">Still stuck?</span> Every run is logged to a file whose path the app
+            prints when it starts (in <code className={code}>%AppData%\d2rr-ap\logs</code>). Send it with your
+            report. With your character loaded,{' '}
+            <code className={code}>d2rr-ap.exe doctor</code> also checks the install and your character and
+            changes nothing.
           </li>
         </ul>
 

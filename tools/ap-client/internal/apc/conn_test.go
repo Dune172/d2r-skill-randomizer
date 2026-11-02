@@ -3,6 +3,7 @@ package apc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -198,8 +199,8 @@ func TestHandshakeAndItemDelivery(t *testing.T) {
 	}
 }
 
-// A refused connection must surface rather than spin silently.
-func TestConnectionRefusedSurfaces(t *testing.T) {
+// A refused connection ends Run with an explanation, rather than retrying forever.
+func TestConnectionRefusedStopsAndExplains(t *testing.T) {
 	fs := newFakeServer(t, func(ctx context.Context, send func(...map[string]any) error, got map[string]any) error {
 		if got["cmd"] == "Connect" {
 			return send(map[string]any{
@@ -213,30 +214,20 @@ func TestConnectionRefusedSurfaces(t *testing.T) {
 	host, port := fs.hostPort(t)
 	session, _ := NewSession(t.TempDir(), "room", "slot")
 
-	msgs := make(chan string, 16)
-	conn := NewConn(host, port, "WrongSlot", "", session, Handler{
-		OnPrint: func(s string) {
-			select {
-			case msgs <- s:
-			default:
-			}
-		},
-	})
+	conn := NewConn(host, port, "WrongSlot", "", session, Handler{})
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	go conn.Run(ctx)
-
-	deadline := time.After(15 * time.Second)
-	for {
-		select {
-		case m := <-msgs:
-			if contains(m, "InvalidSlot") {
-				return // reported, as required
-			}
-		case <-deadline:
-			t.Fatal("ConnectionRefused was never surfaced to the user")
-		}
+	err := conn.Run(ctx)
+	var refused *RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("Run returned %v, want a refusal", err)
+	}
+	if ctx.Err() != nil {
+		t.Fatal("Run kept retrying a refusal until the deadline")
+	}
+	if msg := refused.Explain("WrongSlot"); !contains(msg, "no player named \"WrongSlot\"") {
+		t.Fatalf("unhelpful explanation: %q", msg)
 	}
 }
 
@@ -283,7 +274,8 @@ func TestIncompatibleRoomDoesNotApplyChecksOrPrepareMod(t *testing.T) {
 				"slot_data":         map[string]any{"contract_version": version},
 				"checked_locations": []any{float64(5721000)},
 			})
-			if err == nil || !contains(err.Error(), "generate a new room") {
+			var refused *RefusedError
+			if !errors.As(err, &refused) || !contains(refused.Explain("S"), "generate the room again") {
 				t.Fatalf("expected actionable compatibility error, got %v", err)
 			}
 			if called || len(session.AllChecks()) != 0 {

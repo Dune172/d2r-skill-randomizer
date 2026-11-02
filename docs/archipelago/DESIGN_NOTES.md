@@ -203,8 +203,13 @@ without leaving town).
 - Level-up and quest points can be spent in the fraction of a second before the client
   takes them back, and freely if the client is not running. It is a single-player game;
   this is accounting, not enforcement.
-- Area checks on Nightmare and Hell need `-difficulty`, or a calibration recorded with
-  `doctor -calibrate-difficulty`. No field has been found that states the difficulty.
+- Area checks past Normal need the player to say the difficulty once: `/difficulty`
+  in the app's window (kept per room), or `-difficulty`. No field has been found that
+  reliably states it. The app samples the candidate memory field by itself while Normal
+  is certain, and `/difficulty nightmare|hell` adds the other sample; if exactly one
+  candidate matches both, the app reads the difficulty from memory from then on and
+  drops the choice. Whether that calibration holds on 3.3 is not yet measured (G5 step 4
+  in `PLAYTEST.md`); if it does not, the choice stays and must be retyped on each change.
 - A `PIPELINE_VERSION` bump changes AP mods as well. A client keeps the mod it
   installed; regenerating mid-run is not supported.
 - Offsets come from pattern scans in vendored d2go, last updated October 2025, with no

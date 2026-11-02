@@ -1,51 +1,50 @@
-**Preview.** Generating a multiworld and connecting to a room both work. Whether the game
-accepts the skill points the client hands over has not been confirmed in a real
-playthrough yet, so treat a run as a test.
+**Preview.** Generating a multiworld, connecting to a room and receiving skill points,
+stat points and keys all work, checked in the game in town. A full run from start to goal
+has not been played yet, so treat a run as a test and tell us how it went.
 
 ## Files
 
 | File | What it is |
 |---|---|
 | `d2rr.apworld` | The world. Double-click it, or use *Install APWorld* in the Archipelago Launcher. |
-| `d2rr-ap.exe` | The companion client. It fetches your slot's mod, installs it and talks to the room. |
+| `d2rr-ap.exe` | The companion app. It fetches your slot's mod, installs it, starts the game and talks to the room. |
 | `D2R Randomizer.yaml` | An options template. Or build one at https://d2rrandomizer.com/archipelago |
 | `SHA256SUMS.txt` | Checksums of the above. |
 
-Use the apworld and the client from the **same** release. A mismatched pair is refused
-when the client connects.
+The same files are always on https://d2rrandomizer.com/archipelago, which is the easiest
+place to get them. Use the apworld and the app from the **same** place: a mismatched pair
+is refused when the app connects, with a message saying so.
 
 ## Requirements
 
-- Diablo II: Resurrected, with an offline character. The mod cannot be used on Battle.net,
-  and the client refuses to act while the game is online.
+- Diablo II: Resurrected, played offline. The mod cannot be used on Battle.net, and the
+  app refuses to act while the game is online.
 - Archipelago 0.6.7 or newer.
 - Windows.
 
-## Setup
+## Playing
 
-The full guide ships inside the apworld and is on the
-[setup page](https://d2rrandomizer.com/archipelago). In short: install the apworld,
-generate with your YAML, then with the game closed run
+1. Install the apworld and make your player file (the page above has a builder).
+2. Once the room is up, close Diablo II and double-click `d2rr-ap.exe`. Type the room's
+   address, your name and the room's password, if it has one.
+3. The app downloads and installs your slot's mod, makes your character (Acts II and III
+   already open, the Open Acts option) and starts the game. Choose **Offline** and load
+   that character.
+4. Keep the app open while you play. Points arrive by themselves, and what you receive
+   and send appears in the game beside the chat.
 
-```
-d2rr-ap.exe -host <host> -port <port> -slot <your name> -launch
-```
-
-and create a new offline character of your class.
+Past Normal, type `/difficulty nightmare` or `/difficulty hell` in the app's window when
+you start that difficulty: the game does not say which one you are on, and area checks
+need it. The full guide ships inside the apworld.
 
 ## Known limits
 
-- Horadric Keys and pooled stat points are experimental and off by default: checked in
-  the game in town, not yet over a full run. Traps and DeathLink are untested.
-- Skill points, stat points and keys now arrive by themselves while the client is
-  running. The Draught of Attunement, the Tonic of Renewal and the Archipelago Sigil are
-  gone, and so are runes and the Rune Percentage option. An old YAML that still sets it
-  generates with a warning, and the setting is ignored.
-- What you receive and send is shown in the game, in a text box beside the chat.
-- This release changes the mod contract to 5: the client and the site must be updated
-  together.
-- On Nightmare and Hell, start the client with `-difficulty 1` or `-difficulty 2`.
-- The client is unsigned, and it reads and writes the game's memory. Some antivirus
-  software will warn about it.
+- Horadric Keys and pooled stat points are experimental and off by default. Traps and
+  DeathLink have not been tried in the game.
+- The app is unsigned, and it reads and writes the game's memory, so Windows SmartScreen
+  and some antivirus software warn about it. PCs with Smart App Control on may refuse to
+  run it.
+- A D2R patch can break the app until it is updated.
 
-Problems and questions: https://github.com/Dune172/d2r-skill-randomizer/issues
+Problems and questions: https://github.com/Dune172/d2r-skill-randomizer/issues. Each run
+of the app writes a log under `%AppData%\d2rr-ap\logs`; please attach it.

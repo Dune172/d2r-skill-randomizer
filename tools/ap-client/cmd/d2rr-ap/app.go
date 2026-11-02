@@ -40,9 +40,13 @@ type app struct {
 
 	mu       sync.Mutex
 	lastSeen map[string]bool
+	// checksQuiet: saving checks is failing, so "check:" lines are held back.
+	checksQuiet bool
 
-	// Last value written, so the log speaks only on change.
+	// Last value written, so the log speaks only on change, and how many points had been
+	// received when it landed.
 	lastPointsWritten int
+	receivedAtWrite   int
 
 	// Skill points Archipelago has sent. The client hands the player unspent points and
 	// the game builds the skill when one is spent.
@@ -73,6 +77,7 @@ type app struct {
 	// DeathLink. pendingDeaths are deaths received and not yet carried out; killStarted
 	// is when the current one was written, so a write the game ignores can be noticed.
 	pendingDeaths   int
+	deathQueuedAt   time.Time
 	killStarted     time.Time
 	killedByLink    bool
 	killUnsupported bool
@@ -98,6 +103,10 @@ type app struct {
 	slotData      map[string]any
 	lastSetupTry  time.Time
 	setupFailures int
+	// setupNotBefore paces retries (and honours a server's Retry-After); setupBlocked
+	// stops them for good when the app and the site disagree on the mod format.
+	setupNotBefore time.Time
+	setupBlocked   bool
 	// The mod zip and manifest from the last successful fetch, so a retry after a
 	// failed install does not ask the server to build the mod again.
 	fetchedZip []byte
@@ -123,8 +132,16 @@ type app struct {
 	// difficulty and no reliable automatic source has been found (see
 	// internal/save/difficulty.go), so on a Nightmare or Hell goal this is how you get
 	// them filed correctly while farming a difficulty you have already finished.
+	// difficultyFlag is -difficulty as given (-1 when absent); a flag wins over a saved
+	// /difficulty choice. difficultyHinted: the Nightmare/Hell advice was printed.
 	difficultyOverride int
-	warnedAssumed      bool
+	difficultyFlag     int
+	difficultyHinted   bool
+	// The player unit a Normal sample of the memory field was last tried for.
+	normalSampledFor uintptr
+
+	// Lines typed in the window that the app answers itself, handled on the poll loop.
+	commands chan consoleCommand
 
 	// Why the game side is idle, and when each reason was last logged, so a standing
 	// condition is stated once a minute rather than every 400ms.
@@ -133,6 +150,15 @@ type app struct {
 
 	// When the player unit first stopped resolving, used to decide when to re-attach.
 	noPlayerSince time.Time
+	// Attach backoff after failures in a row, and the game process already verified
+	// (command line, mod files, executable), so a re-attach to it skips that work.
+	attachNotBefore time.Time
+	attachFailures  int
+	verifiedPID     uint32
+	// The last Battle.net check, the unit it was made for, and its answer.
+	online           bool
+	onlineCheckedAt  time.Time
+	onlineCheckedFor uintptr
 	// When the UI or waypoint offset was first seen unresolved, for the same reason, and
 	// whether the next attach is such a retry (and so not worth announcing).
 	offsetsMissingSince time.Time
@@ -161,6 +187,8 @@ func (a *app) run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
+		case cmd := <-a.commands:
+			a.handleCommand(cmd)
 		case <-ticker.C:
 			a.writeStatus()
 			if !a.ready() {

@@ -52,13 +52,17 @@ to finish.
    with this mod, so its save lands in the folder the app watches.
 4. Play, and leave the app open while you do. Your items arrive by themselves.
 
-One slot is bound to one character. If the mod changes (a new room, say), the app asks
-you to close the game, then reinstalls the mod and starts the game again.
+One slot is bound to one character: the first one you load in the room's mod. If the mod
+changes (a new room, say), the app asks you to close the game, then reinstalls the mod
+and starts the game again.
 
-From a command prompt the same thing is
-`d2rr-ap.exe -host archipelago.gg -port 12345 -slot YourName -launch`, with `-install`
-to install without starting the game, `-game-dir` if the game is not in a standard
-location, and `-character Name` if the save folder holds several characters.
+If the room refuses your name or password, the app explains why and asks again. Every
+run is logged to a file under `%AppData%\d2rr-ap\logs`; the app prints its path when it
+starts.
+
+The app also runs from a command prompt:
+`d2rr-ap.exe -host archipelago.gg -port 12345 -slot YourName -launch`. Run
+`d2rr-ap.exe -h` for the other flags.
 
 ## Playing
 
@@ -68,16 +72,21 @@ location, and `-character Name` if the save folder holds several characters.
 - "You received X from Y" and "You sent X to Y" appear in the game, in a text box beside
   the chat at the bottom left, in any display mode. The app's window shows them as well.
 - Type into the app's window to talk to the room. `!hint Progressive Skill Point` and
-  the other `!` commands work as in any Archipelago client.
+  the other `!` commands work as in any Archipelago client. `/help` lists the app's own
+  commands.
 - The app sends checks as you complete quests, activate waypoints, enter areas and
   gain levels, and reports the goal when your goal boss dies. Towns are never checks,
   neither the town nor its waypoint.
 
 ### After Normal
 
-On Nightmare and Hell the client needs to know which difficulty you are playing, to file
-area checks correctly. Start it with `-difficulty 1` for Nightmare or `-difficulty 2` for
-Hell, and restart it with the right number if you go back to an easier difficulty.
+The game does not tell the app which difficulty you are playing, and area checks need it.
+While only Normal is unlocked there is nothing to tell. After that, when you start
+Nightmare or Hell, type `/difficulty nightmare` or `/difficulty hell` in the app's window.
+The app uses that to learn where the game keeps the difficulty, so once is usually
+enough. If it cannot learn it on your PC, area checks pause with a message whenever it
+cannot tell, and you type `/difficulty` again each time you change difficulty.
+`/difficulty auto` hands the choice back to the app.
 
 ### Experimental items
 
@@ -95,16 +104,22 @@ waits, and what you were sent arrives after your next level-up, quest reward or 
 
 ## Troubleshooting
 
-Run `d2rr-ap.exe doctor -manifest <the downloaded mod zip>` (from a command prompt) with
-the game running and
-your character loaded. It checks the installation, the character and the client's view
-of your points, and changes nothing.
+With the game running and your character loaded, run `d2rr-ap.exe doctor` from a command
+prompt. It checks the installation, the character and the app's view of your points, and
+changes nothing. Include its output and the app's log file in a bug report.
 
 - **Nothing is granted.** The client says why, once a minute: the game is not running,
   the character is not the one bound to the slot, or the room's items have not finished
   arriving.
-- **"incompatible room contract".** The apworld and the client are different versions.
-  Update both and generate a new room; an existing room cannot be upgraded.
+- **"generated with a different version of d2rr.apworld".** The apworld and the app are
+  from different downloads. Use both from the same place and generate a new room; an
+  existing room cannot be upgraded.
+- **"This app is out of date".** Download the app again from the page above.
+- **"The room has no player named ...".** Use the name from your player file exactly.
+- **No answer from the room.** archipelago.gg rooms sleep when idle and can wake on a
+  new port. Open the room's page again and start the app with the address it shows.
+- **"running as administrator".** Run the app the same way as the game: both normally,
+  or both as administrator.
 - **The game says the mod is missing.** Close the game and start the app again: it
   installs the mod and starts the game with it.
 - **Windows blocked the app.** Smart App Control or antivirus software can block a new

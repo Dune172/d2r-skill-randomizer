@@ -12,6 +12,7 @@ scripts/verify-ap-ids.mjs diffs the two implementations.
 """
 
 import hashlib
+import logging
 
 from typing import Any
 
@@ -94,7 +95,11 @@ class D2RRWorld(World):
         "Skill Points": {ids.SKILL_POINT_ITEM},
         "Keys": {ids.HORADRIC_KEY_ITEM},
         "Traps": set(ids.TRAP_ITEMS),
+        "Filler": {ids.GOLD_ITEM, ids.TRAINING_FRAGMENT_ITEM},
     }
+
+    # Universal Tracker rebuilds a slot from its slot_data, without the player's YAML.
+    ut_can_gen_without_yaml = True
     # The rune items keep their names and ids (ids.py) but are never placed, so they
     # have no group: a hint for one could never succeed.
     location_name_groups = _location_groups()
@@ -109,13 +114,17 @@ class D2RRWorld(World):
         self.pool: dict[str, int] = {"skill_points": 110}
 
     def generate_early(self) -> None:
+        tracked = getattr(self.multiworld, "re_gen_passthrough", {}).get(self.game)
+        if tracked:
+            self.use_tracker_slot_data(tracked)
+
         self.class_code = ids.CLASSES[self.options.character_class.value]
         self.goal_difficulty = self.options.goal_difficulty.value
         self.goal_act = self.options.goal_boss.value
 
         # The seed is chosen HERE, not by the player: it must be reproducible from the
         # multiworld, and the client asks d2rrandomizer.com for exactly this mod.
-        self.d2rr_seed = self.random.randint(1, 2_000_000_000)
+        self.d2rr_seed = tracked["d2rr_seed"] if tracked else self.random.randint(1, 2_000_000_000)
 
         pooled_stats = self.options.stat_points.value == self.options.stat_points.option_pooled
         self.pool = ids.resolve_pool(
@@ -127,6 +136,36 @@ class D2RRWorld(World):
             stat_bundles=ids.level_cap(self.goal_difficulty, self.goal_act) - 1 if pooled_stats else 0,
             trap_percentage=self.options.trap_percentage.value,
         )
+        asked = self.options.skill_points.value
+        if self.pool["skill_points"] < asked and not tracked:
+            logging.warning(
+                "D2R Randomizer: %s asked for %d skill points, but only %d fit in this slot's "
+                "locations (or a character can spend); generating with %d.",
+                self.player_name, asked, self.pool["skill_points"], self.pool["skill_points"])
+
+    @staticmethod
+    def interpret_slot_data(slot_data: dict[str, Any]) -> dict[str, Any]:
+        """Universal Tracker hands this back as re_gen_passthrough when it regenerates."""
+        return slot_data
+
+    def use_tracker_slot_data(self, slot_data: dict[str, Any]) -> None:
+        """Set the options that shape regions and rules from a room's slot_data, so a
+        tracker's regeneration has the same locations and logic as the room."""
+        options = self.options
+        options.character_class.value = ids.CLASSES.index(slot_data["character_class"])
+        options.goal_difficulty.value = slot_data["goal_difficulty"]
+        options.goal_boss.value = slot_data["goal_act"]
+        options.skill_points.value = slot_data["skill_points"]
+        options.starting_skill_points.value = slot_data["starting_skill_points"]
+        options.include_waypoints.value = int(slot_data["include_waypoints"])
+        options.include_areas.value = int(slot_data["include_areas"])
+        options.include_level_milestones.value = int(slot_data["include_level_milestones"])
+        options.key_items.value = int(slot_data["horadric_keys"] > 0)
+        options.stat_points.value = (options.stat_points.option_pooled if slot_data["stat_points_pooled"]
+                                     else options.stat_points.option_vanilla)
+        options.open_acts.value = int(slot_data.get("open_acts", False))
+        if "logic_difficulty" in slot_data:
+            options.logic_difficulty.value = slot_data["logic_difficulty"]
 
     def _active_location_names(self) -> list[str]:
         return ids.active_location_names(
@@ -278,6 +317,8 @@ class D2RRWorld(World):
             "horadric_keys": self.pool["keys"],
             "death_link": bool(self.options.death_link),
             "open_acts": bool(self.options.open_acts),
+            # For Universal Tracker: the logic a tracker rebuilds must be the room's.
+            "logic_difficulty": self.options.logic_difficulty.value,
             # Passed straight through to /api/archipelago/mod.
             "mod_options": {
                 "keyItems": self.pool["keys"] > 0,

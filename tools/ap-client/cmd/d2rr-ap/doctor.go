@@ -74,6 +74,17 @@ func doctor(args []string) int {
 		}
 	}
 	var m *manifest.Manifest
+	// Without -manifest, use the mod the running game was started with: the app installs
+	// it from memory, so the player has no zip to point at.
+	if *manPath == "" && root != "" {
+		if mod, err := setup.RunningMod(); err == nil && mod != "" {
+			installed := filepath.Join(root, "mods", mod, manifestFileName)
+			if _, err := os.Stat(installed); err == nil {
+				*manPath = installed
+				report["manifestSource"] = "the running game's mod (" + mod + ")"
+			}
+		}
+	}
 	if *manPath != "" {
 		m, e = manifest.LoadFile(*manPath)
 		add(e)
@@ -85,7 +96,7 @@ func doctor(args []string) int {
 			}
 		}
 	} else {
-		issues = append(issues, "pass -manifest <mod.zip> to verify mod and point mapping")
+		issues = append(issues, "start the game with this room's mod (or pass -manifest <mod.zip>) to check the mod and the point mapping")
 	}
 	if !setup.GameRunning() {
 		issues = append(issues, "D2R is not running; live checks are unavailable")
@@ -175,7 +186,7 @@ func doctor(args []string) int {
 		raw, _ := json.MarshalIndent(report, "", "  ")
 		fmt.Println(string(raw))
 	} else {
-		for _, key := range []string{"roomContract", "manifestContract", "gameDirectory", "manifest", "saveDirectory", "d2rBuild", "d2rBuildKnown", "offsetsResolved", "processID", "character", "classID", "session", "spentHardPoints", "pointBalance", "pointStatExists", "actualUnspent", "difficultyCandidates", "difficultyCalibrated", "difficultyLayout", "difficultyProfile", "clientStatus"} {
+		for _, key := range []string{"roomContract", "manifestContract", "gameDirectory", "manifestSource", "manifest", "saveDirectory", "d2rBuild", "d2rBuildKnown", "offsetsResolved", "processID", "character", "classID", "session", "spentHardPoints", "pointBalance", "pointStatExists", "actualUnspent", "difficultyCandidates", "difficultyCalibrated", "difficultyLayout", "difficultyProfile", "clientStatus"} {
 			if val, ok := report[key]; ok {
 				raw, _ := json.Marshal(val)
 				fmt.Printf("%s: %s\n", key, raw)
@@ -190,3 +201,6 @@ func doctor(args []string) int {
 	}
 	return 0
 }
+
+// manifestFileName is the manifest's name inside an installed mod's folder.
+const manifestFileName = "d2rr-ap-manifest.json"

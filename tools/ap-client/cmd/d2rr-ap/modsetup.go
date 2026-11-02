@@ -63,10 +63,11 @@ func (a *app) ensureMod(slotData map[string]any) error {
 	// running, say) does not ask the server to build the whole mod again.
 	zipBytes, man := a.fetchedZip, a.fetchedMan
 	if man == nil || man.MatchRoom(seed, class, savepath) != nil {
-		logf("room wants seed %d, class %s — requesting mod ...", seed, class)
+		logf("room wants seed %d, class %s — requesting this room's mod (about 50 MB; the site may take a minute to build it) ...", seed, class)
 		var err error
 		zipBytes, man, err = manifest.Fetch(manifest.FetchRequest{
 			BaseURL: a.baseURL, Seed: seed, CharacterClass: class, Savepath: savepath, Options: options,
+			Progress: downloadProgress(),
 		})
 		if err != nil {
 			return err
@@ -76,15 +77,17 @@ func (a *app) ensureMod(slotData map[string]any) error {
 		}
 		// Kept from here on, so not even a failure to save the zip costs another build.
 		a.fetchedZip, a.fetchedMan = zipBytes, man
-		if err := os.MkdirAll(a.modOut, 0755); err != nil {
-			return err
-		}
-		out := filepath.Join(a.modOut, man.ModName+".zip")
-		if err := os.WriteFile(out, zipBytes, 0o644); err != nil {
-			return fmt.Errorf("writing mod zip: %w", err)
-		}
-		logf("mod written to %s", out)
+		// Installed straight from memory when the app installs it; written out only for
+		// a player who installs it by hand.
 		if !a.installMod {
+			if err := os.MkdirAll(a.modOut, 0755); err != nil {
+				return err
+			}
+			out := filepath.Join(a.modOut, man.ModName+".zip")
+			if err := writeFileAtomic(out, zipBytes); err != nil {
+				return fmt.Errorf("writing mod zip: %w", err)
+			}
+			logf("mod written to %s", out)
 			logf(`INSTALL: rerun with -install (or -launch) to install and verify the downloaded mod:`)
 			logf("  D2R.exe -mod %s -txt", man.ModName)
 		}
@@ -165,15 +168,18 @@ func resolveSaveDir(flagDir, expected string) (string, error) {
 func (a *app) retrySetup() {
 	a.mu.Lock()
 	sd := a.slotData
-	last := a.lastSetupTry
+	notBefore := a.setupNotBefore
+	blocked := a.setupBlocked
 	failures := a.setupFailures
 	a.mu.Unlock()
 
-	if sd == nil || time.Since(last) < setupRetryDelay(failures) {
+	if sd == nil || blocked || time.Now().Before(notBefore) {
 		return
 	}
 	a.mu.Lock()
 	a.lastSetupTry = time.Now()
+	// The usual pace; a failure below may push it further out.
+	a.setupNotBefore = time.Now().Add(setupRetryDelay(failures))
 	a.mu.Unlock()
 
 	if err := a.ensureMod(sd); err != nil {
@@ -183,11 +189,25 @@ func (a *app) retrySetup() {
 				"it is installed and the game started again as soon as it is closed")
 			return
 		}
+		var fe *manifest.FetchError
+		if errors.As(err, &fe) && fe.Mismatch() {
+			// The app and the site disagree on the mod format: asking again cannot help.
+			a.mu.Lock()
+			a.setupBlocked = true
+			a.mu.Unlock()
+			logf("cannot get this room's mod: %s", fe.Explain())
+			return
+		}
 		a.mu.Lock()
 		a.setupFailures++
+		delay := setupRetryDelay(failures + 1)
+		if errors.As(err, &fe) && fe.RetryAfter > delay {
+			delay = fe.RetryAfter
+		}
+		a.setupNotBefore = time.Now().Add(delay)
 		a.mu.Unlock()
 		a.warnAttach(fmt.Sprintf("cannot set up this slot's mod yet (retrying in %s): %v",
-			setupRetryDelay(failures+1), err))
+			delay.Round(time.Second), err))
 		return
 	}
 	a.mu.Lock()
@@ -307,4 +327,44 @@ func savedGamesDir() string {
 		return filepath.Join(home, "Saved Games")
 	}
 	return "."
+}
+
+// downloadProgress logs a mod download every 5 MB, so a slow connection is visibly
+// working rather than hanging.
+func downloadProgress() func(read, total int64) {
+	const step = 5 << 20
+	next := int64(step)
+	return func(read, total int64) {
+		if read < next {
+			return
+		}
+		next = read - read%step + step
+		if total > 0 {
+			logf("  downloaded %d of %d MB", read>>20, total>>20)
+		} else {
+			logf("  downloaded %d MB", read>>20)
+		}
+	}
+}
+
+// writeFileAtomic writes through a .part file, so an interrupted write never leaves a
+// zip that looks complete.
+func writeFileAtomic(path string, data []byte) error {
+	part := path + ".part"
+	if err := os.WriteFile(part, data, 0o644); err != nil {
+		_ = os.Remove(part)
+		return err
+	}
+	return os.Rename(part, path)
+}
+
+// removeLeftoverZips clears mod zips that older versions of the app kept after
+// installing them (about 50 MB per room).
+func removeLeftoverZips(dir string) {
+	for _, pattern := range []string{"*.zip", "*.zip.part"} {
+		old, _ := filepath.Glob(filepath.Join(dir, pattern))
+		for _, f := range old {
+			_ = os.Remove(f)
+		}
+	}
 }

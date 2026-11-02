@@ -102,6 +102,7 @@ func (a *app) applySkillPoints(player uintptr) {
 	a.mu.Lock()
 	changed := a.lastPointsWritten != want
 	a.lastPointsWritten = want
+	a.receivedAtWrite = sent
 	a.mu.Unlock()
 	if changed {
 		logf("skill points: %d unspent (%d sent, %d spent, %d excess, %d overspent)", want, sent, spent, balance.Excess, balance.Debt)

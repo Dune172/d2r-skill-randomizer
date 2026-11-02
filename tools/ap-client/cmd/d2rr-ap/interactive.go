@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,10 +16,6 @@ import (
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/setup"
 	"golang.org/x/sys/windows"
 )
-
-// console is the one reader of standard input: the questions asked at start and the
-// chat afterwards share it, so nothing typed is lost between them.
-var console = bufio.NewReader(os.Stdin)
 
 // pauseOnExit keeps the window open after a fatal error. A double-clicked console
 // window closes the moment the program exits, taking the error with it.
@@ -87,8 +82,8 @@ func ask(question, fallback string) (string, error) {
 	} else {
 		fmt.Printf("%s: ", question)
 	}
-	line, err := console.ReadString('\n')
-	if err != nil && line == "" {
+	line, ok := readLine()
+	if !ok {
 		return "", errors.New("no answer (the input was closed)")
 	}
 	if answer := strings.TrimSpace(line); answer != "" {
@@ -98,15 +93,24 @@ func ask(question, fallback string) (string, error) {
 }
 
 // askRoom is the start of a double-click: where the room is, who the player is, and
-// where the game is installed, remembering the answers for next time.
-func askRoom(stateDir string) (roomChoice, error) {
-	setConsoleTitle("D2R Randomizer for Archipelago")
-	fmt.Println("D2R Randomizer for Archipelago")
-	fmt.Println("Connects your offline character to an Archipelago room, installs this room's")
-	fmt.Println("mod and starts Diablo II: Resurrected. Press Enter to keep a value in [brackets].")
+// where the game is installed. The game folder is remembered at once; the room and name
+// only once the room accepts them (rememberRoom), so a typo is not offered next time.
+//
+// retry is the choice the room just refused, or nil at start. Its address is offered
+// again, since the room did answer there.
+func askRoom(stateDir string, retry *roomChoice) (roomChoice, error) {
+	last := loadLastRoom(stateDir)
+	if retry == nil {
+		setConsoleTitle("D2R Randomizer for Archipelago")
+		fmt.Println("D2R Randomizer for Archipelago")
+		fmt.Println("Connects your offline character to an Archipelago room, installs this room's")
+		fmt.Println("mod and starts Diablo II: Resurrected. Press Enter to keep a value in [brackets].")
+	} else {
+		fmt.Println("Enter the room details again. Press Enter to keep a value in [brackets].")
+		last.Host, last.Port, last.GameDir = retry.Host, retry.Port, retry.GameDir
+	}
 	fmt.Println()
 
-	last := loadLastRoom(stateDir)
 	choice := last
 	lastAddress := ""
 	if last.Host != "" {
@@ -162,9 +166,17 @@ func askRoom(stateDir string) (roomChoice, error) {
 			}
 		}
 	}
-	saveLastRoom(stateDir, choice)
+	if remembered := loadLastRoom(stateDir); remembered.GameDir != choice.GameDir {
+		remembered.GameDir = choice.GameDir
+		saveLastRoom(stateDir, remembered)
+	}
 	fmt.Println()
 	return choice, nil
+}
+
+// rememberRoom keeps a room the server accepted, to offer it next time.
+func rememberRoom(stateDir string, choice roomChoice) {
+	saveLastRoom(stateDir, choice)
 }
 
 func setConsoleTitle(title string) {
@@ -176,5 +188,5 @@ func setConsoleTitle(title string) {
 // waitForEnter holds a double-clicked window open so its last lines can be read.
 func waitForEnter() {
 	fmt.Print("\nPress Enter to close this window.")
-	_, _ = console.ReadString('\n')
+	_, _ = readLine()
 }

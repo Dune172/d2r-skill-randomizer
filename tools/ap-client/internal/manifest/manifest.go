@@ -6,6 +6,7 @@ package manifest
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -250,7 +252,49 @@ type FetchRequest struct {
 	Savepath       string
 	// Options is the room's mod_options, passed through to the endpoint untouched.
 	Options map[string]any
+	// Progress, when set, is told how much of the mod has arrived (total is -1 when the
+	// server did not say).
+	Progress func(read, total int64)
 }
+
+// FetchError is a mod request the server answered with an error.
+type FetchError struct {
+	Status int
+	// RetryAfter is the server's Retry-After, or 0.
+	RetryAfter time.Duration
+	// ServerContract is the contract the site speaks, from a 409.
+	ServerContract int
+	Message        string
+}
+
+func (e *FetchError) Error() string {
+	return fmt.Sprintf("mod request failed (%d): %s", e.Status, e.Message)
+}
+
+// Mismatch reports a contract mismatch, which no retry can fix: this app and the site
+// were released apart.
+func (e *FetchError) Mismatch() bool { return e.Status == http.StatusConflict }
+
+// Explain says what a mismatch means for the player.
+func (e *FetchError) Explain() string {
+	if !e.Mismatch() {
+		return e.Error()
+	}
+	if e.ServerContract > 0 && e.ServerContract < ContractVersion {
+		return "This app is newer than d2rrandomizer.com. Download the app again from " +
+			"https://d2rrandomizer.com/archipelago (the copy there always matches the site)."
+	}
+	return "This app is out of date. Download it again from https://d2rrandomizer.com/archipelago, " +
+		"close this window and open the new one."
+}
+
+// Timeouts for a mod request. The server can take a minute or more to build a mod when it
+// is busy, and the download is about 50 MB, so there is no limit on the whole request:
+// only on waiting for the server to start answering, and on a download that stalls.
+var (
+	responseTimeout = 5 * time.Minute
+	stallTimeout    = 60 * time.Second
+)
 
 type wireRequest struct {
 	Seed            int            `json:"seed"`
@@ -281,9 +325,16 @@ func Fetch(req FetchRequest) (zipBytes []byte, m *Manifest, err error) {
 	if base == "" {
 		base = "https://d2rrandomizer.com"
 	}
-	// Generation is a few seconds cold, and the server serialises it behind a queue.
-	client := &http.Client{Timeout: 120 * time.Second}
-	resp, err := client.Post(base+"/api/archipelago/mod", "application/json", bytes.NewReader(body))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, base+"/api/archipelago/mod", bytes.NewReader(body))
+	if err != nil {
+		return nil, nil, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.ResponseHeaderTimeout = responseTimeout
+	resp, err := (&http.Client{Transport: transport}).Do(httpReq)
 	if err != nil {
 		return nil, nil, fmt.Errorf("requesting mod: %w", err)
 	}
@@ -291,10 +342,26 @@ func Fetch(req FetchRequest) (zipBytes []byte, m *Manifest, err error) {
 
 	if resp.StatusCode != http.StatusOK {
 		payload, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrorBytes))
-		return nil, nil, fmt.Errorf("mod request failed (%d): %s", resp.StatusCode, errorBody(payload))
+		fe := &FetchError{Status: resp.StatusCode, Message: errorBody(payload)}
+		if secs, err := strconv.Atoi(strings.TrimSpace(resp.Header.Get("Retry-After"))); err == nil && secs > 0 {
+			fe.RetryAfter = time.Duration(secs) * time.Second
+		}
+		var conflict struct {
+			ServerContractVersion int `json:"serverContractVersion"`
+		}
+		if json.Unmarshal(payload, &conflict) == nil {
+			fe.ServerContract = conflict.ServerContractVersion
+		}
+		return nil, nil, fe
 	}
-	payload, err := readLimited(resp.Body, maxModZipBytes)
+	reader := &watchedReader{r: resp.Body, total: resp.ContentLength, progress: req.Progress,
+		stall: time.AfterFunc(stallTimeout, cancel)}
+	defer reader.stall.Stop()
+	payload, err := readLimited(reader, maxModZipBytes)
 	if err != nil {
+		if ctx.Err() != nil {
+			return nil, nil, fmt.Errorf("reading the mod: the download stalled for %s", stallTimeout)
+		}
 		return nil, nil, fmt.Errorf("reading the mod: %w", err)
 	}
 
@@ -303,6 +370,27 @@ func Fetch(req FetchRequest) (zipBytes []byte, m *Manifest, err error) {
 		return nil, nil, err
 	}
 	return payload, man, nil
+}
+
+// watchedReader reports download progress and cancels a download that stops arriving.
+type watchedReader struct {
+	r        io.Reader
+	read     int64
+	total    int64
+	progress func(read, total int64)
+	stall    *time.Timer
+}
+
+func (w *watchedReader) Read(p []byte) (int, error) {
+	n, err := w.r.Read(p)
+	if n > 0 {
+		w.stall.Reset(stallTimeout)
+		w.read += int64(n)
+		if w.progress != nil {
+			w.progress(w.read, w.total)
+		}
+	}
+	return n, err
 }
 
 // errorBody turns a failed response into one readable line.

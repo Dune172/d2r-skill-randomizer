@@ -4,10 +4,13 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 // modZip builds a zip from name -> contents.
@@ -141,5 +144,71 @@ func TestReadLimitedFailsRatherThanTruncates(t *testing.T) {
 	}
 	if _, err := readLimited(strings.NewReader("123456"), 5); err == nil {
 		t.Fatal("one byte over the limit was accepted")
+	}
+}
+
+func TestFetchReportsProgressAndRetryAfter(t *testing.T) {
+	zipBytes := modZip(t, map[string][]byte{"seed1234/d2rr-ap-manifest.json": validJSON(t)})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(zipBytes)
+	}))
+	defer srv.Close()
+	var last int64
+	if _, _, err := Fetch(FetchRequest{BaseURL: srv.URL, Seed: 1234, CharacterClass: "pal", Savepath: "x",
+		Progress: func(read, total int64) { last = read }}); err != nil {
+		t.Fatal(err)
+	}
+	if last != int64(len(zipBytes)) {
+		t.Fatalf("progress ended at %d of %d", last, len(zipBytes))
+	}
+
+	busy := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Retry-After", "7")
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer busy.Close()
+	_, _, err := Fetch(FetchRequest{BaseURL: busy.URL, Seed: 1, CharacterClass: "pal", Savepath: "x"})
+	var fe *FetchError
+	if !errors.As(err, &fe) || fe.RetryAfter != 7*time.Second || fe.Mismatch() {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestFetchExplainsAContractMismatch(t *testing.T) {
+	for server, want := range map[int]string{ContractVersion + 1: "out of date", ContractVersion - 1: "newer than"} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusConflict)
+			fmt.Fprintf(w, `{"error":"Contract version mismatch","serverContractVersion":%d}`, server)
+		}))
+		_, _, err := Fetch(FetchRequest{BaseURL: srv.URL, Seed: 1, CharacterClass: "pal", Savepath: "x"})
+		srv.Close()
+		var fe *FetchError
+		if !errors.As(err, &fe) || !fe.Mismatch() || !strings.Contains(fe.Explain(), want) {
+			t.Fatalf("server %d: %v", server, err)
+		}
+	}
+}
+
+// A download that stops arriving fails instead of hanging the app.
+func TestFetchGivesUpOnAStalledDownload(t *testing.T) {
+	old := stallTimeout
+	stallTimeout = 200 * time.Millisecond
+	defer func() { stallTimeout = old }()
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", "1000000")
+		w.Write(make([]byte, 1000))
+		w.(http.Flusher).Flush()
+		<-release
+	}))
+	defer srv.Close()
+	defer close(release)
+	start := time.Now()
+	_, _, err := Fetch(FetchRequest{BaseURL: srv.URL, Seed: 1, CharacterClass: "pal", Savepath: "x"})
+	if err == nil || !strings.Contains(err.Error(), "stalled") {
+		t.Fatalf("got %v", err)
+	}
+	if time.Since(start) > 10*time.Second {
+		t.Fatal("took far longer than the stall timeout")
 	}
 }

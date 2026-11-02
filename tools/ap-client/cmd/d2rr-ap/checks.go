@@ -66,7 +66,7 @@ func (a *app) pollSave(ctx context.Context) {
 		if id, ok := ids.QuestLocationID(q.Difficulty, q.Act, q.Index); ok && a.conn.KnownLocation(id) {
 			if key := q.ID(); !a.seen(key) {
 				newIDs = append(newIDs, id)
-				logf("check: %s %s (A%d)", save.DifficultyNames[q.Difficulty], q.Name, q.Act+1)
+				a.logCheck("check: %s %s (A%d)", save.DifficultyNames[q.Difficulty], q.Name, q.Act+1)
 			}
 		}
 	}
@@ -108,11 +108,22 @@ func (a *app) sendChecks(ctx context.Context, newIDs []int64) {
 	}
 	added, err := a.session.AddChecks(newIDs)
 	if err != nil {
-		logf("persisting checks failed: %v", err)
+		// Forget what was seen so these checks are found again next poll, but say so
+		// once: the check lines would otherwise repeat twice a second until it clears.
+		a.note("persist", fmt.Sprintf("saving checks failed (%v); they are retried, and sent once saving works", err))
 		a.mu.Lock()
 		a.lastSeen = map[string]bool{}
+		a.checksQuiet = true
 		a.mu.Unlock()
 		return
+	}
+	a.mu.Lock()
+	wasQuiet := a.checksQuiet
+	a.checksQuiet = false
+	a.mu.Unlock()
+	if wasQuiet {
+		a.note("persist", "")
+		logf("saving checks works again")
 	}
 	if len(added) == 0 {
 		return
@@ -163,12 +174,12 @@ func (a *app) pollProgress(ctx context.Context) {
 		// a level cannot be revisited to re-trigger the check.
 		for clvl := ids.LevelMin; clvl <= prog.CharLevel && clvl <= cap; clvl++ {
 			id, ok := ids.LevelLocationID(clvl)
-			if !ok {
+			if !ok || !a.conn.KnownLocation(id) { // not in this room: past the level cap, say
 				continue
 			}
 			if key := fmt.Sprintf("lvl:%d", clvl); !a.seen(key) {
 				newIDs = append(newIDs, id)
-				logf("check: reached level %d", clvl)
+				a.logCheck("check: reached level %d", clvl)
 			}
 		}
 	}
@@ -186,12 +197,12 @@ func (a *app) pollProgress(ctx context.Context) {
 				continue
 			}
 			id, ok := ids.WaypointLocationID(res.Difficulty, index)
-			if !ok {
+			if !ok || !a.conn.KnownLocation(id) { // not in this room: a town, say
 				continue
 			}
 			if key := fmt.Sprintf("wp:%d:%d", res.Difficulty, index); !a.seen(key) {
 				newIDs = append(newIDs, id)
-				logf("check: waypoint %s (%s)", areaLabel(areaID),
+				a.logCheck("check: waypoint %s (%s)", areaLabel(areaID),
 					save.DifficultyNames[res.Difficulty])
 			}
 		}
@@ -206,15 +217,12 @@ func (a *app) pollProgress(ctx context.Context) {
 		if index, known := ids.AreaIndexForLevelID(prog.AreaLevelID); known {
 			// Attributing an area to the wrong difficulty means the right location is
 			// never sent, which strands whatever item fill put there — in a multiworld,
-			// somebody else's progression.
-			if res.NeedsOverrideWarning() {
-				a.warnAssumedDifficulty(res)
-			}
-			if id, ok := ids.AreaLocationID(res.Difficulty, index); ok && res.OK {
+			// somebody else's progression. So nothing is sent unless res.OK.
+			if id, ok := ids.AreaLocationID(res.Difficulty, index); ok && res.OK && a.conn.KnownLocation(id) { // towns are not in any room
 				key := fmt.Sprintf("area:%d:%d", res.Difficulty, index)
 				if !a.seen(key) {
 					newIDs = append(newIDs, id)
-					logf("check: entered %s (%s)", ids.AreaLabels[index],
+					a.logCheck("check: entered %s (%s)", ids.AreaLabels[index],
 						save.DifficultyNames[res.Difficulty])
 				}
 			}
@@ -294,7 +302,7 @@ func (a *app) liveQuestChecks(st *save.State, difficulty int) []int64 {
 			continue
 		}
 		out = append(out, id)
-		logf("check: %s (A%d) — from memory, ahead of the save",
+		a.logCheck("check: %s (A%d) — from memory, ahead of the save",
 			save.QuestNames[q.Act][q.Index], q.Act+1)
 	}
 	return out
@@ -352,4 +360,15 @@ func areaLabel(levelID int) string {
 		return ids.AreaLabels[i]
 	}
 	return fmt.Sprintf("area %d", levelID)
+}
+
+// logCheck logs a newly seen check, except while saving checks is failing: then every
+// check is "new" again each poll, and the persist note has already said why.
+func (a *app) logCheck(format string, args ...any) {
+	a.mu.Lock()
+	quiet := a.checksQuiet
+	a.mu.Unlock()
+	if !quiet {
+		logf(format, args...)
+	}
 }

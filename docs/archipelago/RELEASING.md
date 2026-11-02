@@ -45,11 +45,12 @@ it; no tag is needed for testers.
 
 ## Cutting it
 
-Push a tag named `archipelago-v` plus the world version:
+Push a tag named `archipelago-v` plus the world version (the release job fails if they
+differ):
 
 ```bash
-git tag archipelago-v0.1.0
-git push origin archipelago-v0.1.0
+git tag archipelago-v0.4.1
+git push origin archipelago-v0.4.1
 ```
 
 The `Archipelago` workflow tests the world on Python 3.11 to 3.13 inside a checkout of
@@ -62,8 +63,9 @@ It is published as a pre-release. Untick that on GitHub once the gates have pass
 
 ## After
 
-- Link the release from `/archipelago` (the client download line in
-  `src/app/archipelago/page.tsx`), then list the page in `SiteNav.tsx` and `sitemap.ts`
-  and remove its `noindex` and the `robots.ts` entry.
+- `/archipelago` stays the main download: it serves the committed app and the apworld
+  built at deploy, which always match the site. The GitHub release is the archive.
+- To launch: list the page in `SiteNav.tsx` and `sitemap.ts`, remove its `noindex`
+  (`page.tsx`) and the `robots.ts` entry, and change its "Tester preview" badge.
 - Ids are frozen from the first public release: add items, locations and areas at the
   end of their tables, never renumber.

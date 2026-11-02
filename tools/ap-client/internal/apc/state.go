@@ -69,6 +69,10 @@ type Session struct {
 
 	GoalReported bool `json:"goalReported"`
 
+	// Difficulty the player said they are on with /difficulty (0 to 2), or nil to infer.
+	// Kept per room, so it survives a restart and a new room starts without one.
+	Difficulty *int `json:"difficulty,omitempty"`
+
 	path string
 	mu   sync.Mutex
 }
@@ -295,7 +299,30 @@ func (s *Session) Bind(seed string, team, slot int64) error {
 	s.Character = loaded.Character
 	s.CheckedLocations, s.ItemCounts, s.Applied = loaded.CheckedLocations, loaded.ItemCounts, loaded.Applied
 	s.LastReceivedIndex, s.GoalReported = loaded.LastReceivedIndex, loaded.GoalReported
+	s.Difficulty = loaded.Difficulty
 	return nil
+}
+
+// DifficultyChoice is the difficulty chosen with /difficulty, or -1 when none is.
+func (s *Session) DifficultyChoice() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.Difficulty == nil {
+		return -1
+	}
+	return *s.Difficulty
+}
+
+// SetDifficultyChoice records a /difficulty choice (-1 clears it) and persists it.
+func (s *Session) SetDifficultyChoice(d int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if d < 0 {
+		s.Difficulty = nil
+	} else {
+		s.Difficulty = &d
+	}
+	return s.saveLocked()
 }
 
 func (s *Session) BindCharacter(name string) error {

@@ -219,7 +219,9 @@ write; record which happens so the docs can say so.
 
    `-base-url` points the mod download at the dev server. `-launch` installs the room's
    mod and starts D2R.
-3. Create a new character of the room's class and play to the goal. Watch that:
+3. Load the character the app made (Open Acts, the default) and play to the goal. Do one
+   run with `open_acts: false` as well, on a new character of the room's class. Watch
+   that:
    - points arrive and match the client's log, and skills bought with them work;
    - points sent after you spend your last one arrive too;
    - "You received X from Y" and "You sent X to Y" appear in the box beside the chat,
@@ -230,6 +232,11 @@ write; record which happens so the docs can say so.
    - killing the goal boss prints `GOAL COMPLETE`;
    - from the server console, `/send <name> Mana Burn Trap` (and anything else you
      enabled) arrives.
+4. **Past Normal** (a Nightmare or Hell goal). After beating Normal Baal, enter
+   Nightmare and type `/difficulty nightmare` in the app's window. Record whether it
+   answers "the app can now tell the difficulty by itself" (the memory field calibrated)
+   or keeps the choice. Then go back to a Normal game: area checks should file under
+   Normal with no typing if it calibrated. Add which happened to `DESIGN_NOTES.md`.
 
 ## Recording results
 

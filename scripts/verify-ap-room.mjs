@@ -31,6 +31,10 @@ const AP_DIR = process.env.ARCHIPELAGO_DIR || 'C:\\ProgramData\\Archipelago';
 const BASE = process.env.D2RR_BASE || 'http://localhost:3210';
 const CLIENT = path.join(repoRoot, 'dist', 'd2rr-ap.exe');
 const SLOT = 'Solo';
+// Sent from the server console. The restart check counts on this list, so it is the
+// one place that says what was sent.
+const SENT = ['Progressive Skill Point', 'Progressive Skill Point', 'Training Fragment',
+  'Stat Points', 'Progressive Horadric Key', 'Mana Burn Trap', 'Gold'];
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -135,8 +139,7 @@ async function main() {
 
     await step('items sent by the server are counted', async () => {
       await server.waitFor(/Solo.*(has joined|joined)/i, 'the server to see the client');
-      for (const item of ['Progressive Skill Point', 'Progressive Skill Point', 'Training Fragment',
-        'Stat Points', 'Progressive Horadric Key', 'Mana Burn Trap', 'Gold']) {
+      for (const item of SENT) {
         server.say(`/send ${SLOT} ${item}`);
       }
       // One starting point is precollected; two more were sent.
@@ -189,7 +192,8 @@ async function main() {
       if (state.length !== 1) throw new Error(`expected one session file, found ${state.length}`);
       const session = JSON.parse(fs.readFileSync(path.join(work, 'state', state[0]), 'utf8'));
       const total = Object.values(session.itemCounts).reduce((a, b) => a + b, 0);
-      if (total !== 9) throw new Error(`session holds ${total} items, expected 9 (1 starting + 8 sent)`);
+      const want = 1 + SENT.length; // the starting point and every item sent
+      if (total !== want) throw new Error(`session holds ${total} items, expected ${want} (1 starting + ${SENT.length} sent)`);
       return `${total} items on disk`;
     });
     await step('the data package was cached by checksum', () => {

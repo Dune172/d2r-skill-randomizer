@@ -6,18 +6,18 @@ package setup
 import (
 	"archive/zip"
 	"bytes"
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
-	"syscall"
 	"time"
 	"unsafe"
 
@@ -30,24 +30,69 @@ type Process struct {
 	ExecutablePath, CommandLine string
 }
 
+// Inspect reads a process's executable path and command line straight from Windows.
+//
+// It used to ask PowerShell, which cost a new process per call, printed in the console's
+// code page (so a game folder with non-ASCII letters came back garbled), and could time
+// out on a slow machine. PROCESS_QUERY_LIMITED_INFORMATION is enough for both reads, and
+// is granted even when the game runs as administrator.
 func Inspect(pid uint32) (Process, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, "powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
-		fmt.Sprintf(`Get-CimInstance Win32_Process -Filter "ProcessId=%d" | Select-Object ProcessId,ExecutablePath,CommandLine | ConvertTo-Json -Compress`, pid))
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	out, err := cmd.Output()
+	h, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, pid)
 	if err != nil {
 		return Process{}, fmt.Errorf("cannot inspect process %d: %w", pid, err)
 	}
-	var p Process
-	if err := json.Unmarshal(bytes.TrimPrefix(out, []byte{0xef, 0xbb, 0xbf}), &p); err != nil {
-		return p, err
+	defer windows.CloseHandle(h)
+
+	name := make([]uint16, 32768)
+	n := uint32(len(name))
+	if err := windows.QueryFullProcessImageName(h, 0, &name[0], &n); err != nil {
+		return Process{}, fmt.Errorf("cannot read the path of process %d: %w", pid, err)
 	}
-	if p.ProcessId != pid || p.ExecutablePath == "" || p.CommandLine == "" {
+	p := Process{ProcessId: pid, ExecutablePath: windows.UTF16ToString(name[:n])}
+	if p.CommandLine, err = commandLine(h); err != nil {
+		return p, fmt.Errorf("cannot read the command line of process %d: %w", pid, err)
+	}
+	if p.ExecutablePath == "" || p.CommandLine == "" {
 		return p, fmt.Errorf("process identity is unreadable; check permissions")
 	}
 	return p, nil
+}
+
+// commandLine asks for ProcessCommandLineInformation, which answers with a
+// UNICODE_STRING followed by its text.
+func commandLine(h windows.Handle) (string, error) {
+	size := uint32(4096)
+	for attempt := 0; attempt < 3; attempt++ {
+		buf := make([]byte, size)
+		var needed uint32
+		err := windows.NtQueryInformationProcess(h, windows.ProcessCommandLineInformation,
+			unsafe.Pointer(&buf[0]), size, &needed)
+		if err == nil {
+			return (*windows.NTUnicodeString)(unsafe.Pointer(&buf[0])).String(), nil
+		}
+		if needed <= size {
+			return "", err
+		}
+		size = needed
+	}
+	return "", fmt.Errorf("the command line kept growing")
+}
+
+// GameElevated reports whether a running D2R.exe refuses memory access to this app,
+// which is what happens when the game runs as administrator and the app does not.
+func GameElevated() bool {
+	pids, _ := gamePIDs()
+	for _, pid := range pids {
+		h, err := windows.OpenProcess(windows.PROCESS_VM_READ|windows.PROCESS_QUERY_INFORMATION, false, pid)
+		if err == nil {
+			windows.CloseHandle(h)
+			continue
+		}
+		if errors.Is(err, windows.ERROR_ACCESS_DENIED) {
+			return true
+		}
+	}
+	return false
 }
 
 func VerifyProcess(p Process, m *manifest.Manifest) error {
@@ -344,6 +389,7 @@ func Install(root string, data []byte, m *manifest.Manifest) (string, error) {
 		}
 		return "", err
 	}
+	pruneBackups(dest, 1)
 	return dest, nil
 }
 
@@ -439,10 +485,18 @@ func ExecutableHash(path string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
+// GameRunning reports whether any D2R.exe is running. An unreadable process list counts
+// as running, so nothing is installed under a game that might be open.
 func GameRunning() bool {
+	pids, ok := gamePIDs()
+	return !ok || len(pids) > 0
+}
+
+// gamePIDs lists every running D2R.exe; ok is false when the process list is unreadable.
+func gamePIDs() (pids []uint32, ok bool) {
 	h, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if e != nil {
-		return true
+		return nil, false
 	}
 	defer windows.CloseHandle(h)
 	var entry windows.ProcessEntry32
@@ -450,9 +504,48 @@ func GameRunning() bool {
 	e = windows.Process32First(h, &entry)
 	for e == nil {
 		if strings.EqualFold(windows.UTF16ToString(entry.ExeFile[:]), "D2R.exe") {
-			return true
+			pids = append(pids, entry.ProcessID)
 		}
 		e = windows.Process32Next(h, &entry)
 	}
-	return false
+	return pids, true
+}
+
+// pruneBackups keeps the newest keep backups of an installed mod (<dest>.backup-<time>).
+// Each is a whole mod, about 150 MB, and every update of the room's mod made one more.
+func pruneBackups(dest string, keep int) {
+	old, _ := filepath.Glob(dest + ".backup-*")
+	sort.Strings(old) // the suffix is a timestamp, so this is oldest first
+	for len(old) > keep {
+		_ = os.RemoveAll(old[0])
+		old = old[1:]
+	}
+}
+
+// RunningMod names the mod a running D2R.exe was started with (its -mod argument), or ""
+// when it has none.
+func RunningMod() (string, error) {
+	pids, _ := gamePIDs()
+	if len(pids) == 0 {
+		return "", fmt.Errorf("D2R is not running")
+	}
+	p, err := Inspect(pids[0])
+	if err != nil {
+		return "", err
+	}
+	return modArgument(p.CommandLine)
+}
+
+// modArgument reads -mod's value from a command line.
+func modArgument(commandLine string) (string, error) {
+	args, err := windows.DecomposeCommandLine(commandLine)
+	if err != nil {
+		return "", err
+	}
+	for i := 1; i+1 < len(args); i++ {
+		if strings.EqualFold(args[i], "-mod") {
+			return args[i+1], nil
+		}
+	}
+	return "", nil
 }
