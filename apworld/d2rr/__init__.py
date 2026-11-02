@@ -126,6 +126,23 @@ class D2RRWorld(World):
         # multiworld, and the client asks d2rrandomizer.com for exactly this mod.
         self.d2rr_seed = tracked["d2rr_seed"] if tracked else self.random.randint(1, 2_000_000_000)
 
+        pooled_stats = self.options.stat_points.value == self.options.stat_points.option_pooled
+        self.pool = ids.resolve_pool(
+            len(self._active_location_names()),
+            skill_points=self.options.skill_points.value,
+            starting_skill_points=self.options.starting_skill_points.value,
+            keys=ids.keys_in_pool(bool(self.options.key_items), self.goal_difficulty, self.goal_act),
+            # One bundle for each level-up the goal expects.
+            stat_bundles=ids.level_cap(self.goal_difficulty, self.goal_act) - 1 if pooled_stats else 0,
+            trap_percentage=self.options.trap_percentage.value,
+        )
+        asked = self.options.skill_points.value
+        if self.pool["skill_points"] < asked and not tracked:
+            logging.warning(
+                "D2R Randomizer: %s asked for %d skill points, but only %d fit in this slot's "
+                "locations (or a character can spend); generating with %d.",
+                self.player_name, asked, self.pool["skill_points"], self.pool["skill_points"])
+
     @staticmethod
     def interpret_slot_data(slot_data: dict[str, Any]) -> dict[str, Any]:
         """Universal Tracker hands this back as re_gen_passthrough when it regenerates."""
@@ -149,23 +166,6 @@ class D2RRWorld(World):
         options.open_acts.value = int(slot_data.get("open_acts", False))
         if "logic_difficulty" in slot_data:
             options.logic_difficulty.value = slot_data["logic_difficulty"]
-
-        pooled_stats = self.options.stat_points.value == self.options.stat_points.option_pooled
-        self.pool = ids.resolve_pool(
-            len(self._active_location_names()),
-            skill_points=self.options.skill_points.value,
-            starting_skill_points=self.options.starting_skill_points.value,
-            keys=ids.keys_in_pool(bool(self.options.key_items), self.goal_difficulty, self.goal_act),
-            # One bundle for each level-up the goal expects.
-            stat_bundles=ids.level_cap(self.goal_difficulty, self.goal_act) - 1 if pooled_stats else 0,
-            trap_percentage=self.options.trap_percentage.value,
-        )
-        asked = self.options.skill_points.value
-        if self.pool["skill_points"] < asked and not tracked:
-            logging.warning(
-                "D2R Randomizer: %s asked for %d skill points, but only %d fit in this slot's "
-                "locations (or a character can spend); generating with %d.",
-                self.player_name, asked, self.pool["skill_points"], self.pool["skill_points"])
 
     def _active_location_names(self) -> list[str]:
         return ids.active_location_names(
