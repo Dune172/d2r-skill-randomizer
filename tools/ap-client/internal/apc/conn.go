@@ -84,20 +84,81 @@ func NewConn(host string, port int, slot, password string, session *Session, h H
 	return &Conn{Host: host, Port: port, Slot: slot, Password: password, session: session, handler: h}
 }
 
-// Run maintains the connection until ctx is cancelled, reconnecting with backoff.
-func (c *Conn) Run(ctx context.Context) {
+// RefusedError is an answer from the room that retrying cannot change: a slot name it
+// does not have, a wrong password, or a room made for a different apworld.
+type RefusedError struct {
+	// Reasons are Archipelago's codes (InvalidSlot, InvalidPassword, ...), or this
+	// client's own for a room it cannot play.
+	Reasons []string
+	Detail  string
+}
+
+func (e *RefusedError) Error() string {
+	if e.Detail != "" {
+		return e.Detail
+	}
+	return "connection refused by server: " + strings.Join(e.Reasons, ", ")
+}
+
+// Explain says what went wrong and what to do, in the player's terms.
+func (e *RefusedError) Explain(slot string) string {
+	var lines []string
+	for _, r := range e.Reasons {
+		switch r {
+		case "InvalidSlot":
+			lines = append(lines, fmt.Sprintf("The room has no player named %q. Use the name from your "+
+				"player file exactly; capital letters count.", slot))
+		case "InvalidGame":
+			lines = append(lines, fmt.Sprintf("%q is in the room, but not as a D2R Randomizer player.", slot))
+		case "InvalidPassword":
+			lines = append(lines, "The room password is wrong (or the room has one and none was given).")
+		case "IncompatibleVersion":
+			lines = append(lines, "The room's Archipelago server is too old for this app. It needs 0.6.7 or newer.")
+		case "IncompatibleWorld":
+			lines = append(lines, "This room was generated with a different version of d2rr.apworld than this app. "+
+				"Use the app and the apworld from the same download, and generate the room again.")
+		}
+	}
+	if len(lines) == 0 {
+		return e.Error()
+	}
+	return strings.Join(lines, "\n")
+}
+
+// failedConnectsBeforeHint is how many connection attempts in a row fail before the
+// client suggests the address may have changed.
+const failedConnectsBeforeHint = 3
+
+// Run maintains the connection until ctx is cancelled, reconnecting with backoff. It
+// returns early only for a *RefusedError, which no retry can fix.
+func (c *Conn) Run(ctx context.Context) error {
 	backoff := time.Second
+	failedConnects := 0
 	for ctx.Err() == nil {
 		err := c.once(ctx)
 		if ctx.Err() != nil {
-			return
+			return nil
+		}
+		var refused *RefusedError
+		if errors.As(err, &refused) {
+			return refused
+		}
+		if errors.Is(err, errDial) {
+			failedConnects++
+		} else {
+			failedConnects = 0 // the room answered, so the address is right
 		}
 		if err != nil {
 			c.printf("disconnected: %v (retrying in %s)", err, backoff.Round(time.Second))
 		}
+		if failedConnects == failedConnectsBeforeHint {
+			c.printf("  Still no answer from %s:%d. If the room was restarted (archipelago.gg rooms "+
+				"sleep when idle), open its page again: the port may have changed. Then close this "+
+				"window and start the app with the new address.", c.Host, c.Port)
+		}
 		select {
 		case <-ctx.Done():
-			return
+			return nil
 		case <-time.After(backoff):
 		}
 		if backoff < 30*time.Second {
@@ -107,6 +168,7 @@ func (c *Conn) Run(ctx context.Context) {
 			backoff = 30 * time.Second
 		}
 	}
+	return nil
 }
 
 // once runs a single connection attempt to completion.
@@ -145,6 +207,9 @@ func (c *Conn) once(ctx context.Context) error {
 	}
 }
 
+// errDial marks a failure to reach the room at all, as opposed to a dropped connection.
+var errDial = errors.New("could not connect")
+
 // dial tries wss:// first, then ws://.
 //
 // Both are required: hosted rooms are TLS, while a self-hosted server on localhost
@@ -170,7 +235,7 @@ func (c *Conn) dial(ctx context.Context) (*websocket.Conn, error) {
 		}
 		lastErr = err
 	}
-	return nil, fmt.Errorf("could not connect to %s:%d: %w", c.Host, c.Port, lastErr)
+	return nil, fmt.Errorf("%w to %s:%d: %v", errDial, c.Host, c.Port, lastErr)
 }
 
 func (c *Conn) handle(ctx context.Context, p map[string]any) error {
@@ -195,10 +260,11 @@ func (c *Conn) handle(ctx context.Context, p map[string]any) error {
 	case "Connected":
 		slotData, _ := p["slot_data"].(map[string]any)
 		if version, ok := slotData["contract_version"].(float64); !ok || version != SlotContractVersion {
-			return fmt.Errorf("incompatible D2RR room contract %v (client requires %d); install the matching d2rr.apworld and generate a new room for Progressive Skill Point items", slotData["contract_version"], SlotContractVersion)
+			return &RefusedError{Reasons: []string{"IncompatibleWorld"}, Detail: fmt.Sprintf(
+				"incompatible D2RR room contract %v (this app requires %d)", slotData["contract_version"], SlotContractVersion)}
 		}
 		if ratio, ok := toInt64(slotData["fragments_per_point"]); !ok || ratio != 5 {
-			return fmt.Errorf("unsupported training-fragment conversion in room data")
+			return &RefusedError{Reasons: []string{"IncompatibleWorld"}, Detail: "unsupported training-fragment conversion in room data"}
 		}
 		team, teamOK := toInt64(p["team"])
 		slot, slotOK := toInt64(p["slot"])
@@ -327,7 +393,7 @@ func (c *Conn) handle(ctx context.Context, p map[string]any) error {
 			parts = append(parts, fmt.Sprint(e))
 		}
 		// Not retryable: a bad slot name or password will fail identically forever.
-		return fmt.Errorf("connection refused by server: %s", strings.Join(parts, ", "))
+		return &RefusedError{Reasons: parts}
 
 	case "DataPackage":
 		data, _ := p["data"].(map[string]any)

@@ -110,7 +110,7 @@ func CurrentDifficulty(goalDifficulty, override int, st *State) DifficultyResult
 	if unlocked == 0 {
 		return DifficultyResult{Difficulty: 0, OK: true, Source: SourceSingleDifficulty}
 	}
-	return DifficultyResult{Reason: "multiple difficulties are unlocked; use a calibrated memory profile or -difficulty", Unlocked: unlocked}
+	return DifficultyResult{Reason: "you have unlocked more than one difficulty", Unlocked: unlocked}
 }
 
 // NeedsOverrideWarning reports whether the caller should tell the player that area

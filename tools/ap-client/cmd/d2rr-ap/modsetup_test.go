@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/apc"
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/manifest"
@@ -199,5 +200,47 @@ func TestTheReadyMadeCharacterIsPlacedOnlyInAnEmptyFolder(t *testing.T) {
 	a.placeStarterSave(root, m)
 	if files, _ := filepath.Glob(filepath.Join(empty, "*")); len(files) != 0 {
 		t.Fatal("a character was placed without Open Acts")
+	}
+}
+
+// A contract mismatch stops the retries: the app is out of date, and asking the site
+// again (each ask builds a mod) cannot change that.
+func TestAnOutOfDateAppStopsAskingForTheMod(t *testing.T) {
+	var requests atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests.Add(1)
+		w.WriteHeader(http.StatusConflict)
+		w.Write([]byte(`{"error":"Contract version mismatch","serverContractVersion":99}`))
+	}))
+	defer srv.Close()
+	a := &app{
+		baseURL: srv.URL, modOut: t.TempDir(), session: apc.PendingSession(t.TempDir(), "Slot"),
+		lastSeen: map[string]bool{},
+		slotData: map[string]any{"d2rr_seed": float64(1234), "character_class": "pal", "savepath": "ap_1234_pal"},
+	}
+	a.retrySetup()
+	a.setupNotBefore = time.Time{}
+	a.retrySetup()
+	if n := requests.Load(); n != 1 || !a.setupBlocked {
+		t.Fatalf("requests %d, blocked %v", n, a.setupBlocked)
+	}
+}
+
+// A busy site's Retry-After is honoured when it is longer than the usual pace.
+func TestABusySiteIsAskedAgainWhenItSays(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Retry-After", "600")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		w.Write([]byte(`{"error":"busy"}`))
+	}))
+	defer srv.Close()
+	a := &app{
+		baseURL: srv.URL, modOut: t.TempDir(), session: apc.PendingSession(t.TempDir(), "Slot"),
+		lastSeen: map[string]bool{},
+		slotData: map[string]any{"d2rr_seed": float64(1234), "character_class": "pal", "savepath": "ap_1234_pal"},
+	}
+	a.retrySetup()
+	if wait := time.Until(a.setupNotBefore); wait < 9*time.Minute {
+		t.Fatalf("next try in %s, want about 10 minutes", wait)
 	}
 }

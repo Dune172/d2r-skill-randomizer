@@ -272,3 +272,51 @@ func TestARebuiltModWithTheSameManifestIsReinstalled(t *testing.T) {
 		t.Fatalf("the rebuilt mod was not installed: %q", got)
 	}
 }
+
+// Inspect reads the path and command line without PowerShell; this process is a
+// stand-in for D2R.exe.
+func TestInspectReadsThisProcess(t *testing.T) {
+	p, err := Inspect(uint32(os.Getpid()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.EqualFold(p.ExecutablePath, exe) {
+		t.Fatalf("path %q, want %q", p.ExecutablePath, exe)
+	}
+	args, err := windows.DecomposeCommandLine(p.CommandLine)
+	if err != nil || len(args) != len(os.Args) {
+		t.Fatalf("command line %q decomposes to %v (%v), want %d args", p.CommandLine, args, err, len(os.Args))
+	}
+	for i := 1; i < len(args); i++ {
+		if args[i] != os.Args[i] {
+			t.Fatalf("arg %d is %q, want %q", i, args[i], os.Args[i])
+		}
+	}
+}
+
+func TestGameElevatedIsFalseWithoutAGame(t *testing.T) {
+	if GameRunning() {
+		t.Skip("D2R is running")
+	}
+	if GameElevated() {
+		t.Fatal("no game is running, so none can refuse access")
+	}
+}
+
+func TestOnlyTheNewestModBackupIsKept(t *testing.T) {
+	dest := filepath.Join(t.TempDir(), "seed1")
+	for _, stamp := range []string{"20261101-100000.000000000", "20261102-100000.000000000", "20261103-100000.000000000"} {
+		if err := os.MkdirAll(dest+".backup-"+stamp, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	pruneBackups(dest, 1)
+	left, _ := filepath.Glob(dest + ".backup-*")
+	if len(left) != 1 || !strings.HasSuffix(left[0], "20261103-100000.000000000") {
+		t.Fatalf("kept %v", left)
+	}
+}

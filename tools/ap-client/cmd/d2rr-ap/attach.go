@@ -18,47 +18,42 @@ import (
 // pollGame verifies the mod and bound character before writing a point balance.
 func (a *app) pollGame(ctx context.Context) {
 	if a.gc == nil {
-		gc, err := game.Attach()
-		if err != nil {
-			// Report it ONCE. Silence here is indistinguishable from "the game is not
-			// running", and it hides the case that actually matters: attached-but-
-			// refused, where checks keep flowing from the save while no skill is ever
-			// granted. That looked exactly like a broken grant path.
-			a.reattaching = false
-			if !setup.GameRunning() {
-				a.warnAttach("waiting for Diablo II: Resurrected to start")
-			} else {
-				a.warnAttach(fmt.Sprintf("cannot attach to D2R: %v", err))
-			}
+		// Attaching scans every process and the game's whole module, so a condition
+		// that keeps it failing (no game, a game started without the mod) must not
+		// repeat it every poll.
+		if time.Now().Before(a.attachNotBefore) {
 			return
 		}
-		proc, err := setup.Inspect(gc.PID())
-		if err == nil {
-			err = setup.VerifyProcess(proc, a.man)
-		}
-		if err != nil {
+		// Waiting for the game to start costs only a look at the process list, so it is
+		// done every second; the backoff is for a game that is running and refuses.
+		if !setup.GameRunning() {
 			a.reattaching = false
-			a.warnAttach(fmt.Sprintf("game verification: %v", err))
-			gc.Close()
+			a.attachFailures = 0
+			a.attachNotBefore = time.Now().Add(time.Second)
+			a.warnAttach("waiting for Diablo II: Resurrected to start")
 			return
 		}
-		if build, e := setup.ExecutableHash(proc.ExecutablePath); e == nil {
-			a.difficultyProfile, _ = game.LoadDifficultyProfile(a.stateDir, build)
+		if !a.attachGame() {
+			a.attachFailures++
+			a.attachNotBefore = time.Now().Add(attachRetryDelay(a.attachFailures))
+			return
 		}
-		a.gc = gc
-		if !a.reattaching {
-			a.clearAttachWarning()
-			logf("attached to D2R")
-		}
-		a.reattaching = false
+		a.attachFailures = 0
 	}
 
-	if a.gc.IsOnline() {
+	player := a.gc.PlayerUnit()
+	// IsOnline walks the game's whole panel tree, so it is asked when the character
+	// changes and every few seconds, not every poll. An AP mod cannot go online anyway.
+	if player != a.onlineCheckedFor || time.Since(a.onlineCheckedAt) > onlineCheckInterval {
+		a.online = a.gc.IsOnline()
+		a.onlineCheckedFor = player
+		a.onlineCheckedAt = time.Now()
+	}
+	if a.online {
 		a.resetPlayer()
 		a.warnAttach("enter an offline character in the room's mod")
 		return
 	}
-	player := a.gc.PlayerUnit()
 	if player == 0 {
 		wasAttached := a.attached
 		a.resetPlayer()
@@ -93,9 +88,15 @@ func (a *app) pollGame(ctx context.Context) {
 	a.noPlayerSince = time.Time{}
 	name, err := a.gc.CharacterName(player)
 	cls, classErr := a.gc.ReadClass(player)
-	if err != nil || classErr != nil || cls < 0 || cls >= len(ids.Classes) || ids.Classes[cls] != a.class {
+	if err != nil || classErr != nil {
 		a.attached = false
-		a.warnAttach("loaded character class/name does not match the room")
+		a.warnAttach("the loaded character could not be read yet")
+		return
+	}
+	if cls < 0 || cls >= len(ids.Classes) || ids.Classes[cls] != a.class {
+		a.attached = false
+		a.warnAttach(fmt.Sprintf("%s is not a %s: this room plays a %s. Load the room's %s, "+
+			"or create one with this mod", name, className(a.class), className(a.class), className(a.class)))
 		return
 	}
 	if a.characterFlag != "" && name != a.characterFlag {
@@ -217,6 +218,83 @@ func (a *app) detachGame() {
 	}
 	a.gc.Close()
 	a.gc = nil
+	a.onlineCheckedAt = time.Time{}
+}
+
+// attachGame opens the running game and checks it is the room's mod. The check (the
+// process's command line, every installed mod file's hash, the executable's hash) is
+// done once per game process: re-attaching to the same process, which happens every
+// 10 s at the character screen, only redoes d2go's offset scan.
+func (a *app) attachGame() bool {
+	gc, err := game.Attach()
+	if err != nil {
+		// Report it. Silence here is indistinguishable from "the game is not running",
+		// and it hides the case that matters: attached-but-refused, where checks keep
+		// flowing from the save while no skill is ever granted.
+		a.reattaching = false
+		switch {
+		case setup.GameElevated():
+			a.warnAttach("Diablo II: Resurrected is running as administrator, so this app cannot " +
+				"reach it. Close this window and open the app as administrator too " +
+				"(right-click, Run as administrator), or start the game normally")
+		default:
+			a.warnAttach(fmt.Sprintf("cannot attach to D2R: %v", err))
+		}
+		return false
+	}
+	if pid := gc.PID(); pid != a.verifiedPID {
+		proc, err := setup.Inspect(pid)
+		if err == nil {
+			err = setup.VerifyProcess(proc, a.man)
+		}
+		if err != nil {
+			a.reattaching = false
+			a.warnAttach(fmt.Sprintf("game verification: %v", err))
+			gc.Close()
+			return false
+		}
+		if build, e := setup.ExecutableHash(proc.ExecutablePath); e == nil {
+			a.difficultyProfile, _ = game.LoadDifficultyProfile(a.stateDir, build)
+		}
+		a.verifiedPID = pid
+	}
+	a.gc = gc
+	if !a.reattaching {
+		a.clearAttachWarning()
+		logf("attached to D2R")
+	}
+	a.reattaching = false
+	return true
+}
+
+// onlineCheckInterval spaces out the Battle.net check, which reads every UI panel.
+const onlineCheckInterval = 3 * time.Second
+
+// attachRetryDelay is the wait before attach attempt n+1 after n failures in a row:
+// 1 s, doubling, at most 30 s. A game that has just started is found within a second or
+// two; one that keeps failing verification is not rescanned twice a second.
+func attachRetryDelay(failures int) time.Duration {
+	d := time.Second
+	for i := 1; i < failures && d < 30*time.Second; i++ {
+		d *= 2
+	}
+	if d > 30*time.Second {
+		d = 30 * time.Second
+	}
+	return d
+}
+
+// classNames are the game's names for ids.Classes.
+var classNames = map[string]string{
+	"ama": "Amazon", "sor": "Sorceress", "nec": "Necromancer", "pal": "Paladin",
+	"bar": "Barbarian", "dru": "Druid", "ass": "Assassin", "war": "Warlock",
+}
+
+func className(code string) string {
+	if name, ok := classNames[code]; ok {
+		return name
+	}
+	return code
 }
 
 func selectSave(dir, name string) (string, error) {
@@ -254,6 +332,13 @@ func (a *app) bindCurrentCharacter(name string) error {
 	expected := a.session.CharacterName()
 	if expected == "" {
 		expected = a.characterFlag
+	}
+	// Nothing chosen yet: the character the player loaded is the choice. Asking for
+	// "the only save" failed as soon as the folder held two, such as the ready-made
+	// Open Acts character next to one the player created, and a double-clicked app has
+	// no -character flag to settle it.
+	if expected == "" {
+		expected = name
 	}
 	path, e := selectSave(a.saveDir, expected)
 	if e != nil {

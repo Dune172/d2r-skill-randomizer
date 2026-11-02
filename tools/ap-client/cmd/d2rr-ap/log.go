@@ -5,6 +5,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime/debug"
+	"sort"
+	"sync"
 	"time"
 )
 
@@ -51,14 +55,97 @@ func (a *app) clearAttachWarning() {
 	a.mu.Unlock()
 }
 
+var (
+	logMu   sync.Mutex
+	logFile *os.File
+)
+
+// keepLogs is how many runs' log files are kept.
+const keepLogs = 10
+
+// openLogFile starts this run's log file under <stateDir>\logs and removes the oldest
+// beyond keepLogs. A bug report needs more than the window's scrollback, and a
+// double-clicked window takes its text with it when it closes.
+func openLogFile(stateDir string) (string, error) {
+	dir := filepath.Join(stateDir, "logs")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", err
+	}
+	path := filepath.Join(dir, "d2rr-ap-"+time.Now().Format("20060102-150405")+".log")
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return "", err
+	}
+	logMu.Lock()
+	logFile = f
+	logMu.Unlock()
+	pruneLogs(dir, keepLogs)
+	return path, nil
+}
+
+// pruneLogs keeps the newest keep log files in dir. Their names sort by time.
+func pruneLogs(dir string, keep int) {
+	old, _ := filepath.Glob(filepath.Join(dir, "d2rr-ap-*.log"))
+	sort.Strings(old)
+	for len(old) > keep {
+		_ = os.Remove(old[0])
+		old = old[1:]
+	}
+}
+
+func writeLogLine(line string) {
+	logMu.Lock()
+	defer logMu.Unlock()
+	if logFile != nil {
+		_, _ = logFile.WriteString(line)
+	}
+}
+
 func logf(format string, args ...any) {
-	fmt.Printf("%s  %s\n", time.Now().Format("15:04:05"), fmt.Sprintf(format, args...))
+	line := fmt.Sprintf("%s  %s\n", time.Now().Format("15:04:05"), fmt.Sprintf(format, args...))
+	fmt.Print(line)
+	writeLogLine(line)
 }
 
 func fatal(format string, args ...any) {
-	fmt.Fprintf(os.Stderr, format+"\n", args...)
+	msg := fmt.Sprintf(format, args...)
+	fmt.Fprintln(os.Stderr, msg)
+	writeLogLine(time.Now().Format("15:04:05") + "  FATAL: " + msg + "\n")
 	if pauseOnExit {
 		waitForEnter()
 	}
 	os.Exit(1)
+}
+
+// crashGuard turns a panic into a logged crash report. Deferred at the top of main and
+// of every goroutine: an unchecked read of game memory can panic, and a double-clicked
+// window that vanishes leaves nothing to report.
+func crashGuard() {
+	r := recover()
+	if r == nil {
+		return
+	}
+	logf("CRASH: %v\n%s", r, debug.Stack())
+	logMu.Lock()
+	path := ""
+	if logFile != nil {
+		path = logFile.Name()
+	}
+	logMu.Unlock()
+	if path != "" {
+		logf("Please report this at https://github.com/Dune172/d2r-skill-randomizer/issues with the log file:")
+		logf("  %s", path)
+	}
+	if pauseOnExit {
+		waitForEnter()
+	}
+	os.Exit(2)
+}
+
+// goSafe runs f on its own goroutine under crashGuard.
+func goSafe(f func()) {
+	go func() {
+		defer crashGuard()
+		f()
+	}()
 }

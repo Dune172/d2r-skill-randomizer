@@ -227,8 +227,19 @@ func (a *app) applyIncomingDeath(player uintptr) {
 	pending := a.pendingDeaths
 	since := a.killStarted
 	unsupported := a.killUnsupported
+	queued := a.deathQueuedAt
 	a.mu.Unlock()
 	if pending == 0 {
+		return
+	}
+	// A death that waited too long (received at the menu, or while the character could
+	// not be written) is dropped rather than sprung on the player much later.
+	if since.IsZero() && !queued.IsZero() && time.Since(queued) > deathMaxAge {
+		a.mu.Lock()
+		a.pendingDeaths = 0
+		a.deathQueuedAt = time.Time{}
+		a.mu.Unlock()
+		logf("DeathLink: a death from the room arrived more than a minute ago, while you were not in a game; skipped")
 		return
 	}
 
@@ -257,6 +268,23 @@ func (a *app) applyIncomingDeath(player uintptr) {
 		logf("DeathLink: the game did not treat an emptied life pool as a death.")
 		logf("  Incoming deaths will leave you on one life instead.")
 	}
+}
+
+// deathMaxAge is how long a received death may wait for the character before it is
+// dropped.
+const deathMaxAge = time.Minute
+
+// queueDeath records a death from the room. Deaths do not add up: one death in waiting
+// already kills the character, and ten bounces received at the menu must not become ten
+// deaths in a row.
+func (a *app) queueDeath() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.pendingDeaths > 0 {
+		return
+	}
+	a.pendingDeaths = 1
+	a.deathQueuedAt = time.Now()
 }
 
 func (a *app) finishDeath(message string) {

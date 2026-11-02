@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/apc"
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
@@ -153,5 +154,48 @@ func TestChecksTheRoomDoesNotHaveAreNeverRecorded(t *testing.T) {
 	a.sendChecks(context.Background(), []int64{10})
 	if len(session.AllChecks()) != 1 {
 		t.Fatalf("offline check was dropped: %v", session.AllChecks())
+	}
+}
+
+// saveHeader is the start of a new character's .d2s: enough to name the character.
+func saveHeader(name string) []byte {
+	data := make([]byte, 0x12B+16)
+	binary.LittleEndian.PutUint32(data, 0xaa55aa55)
+	copy(data[0x12B:], name)
+	return data
+}
+
+// The ready-made Open Acts character and one the player made share the folder: the
+// one loaded in the game is bound, without a -character flag.
+func TestBindsTheLoadedCharacterAmongSeveralSaves(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "Ready.d2s"), saveHeader("Ready"), 0600)
+	os.WriteFile(filepath.Join(dir, "Mine.d2s"), saveHeader("Mine"), 0600)
+	session, err := apc.NewSession(t.TempDir(), "room", "slot")
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := &app{session: session, saveDir: dir}
+	if err := a.bindCurrentCharacter("Mine"); err != nil {
+		t.Fatal(err)
+	}
+	if got := session.CharacterName(); got != "Mine" {
+		t.Fatalf("bound %q", got)
+	}
+	// Once bound, another character is refused.
+	if err := a.bindCurrentCharacter("Ready"); err == nil {
+		t.Fatal("rebound to a different character")
+	}
+}
+
+func TestAttachRetryDelayBacksOff(t *testing.T) {
+	want := []time.Duration{time.Second, time.Second, 2 * time.Second, 4 * time.Second}
+	for n, d := range want {
+		if got := attachRetryDelay(n); got != d {
+			t.Fatalf("after %d failures: %s, want %s", n, got, d)
+		}
+	}
+	if got := attachRetryDelay(100); got != 30*time.Second {
+		t.Fatalf("cap: %s", got)
 	}
 }
