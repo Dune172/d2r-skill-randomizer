@@ -280,6 +280,7 @@ class TestPoolSizing(unittest.TestCase):
         filler = 300 - 100
         self.assertEqual(pool["traps"], filler * 10 // 100)
         self.assertEqual(pool["gold"] + pool["fragments"], filler - pool["traps"])
+        self.assertEqual(pool["fragments"], 0, "Training Fragments are no longer placed; filler is Gold")
         everything = ids.resolve_pool(300, skill_points=100, trap_percentage=100)
         self.assertEqual((everything["traps"], everything["gold"], everything["fragments"]), (filler, 0, 0))
 

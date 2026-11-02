@@ -7,16 +7,16 @@
  * This is the guard that stops a future mutation or writer change from silently
  * breaking Archipelago:
  *
- *   SkillsPerLevel = 1     the client writes the unspent-point count, and can only write
- *                          a stat the game has created; levelling is what creates it
+ *   SkillsPerLevel = 0     skill points come only from the multiworld
+ *   StatPerLevel = 0       with pooled stat points; the vanilla value otherwise
  *   StartSkill = ''        the normal pipeline hands every class a free starting skill
- *   reqlevel = 1           a point may go into any skill, in any order
+ *   reqlevel by row        the normal 1/6/12/18/24/30, as in the public mod
  *   prerequisites kept     the class's tree keeps its chains; each names a skill of the class
  *   30 slots, S00..S29     the client counts spent points over exactly these rows
  *   skillId correctness    skillId must index the row holding that skill
  *   no seasonal overlay    a room's mod must not change when the month does
  *   same tree as the seed  Archipelago seed N plays the tree public seed N shows
- *   contract 5 tables      stats.keys, keyGates (only with keyItems), baseAttributes and
+ *   contract 6 tables      stats.keys, keyGates (only with keyItems), baseAttributes and
  *                          messageBox, starterSave, and nothing else
  *   Open Acts              with openActs, one ready-made character for the class with
  *                          Acts II and III open, no skill points, no quest done; without,
@@ -54,6 +54,9 @@ const MESSAGE_CAPACITY = Number(/AP_MESSAGE_CAPACITY = (\d+)/.exec(AP_MODE_SOURC
 
 /** Items contracts 1-4 repurposed: the Sigils, the Draught, the Receipt and the Tonic. */
 const REMOVED_ITEMS = ['hrt', 'sol', 'elx', 'hrb', 'mpf'];
+
+/** Required level by tree row, as skills-writer.ts sets it for every mod. */
+const ROW_REQLEVEL = [1, 6, 12, 18, 24, 30];
 
 const VANILLA = Object.fromEntries(['itemstatcost', 'cubemain', 'misc'].map(name =>
   [name, parseTsv(readFileSync(new URL(`../data/txt/${name}.txt`, import.meta.url), 'utf8'))]));
@@ -156,12 +159,19 @@ async function verifyCase(c) {
   if (csRaw) {
     const cs = parseTsv(csRaw);
     const spl = col(cs.headers, 'SkillsPerLevel');
+    const spt = col(cs.headers, 'StatPerLevel');
     const start = col(cs.headers, 'StartSkill');
     for (const row of cs.rows) {
       if (!row[0] || row[0] === 'Expansion') continue;
-      check(failures, row[spl] !== '0' && row[spl] !== '',
-        `${row[0]}: SkillsPerLevel="${row[spl]}", expected non-zero so the ` +
-        `SkillPoints stat exists for the client to write`);
+      check(failures, row[spl] === '0',
+        `${row[0]}: SkillsPerLevel="${row[spl]}", expected 0: skill points come only from the multiworld`);
+      if (c.options?.pooledStats) {
+        check(failures, row[spt] === '0',
+          `${row[0]}: StatPerLevel="${row[spt]}", expected 0 with pooled stat points`);
+      } else {
+        check(failures, Number(row[spt]) > 0,
+          `${row[0]}: StatPerLevel="${row[spt]}", expected the vanilla value without pooled stat points`);
+      }
       check(failures, row[start] === '', `${row[0]}: StartSkill="${row[start]}", expected empty`);
     }
   }
@@ -176,17 +186,15 @@ async function verifyCase(c) {
   const cReqLvl = col(sk.headers, 'reqlevel');
   const cReq = ['reqskill1', 'reqskill2', 'reqskill3'].map(n => col(sk.headers, n));
 
-  let badLvl = 0, withReq = 0, badReq = 0;
+  let withReq = 0, badReq = 0;
   const classOf = new Map(sk.rows.map(r => [r[cName], r[cClass]]));
   sk.rows.forEach(row => {
     if (!row[cClass]) return; // non-class row: left vanilla on purpose
-    if (row[cReqLvl] !== '' && row[cReqLvl] !== '1') badLvl++;
     const reqs = cReq.map(i => row[i]).filter(Boolean);
     if (row[cClass] === c.characterClass && reqs.length) withReq++;
     // A prerequisite must be a skill of the same class, or the tree could never open.
     if (reqs.some(name => classOf.get(name) !== row[cClass])) badReq++;
   });
-  check(failures, badLvl === 0, `${badLvl} class rows have reqlevel not in {empty,1}`);
   check(failures, withReq >= 10, `only ${withReq} of the class's skills have a prerequisite; the tree's chains are missing`);
   check(failures, badReq === 0, `${badReq} class rows name a prerequisite outside their class`);
 
@@ -208,6 +216,9 @@ async function verifyCase(c) {
         `slot ${s.slotId}: skillId ${s.skillId} is "${row[cName]}", manifest says "${s.skillName}"`);
       check(failures, row[cClass] === c.characterClass,
         `slot ${s.slotId}: row charclass "${row[cClass]}" != ${c.characterClass}`);
+      // Normal level requirements: the tree's row decides, as in the public mod.
+      check(failures, row[cReqLvl] === String(ROW_REQLEVEL[s.row - 1]),
+        `slot ${s.slotId}: reqlevel "${row[cReqLvl]}" in tree row ${s.row}, expected ${ROW_REQLEVEL[s.row - 1]}`);
     }
   }
 
@@ -223,7 +234,7 @@ async function verifyCase(c) {
   const tables = manifest.tables ?? {};
   check(failures, JSON.stringify(Object.keys(tables).sort())
     === JSON.stringify(['baseAttributes', 'messageBox', 'starterSave', 'stats', ...(c.options?.keyItems ? ['keyGates'] : [])].sort()),
-    `manifest tables has keys ${Object.keys(tables).sort().join()}, expected exactly the contract-5 shape`);
+    `manifest tables has keys ${Object.keys(tables).sort().join()}, expected exactly the contract-6 shape`);
   check(failures, JSON.stringify(Object.keys(tables.stats ?? {})) === '["keys"]',
     `manifest tables.stats has ${Object.keys(tables.stats ?? {}).join()}, expected only keys`);
   check(failures, tables.messageBox === MESSAGE_BOX, `manifest messageBox "${tables.messageBox}" != ${MESSAGE_BOX}`);

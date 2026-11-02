@@ -154,3 +154,13 @@ class TestUniversalTrackerRebuildsTheSlot(D2RRTestBase):
         self.assertFalse(world.options.open_acts.value)
         self.assertTrue(world.options.key_items.value)
         self.assertEqual(world.options.stat_points.value, world.options.stat_points.option_pooled)
+
+
+class TestFillerIsGold(D2RRTestBase):
+    options = {"goal_boss": "baal", "skill_points": 60}
+
+    def test_no_training_fragments_and_gold_fills_the_rest(self) -> None:
+        names = [item.name for item in self.multiworld.itempool if item.player == self.player]
+        self.assertNotIn(ids.TRAINING_FRAGMENT_ITEM, names)
+        self.assertGreater(names.count(ids.GOLD_ITEM), 0)
+        self.assertEqual(self.world.get_filler_item_name(), ids.GOLD_ITEM)

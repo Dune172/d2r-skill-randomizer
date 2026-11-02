@@ -65,7 +65,7 @@ from your real ones. `keyItems` turns on the Horadric Key recipes that G3 looks 
 `contractVersion` must equal `AP_CONTRACT_VERSION` in `src/lib/randomizer/ap-mode.ts`.
 
 ```powershell
-$body = @{ seed = 987002; contractVersion = 5; characterClass = 'pal';
+$body = @{ seed = 987002; contractVersion = 6; characterClass = 'pal';
            savepath = 'ap_gate_pal'; options = @{ keyItems = $true } } | ConvertTo-Json
 Invoke-WebRequest -Method Post -Uri http://localhost:3210/api/archipelago/mod `
   -ContentType application/json -Body $body -OutFile dist\ap_gate.zip

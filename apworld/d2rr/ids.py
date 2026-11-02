@@ -39,7 +39,9 @@ ACT_NAMES = ["Act I", "Act II", "Act III", "Act IV", "Act V"]
 SKILL_POINT_ITEM = "Progressive Skill Point"
 SKILL_POINT_ID = ITEM_BASE + 2000
 
-# Filler. Five fragments make one bonus skill point, on top of the progression total.
+# No longer placed (2026-11-02): testers could not tell what a fragment did, since four
+# of every five did nothing visible. The name and id stay reserved, like the runes, so ids
+# do not move, and the client still counts fragments from rooms generated before.
 TRAINING_FRAGMENT_ITEM = "Training Fragment"
 TRAINING_FRAGMENT_ID = ITEM_BASE + 2001
 FRAGMENTS_PER_POINT = 5
@@ -433,8 +435,7 @@ def resolve_pool(locations: int, *, skill_points: int, starting_skill_points: in
       skill points   as requested, capped by what a character can spend and by the
                      progression density limit, never below one
       stat points    as many bundles as still fit
-      filler         everything left over: a share of traps, and the rest alternating
-                     Training Fragments and Gold
+      filler         everything left over: a share of traps, and the rest Gold
 
     Starting skill points are part of the skill point total but are handed out at the
     start rather than placed, so they free their locations for filler.
@@ -450,7 +451,7 @@ def resolve_pool(locations: int, *, skill_points: int, starting_skill_points: in
     filler = free - stats
     traps = filler * trap_percentage // 100
     rest = filler - traps
-    gold = rest // 3
+    gold = rest
     return {
         "keys": keys,
         "skill_points": points,
@@ -459,5 +460,5 @@ def resolve_pool(locations: int, *, skill_points: int, starting_skill_points: in
         "stat_bundles": stats,
         "traps": traps,
         "gold": gold,
-        "fragments": rest - gold,
+        "fragments": 0,  # reserved, never placed (see TRAINING_FRAGMENT_ITEM)
     }

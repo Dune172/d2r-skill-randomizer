@@ -164,12 +164,13 @@ class TrapPercentage(Range):
 class XPMultiplier(Range):
     """Multiplies experience from monsters, as on the D2R Randomizer site.
 
-    Worth raising for a synchronous game, so nobody waits on your levelling.
+    3x by default, so your levels keep up with the skill points the multiworld sends
+    (skills still need their usual character level). Lower it for a slower game.
     """
     display_name = "Experience Multiplier"
     range_start = 1
     range_end = 3
-    default = 1
+    default = 3
 
 
 class OpenActs(Toggle):
@@ -186,7 +187,7 @@ class OpenActs(Toggle):
 class MonsterShuffle(Toggle):
     """Shuffle which monsters appear in which areas, as on the D2R Randomizer site."""
     display_name = "Monster Shuffle"
-    default = 0
+    default = 1
 
 
 class D2RRDeathLink(DeathLink):
@@ -232,13 +233,11 @@ OPTION_PRESETS = {
         "goal_boss": "andariel",
         "skill_points": 40,
         "starting_skill_points": 2,
-        "xp_multiplier": 2,
     },
     "An Evening (Normal Baal)": {
         "goal_difficulty": "normal",
         "goal_boss": "baal",
         "skill_points": 110,
-        "xp_multiplier": 2,
     },
     "Full Playthrough (Hell Baal)": {
         "goal_difficulty": "hell",

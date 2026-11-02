@@ -137,10 +137,19 @@ without leaving town).
 ## Decisions
 
 - **Points, not skills.** Archipelago decides when a point arrives; the player chooses
-  the skill and the game builds it. Consequently every class skill is level 1 in an AP
-  mod, so a point is spendable whatever the character's level. Prerequisites are kept
+  the skill and the game builds it. Skills keep their normal level requirements (since
+  2026-11-02; before, every class skill was level 1, which testers found wrong): a point
+  that arrives early waits until the character is old enough. Prerequisites are kept
   (since 2026-10-30): a generic point is the player's to place, so the chains only shape
-  that choice. The tree for AP seed N is the tree the public spoiler shows for seed N.
+  that choice.
+- **Levelling grants no skill points** (since 2026-11-02, contract 6): `SkillsPerLevel`
+  is 0, and `StatPerLevel` is 0 when stat points are pooled. Before, the game granted them
+  and the client took them back, which only worked while it was running and the game
+  window was active. Quest rewards are hard-coded in the game, so the client still takes
+  those back.
+- **Filler is Gold** (since 2026-11-02). Training Fragments (five made a skill point) are
+  no longer placed: four of every five did nothing a player could see. Their id stays
+  reserved, and the client still counts them for older rooms. The tree for AP seed N is the tree the public spoiler shows for seed N.
 - **Targets, not increments.** Unspent points, stat points and keys are recomputed from
   the item counts every poll, so duplicates, reordering and full resyncs converge.
   One-shot effects (gold, traps) are owed until recorded as applied, and are
@@ -200,8 +209,9 @@ without leaving town).
   level-up, a quest reward, an item), and delivers then.
 - Items arrive only while the client is running; nothing in the game can collect them
   without it.
-- Level-up and quest points can be spent in the fraction of a second before the client
-  takes them back, and freely if the client is not running. It is a single-player game;
+- Quest-reward skill and stat points can be spent in the fraction of a second before the
+  client takes them back, and freely if the client is not running or the game window is
+  not active (the client writes nothing then). It is a single-player game;
   this is accounting, not enforcement.
 - Area checks past Normal need the player to say the difficulty once: `/difficulty`
   in the app's window (kept per room), or `-difficulty`. No field has been found that

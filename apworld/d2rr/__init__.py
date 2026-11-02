@@ -95,13 +95,13 @@ class D2RRWorld(World):
         "Skill Points": {ids.SKILL_POINT_ITEM},
         "Keys": {ids.HORADRIC_KEY_ITEM},
         "Traps": set(ids.TRAP_ITEMS),
-        "Filler": {ids.GOLD_ITEM, ids.TRAINING_FRAGMENT_ITEM},
+        "Filler": {ids.GOLD_ITEM},
     }
 
     # Universal Tracker rebuilds a slot from its slot_data, without the player's YAML.
     ut_can_gen_without_yaml = True
-    # The rune items keep their names and ids (ids.py) but are never placed, so they
-    # have no group: a hint for one could never succeed.
+    # The rune items and Training Fragments keep their names and ids (ids.py) but are never
+    # placed, so they have no group: a hint for one could never succeed.
     location_name_groups = _location_groups()
 
     def __init__(self, multiworld, player: int):
@@ -267,12 +267,12 @@ class D2RRWorld(World):
         elif name == ids.STAT_POINTS_ITEM:
             classification = ItemClassification.useful
         else:
-            # Gold, Training Fragments, and the reserved rune names, which are never placed.
+            # Gold, and the reserved names (Training Fragments, runes), which are never placed.
             classification = ItemClassification.filler
         return D2RRItem(name, classification, self.item_name_to_id[name], self.player)
 
     def get_filler_item_name(self) -> str:
-        return ids.TRAINING_FRAGMENT_ITEM
+        return ids.GOLD_ITEM
 
     def create_items(self) -> None:
         pool = self.pool

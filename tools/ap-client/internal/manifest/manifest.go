@@ -21,7 +21,7 @@ import (
 
 // ContractVersion is the manifest shape this client understands. The server rejects a
 // mismatch rather than serving something we would misread.
-const ContractVersion = 5
+const ContractVersion = 6
 
 type Slot struct {
 	SlotID    string `json:"slotId"`
