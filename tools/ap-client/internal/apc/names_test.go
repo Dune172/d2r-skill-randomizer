@@ -51,3 +51,14 @@ func TestOtherPlayersItemsAndOtherMessagesAreNotShown(t *testing.T) {
 		t.Fatal("a chat line was reported as an item")
 	}
 }
+
+// An item the host gives with /send arrives as ItemCheat from slot 0.
+func TestHostSentItemsAreShown(t *testing.T) {
+	n := roomNames()
+	p := itemSend(1, 0, 100)
+	p["type"] = "ItemCheat"
+	e, ok := n.itemEvent(p)
+	if !ok || e.Text() != "You received Progressive Skill Point from the server" {
+		t.Fatalf("got %q (%v)", e.Text(), ok)
+	}
+}

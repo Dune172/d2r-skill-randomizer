@@ -31,12 +31,9 @@ func (a *app) warnAttach(reason string) {
 	if !quiet {
 		a.attachWarnedAt[reason] = time.Now()
 	}
-	// What is owed and not yet in the game: the last computed target once spending is
-	// known, otherwise everything received.
-	pending := a.pointsReceived - a.lastPointsWritten
-	if a.pointSampleOK {
-		pending = a.balance.Unspent
-	}
+	// What is owed and not yet in the game: points received since the last write that
+	// landed. (The unspent total is not it: those points are already in the game.)
+	pending := a.pointsReceived - a.receivedAtWrite
 	a.mu.Unlock()
 
 	if quiet {

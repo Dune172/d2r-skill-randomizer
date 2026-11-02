@@ -53,8 +53,9 @@ func (e ItemEvent) Text() string {
 }
 
 // itemEvent reads an ItemSend PrintJSON packet, reporting only one that concerns this slot.
+// ItemCheat, an item the host gave with /send, counts too: it comes from slot 0.
 func (n *nameTable) itemEvent(p map[string]any) (ItemEvent, bool) {
-	if p["type"] != "ItemSend" {
+	if p["type"] != "ItemSend" && p["type"] != "ItemCheat" {
 		return ItemEvent{}, false
 	}
 	receiving, okR := toInt64(p["receiving"])
@@ -69,6 +70,9 @@ func (n *nameTable) itemEvent(p map[string]any) (ItemEvent, bool) {
 		name = fmt.Sprintf("item %d", id)
 	}
 	who := func(slot int64) string {
+		if slot == 0 {
+			return "the server"
+		}
 		if alias, ok := n.players[slot]; ok {
 			return alias
 		}

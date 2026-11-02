@@ -174,7 +174,7 @@ func (a *app) pollProgress(ctx context.Context) {
 		// a level cannot be revisited to re-trigger the check.
 		for clvl := ids.LevelMin; clvl <= prog.CharLevel && clvl <= cap; clvl++ {
 			id, ok := ids.LevelLocationID(clvl)
-			if !ok {
+			if !ok || !a.conn.KnownLocation(id) { // not in this room: past the level cap, say
 				continue
 			}
 			if key := fmt.Sprintf("lvl:%d", clvl); !a.seen(key) {
@@ -197,7 +197,7 @@ func (a *app) pollProgress(ctx context.Context) {
 				continue
 			}
 			id, ok := ids.WaypointLocationID(res.Difficulty, index)
-			if !ok {
+			if !ok || !a.conn.KnownLocation(id) { // not in this room: a town, say
 				continue
 			}
 			if key := fmt.Sprintf("wp:%d:%d", res.Difficulty, index); !a.seen(key) {
@@ -218,7 +218,7 @@ func (a *app) pollProgress(ctx context.Context) {
 			// Attributing an area to the wrong difficulty means the right location is
 			// never sent, which strands whatever item fill put there — in a multiworld,
 			// somebody else's progression. So nothing is sent unless res.OK.
-			if id, ok := ids.AreaLocationID(res.Difficulty, index); ok && res.OK {
+			if id, ok := ids.AreaLocationID(res.Difficulty, index); ok && res.OK && a.conn.KnownLocation(id) { // towns are not in any room
 				key := fmt.Sprintf("area:%d:%d", res.Difficulty, index)
 				if !a.seen(key) {
 					newIDs = append(newIDs, id)

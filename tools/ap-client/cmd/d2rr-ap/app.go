@@ -43,8 +43,10 @@ type app struct {
 	// checksQuiet: saving checks is failing, so "check:" lines are held back.
 	checksQuiet bool
 
-	// Last value written, so the log speaks only on change.
+	// Last value written, so the log speaks only on change, and how many points had been
+	// received when it landed.
 	lastPointsWritten int
+	receivedAtWrite   int
 
 	// Skill points Archipelago has sent. The client hands the player unspent points and
 	// the game builds the skill when one is spent.
