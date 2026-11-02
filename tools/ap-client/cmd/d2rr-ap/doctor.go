@@ -186,7 +186,7 @@ func doctor(args []string) int {
 		raw, _ := json.MarshalIndent(report, "", "  ")
 		fmt.Println(string(raw))
 	} else {
-		for _, key := range []string{"roomContract", "manifestContract", "gameDirectory", "manifest", "saveDirectory", "d2rBuild", "d2rBuildKnown", "offsetsResolved", "processID", "character", "classID", "session", "spentHardPoints", "pointBalance", "pointStatExists", "actualUnspent", "difficultyCandidates", "difficultyCalibrated", "difficultyLayout", "difficultyProfile", "clientStatus"} {
+		for _, key := range []string{"roomContract", "manifestContract", "gameDirectory", "manifestSource", "manifest", "saveDirectory", "d2rBuild", "d2rBuildKnown", "offsetsResolved", "processID", "character", "classID", "session", "spentHardPoints", "pointBalance", "pointStatExists", "actualUnspent", "difficultyCandidates", "difficultyCalibrated", "difficultyLayout", "difficultyProfile", "clientStatus"} {
 			if val, ok := report[key]; ok {
 				raw, _ := json.Marshal(val)
 				fmt.Printf("%s: %s\n", key, raw)
