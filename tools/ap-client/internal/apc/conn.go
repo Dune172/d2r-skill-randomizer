@@ -148,7 +148,14 @@ func (c *Conn) Run(ctx context.Context) error {
 		} else {
 			failedConnects = 0 // the room answered, so the address is right
 		}
-		if err != nil {
+		switch {
+		case err == nil:
+		case failedConnects > 1:
+			// The full error was printed for the first try; the rest only say it goes on.
+			c.printf("still no answer from %s:%d (retrying in %s)", c.Host, c.Port, backoff.Round(time.Second))
+		case failedConnects == 1:
+			c.printf("cannot reach the room: %v (retrying in %s)", err, backoff.Round(time.Second))
+		default:
 			c.printf("disconnected: %v (retrying in %s)", err, backoff.Round(time.Second))
 		}
 		if failedConnects == failedConnectsBeforeHint {
