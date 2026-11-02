@@ -3,6 +3,7 @@
 package main
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/save"
@@ -38,9 +39,11 @@ func (a *app) warnDifficulty(reason string) {
 	}
 }
 
+// difficultyName is a difficulty as the game shows it: Normal, Nightmare, Hell.
 func difficultyName(d int) string {
 	if d >= 0 && d < len(save.DifficultyNames) {
-		return save.DifficultyNames[d]
+		name := save.DifficultyNames[d]
+		return strings.ToUpper(name[:1]) + name[1:]
 	}
 	return "?"
 }
@@ -140,14 +143,18 @@ func (a *app) loadDifficultyChoice() {
 // chooseDifficulty is /difficulty: pin area checks to a difficulty, or "auto".
 func (a *app) chooseDifficulty(arg string) {
 	if arg == "" {
-		source := a.difficultySource
-		if source == "" {
-			source = "not worked out yet"
-		}
-		if a.difficultyOverride >= 0 {
-			logf("area checks are filed on %s (%s)", difficultyName(a.difficultyOverride), source)
-		} else {
-			logf("area checks: %s. Type /difficulty normal, nightmare, hell or auto to change it", source)
+		switch {
+		case a.difficultyFlag >= 0:
+			logf("area checks are filed on %s (the -difficulty flag)", difficultyName(a.difficultyOverride))
+		case a.difficultyOverride >= 0:
+			logf("area checks are filed on %s (your /difficulty choice; /difficulty auto undoes it)",
+				difficultyName(a.difficultyOverride))
+		default:
+			source := a.difficultySource
+			if source == "" {
+				source = "not worked out yet (no character loaded)"
+			}
+			logf("area checks: the app works it out (%s). Type /difficulty normal, nightmare or hell to set it", source)
 		}
 		return
 	}
