@@ -91,15 +91,19 @@ enough. If it cannot learn it on your PC, area checks pause with a message whene
 cannot tell, and you type `/difficulty` again each time you change difficulty.
 `/difficulty auto` hands the choice back to the app.
 
+### Stat points
+
+By default levelling gives no attribute points either. They arrive like skill points,
+as unspent points to put where you like, five per Stat Points item. Set `stat_points`
+to `vanilla` to get five per level as usual instead.
+
 ### Experimental items
 
 - **Horadric Keys**: they arrive by themselves while the app is running. Once you hold
   enough, the Cube assembles the Horadric Staff and Khalim's Will as usual.
-- **Pooled stat points**: they arrive like skill points, as unspent points to put where
-  you like.
 
 Keys and pooled stat points have been checked in the game in town, but not yet over a
-full run. Leave them off for a run that has to finish. Runes are not in the game for
+full run. Leave keys off for a run that has to finish. Runes are not in the game for
 now.
 
 Now and then the game has no room on your character for something new yet. The app then

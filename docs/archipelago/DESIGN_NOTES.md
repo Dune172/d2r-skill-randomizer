@@ -150,6 +150,14 @@ without leaving town).
 - **Filler is Gold** (since 2026-11-02). Training Fragments (five made a skill point) are
   no longer placed: four of every five did nothing a player could see. Their id stays
   reserved, and the client still counts them for older rooms. The tree for AP seed N is the tree the public spoiler shows for seed N.
+- **Stat points are pooled by default** (since 2026-11-02, apworld 0.5.1). Before, they
+  were an experimental option, off by default.
+- **The one-point-per-level skill cap stays** (2026-11-02). The game allows a hard point
+  only while character level >= `reqlevel` + the points already in the skill, so unlocking
+  and the cap come from one check. No table column changes it. The check is in D2R.exe,
+  whose code is mostly encrypted on disk, so removing it would mean patching protected
+  code at runtime. Moving points by writing the skill node's level from the app (with a
+  console command) is possible but was not wanted for now.
 - **Targets, not increments.** Unspent points, stat points and keys are recomputed from
   the item counts every poll, so duplicates, reordering and full resyncs converge.
   One-shot effects (gold, traps) are owed until recorded as applied, and are
@@ -201,8 +209,8 @@ without leaving town).
 
 ## Known limits
 
-- Horadric Keys and pooled stat points are experimental: checked in town, but no full
-  run has been played with them.
+- Horadric Keys (experimental, off) and pooled stat points (on by default) are checked
+  in town, but no full run has been played with them.
 - An entry can only be added when the game's stat array has a free slot (measured 14
   and 16 of 19 used on a fresh character). When it is full, the client waits for the
   game to grow it, which happens the next time the game adds a stat of its own (a

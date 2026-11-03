@@ -22,8 +22,12 @@ items, found by you and by everyone else.
 
 - **Progressive Skill Point**: one unspent skill point. You choose where it goes, and
   the game builds the skill when you spend it. Skills keep their usual level
-  requirements (1, 6, 12, 18, 24 and 30 by row), so a point that arrives early waits
-  until you are old enough for the skill you want.
+  requirements (1, 6, 12, 18, 24 and 30 by row), and the usual limit of one point in a
+  skill per level past its requirement, so a point that arrives early waits until you
+  are old enough for the skill you want.
+- **Stat Points**: five attribute points, replacing the five you would get per level.
+  On by default; with the `stat_points` option set to `vanilla`, levelling grants them
+  as usual and these items are not placed.
 - **Gold**: filler, scaled to your level.
 
 Experimental, each off unless you turn it on:
@@ -31,7 +35,6 @@ Experimental, each off unless you turn it on:
 - **Progressive Horadric Key**: the Horadric Cube will not assemble the Horadric Staff
   until you hold two, or Khalim's Will until you hold five. Duriel and Mephisto wait on
   them.
-- **Stat Points**: five attribute points, replacing the five you would get per level.
 - **Traps**: Mana Burn, Exhaustion, Brush with Death, Skill Lock and Gold Tax.
 
 Keys and Stat Points have been checked in the game in town but not yet over a full run;

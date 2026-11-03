@@ -130,11 +130,12 @@ class KeyItems(Toggle):
 
 
 class StatPoints(Choice):
-    """EXPERIMENTAL. Where attribute points come from.
+    """Where attribute points come from.
 
-    vanilla: five per level-up, as in the unmodded game.
     pooled: level-ups and quests grant none. Stat Points items, each worth five, are
-    placed in the multiworld instead, one for every level the goal expects you to reach.
+    placed in the multiworld instead, one for every level the goal expects you to reach,
+    as far as the locations have room.
+    vanilla: five per level-up, as in the unmodded game.
 
     Pooled points arrive automatically while the companion app is running, as unspent
     points to put where you like. Checked in the game in town; a full run with it has not
@@ -143,7 +144,7 @@ class StatPoints(Choice):
     display_name = "Stat Points"
     option_vanilla = 0
     option_pooled = 1
-    default = 0
+    default = 1
 
 
 class TrapPercentage(Range):
@@ -221,10 +222,10 @@ class D2RROptions(PerGameCommonOptions):
 
 OPTION_GROUPS = [
     OptionGroup("Goal", [CharacterClass, GoalDifficulty, GoalBoss]),
-    OptionGroup("Skill Points", [SkillPoints, StartingSkillPoints, LogicDifficulty]),
+    OptionGroup("Skill Points", [SkillPoints, StartingSkillPoints, LogicDifficulty, StatPoints]),
     OptionGroup("Checks", [IncludeWaypoints, IncludeAreas, IncludeLevelMilestones]),
     OptionGroup("The Mod", [OpenActs, XPMultiplier, MonsterShuffle]),
-    OptionGroup("Experimental", [KeyItems, StatPoints, TrapPercentage, D2RRDeathLink]),
+    OptionGroup("Experimental", [KeyItems, TrapPercentage, D2RRDeathLink]),
 ]
 
 OPTION_PRESETS = {

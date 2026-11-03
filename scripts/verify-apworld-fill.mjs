@@ -42,8 +42,8 @@ const DEFAULTS = {
   character_class: 'paladin', goal_difficulty: 'normal', goal_boss: 'baal',
   skill_points: 110, starting_skill_points: 1, logic_difficulty: 'standard',
   include_waypoints: true, include_areas: true, include_level_milestones: true,
-  key_items: false, stat_points: 'vanilla', trap_percentage: 0,
-  xp_multiplier: 1, monster_shuffle: false, death_link: false,
+  key_items: false, stat_points: 'pooled', trap_percentage: 0,
+  xp_multiplier: 3, monster_shuffle: true, death_link: false,
 };
 const QUESTS_ONLY = { include_waypoints: false, include_areas: false, include_level_milestones: false };
 const EVERYTHING = { key_items: true, stat_points: 'pooled', trap_percentage: 15 };
@@ -85,9 +85,9 @@ function cases() {
     out.push({ name: `starting-${starting}`, skill_points: 20, starting_skill_points: starting, logic_difficulty: 'strict', ...QUESTS_ONLY });
   }
   out.push({ name: 'keys-only', key_items: true });
-  out.push({ name: 'stats-pooled', stat_points: 'pooled' });
+  out.push({ name: 'stats-vanilla', stat_points: 'vanilla' });
   out.push({ name: 'traps-100', trap_percentage: 100 });
-  out.push({ name: 'mod-options', xp_multiplier: 3, monster_shuffle: true, death_link: true });
+  out.push({ name: 'mod-options', xp_multiplier: 1, monster_shuffle: false, death_link: true });
   return out.map(c => ({ ...DEFAULTS, ...c }));
 }
 
