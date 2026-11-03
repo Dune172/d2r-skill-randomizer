@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.340',
+    date: 'November 2026',
+    tagline: 'Simpler install: the downloaded folder is the mod',
+    notes: [
+      'Downloads are now named after the mod, such as seed12345.zip, and Extract All gives you one seed12345 folder that is the mod itself. Move that whole folder into the game’s mods folder and you’re done: mods\\seed12345\\seed12345.mpq',
+      'Before, the extracted folder had the mod folder inside it, and moving the outer folder was the most common reason a mod loaded the normal skill trees',
+      'Each download has a short README.txt with the install steps, and the launch shortcut now sits inside the mod folder',
+      'Mods you already installed keep working. Only the layout of new downloads changed',
+    ],
+  },
+  {
     version: 'v0.339',
     date: 'November 2026',
     tagline: 'Build every class at once, shuffle only part of the trees, and use any class item',

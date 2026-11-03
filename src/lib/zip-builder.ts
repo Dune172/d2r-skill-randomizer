@@ -73,7 +73,19 @@ const PREFIX_TO_FOLDER: Record<string, string> = {
 /**
  * Build the mod zip file as a Buffer using pure-JS adm-zip (no native threads).
  * Structure matches D2R mod format — modinfo.json at the mod root, all data
- * files under the required {modName}.mpq subfolder:
+ * files under the required {modName}.mpq subfolder.
+ *
+ * A mod players install by hand is FLAT: the zip's root is the mod folder itself
+ * ({modName}.mpq/, the launch shortcut, README.txt and any spoiler files), and
+ * /api/download names it {modName}.zip. Windows' Extract All then produces a
+ * {modName} folder that goes straight into mods. The old nested layout made
+ * Extract All produce d2rr_export_N\seedN\seedN.mpq, and moving the outer folder was
+ * the most common install mistake on Discord.
+ *
+ * An Archipelago mod keeps the nested layout below ({modName}/ prefix): its
+ * companion client installs it and only accepts entries under that folder.
+ *
+ * Nested layout:
  *   {modName}/{modName}.mpq/modinfo.json
  *   {modName}/{modName}.mpq/data/global/excel/skills.txt
  *   {modName}/{modName}.mpq/data/global/excel/skilldesc.txt
@@ -86,7 +98,9 @@ const PREFIX_TO_FOLDER: Record<string, string> = {
 export function buildZip(contents: ZipContents): Buffer {
   const zip = new AdmZip();
   const m = contents.modName;
-  const d = `${m}/${m}.mpq`; // data root — D2R requires this subfolder name
+  // Flat unless the companion client installs it (see above).
+  const root = contents.apManifestJson ? `${m}/` : '';
+  const d = `${root}${m}.mpq`; // data root — D2R requires this subfolder name
 
   const str = (s: string) => Buffer.from(s, 'utf-8');
 
@@ -94,23 +108,23 @@ export function buildZip(contents: ZipContents): Buffer {
     zip.addFile(`${d}/data/hd/character/monsters.json`, str(contents.monsterGraphicsJson));
   }
   if (contents.enemyManifestJson) {
-    zip.addFile(`${m}/enemy-shuffle.json`, str(contents.enemyManifestJson));
+    zip.addFile(`${root}enemy-shuffle.json`, str(contents.enemyManifestJson));
   }
   if (contents.inventorySpellsJson) {
-    zip.addFile(`${m}/forgotten-arts.json`, str(contents.inventorySpellsJson));
+    zip.addFile(`${root}forgotten-arts.json`, str(contents.inventorySpellsJson));
   }
   if (contents.questsJson) {
     zip.addFile(`${d}/data/local/lng/strings/quests.json`, str(contents.questsJson));
   }
   if (contents.mutationsJson) {
-    zip.addFile(`${m}/mutations.json`, str(contents.mutationsJson));
+    zip.addFile(`${root}mutations.json`, str(contents.mutationsJson));
   }
   if (contents.openActsSpoilerJson) {
-    zip.addFile(`${m}/quest-shuffle.json`, str(contents.openActsSpoilerJson));
+    zip.addFile(`${root}quest-shuffle.json`, str(contents.openActsSpoilerJson));
   }
   if (contents.starterSaves) {
-    for (const [name, save] of contents.starterSaves) zip.addFile(`${m}/starter-saves/${name}`, save);
-    if (contents.starterReadme) zip.addFile(`${m}/starter-saves/README.txt`, str(contents.starterReadme));
+    for (const [name, save] of contents.starterSaves) zip.addFile(`${root}starter-saves/${name}`, save);
+    if (contents.starterReadme) zip.addFile(`${root}starter-saves/README.txt`, str(contents.starterReadme));
   }
   if (contents.globalSkillIcons) {
     for (const [relativePath, buffer] of contents.globalSkillIcons) {
@@ -152,11 +166,12 @@ export function buildZip(contents: ZipContents): Buffer {
   if (!contents.apManifestJson) {
     zip.addFile(`D2R Randomizer ${contents.seed}.lnk`,
       createD2RShortcut(m, contents.seed >>> 0, contents.raceMode));
+    zip.addFile('README.txt', str(installReadme(m)));
   }
 
   // Beside the .mpq folder, not inside it: it is for the companion client, not the game.
   if (contents.apManifestJson) {
-    zip.addFile(`${m}/d2rr-ap-manifest.json`, str(contents.apManifestJson));
+    zip.addFile(`${root}d2rr-ap-manifest.json`, str(contents.apManifestJson));
   }
 
   // Add modinfo.json
@@ -310,4 +325,32 @@ export function buildZip(contents: ZipContents): Buffer {
   }
 
   return zip.toBuffer();
+}
+
+/**
+ * README.txt at the root of a hand-installed mod zip. Plain words, CRLF (Notepad),
+ * the folder names spelled out, because the zip root is the mod folder itself.
+ */
+export function installReadme(modName: string): string {
+  const bs = '\\';
+  const path = (...parts: string[]) => parts.join(bs);
+  return [
+    `D2R Randomizer mod: ${modName}`,
+    '',
+    `This folder is the mod. Install it like this:`,
+    '',
+    `1. Extract this zip (right-click it, Extract All). You get a folder named ${modName}.`,
+    `   If it is named "${modName} (1)" or similar, rename it to ${modName}.`,
+    `2. Move that whole ${modName} folder into the game's mods folder, for example`,
+    `   ${path('C:', 'Program Files (x86)', 'Diablo II Resurrected', 'mods')}`,
+    `   (create the mods folder if it does not exist yet).`,
+    `3. Check the result. It must look exactly like this:`,
+    `   ${path('...', 'Diablo II Resurrected', 'mods', modName, `${modName}.mpq`)}`,
+    `   Not ${path('mods', `${modName}.mpq`)}, and not ${path('mods', modName, modName, `${modName}.mpq`)}.`,
+    `4. Start the game with the "D2R Randomizer" shortcut in this folder.`,
+    '',
+    'If the skill trees look like the normal game, the folders are at the wrong level (step 3).',
+    'More help: https://d2rrandomizer.com/guide/install',
+    '',
+  ].join('\r\n');
 }

@@ -2,12 +2,20 @@
 // Usage: node --test scripts/verify-cached-download.mjs
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { createRequire } from 'node:module';
 import test from 'node:test';
 import AdmZip from 'adm-zip';
 import ts from 'typescript';
 
 const require = createRequire(import.meta.url);
+// Pure option modules the routes build their cache keys from: always the real ones, so
+// a stale stand-in can't hide a key mismatch. Other '@/' imports are stubbed ({}) unless
+// a test passes them in.
+const REAL = new Set([
+  '@/lib/mutations/custom', '@/lib/mutations/registry', '@/lib/skill-points',
+  '@/lib/shuffle-amount', '@/lib/mod-extras',
+]);
 function load(file, dependencies = {}) {
   const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
   const { outputText } = ts.transpileModule(source, {
@@ -16,7 +24,10 @@ function load(file, dependencies = {}) {
   });
   const module = { exports: {} };
   new Function('require', 'module', 'exports', outputText)(
-    id => Object.hasOwn(dependencies, id) ? dependencies[id] : id.startsWith('@/') ? {} : require(id),
+    id => Object.hasOwn(dependencies, id) ? dependencies[id]
+      : id.startsWith('./') || id.startsWith('../') ? load(`${path.posix.join(path.posix.dirname(file), id)}.ts`)
+        : REAL.has(id) ? load(`src/${id.slice(2)}.ts`)
+          : id.startsWith('@/') ? {} : require(id),
     module, module.exports,
   );
   return module.exports;
@@ -54,10 +65,33 @@ for (const [seed, raceMode, args] of [
     assert.equal(shortcuts.length, 1);
     assert.equal(shortcuts[0].entryName, `D2R Randomizer ${seed}.lnk`);
     assert.equal(shortcutArgs(shortcuts[0].getData()), args);
-    assert.equal(zip.readAsText(`seed${seed}/seed${seed}.mpq/data/global/excel/skills.txt`),
+    assert.equal(zip.readAsText(`seed${seed}.mpq/data/global/excel/skills.txt`),
       'skill\t*Id\r\nAttack\t0\r\n');
   });
 }
+
+test('a hand-installed ZIP is flat: its root is the mod folder, with a README', () => {
+  const zip = new AdmZip(build(42, false));
+  const names = zip.getEntries().filter(e => !e.isDirectory).map(e => e.entryName);
+  for (const name of names) {
+    assert.ok(name.startsWith('seed42.mpq/') || ['D2R Randomizer 42.lnk', 'README.txt'].includes(name), name);
+  }
+  assert.ok(names.includes('seed42.mpq/modinfo.json'));
+  const readme = zip.readAsText('README.txt');
+  assert.ok(readme.includes(['mods', 'seed42', 'seed42.mpq'].join('\\')), 'README names the exact path');
+  assert.ok(!readme.includes('${') && readme.includes('\r\n'), 'README is rendered text with Windows line ends');
+});
+
+test('an Archipelago ZIP keeps the nested layout its client installs', () => {
+  const zip = new AdmZip(buildZip({
+    modName: 'seed42', seed: 42, raceMode: false, apManifestJson: '{}',
+    skillsTxt: 'x', skillDescTxt: 'y', treeSprites: new Map(), iconSprites: new Map(),
+  }));
+  const names = zip.getEntries().filter(e => !e.isDirectory).map(e => e.entryName);
+  assert.ok(names.every(n => n.startsWith('seed42/')), names.join(', '));
+  assert.ok(names.includes('seed42/seed42.mpq/modinfo.json') && names.includes('seed42/d2rr-ap-manifest.json'));
+  assert.ok(!names.some(n => n.endsWith('.lnk') || n.endsWith('README.txt')));
+});
 
 const calendar = load('src/lib/challenge/week.ts');
 const challengeRules = load('src/lib/challenge/rules.ts');
@@ -70,12 +104,11 @@ function downloadRoute(cached, allowed = true, currentWeek = 14) {
     'adm-zip': class { constructor() { throw new Error('Download must not rebuild the ZIP'); } },
     '@/lib/lnk-builder': { createD2RShortcut() { throw new Error('Launcher must already be cached'); } },
     '@/lib/randomizer/seed': load('src/lib/randomizer/seed.ts'),
-    '@/lib/zip-cache': { makeCacheKey: (...args) => JSON.stringify(args), getCached: cached },
+    '@/lib/zip-cache': { makeCacheKey: (...args) => JSON.stringify(args), withBuildSegment: key => key, getCached: cached },
     '@/lib/rate-limit': {
       getClientIp: () => 'test', checkRateLimit: () => ({ ok: allowed, retryAfter: 60 }),
       rateLimitResponse: () => new Response(null, { status: 429 }),
     },
-    '@/lib/mutations/registry': { getWeekName: () => 'Test Challenge' },
     '@/lib/challenge/week': { getWeekStart: () => new Date('2026-04-15T12:00:00Z'), getCurrentWeekNumber: () => currentWeek },
     '@/lib/challenge/rules': challengeRules,
   });
@@ -89,8 +122,8 @@ for (const weekly of [false, true]) {
     const cached = backing.subarray(6, 6 + zipBytes.length);
     const original = Buffer.from(backing);
     const route = downloadRoute(key => {
-      assert.equal(JSON.parse(key).at(-2), !weekly, 'weekly forces race mode off');
-      assert.equal(JSON.parse(key).at(-1), false, 'enemy shuffle defaults off');
+      assert.equal(JSON.parse(key)[15], !weekly, 'weekly forces race mode off');
+      assert.equal(JSON.parse(key)[16], false, 'enemy shuffle defaults off');
       return cached;
     });
     const url = `http://localhost/api/download?seed=42${weekly ? '&weekly=1&week=1&weekOverride=1' : ''}`;
@@ -99,9 +132,8 @@ for (const weekly of [false, true]) {
       assert.equal(response.status, 200);
       assert.equal(response.headers.get('Content-Type'), 'application/zip');
       assert.equal(response.headers.get('Content-Length'), String(zipBytes.length));
-      assert.equal(response.headers.get('Content-Disposition'), weekly
-        ? 'attachment; filename="d2rr_test_challenge_2026-04-15.zip"'
-        : 'attachment; filename="d2rr_export_42.zip"');
+      // Named after the mod folder, challenge or not, so Extract All makes that folder.
+      assert.equal(response.headers.get('Content-Disposition'), 'attachment; filename="seed42.zip"');
       const reader = response.body.getReader();
       const chunk = await reader.read();
       assert.strictEqual(chunk.value, cached, 'stream reuses the cached Buffer without copying');
@@ -123,7 +155,7 @@ test('missing seeds, cache misses, and rate limits retain their HTTP status', as
 test('enemy shuffle has a distinct download key and stays off for challenges before rollout', async () => {
   for (const weekly of [false, true]) {
     const route = downloadRoute(key => {
-      assert.equal(JSON.parse(key).at(-1), !weekly);
+      assert.equal(JSON.parse(key)[16], !weekly);
       return build(42, false);
     });
     const response = await route.GET(new Request(`http://localhost/api/download?seed=42&enemyShuffle=1${weekly ? '&weekly=1' : ''}`));
@@ -146,8 +178,14 @@ test('generation and download enforce the same rollout rule, ignoring client ove
       '@/lib/challenge/rules': challengeRules,
       '@/lib/zip-cache': {
         makeCacheKey: (...args) => JSON.stringify(args),
+        withBuildSegment: key => key,
         hasCached: key => { generatedKey = JSON.parse(key); return true; },
       },
+      // The real rule, from the real registry, as the download route uses.
+      '@/lib/randomizer/mutations': {
+        isMutationActiveForWeek: (week, id) => load('src/lib/mutations/registry.ts').getActiveMutations(week).some(m => m.id === id),
+      },
+      '@/lib/feature-stats': { recordFeatures() {} },
     });
     const response = await route.POST(new Request('http://localhost/api/randomize', {
       method: 'POST', body: JSON.stringify({ seed: 42, enemyShuffle: flag, weeklyChallenge: { enabled: true, weekOverride } }),
@@ -160,7 +198,7 @@ test('generation and download enforce the same rollout rule, ignoring client ove
     assert.equal((await download.GET(new Request(`http://localhost/api/download?${params}`))).status, 200);
     assert.deepEqual(generatedKey, downloadKey, 'generation/download keys match');
     assert.equal(generatedKey[12], weekOverride ?? currentWeek, 'cache pins absolute challenge number');
-    assert.equal(generatedKey.at(-1), (weekOverride ?? currentWeek) >= 15);
-    assert.equal(generatedKey.at(-2), false, 'challenges remain full-class randomization');
+    assert.equal(generatedKey[16], (weekOverride ?? currentWeek) >= 15);
+    assert.equal(generatedKey[15], false, 'challenges remain full-class randomization');
   }
 });

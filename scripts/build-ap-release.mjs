@@ -40,7 +40,8 @@ function templateYaml(page) {
     '# Change what you like, set your name, and give the file to whoever generates the multiworld.',
     '# The same options, as a form: https://d2rrandomizer.com/archipelago',
     '',
-    'name: Player',
+    // Quoted exactly as the page's builder quotes it (buildApYaml), which the check below compares.
+    'name: "Player"',
     `game: ${page.AP_GAME_NAME}`,
     `${page.AP_GAME_NAME}:`,
   ];
