@@ -22,6 +22,7 @@ interface FormState {
   xpMultiplier: number;
   xpActs: number[];
   xpDifficulties: number[];
+  skillPoints: number;
   raceMode: boolean;
   enemyShuffle: boolean;
   forgottenArts: boolean;
@@ -43,6 +44,7 @@ const SEASON1_PRESET: FormState = {
   xpMultiplier: 1.5,
   xpActs: [1, 2],
   xpDifficulties: [1],
+  skillPoints: 1,
   raceMode: true,
   enemyShuffle: true,
   forgottenArts: false,
@@ -64,6 +66,7 @@ const TURBO_PRESET: FormState = {
   xpMultiplier: 3,
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1, 2, 3],
+  skillPoints: 1,
   raceMode: false,
   enemyShuffle: false,
   forgottenArts: false,
@@ -87,6 +90,7 @@ const OPEN_ACTS_PRESET: FormState = {
   xpMultiplier: 1.5,
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1],
+  skillPoints: 1,
   raceMode: false,
   enemyShuffle: false,
   forgottenArts: false,
@@ -108,6 +112,7 @@ const DEFAULT_STATE: FormState = {
   xpMultiplier: 1,
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1],
+  skillPoints: 1,
   raceMode: true,
   enemyShuffle: false,
   forgottenArts: false,
@@ -116,8 +121,8 @@ const DEFAULT_STATE: FormState = {
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings; mutations?: number[] };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings; mutations: number[] }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints?: number; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings; mutations?: number[] };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints: number; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings; mutations: number[] }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -245,6 +250,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [xpMultiplier, setXpMultiplier] = useState(initialOptions?.xpMultiplier ?? SEASON1_PRESET.xpMultiplier);
   const [xpActs, setXpActs] = useState<number[]>(initialOptions?.xpActs ?? SEASON1_PRESET.xpActs);
   const [xpDifficulties, setXpDifficulties] = useState<number[]>(initialOptions?.xpDifficulties ?? SEASON1_PRESET.xpDifficulties);
+  const [skillPoints, setSkillPoints] = useState(initialOptions?.skillPoints ?? SEASON1_PRESET.skillPoints);
   const [raceMode, setRaceMode] = useState(initialOptions?.raceMode ?? SEASON1_PRESET.raceMode);
   // Forgotten Arts is challenge-only; the standard generator never enables it.
   const forgottenArts = false;
@@ -271,6 +277,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setXpMultiplier(src.xpMultiplier);
       setXpActs(src.xpActs);
       setXpDifficulties(src.xpDifficulties);
+      setSkillPoints(src.skillPoints);
       setRaceMode(src.raceMode);
       setEnemyShuffle(src.enemyShuffle);
       setOpenActs(withModeSpoiler(src.openActs, src.raceMode));
@@ -313,6 +320,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       xpMultiplier,
       xpActs,
       xpDifficulties,
+      skillPoints,
       raceMode: forgottenArts ? false : raceMode,
       enemyShuffle,
       forgottenArts,
@@ -428,6 +436,28 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
                   />
                 </>
               )}
+            </div>
+            <div className="flex items-center gap-2.5">
+              <label htmlFor="skillPoints" className="text-sm text-[#c8a870] whitespace-nowrap flex items-center">
+                Skill points
+                <Tip text="Skill points you get each time you level up. Quest rewards are unchanged. More points let you use more of your shuffled skills, so the game gets easier." />
+              </label>
+              <div className="relative">
+                <select
+                  id="skillPoints"
+                  value={skillPoints}
+                  onChange={e => { setPreset('custom'); setSkillPoints(Number(e.target.value)); }}
+                  className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-2
+                    text-sm text-[#e8d5a0]
+                    focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                    transition-colors cursor-pointer"
+                >
+                  <option value={1}>1 per level</option>
+                  <option value={2}>2 per level</option>
+                  <option value={3}>3 per level</option>
+                </select>
+                <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+              </div>
             </div>
           </div>
         </div>

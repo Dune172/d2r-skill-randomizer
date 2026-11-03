@@ -38,6 +38,7 @@ import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube }
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
+import { applySkillPoints } from '@/lib/skill-points';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
 import { applyMutations, preApplyMagicAffixMutationsFor, getMutationExcludedSkillsFor, hasMutation } from '@/lib/randomizer/mutations';
 import { MUTATIONS } from '@/lib/mutations/registry';
@@ -83,6 +84,8 @@ export interface GenerateModOptions {
   xpMultiplier: number;
   xpActs: number[];
   xpDifficulties: number[];
+  /** Skill points per level (1–3); absent is vanilla 1. Challenges and AP never set it. */
+  skillPoints?: number;
   raceMode: boolean;
   enemyShuffle: boolean;
   /** Open Acts settings; DEFAULT_OPEN_ACTS when off. */
@@ -126,6 +129,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     xpMultiplier,
     xpActs,
     xpDifficulties,
+    skillPoints = 1,
     raceMode,
     enemyShuffle,
     openActs,
@@ -451,35 +455,35 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   // SkillCategoryXxN is the Nth tab left-to-right, and the engine sits it over
   // SkillPage 4-N (vanilla proof: SkillCategoryAm1 = "Javelin and Spear" while
   // `jab` is SkillPage 3; SkillCategorySo3 = "Fire Spells" while `fire bolt` is
-  // SkillPage 1). So the tab strip reads Random 1/2/3 left-to-right, and the
+  // SkillPage 1). So the tab strip reads Skill Tree 1/2/3 left-to-right, and the
   // matching item strings (StrSklTabItem*, keyed by SkillPage via charstats.txt
-  // StrSkillTab1/2/3) must read "Random 4-P" for SkillPage P. Keep the two in
+  // StrSkillTab1/2/3) must read "Skill Tree 4-P" for SkillPage P. Keep the two in
   // sync or items name the wrong tree.
   const SKILL_CATEGORY_OVERRIDES: { id: number; Key: string; enUS: string }[] = [
-    { id: 11193, Key: 'SkillCategoryAm1', enUS: 'Random 1' },
-    { id: 11194, Key: 'SkillCategoryAm2', enUS: 'Random 2' },
-    { id: 11195, Key: 'SkillCategoryAm3', enUS: 'Random 3' },
-    { id: 11196, Key: 'SkillCategorySo1', enUS: 'Random 1' },
-    { id: 11197, Key: 'SkillCategorySo2', enUS: 'Random 2' },
-    { id: 11198, Key: 'SkillCategorySo3', enUS: 'Random 3' },
-    { id: 11199, Key: 'SkillCategoryNe1', enUS: 'Random 1' },
-    { id: 11200, Key: 'SkillCategoryNe2', enUS: 'Random 2' },
-    { id: 11201, Key: 'SkillCategoryNe3', enUS: 'Random 3' },
-    { id: 11202, Key: 'SkillCategoryPa1', enUS: 'Random 1' },
-    { id: 11203, Key: 'SkillCategoryPa2', enUS: 'Random 2' },
-    { id: 11204, Key: 'SkillCategoryPa3', enUS: 'Random 3' },
-    { id: 11205, Key: 'SkillCategoryBa1', enUS: 'Random 1' },
-    { id: 11206, Key: 'SkillCategoryBa2', enUS: 'Random 2' },
-    { id: 11207, Key: 'SkillCategoryBa3', enUS: 'Random 3' },
-    { id: 11208, Key: 'SkillCategoryDr1', enUS: 'Random 1' },
-    { id: 11209, Key: 'SkillCategoryDr2', enUS: 'Random 2' },
-    { id: 11210, Key: 'SkillCategoryDr3', enUS: 'Random 3' },
-    { id: 11211, Key: 'SkillCategoryAs1', enUS: 'Random 1' },
-    { id: 11212, Key: 'SkillCategoryAs2', enUS: 'Random 2' },
-    { id: 11213, Key: 'SkillCategoryAs3', enUS: 'Random 3' },
-    { id: 27563, Key: 'SkillCategoryWa1', enUS: 'Random 1' },
-    { id: 27564, Key: 'SkillCategoryWa2', enUS: 'Random 2' },
-    { id: 27565, Key: 'SkillCategoryWa3', enUS: 'Random 3' },
+    { id: 11193, Key: 'SkillCategoryAm1', enUS: 'Skill Tree 1' },
+    { id: 11194, Key: 'SkillCategoryAm2', enUS: 'Skill Tree 2' },
+    { id: 11195, Key: 'SkillCategoryAm3', enUS: 'Skill Tree 3' },
+    { id: 11196, Key: 'SkillCategorySo1', enUS: 'Skill Tree 1' },
+    { id: 11197, Key: 'SkillCategorySo2', enUS: 'Skill Tree 2' },
+    { id: 11198, Key: 'SkillCategorySo3', enUS: 'Skill Tree 3' },
+    { id: 11199, Key: 'SkillCategoryNe1', enUS: 'Skill Tree 1' },
+    { id: 11200, Key: 'SkillCategoryNe2', enUS: 'Skill Tree 2' },
+    { id: 11201, Key: 'SkillCategoryNe3', enUS: 'Skill Tree 3' },
+    { id: 11202, Key: 'SkillCategoryPa1', enUS: 'Skill Tree 1' },
+    { id: 11203, Key: 'SkillCategoryPa2', enUS: 'Skill Tree 2' },
+    { id: 11204, Key: 'SkillCategoryPa3', enUS: 'Skill Tree 3' },
+    { id: 11205, Key: 'SkillCategoryBa1', enUS: 'Skill Tree 1' },
+    { id: 11206, Key: 'SkillCategoryBa2', enUS: 'Skill Tree 2' },
+    { id: 11207, Key: 'SkillCategoryBa3', enUS: 'Skill Tree 3' },
+    { id: 11208, Key: 'SkillCategoryDr1', enUS: 'Skill Tree 1' },
+    { id: 11209, Key: 'SkillCategoryDr2', enUS: 'Skill Tree 2' },
+    { id: 11210, Key: 'SkillCategoryDr3', enUS: 'Skill Tree 3' },
+    { id: 11211, Key: 'SkillCategoryAs1', enUS: 'Skill Tree 1' },
+    { id: 11212, Key: 'SkillCategoryAs2', enUS: 'Skill Tree 2' },
+    { id: 11213, Key: 'SkillCategoryAs3', enUS: 'Skill Tree 3' },
+    { id: 27563, Key: 'SkillCategoryWa1', enUS: 'Skill Tree 1' },
+    { id: 27564, Key: 'SkillCategoryWa2', enUS: 'Skill Tree 2' },
+    { id: 27565, Key: 'SkillCategoryWa3', enUS: 'Skill Tree 3' },
   ];
 
   // Load the full official skills.json, patch the 24 tab-label overrides, and re-serialize.
@@ -596,6 +600,10 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     if (startingHoradricCube) {
       applyHoradricCube(charstats.headers, charstats.rows);
     }
+
+    // Consumes no RNG, so a seed keeps its trees whatever the setting. Before the mutations,
+    // so one that rewrites SkillsPerLevel (Forgotten Arts) still has the last word.
+    if (!ap) applySkillPoints(charstats.headers, charstats.rows, skillPoints);
 
     // Archipelago: after the StartSkill pick above, which would hand out a free skill.
     if (ap) applyApCharstats(charstats.headers, charstats.rows, ap);

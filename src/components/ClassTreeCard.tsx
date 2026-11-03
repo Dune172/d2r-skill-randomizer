@@ -112,8 +112,8 @@ export default function ClassTreeCard({
   }, [openId]);
 
   // `tabs` arrives in SkillPage order (1, 2, 3), which is the reverse of how the
-  // game lays the tabs out on screen. Render screen order so this card's "Random 1"
-  // is the same tab the game labels "Random 1".
+  // game lays the tabs out on screen. Render screen order so this card's "Skill Tree 1"
+  // is the same tab the game labels "Skill Tree 1".
   const tabsInScreenOrder = [...tabs].reverse();
 
   return (
@@ -167,7 +167,7 @@ export default function ClassTreeCard({
                   shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
               >
                 <div className="mb-1.5 px-0.5 font-cinzel text-[9px] tracking-[0.15em] uppercase text-[#a39a94] truncate">
-                  Random {treeIdx + 1}
+                  Skill Tree {treeIdx + 1}
                   {!masked && <span className="text-[#7a716a]"> · {tab.sourceClass} / Tree {tab.sourceTree}</span>}
                 </div>
                 <SkillTreeGrid tab={tab} treeIdx={treeIdx} openId={openId} setOpenId={setOpenId} />

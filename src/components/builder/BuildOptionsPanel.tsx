@@ -58,6 +58,7 @@ export default function BuildOptionsPanel({
     !value.enablePrereqs && 'no prerequisites',
     value.playersEnabled && value.playersCount > 1 && `players ${value.playersCount}`,
     value.xpMultiplier > 1 && `${value.xpMultiplier}× XP`,
+    value.skillPoints > 1 && `${value.skillPoints} skill points/level`,
     value.startingItems.teleportStaff && 'teleport staff',
     value.startingItems.horadricCube && 'cube',
     !value.hirelingAura && 'no merc aura',
@@ -157,6 +158,15 @@ export default function BuildOptionsPanel({
                   />
                 </>
               )}
+              <div className="flex items-center gap-2.5">
+                <label htmlFor="b-skillPoints" className="text-sm text-[#c8a870] whitespace-nowrap flex items-center">
+                  Skill points
+                  <Tip text="Skill points you get each time you level up. Quest rewards are unchanged. More points let you use more of your skills, so the game gets easier." />
+                </label>
+                <Select id="b-skillPoints" value={value.skillPoints} onChange={v => set('skillPoints', Number(v))}>
+                  {[1, 2, 3].map(n => <option key={n} value={n}>{n} per level</option>)}
+                </Select>
+              </div>
             </div>
           </div>
 

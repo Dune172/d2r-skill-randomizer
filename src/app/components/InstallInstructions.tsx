@@ -3,6 +3,8 @@ import { pickRaceClassIndex } from '@/lib/classes';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { openActsLabel, openActsSavepath, starterName, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 import { mutationName, mutationSavepathSuffix } from '@/lib/mutations/custom';
+import { CustomShortcut } from './CustomShortcut';
+import { CopySeedInfo } from './CopySeedInfo';
 
 export function InstallInstructions({ seed, raceMode = true, forgottenArts = false, modName, openActs, mutations = [] }: { seed: number; raceMode?: boolean; forgottenArts?: boolean; modName?: string; openActs?: OpenActsSettings; mutations?: number[] }) {
   const seedUnsigned = seed >>> 0;
@@ -55,6 +57,7 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
                 <span className="text-[#4a7a4a] border border-[#4a7a4a] rounded px-1 text-[10px]">recommended</span>
                 <div className="mt-0.5">Double-click the included shortcut:</div>
                 <code className="block text-[#a89858] mt-0.5">D2R Randomizer {seed}.lnk</code>
+                <CustomShortcut mod={mod} seed={seed} raceMode={raceMode} />
               </div>
             </div>
             <div className="flex items-start gap-2">
@@ -153,6 +156,10 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
         Share this ZIP and follow the{' '}
         <Link href="/multiplayer" className="text-[#c8942a] underline underline-offset-4 hover:text-[#e0ac4a]">multiplayer guide</Link>
         {' '}to set up D2RLoader. Everyone needs the same seed, mods, and plugins.
+      </div>
+
+      <div className="md:col-span-2">
+        <CopySeedInfo mod={mod} seed={seed} />
       </div>
     </div>
   );

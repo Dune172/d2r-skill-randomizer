@@ -10,6 +10,7 @@
  */
 import { DEFAULT_OPEN_ACTS, normalizeOpenActs, openActsFromParams, openActsToParams, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 import { encodeMutationParam, normalizeMutationIds, parseMutationParam } from '@/lib/mutations/custom';
+import { normalizeSkillPoints, parseSkillPoints, skillPointsParam } from '@/lib/skill-points';
 
 export interface ModOptions {
   enablePrereqs: boolean;
@@ -28,6 +29,8 @@ export interface ModOptions {
   xpMultiplier: number;
   xpActs: number[];
   xpDifficulties: number[];
+  /** Skill points per level, 1–3. */
+  skillPoints: number;
   enemyShuffle: boolean;
   openActs: OpenActsSettings;
   /** Player-picked mutation ids (sorted). */
@@ -51,6 +54,7 @@ export const DEFAULT_MOD_OPTIONS: ModOptions = {
   xpMultiplier: 1,
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1, 2, 3],
+  skillPoints: 1,
   enemyShuffle: false,
   openActs: DEFAULT_OPEN_ACTS,
   mutations: [],
@@ -85,6 +89,7 @@ export function optionParams(opts: ModOptions): string {
     boosted && `xpMultiplier=${opts.xpMultiplier}`,
     boosted && `xpActs=${sorted(opts.xpActs)}`,
     boosted && `xpDifficulties=${sorted(opts.xpDifficulties)}`,
+    skillPointsParam(opts.skillPoints),
     opts.enemyShuffle && 'enemyShuffle=1',
     openActsToParams(normalizeOpenActs(opts.openActs)).slice(1),
     opts.mutations.length > 0 && `mut=${encodeMutationParam(opts.mutations)}`,
@@ -117,6 +122,7 @@ export function parseModOptions(p: URLSearchParams): ModOptions {
     xpMultiplier: Math.min(3, Math.max(1, Number(p.get('xpMultiplier')) || 1)),
     xpActs: list('xpActs', 5, [1, 2, 3, 4, 5]),
     xpDifficulties: list('xpDifficulties', 3, [1, 2, 3]),
+    skillPoints: parseSkillPoints(p.get('skillPoints')),
     enemyShuffle: p.get('enemyShuffle') === '1',
     openActs: openActsFromParams(name => p.get(name)),
     mutations: parseMutationParam(p.get('mut')),
@@ -137,6 +143,7 @@ export function buildRandomizeBody(code: string, opts: ModOptions): string {
     xpMultiplier: opts.xpMultiplier,
     xpActs: opts.xpActs,
     xpDifficulties: opts.xpDifficulties,
+    skillPoints: normalizeSkillPoints(opts.skillPoints),
     enemyShuffle: opts.enemyShuffle,
     openActs: normalizeOpenActs(opts.openActs),
     mutations: normalizeMutationIds(opts.mutations),

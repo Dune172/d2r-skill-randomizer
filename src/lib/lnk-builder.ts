@@ -31,11 +31,9 @@ function u32le(n: number): Buffer {
  * TargetAnsi     = 260 bytes, null-padded
  * TargetUnicode  = 520 bytes, null-padded UTF-16LE
  */
-function buildEnvVarBlock(): Buffer {
-  const envPath = '%ProgramFiles(x86)%\\Diablo II Resurrected\\D2R.exe';
-
+function buildEnvVarBlock(envPath = '%ProgramFiles(x86)%\\Diablo II Resurrected\\D2R.exe'): Buffer {
   const ansi = Buffer.alloc(260, 0);
-  ansi.write(envPath, 0, 'ascii');
+  ansi.write(toAnsi(envPath), 0, 'ascii');
 
   const unicode = Buffer.alloc(520, 0);
   unicode.write(envPath, 0, 'utf16le');
@@ -49,13 +47,21 @@ function buildEnvVarBlock(): Buffer {
   ]);
 }
 
+/** ANSI fields can't hold other characters; the env block's Unicode copy keeps them. */
+const toAnsi = (s: string) => s.replace(/[^\x20-\x7e]/g, '?');
+
 /**
  * Build a Windows .lnk shortcut that launches D2R via %ProgramFiles(x86)%.
  * The target path is resolved at runtime using the EnvironmentVariableDataBlock,
  * with an expanded fallback path in LinkInfo.LocalBasePath.
+ *
+ * `installDir` (checked by normalizeInstallDir) points the shortcut at another folder:
+ * the env block and the fallback then both hold that literal path. Without it, the
+ * bytes are exactly what every ZIP has always shipped.
  */
-export function createD2RShortcut(modName: string, mapSeed: number, raceMode = true): Buffer {
-  const TARGET_PATH = 'C:\\Program Files (x86)\\Diablo II Resurrected\\D2R.exe';
+export function createD2RShortcut(modName: string, mapSeed: number, raceMode = true, installDir?: string): Buffer {
+  const customTarget = installDir ? `${installDir.replace(/\\$/, '')}\\D2R.exe` : undefined;
+  const TARGET_PATH = customTarget ?? 'C:\\Program Files (x86)\\Diablo II Resurrected\\D2R.exe';
   const ARGS = raceMode
     ? `-mod ${modName} -txt -seed ${mapSeed}`
     : `-mod ${modName} -txt`;
@@ -106,7 +112,7 @@ export function createD2RShortcut(modName: string, mapSeed: number, raceMode = t
     volumeLabel,
   ]);
 
-  const localBasePath = Buffer.from(TARGET_PATH + '\0', 'ascii');
+  const localBasePath = Buffer.from(toAnsi(TARGET_PATH) + '\0', 'ascii');
   const commonPathSuffix = Buffer.from([0x00]);
 
   const linkInfoHeaderSize = 0x1C; // 28
@@ -149,7 +155,7 @@ export function createD2RShortcut(modName: string, mapSeed: number, raceMode = t
   ]);
 
   // ── 4. ExtraData — EnvironmentVariableDataBlock ─────────────────────────
-  const envVarBlock = buildEnvVarBlock();
+  const envVarBlock = buildEnvVarBlock(customTarget);
 
   return Buffer.concat([header, linkInfo, argsStringData, envVarBlock]);
 }
