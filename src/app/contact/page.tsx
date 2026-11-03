@@ -10,14 +10,14 @@ export const metadata: Metadata = contentMetadata(
   'How to reach the D2R Randomizer team: email, Discord, bug reports, leaderboard and privacy requests, and press or creator inquiries.',
 );
 
-const EMAIL = 'contact@d2rrandomizer.com';
+const EMAIL = 'diablo2randomizer@gmail.com';
 
 export default function ContactPage() {
   return (
     <ContentPage
       eyebrow="Contact"
       title="Contact"
-      updated="2026-10-26"
+      updated="2026-11-03"
       intro={
         <p>
           D2R Randomizer is run by one developer, Dune, with help from the community. The fastest way to get

@@ -15,7 +15,7 @@ export default function TermsPage() {
     <ContentPage
       eyebrow="Legal"
       title="Terms of Use"
-      updated="2026-10-26"
+      updated="2026-11-03"
       intro={
         <p>
           These terms apply to d2rrandomizer.com and the mods it generates. By using the site or a generated
@@ -103,7 +103,7 @@ export default function TermsPage() {
       <h2>10. Contact</h2>
       <p>
         Questions about these terms can be sent to{' '}
-        <a href="mailto:contact@d2rrandomizer.com">contact@d2rrandomizer.com</a>.
+        <a href="mailto:diablo2randomizer@gmail.com">diablo2randomizer@gmail.com</a>.
       </p>
     </ContentPage>
   );

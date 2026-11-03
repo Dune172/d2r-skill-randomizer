@@ -19,7 +19,7 @@ export default function AboutPage() {
     <ContentPage
       eyebrow="About"
       title="About D2R Randomizer"
-      updated="2026-10-26"
+      updated="2026-11-03"
       intro={
         <p>
           D2R Randomizer is a free, independent fan project that turns Diablo II: Resurrected into a new game
@@ -111,7 +111,7 @@ export default function AboutPage() {
       <h2>Get in touch</h2>
       <p>
         Questions, bug reports and press or creator requests are welcome. Email{' '}
-        <a href="mailto:contact@d2rrandomizer.com">contact@d2rrandomizer.com</a> or see the{' '}
+        <a href="mailto:diablo2randomizer@gmail.com">diablo2randomizer@gmail.com</a> or see the{' '}
         <Link href="/contact">contact page</Link> for other ways to reach us.
       </p>
     </ContentPage>

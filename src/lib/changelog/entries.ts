@@ -42,7 +42,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'New install guide that walks through Battle.net, Steam and Game Pass setups, launch options, switching seeds, uninstalling and troubleshooting',
       'New FAQ page covering safety, seeds, Race Mode, the Class Builder, challenges, leaderboards and multiplayer',
       'New mutations guide: every challenge mutation explained, with strategy tips and the challenges that featured it',
-      'New About, Contact and Terms of Use pages. You can now reach us by email at contact@d2rrandomizer.com as well as on Discord',
+      'New About, Contact and Terms of Use pages. You can now reach us by email at diablo2randomizer@gmail.com as well as on Discord',
       'The Generate page now explains how the generator, Race Mode and the Class Builder work, and links to the guides',
       'New Guides menu in the site header, and the Ko-fi request on the archive page no longer pops up over the page',
     ],
