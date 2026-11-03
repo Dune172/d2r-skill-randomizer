@@ -5,6 +5,7 @@ export const maxDuration = 30;
 import { loadTreeGrid, loadSkills, loadSkillDescs, loadSkillStrings } from '@/lib/data-loader';
 import { groupByClass } from '@/lib/randomizer/skill-placer';
 import { runPlacement } from '@/lib/randomizer/placement-step';
+import { normalizeShuffleAmount, shuffleShareOf } from '@/lib/shuffle-amount';
 import { BuildRequestError, resolveClassBuild } from '@/lib/builder/class-build-server';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { MYSTERY_ICON } from '@/lib/randomizer/mutations/mystery-box';
@@ -61,6 +62,8 @@ export async function POST(request: NextRequest) {
       skills,
       excludeSkills: getMutationExcludedSkillsFor(mutationIds),
       build: classBuild ?? undefined,
+      // Same guard as /api/randomize: challenges and builds always shuffle fully.
+      shuffleShare: classBuild || weekNumber > 0 ? undefined : shuffleShareOf(normalizeShuffleAmount(body.shuffleAmount)),
     });
     const placementsByClass = groupByClass(placements);
 

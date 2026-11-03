@@ -13,6 +13,8 @@ import AdUnit from './AdUnit';
 import { DEFAULT_OPEN_ACTS, openActsFromParams, openActsToParams, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 import { encodeMutationParam, parseMutationParam } from '@/lib/mutations/custom';
 import { parseSkillPoints } from '@/lib/skill-points';
+import { parseShuffleAmount, shuffleAmountParam } from '@/lib/shuffle-amount';
+import { modExtrasFromParams, modExtrasParams } from '@/lib/mod-extras';
 import { SITE_UPDATED, SITE_VERSION } from '@/lib/site-version';
 
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
@@ -30,6 +32,12 @@ interface Options {
   xpDifficulties: number[];
   /** Skill points per level, 1–3. */
   skillPoints: number;
+  /** Shuffle amount: 100 (full), 50 or 25. */
+  shuffleAmount: number;
+  /** Seasonal town decorations (src/lib/mod-extras.ts). */
+  seasonal: boolean;
+  /** Every class can equip class-only items. */
+  anyClassItems: boolean;
   raceMode: boolean;
   enemyShuffle: boolean;
   forgottenArts: boolean;
@@ -50,6 +58,9 @@ const defaultOptions: Options = {
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1],
   skillPoints: 1,
+  shuffleAmount: 100,
+  seasonal: true,
+  anyClassItems: false,
   raceMode: true,
   enemyShuffle: false,
   forgottenArts: false,
@@ -86,6 +97,8 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
       ? p.get('xpDifficulties')!.split(',').map(Number).filter(n => n >= 1 && n <= 3)
       : [1, 2, 3],
     skillPoints: parseSkillPoints(p.get('skillPoints')),
+    shuffleAmount: parseShuffleAmount(p.get('shuffle')),
+    ...modExtrasFromParams(name => p.get(name)),
     raceMode: p.get('raceMode') !== '0',
     enemyShuffle: p.get('enemyShuffle') === '1',
     forgottenArts: false, // challenge-only
@@ -132,9 +145,11 @@ export default function RandomizerApp() {
     const raceModeParam     = !opts.raceMode ? '&raceMode=0' : '';
     const enemyParam = opts.enemyShuffle ? '&enemyShuffle=1' : '';
     const skillPointsParam = opts.skillPoints > 1 ? `&skillPoints=${opts.skillPoints}` : '';
+    const shuffleParam = shuffleAmountParam(opts.shuffleAmount) ? `&${shuffleAmountParam(opts.shuffleAmount)}` : '';
+    const extrasParam = modExtrasParams(opts).map(p => `&${p}`).join('');
     // Part of the download cache key: /api/download parses it back the same way.
     const mutParam = opts.mutations.length ? `&mut=${encodeMutationParam(opts.mutations)}` : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${skillPointsParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}${openActsToParams(opts.openActs, opts.raceMode)}${mutParam}`;
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${skillPointsParam}${shuffleParam}${extrasParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}${openActsToParams(opts.openActs, opts.raceMode)}${mutParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -147,7 +162,7 @@ export default function RandomizerApp() {
       const previewRes = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: seedInput, forgottenArts: options.forgottenArts, mutations: options.mutations }),
+        body: JSON.stringify({ seed: seedInput, forgottenArts: options.forgottenArts, mutations: options.mutations, shuffleAmount: options.shuffleAmount }),
       });
 
       if (!previewRes.ok) {
@@ -165,7 +180,7 @@ export default function RandomizerApp() {
 
       setStatus('building');
       const buildingStart = Date.now();
-      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, skillPoints: options.skillPoints, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts, openActs: options.openActs, mutations: options.mutations });
+      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, skillPoints: options.skillPoints, shuffleAmount: options.shuffleAmount, seasonal: options.seasonal, anyClassItems: options.anyClassItems, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts, openActs: options.openActs, mutations: options.mutations });
 
       await generateMod(buildBody, setErrorMessage);
 

@@ -13,7 +13,7 @@ import {
   type ClassBuild,
   PAGE_REFS,
   SLOTS_PER_CLASS,
-  checkClassBuild,
+  checkClassBuildSet,
   classNameOf,
   emptyBuild,
   fillEmptySlots,
@@ -22,8 +22,9 @@ import {
   pageKey,
   pruneSlots,
   resolvePages,
+  skillsInBuilds,
 } from '@/lib/builder/class-build';
-import { decodeClassBuild, encodeClassBuild } from '@/lib/builder/class-build-codec';
+import { decodeClassBuildSet, encodeClassBuildSet } from '@/lib/builder/class-build-codec';
 import {
   DEFAULT_MOD_OPTIONS,
   type ModOptions,
@@ -56,7 +57,10 @@ const BTN_QUIET = `${BTN} border-[#3a1510] bg-[#0c0405] text-[#c8a870] hover:bor
 const BTN_PRIMARY = `${BTN} border-[#8b2820] bg-gradient-to-b from-[#5c1010] to-[#380808] text-[#f0c040] hover:from-[#701414]`;
 
 export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
+  // The class being edited, and the build's other hand-built classes (a build can
+  // hand-build several; they all share spec's seed).
   const [spec, setSpec] = useState<ClassBuild | null>(null);
+  const [others, setOthers] = useState<ClassBuild[]>([]);
   const [step, setStep] = useState<Step>('class');
   const [options, setOptions] = useState<ModOptions>(DEFAULT_MOD_OPTIONS);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -101,10 +105,19 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
   }, [pages]);
   const placed = useMemo(() => new Set(Object.values(spec?.slots ?? {})), [spec]);
   const placedCount = spec ? Object.keys(spec.slots).length : 0;
+  // Every hand-built class, the one being edited first (its issues keep their slots).
+  const allSpecs = useMemo(
+    () => (spec ? [spec, ...others.map(o => ({ ...o, seed: spec.seed }))] : []),
+    [spec, others],
+  );
+  const takenByOthers = useMemo(() => skillsInBuilds(others), [others]);
+  const allPlaced = useMemo(() => skillsInBuilds(allSpecs), [allSpecs]);
+  const builtCodes = new Set(allSpecs.map(s => s.classCode));
+  const randomCount = CLASS_DEFS.length - allSpecs.length;
 
   const editIssues = useMemo(
-    () => (spec ? checkClassBuild(spec, catalog.skills, treePages, { requireComplete: false }) : []),
-    [spec, catalog.skills, treePages],
+    () => (spec ? checkClassBuildSet(allSpecs, catalog.skills, treePages, { requireComplete: false }) : []),
+    [spec, allSpecs, catalog.skills, treePages],
   );
   const issuesBySlot = useMemo(() => {
     const m = new Map<string, BuildIssue>();
@@ -116,16 +129,17 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
   const errors = editIssues.filter(i => i.severity === 'error');
   const warnings = editIssues.filter(i => i.severity === 'warning');
   const complete = placedCount === SLOTS_PER_CLASS;
-  const buildable = !!spec && complete && !hasErrors(editIssues);
+  const othersIncomplete = others.filter(o => Object.keys(o.slots).length < SLOTS_PER_CLASS);
+  const buildable = !!spec && complete && othersIncomplete.length === 0 && !hasErrors(editIssues);
 
   const code = useMemo(() => {
     if (!spec) return null;
     try {
-      return encodeClassBuild(spec, catalog.skills, treePages);
+      return encodeClassBuildSet(allSpecs, catalog.skills, treePages);
     } catch {
       return null;
     }
-  }, [spec, catalog.skills, treePages]);
+  }, [spec, allSpecs, catalog.skills, treePages]);
   const optsKey = optionParams(options);
   // The preview depends on the build and on the mutations (No Guard, Mystery Box).
   const previewKey = code ? `${code}|${options.mutations.join('.')}` : null;
@@ -137,10 +151,12 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
     const shared = params.get('b');
     if (!shared) return;
     try {
-      const decoded = decodeClassBuild(shared, catalog.skills, treePages);
-      setSpec(decoded);
+      const [first, ...rest] = decodeClassBuildSet(shared, catalog.skills, treePages);
+      setSpec(first);
+      setOthers(rest);
       setOptions(parseModOptions(params));
-      setStep(Object.keys(decoded.slots).length === SLOTS_PER_CLASS ? 'finish' : 'skills');
+      const full = [first, ...rest].every(s => Object.keys(s.slots).length === SLOTS_PER_CLASS);
+      setStep(full ? 'finish' : 'skills');
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'That build link could not be read.');
     }
@@ -158,17 +174,30 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
     setMessage(null);
   }, []);
 
+  /**
+   * Edit a class: switch to one already in the build, or start a new one beside
+   * the rest. The class being left stays in the build unless nothing was placed on it.
+   */
   const pickClass = (classCode: ClassCode) => {
-    if (spec && spec.classCode !== classCode && placedCount > 0
-      && !window.confirm(`Switch to ${classNameOf(classCode)}? This clears the ${placedCount} skills you placed.`)) {
-      return;
-    }
     if (!spec || spec.classCode !== classCode) {
-      setSpec(emptyBuild(classCode, randomSeed()));
+      const kept = spec && placedCount > 0 ? [...others, spec] : others;
+      const existing = kept.find(o => o.classCode === classCode);
+      const seed = spec?.seed ?? randomSeed();
+      setOthers(kept.filter(o => o.classCode !== classCode));
+      setSpec(existing ? { ...existing, seed } : emptyBuild(classCode, seed));
       setSelectedKey(null);
       setLayoutTab(2);
+      setMessage(null);
+      setStep(existing && Object.keys(existing.slots).length === SLOTS_PER_CLASS ? 'finish' : 'layout');
+      return;
     }
     setStep('layout');
+  };
+
+  /** Take a hand-built class out of the build; it goes back to being randomized. */
+  const removeOther = (classCode: ClassCode) => {
+    if (!window.confirm(`Remove your ${classNameOf(classCode)} from this build? Its skills go back to the randomized classes.`)) return;
+    setOthers(list => list.filter(o => o.classCode !== classCode));
   };
 
   const setPage = (tabIndex: number, key: string) => {
@@ -362,7 +391,7 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
                   {s.label}
                   {s.id === 'class' && spec && (
                     <span className="normal-case tracking-normal text-[10px]" style={{ color: theme!.frame }}>
-                      · {classNameOf(spec.classCode)}
+                      · {classNameOf(spec.classCode)}{others.length > 0 ? ` +${others.length}` : ''}
                     </span>
                   )}
                   {s.id === 'skills' && spec && (
@@ -383,27 +412,34 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
         <section aria-labelledby="step-class">
           <h2 id="step-class" className="sr-only">Choose a class</h2>
           <p className="text-center text-sm text-[#a89060]/80 mb-5">
-            Pick the class you&rsquo;ll play. You design its three skill trees; the other seven are randomized
-            from the skills you leave behind.
+            Pick the class you&rsquo;ll play. You design its three skill trees, and every class you don&rsquo;t
+            build is randomized from the skills you leave behind.
+          </p>
+          <p className="text-center text-[11px] text-[#8a7a5a] -mt-3 mb-5">
+            Playing with friends? Build as many classes as you like, even all eight. Each skill can only be on one class.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {CLASS_DEFS.map(def => {
               const t = classTheme(def.code);
               const current = spec?.classCode === def.code;
+              const other = others.find(o => o.classCode === def.code);
+              const inBuild = current || !!other;
               return (
                 <button
                   key={def.code}
                   type="button"
                   onClick={() => pickClass(def.code)}
                   aria-pressed={current}
-                  style={{ borderColor: current ? '#f0c040' : t.frame }}
+                  style={{ borderColor: current ? '#f0c040' : t.frame, borderStyle: inBuild ? 'solid' : 'dashed' }}
                   className="rounded-lg border-2 bg-[#0c0304] px-3 py-5 text-center hover:bg-[#1a0808] transition-colors"
                 >
                   <span className="block font-cinzel font-bold tracking-[0.14em] uppercase text-sm" style={{ color: t.frame }}>
                     {def.name}
                   </span>
                   <span className="block mt-1 text-[10px] text-[#7a6a4a]">
-                    {current ? `${placedCount}/${SLOTS_PER_CLASS} placed` : 'Start building'}
+                    {current ? `Editing · ${placedCount}/${SLOTS_PER_CLASS} placed`
+                      : other ? `In this build · ${Object.keys(other.slots).length}/${SLOTS_PER_CLASS}`
+                        : spec ? 'Add to this build' : 'Start building'}
                   </span>
                 </button>
               );
@@ -475,7 +511,7 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
           <h2 id="step-skills" className="sr-only">Place skills</h2>
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button type="button" className={BTN_QUIET} disabled={complete}
-              onClick={() => { update(s => fillEmptySlots(s, catalog.skills, treePages, randomSeed())); setSelectedKey(null); }}>
+              onClick={() => { update(s => fillEmptySlots(s, catalog.skills, treePages, randomSeed(), takenByOthers)); setSelectedKey(null); }}>
               Fill empty slots
             </button>
             <button type="button" className={BTN_QUIET} disabled={placedCount === 0}
@@ -500,6 +536,7 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
               skills={catalog.skills}
               classCode={spec.classCode}
               placed={placed}
+              taken={takenByOthers}
               targetLabel={selectedLabel}
               onPick={handlePick}
               onReturn={key => { removeAt(key); setSelectedKey(null); }}
@@ -519,7 +556,12 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
               <span className="font-cinzel text-[11px] tracking-[0.18em] uppercase" style={{ color: theme!.frame }}>
                 Your {classNameOf(spec.classCode)}
               </span>
-              <button type="button" className={BTN_QUIET} onClick={() => setStep('skills')}>Edit skills</button>
+              <span className="flex gap-2">
+                <button type="button" className={BTN_QUIET} onClick={() => setStep('skills')}>Edit skills</button>
+                {randomCount > 0 && (
+                  <button type="button" className={BTN_QUIET} onClick={() => setStep('class')}>Build another class</button>
+                )}
+              </span>
             </div>
             <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 {SCREEN_ORDER.map((tabIndex, i) => (
@@ -539,6 +581,36 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
             </div>
           </div>
 
+          {others.length > 0 && (
+            <div className="rounded-lg border border-[#3a1510] bg-[#0c0304] p-3 space-y-2">
+              <h3 className="font-cinzel font-bold text-[11px] tracking-[0.18em] uppercase text-[#c8942a]">
+                Also hand-built in this mod
+              </h3>
+              <ul className="space-y-1.5">
+                {others.map(o => {
+                  const n = Object.keys(o.slots).length;
+                  return (
+                    <li key={o.classCode} className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-[12px]" style={{ color: classTheme(o.classCode).frame }}>
+                        {classNameOf(o.classCode)}{' '}
+                        <span className={`text-[10px] ${n === SLOTS_PER_CLASS ? 'text-[#78c078]' : 'text-[#e0a060]'}`}>{n}/{SLOTS_PER_CLASS}</span>
+                      </span>
+                      <span className="flex gap-2">
+                        <button type="button" className={BTN_QUIET} onClick={() => pickClass(o.classCode)}>Edit</button>
+                        <button type="button" className={BTN_QUIET} onClick={() => removeOther(o.classCode)}>Remove</button>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {othersIncomplete.length > 0 && (
+            <p className="text-center text-[11px] text-[#e0a060]">
+              Finish {othersIncomplete.map(o => classNameOf(o.classCode)).join(' and ')} before building: every slot needs a skill.
+            </p>
+          )}
           {!complete && (
             <p className="text-center text-[11px] text-[#e0a060]">
               {SLOTS_PER_CLASS - placedCount} slot{SLOTS_PER_CLASS - placedCount === 1 ? ' is' : 's are'} still
@@ -547,10 +619,13 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
           )}
           <IssueList errors={errors} warnings={warnings} />
 
+          {randomCount > 0 && (
           <div className="rounded-lg border border-[#3a1510] bg-[#0c0304] p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h3 className="font-cinzel font-bold text-[11px] tracking-[0.18em] uppercase text-[#c8942a]">The other seven classes</h3>
+                <h3 className="font-cinzel font-bold text-[11px] tracking-[0.18em] uppercase text-[#c8942a]">
+                  {randomCount === 7 ? 'The other seven classes' : `The other ${randomCount} class${randomCount === 1 ? '' : 'es'}`}
+                </h3>
                 <p className="text-[10px] text-[#7a6a4a] mt-0.5">
                   Randomized from the skills you didn&rsquo;t take (roll #{spec.seed}). Class-locked skills you left
                   out are swapped for stand-ins on another class, like in a normal seed.
@@ -568,7 +643,7 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
             </div>
             {preview && preview.code === previewKey && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                {preview.data.classes.filter(c => c.code !== spec.classCode).map(cls => (
+                {preview.data.classes.filter(c => !builtCodes.has(c.code)).map(cls => (
                   <ClassTreeCard
                     key={cls.code}
                     code={cls.code}
@@ -586,8 +661,9 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
               </div>
             )}
           </div>
+          )}
 
-          <BuildOptionsPanel value={options} onChange={setOptions} buildSkills={placed} />
+          <BuildOptionsPanel value={options} onChange={setOptions} buildSkills={allPlaced} />
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button

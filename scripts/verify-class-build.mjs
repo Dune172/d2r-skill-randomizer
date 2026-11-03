@@ -33,7 +33,7 @@ const { HARDCODED_CLASS_SKILLS, SKILL_CLASS_EXCLUSIONS, COPACEMENT_REQUIRES, ord
   load('src/lib/randomizer/skill-placer.ts');
 const { runPlacement } = load('src/lib/randomizer/placement-step.ts');
 const cb = load('src/lib/builder/class-build.ts');
-const { encodeClassBuild, decodeClassBuild } = load('src/lib/builder/class-build-codec.ts');
+const { encodeClassBuild, decodeClassBuild, encodeClassBuildSet, decodeClassBuildSet } = load('src/lib/builder/class-build-codec.ts');
 const { resolveClassBuild } = load('src/lib/builder/class-build-server.ts');
 
 const skills = loadSkills();
@@ -102,7 +102,7 @@ test('placement keeps the fixed class verbatim and leaves a perfect bijection', 
       // Fixed class: exactly the hand-built placements, untouched.
       const mine = placed.placements.filter(p => p.targetClass === def.code);
       assert.equal(mine.length, 30, tag);
-      for (const fp of build.fixed.placements) {
+      for (const fp of build.classes[0].fixed.placements) {
         const p = mine.find(m => m.tabIndex === fp.tabIndex && m.row === fp.row && m.col === fp.col);
         assert.equal(p?.skill.skill, fp.skill.skill, tag);
         assert.equal(p.skill.charclass, fp.skill.charclass, `${tag} ${fp.skill.skill} was substituted`);
@@ -150,4 +150,123 @@ test('placement is deterministic for a build', () => {
   const run = () => runPlacement(createRNG(build.seed), { treePages, skills, build }).placements
     .map(p => `${p.targetClass}:${p.tabIndex}:${p.row}:${p.col}:${p.skill.skill}:${p.skill.charclass}`);
   assert.deepEqual(run(), run());
+});
+
+// ---------------------------------------------------------------------------
+// Several hand-built classes in one mod (stridssill: "build all 8 classes at the same time")
+
+/** n hand-built classes, each filled around the ones before it; one shared seed. */
+function randomSet(codes, n) {
+  const seed = (n * 2654435761 + 99) >>> 0;
+  const specs = [];
+  for (const code of codes) {
+    const spec = cb.emptyBuild(code, seed);
+    specs.push(cb.fillEmptySlots(spec, skills, treePages, n * 31 + specs.length, cb.skillsInBuilds(specs)));
+  }
+  return specs;
+}
+
+test('a single-class code encodes exactly as before', () => {
+  for (const def of CLASS_DEFS) {
+    const spec = randomBuild(def.code, 3);
+    const code = encodeClassBuild(spec, skills, treePages);
+    assert.equal(encodeClassBuildSet([spec], skills, treePages), code);
+    assert.equal(resolveClassBuild(code).code, code);
+    assert.equal(decodeClassBuildSet(code, skills, treePages).length, 1);
+  }
+});
+
+test('multi-class codes round-trip in class order, up to all eight', () => {
+  const codes = CLASS_DEFS.map(d => d.code);
+  for (const count of [2, 3, 5, 8]) {
+    for (let n = 0; n < 6; n++) {
+      const picked = createRNG(n + count * 100).shuffle(codes).slice(0, count);
+      const specs = randomSet(picked, n);
+      assert.deepEqual(cb.checkClassBuildSet(specs, skills, treePages).filter(i => i.severity === 'error'), [], `${count} #${n}`);
+      const code = encodeClassBuildSet(specs, skills, treePages);
+      assert.ok(code.length <= 362, `${count} classes: ${code.length} chars`);
+      const back = decodeClassBuildSet(code, skills, treePages);
+      assert.deepEqual(back.map(s => s.classCode), codes.filter(c => picked.includes(c)), 'class order');
+      for (const s of back) assert.deepEqual(s.slots, specs.find(x => x.classCode === s.classCode).slots);
+      // Any input order gives the same canonical code.
+      assert.equal(encodeClassBuildSet([...specs].reverse(), skills, treePages), code);
+    }
+  }
+});
+
+test('the set validator rejects a skill on two classes and a class built twice', () => {
+  const [a, b] = randomSet(['sor', 'nec'], 1);
+  const key = Object.keys(b.slots)[0];
+  const clash = { ...b, slots: { ...b.slots, [key]: Object.values(a.slots).find(s => !cb.blockReason(s, 'nec')) } };
+  assert.ok(cb.checkClassBuildSet([a, clash], skills, treePages).some(i => i.code === 'skill_on_two_classes'));
+  assert.ok(cb.checkClassBuildSet([a, a], skills, treePages).some(i => i.code === 'duplicate_class'));
+  assert.ok(cb.checkClassBuildSet([a, { ...b, seed: b.seed + 1 }], skills, treePages).some(i => i.code === 'seed_mismatch'));
+});
+
+test('placement keeps every hand-built class verbatim and uses every skill once', () => {
+  const codes = CLASS_DEFS.map(d => d.code);
+  for (const count of [2, 4, 7, 8]) {
+    for (let n = 0; n < 8; n++) {
+      const picked = createRNG(n * 13 + count).shuffle(codes).slice(0, count);
+      const build = resolveClassBuild(encodeClassBuildSet(randomSet(picked, n), skills, treePages));
+      const placed = runPlacement(createRNG(build.seed), { treePages, skills, build });
+      const tag = `${count} [${picked}] #${n}`;
+      for (const { fixed } of build.classes) {
+        const mine = placed.placements.filter(p => p.targetClass === fixed.classCode);
+        assert.equal(mine.length, 30, tag);
+        for (const fp of fixed.placements) {
+          const p = mine.find(m => m.tabIndex === fp.tabIndex && m.row === fp.row && m.col === fp.col);
+          assert.equal(p?.skill.skill, fp.skill.skill, `${tag} ${fixed.classCode}`);
+          assert.equal(p.skill.charclass, fp.skill.charclass, `${tag} ${fp.skill.skill} was substituted`);
+        }
+      }
+      for (const c of CLASS_DEFS) assert.equal(placed.placements.filter(q => q.targetClass === c.code).length, 30, `${tag} ${c.code}`);
+      assert.deepEqual(placed.placements.map(p => p.skill.skill).sort(), skills.map(s => s.skill).sort(), tag);
+      assert.ok(placed.substitutes.every(s => !picked.includes(s.targetClass)), `${tag} substitute on a hand-built class`);
+      if (count === CLASS_DEFS.length) assert.equal(placed.substitutes.length, 0, `${tag} full build needs no substitutes`);
+    }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Partial shuffle (jondanger: "a 50% or 25% random version")
+
+test('a partial shuffle keeps each class on its own pages with the rest of its skills in place', () => {
+  const vanillaSlot = new Map();
+  for (const def of CLASS_DEFS) for (let t = 1; t <= 3; t++) {
+    for (const g of treePages.get(`${def.code}-${t}`).slots) if (g.skill) vanillaSlot.set(g.skill, `${def.code}:${t - 1}:${g.row}:${g.col}`);
+  }
+  for (const share of [0.5, 0.25]) {
+    for (let seed = 1; seed <= 40; seed++) {
+      const placed = runPlacement(createRNG(seed), { treePages, skills, shuffleShare: share });
+      const tag = `${share} seed ${seed}`;
+      assert.deepEqual(placed.placements.map(p => p.skill.skill).sort(), skills.map(s => s.skill).sort(), tag);
+      for (const def of CLASS_DEFS) {
+        assert.deepEqual(placed.treeAssignments.get(def.code).map(p => `${p.classCode}-${p.treeIndex}`),
+          [1, 2, 3].map(t => `${def.code}-${t}`), `${tag} ${def.code} pages`);
+        const mine = placed.placements.filter(p => p.targetClass === def.code);
+        assert.equal(mine.length, 30, `${tag} ${def.code}`);
+        assert.equal(new Set(mine.map(p => p.skillIndex)).size, 30, `${tag} ${def.code} slots`);
+        const order = orderedFilledSlots(placed.treeAssignments.get(def.code));
+        for (const p of mine) {
+          const rank = order.findIndex(s => s.tabIndex === p.tabIndex && s.row === p.row && s.col === p.col);
+          assert.equal(p.skillIndex, rank, tag);
+          assert.equal(p.iconCel, rank * 2, tag);
+        }
+        // About (1 - share) of each class stays exactly where it is in vanilla.
+        const home = mine.filter(p => p.skill.charclass === def.code
+          && vanillaSlot.get(p.skill.skill) === `${def.code}:${p.tabIndex}:${p.row}:${p.col}`).length;
+        assert.ok(home >= Math.floor(30 * (1 - share)) - 8, `${tag} ${def.code}: only ${home} stayed`);
+        assert.ok(home <= Math.ceil(30 * (1 - share)) + 8, `${tag} ${def.code}: ${home} stayed`);
+      }
+      const again = runPlacement(createRNG(seed), { treePages, skills, shuffleShare: share });
+      assert.deepEqual(again.placements.map(p => `${p.targetClass}:${p.skillIndex}:${p.skill.skill}`),
+        placed.placements.map(p => `${p.targetClass}:${p.skillIndex}:${p.skill.skill}`), `${tag} deterministic`);
+    }
+  }
+});
+
+test('a partial shuffle cannot be combined with a build', () => {
+  const build = resolveClassBuild(encodeClassBuild(randomBuild('sor', 2), skills, treePages));
+  assert.throws(() => runPlacement(createRNG(1), { treePages, skills, build, shuffleShare: 0.5 }), /partial shuffle/i);
 });

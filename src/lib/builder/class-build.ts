@@ -207,6 +207,73 @@ export function checkClassBuild(
 
 export const hasErrors = (issues: BuildIssue[]) => issues.some(i => i.severity === 'error');
 
+/** Most hand-built classes one mod can carry: all of them. */
+export const MAX_BUILD_CLASSES = CLASS_DEFS.length;
+
+/** Every skill placed on any of these classes. */
+export const skillsInBuilds = (specs: readonly ClassBuild[]): Set<string> =>
+  new Set(specs.flatMap(s => Object.values(s.slots ?? {})));
+
+/**
+ * Check a set of hand-built classes that go into one mod (the Class Builder can
+ * build several). Each class is checked on its own (messages name the class when
+ * there is more than one), then across classes: each class at most once, one shared
+ * seed, and no skill on two classes. The issues of specs[0] keep their slot keys so
+ * the editor can mark them; the other classes' issues are listed without a slot.
+ */
+export function checkClassBuildSet(
+  specs: readonly ClassBuild[],
+  skills: BuildSkill[],
+  treePages: Map<string, TreePage>,
+  opts: { requireComplete?: boolean } = {},
+): BuildIssue[] {
+  if (specs.length === 0) return [{ severity: 'error', code: 'no_class', message: 'Build at least one class.' }];
+  if (specs.length > MAX_BUILD_CLASSES) {
+    return [{ severity: 'error', code: 'too_many_classes', message: `A build can have at most ${MAX_BUILD_CLASSES} classes.` }];
+  }
+  const multi = specs.length > 1;
+  const issues: BuildIssue[] = [];
+  specs.forEach((spec, i) => {
+    for (const issue of checkClassBuild(spec, skills, treePages, opts)) {
+      const prefix = multi ? `${classNameOf(spec.classCode)}: ` : '';
+      issues.push(i === 0 ? { ...issue, message: prefix + issue.message } : { ...issue, slot: undefined, message: prefix + issue.message });
+    }
+  });
+  const classes = new Set<string>();
+  for (const spec of specs) {
+    if (classes.has(spec.classCode)) issues.push({ severity: 'error', code: 'duplicate_class', message: `${classNameOf(spec.classCode)} is built twice.` });
+    classes.add(spec.classCode);
+    if (spec.seed !== specs[0].seed) issues.push({ severity: 'error', code: 'seed_mismatch', message: 'Every class in a build must share one seed.' });
+  }
+  const owner = new Map<string, string>();
+  specs.forEach((spec, i) => {
+    for (const [slot, name] of Object.entries(spec.slots ?? {})) {
+      const first = owner.get(name);
+      if (first && first !== spec.classCode) {
+        issues.push({
+          severity: 'error', code: 'skill_on_two_classes', skill: name, slot: i === 0 ? slot : undefined,
+          message: `"${name}" is on both ${classNameOf(first)} and ${classNameOf(spec.classCode)}.`,
+        });
+      } else if (!first) owner.set(name, spec.classCode);
+    }
+  });
+  // With every class hand-built nothing is randomized, so a skill left off every
+  // class has nowhere to go. Say which, and why the classes with room can't take it.
+  if (specs.length === MAX_BUILD_CLASSES) {
+    const open = specs.filter(s => Object.keys(s.slots ?? {}).length < SLOTS_PER_CLASS);
+    for (const s of skills) {
+      if (owner.has(s.skill) || open.length === 0) continue;
+      const reasons = open.map(o => blockReason(s.skill, o.classCode));
+      if (!reasons.every(Boolean)) continue; // a class with room can still take it
+      issues.push({
+        severity: 'error', code: 'unplaced_skill', skill: s.skill,
+        message: `"${s.skill}" isn't on any class, and ${open.map(o => classNameOf(o.classCode)).join(' and ')} can't take it: ${reasons[0]} Put it on another class and move something else here.`,
+      });
+    }
+  }
+  return issues;
+}
+
 // ---------------------------------------------------------------------------
 // Fill
 
@@ -221,6 +288,8 @@ export function fillEmptySlots(
   skills: BuildSkill[],
   treePages: Map<string, TreePage>,
   fillSeed: number,
+  /** Skills other hand-built classes already use. */
+  taken: ReadonlySet<string> = new Set(),
 ): ClassBuild {
   const pages = resolvePages(spec, treePages);
   if (!pages) return spec;
@@ -230,19 +299,35 @@ export function fillEmptySlots(
 
   const placed = new Set(Object.values(spec.slots));
   const rng = createRNG(fillSeed);
-  const pool = rng.shuffle(
-    skills.filter(s => !placed.has(s.skill) && !blockReason(s.skill, spec.classCode)),
+  let pool = rng.shuffle(
+    skills.filter(s => !placed.has(s.skill) && !taken.has(s.skill) && !blockReason(s.skill, spec.classCode)),
   );
+  // This class's own locked skills go first: no other class can use them, so a
+  // fill that left them out would turn them into stand-ins (or, once every class
+  // is hand-built, leave them with nowhere to go at all).
+  // A locked skill with a partner (Fury needs Wearwolf) brings the partner along.
+  const own = (s: BuildSkill) => HARDCODED_CLASS_SKILLS[s.skill] === spec.classCode;
+  const ownPartners = new Set(pool.filter(own).flatMap(s => partnersFor(s) ?? []));
+  const first = (s: BuildSkill) => own(s) || ownPartners.has(s.skill);
+  // Partners go ahead of the skills that need them, so both fit in one pass.
+  pool = [...pool.filter(s => ownPartners.has(s.skill)), ...pool.filter(s => own(s) && !ownPartners.has(s.skill)),
+    ...pool.filter(s => !first(s))];
+  // Beside other hand-built classes they skip the partner check too (Fury without
+  // Wearwolf only warns); alone, a missing partner still leaves them out.
+  const ownFirst = (s: BuildSkill) => taken.size > 0 && own(s);
 
   const picked: BuildSkill[] = [];
   const has = (name: string) => placed.has(name) || picked.some(p => p.skill === name);
-  // Two passes so a partner picked late still lets its dependants in.
-  for (let pass = 0; pass < 2 && picked.length < empty.length; pass++) {
+  // Two passes so a partner picked late still lets its dependants in. When what is
+  // left only just fits (the last class of a full build), a third pass takes the
+  // partner skills too: they warn, but a slot can't stay empty.
+  const lastFit = taken.size > 0 && pool.length <= empty.length;
+  for (let pass = 0; pass < (lastFit ? 3 : 2) && picked.length < empty.length; pass++) {
     for (const s of pool) {
       if (picked.length >= empty.length) break;
       if (has(s.skill)) continue;
       const partners = partnersFor(s);
-      if (partners && !partners.some(has)) continue;
+      if (pass < 2 && !ownFirst(s) && partners && !partners.some(has)) continue;
       picked.push(s);
     }
   }

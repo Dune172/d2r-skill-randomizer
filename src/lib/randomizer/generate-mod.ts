@@ -39,6 +39,8 @@ import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { applySkillPoints } from '@/lib/skill-points';
+import { shuffleShareOf } from '@/lib/shuffle-amount';
+import { DEFAULT_MOD_EXTRAS, openClassItems, type ModExtras } from '@/lib/mod-extras';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
 import { applyMutations, preApplyMagicAffixMutationsFor, getMutationExcludedSkillsFor, hasMutation } from '@/lib/randomizer/mutations';
 import { MUTATIONS } from '@/lib/mutations/registry';
@@ -86,6 +88,10 @@ export interface GenerateModOptions {
   xpDifficulties: number[];
   /** Skill points per level (1–3); absent is vanilla 1. Challenges and AP never set it. */
   skillPoints?: number;
+  /** Shuffle amount 100/50/25 (src/lib/shuffle-amount.ts); absent is a full shuffle. Never with a build. */
+  shuffleAmount?: number;
+  /** Seasonal decorations and open class items (src/lib/mod-extras.ts); absent is the default. */
+  extras?: ModExtras;
   raceMode: boolean;
   enemyShuffle: boolean;
   /** Open Acts settings; DEFAULT_OPEN_ACTS when off. */
@@ -130,6 +136,8 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     xpActs,
     xpDifficulties,
     skillPoints = 1,
+    shuffleAmount = 100,
+    extras = DEFAULT_MOD_EXTRAS,
     raceMode,
     enemyShuffle,
     openActs,
@@ -143,7 +151,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   // Open Acts' quest shuffle edits objects and treasure classes; its open acts alone are a
   // starter save and nothing else, which AP mode uses (ApModeOptions.openActs).
   if (ap && (weeklyEnabled || forgottenArts || classBuild || raceMode || mutationIds.length
-    || openActs.shuffle)) {
+    || openActs.shuffle || !extras.seasonal || extras.anyClassItems)) {
     throw new Error('Archipelago mode cannot be combined with challenges, mutations, the quest shuffle, Race Mode or a Class Builder build');
   }
   if (ap && openActs.acts.length && !ap.openActs) {
@@ -169,6 +177,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     skills,
     excludeSkills: getMutationExcludedSkillsFor(mutationIds),
     build: classBuild ?? undefined,
+    shuffleShare: shuffleShareOf(shuffleAmount),
   });
   const treeAssignments = placed.treeAssignments;
   const droppedSkillNames = placed.droppedSkillNames;
@@ -1005,7 +1014,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     chatPanelHdJson: disableChat ? formatUiJson(chatPanelHdRaw) : undefined,
     magicPrefixTxt: magicPrefixContent,
     magicSuffixTxt: magicSuffixContent,
-    itemtypesTxt,
+    itemtypesTxt: extras.anyClassItems && itemtypesTxt ? openClassItems(itemtypesTxt) : itemtypesTxt,
     dataVersionBuild,
     armorTxt,
     weaponsTxt,
@@ -1015,7 +1024,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     animDataD2: animAssets.animData,
     charCofs: animAssets.cofs,
     // A multiworld can outlast a season. Its mod must not change when the month does.
-    seasonFiles: ap ? undefined : seasonFilesForNow(),
+    seasonFiles: ap || !extras.seasonal ? undefined : seasonFilesForNow(),
     questsJson: openActsFiles.questsJson,
     openActsSpoilerJson: openActsFiles.spoilerJson,
     starterSaves: openActsFiles.starterSaves,

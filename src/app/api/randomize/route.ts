@@ -14,6 +14,8 @@ import { isMutationActiveForWeek } from '@/lib/randomizer/mutations';
 import { getMutationIds } from '@/lib/mutations/registry';
 import { normalizeMutationIds, validateMutations, mutationCacheSegment, mutationFeatureKeys } from '@/lib/mutations/custom';
 import { normalizeSkillPoints, skillPointsCacheSegment } from '@/lib/skill-points';
+import { normalizeShuffleAmount, shuffleAmountCacheSegment } from '@/lib/shuffle-amount';
+import { DEFAULT_MOD_EXTRAS, modExtrasCacheSegment, modExtrasFeatureKeys, normalizeModExtras } from '@/lib/mod-extras';
 import { DEFAULT_OPEN_ACTS, normalizeOpenActs, openActsCacheSegment, openActsFeatureKeys } from '@/lib/randomizer/open-acts/options';
 import { recordFeatures } from '@/lib/feature-stats';
 
@@ -89,6 +91,12 @@ export async function POST(request: NextRequest) {
     // Challenges keep vanilla skill points so every leaderboard run plays the same rules.
     // Mirrored in /api/download so the cache keys agree.
     const skillPoints = weeklyEnabled || forgottenArts ? 1 : normalizeSkillPoints(body.skillPoints);
+    // Partial shuffle is a Generate page option: challenges keep the full shuffle, and a
+    // Class Builder build randomizes the other seven classes fully. Mirrored in /api/download.
+    const shuffleAmount = classBuild || weeklyEnabled || forgottenArts ? 100 : normalizeShuffleAmount(body.shuffleAmount);
+    // Seasonal decorations and open class items: Generate page and Class Builder only, so
+    // every challenge zip stays the same for every player. Mirrored in /api/download.
+    const extras = weeklyEnabled || forgottenArts ? DEFAULT_MOD_EXTRAS : normalizeModExtras(body);
     // Weekly challenges are always full randomization — never Race Mode. Force it
     // off server-side so no caller (challenge page, warmup, or a hand-built link)
     // can produce a race-mode challenge regardless of the raceMode they pass.
@@ -108,7 +116,7 @@ export async function POST(request: NextRequest) {
     const customMutations = weeklyEnabled ? [] : normalizeMutationIds(body.mutations);
     const mutationError = validateMutations(customMutations, {
       openActsShuffle: openActs.shuffle,
-      buildSkills: classBuild ? Object.values(classBuild.spec.slots) : undefined,
+      buildSkills: classBuild ? classBuild.skillNames : undefined,
     });
     if (mutationError) return NextResponse.json({ error: mutationError }, { status: 400 });
     const mutationIds: readonly number[] = weeklyEnabled ? getMutationIds(weekNumber) : customMutations;
@@ -116,6 +124,8 @@ export async function POST(request: NextRequest) {
       ...openActsFeatureKeys(openActs, { raceMode, classBuild: !!classBuild }),
       ...mutationFeatureKeys(customMutations),
       ...(skillPoints > 1 ? [`skill-points:${skillPoints}`] : []),
+      ...(shuffleAmount < 100 ? [`shuffle:${shuffleAmount}`] : []),
+      ...modExtrasFeatureKeys(extras),
     ];
     if (!classBuild && !seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -131,7 +141,8 @@ export async function POST(request: NextRequest) {
     const effectiveXpDifficulties = xpMultiplier > 1 ? xpDifficulties : [1, 2, 3];
     const cacheKey = withBuildSegment(
       makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
-        + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations) + skillPointsCacheSegment(skillPoints),
+        + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations) + skillPointsCacheSegment(skillPoints)
+        + shuffleAmountCacheSegment(shuffleAmount) + modExtrasCacheSegment(extras),
       classBuild?.code,
     );
     const ready = { seed, status: 'ready', ...(classBuild ? { build: classBuild.code, modName: classBuild.modName } : {}) };
@@ -198,6 +209,8 @@ export async function POST(request: NextRequest) {
       xpActs,
       xpDifficulties,
       skillPoints,
+      shuffleAmount,
+      extras,
       raceMode,
       enemyShuffle,
       openActs,

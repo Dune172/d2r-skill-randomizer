@@ -75,7 +75,7 @@ const sections: { heading: string; items: QA[] }[] = [
       },
       {
         q: 'What is the Class Builder?',
-        text: 'The Class Builder is the second tab on the Generate page. You pick one class, choose a layout for each of its three tabs from any of the 24 vanilla skill trees, and place any skill wherever you want it. The other seven classes are then randomized from the skills you left out. Each build has a short share link that recreates the exact same mod.',
+        text: 'The Class Builder is the second tab on the Generate page. You pick a class, choose a layout for each of its three tabs from any of the 24 vanilla skill trees, and place any skill wherever you want it. You can build more than one class in the same mod, even all eight, for example one each for a group of friends; each skill can only be on one class. Every class you don’t build is randomized from the skills you left out. Each build has a share link that recreates the exact same mod.',
       },
       {
         q: 'What is Open Acts?',
@@ -110,7 +110,7 @@ const sections: { heading: string; items: QA[] }[] = [
       },
       {
         q: 'What other options are there?',
-        text: 'The generator can also shuffle ordinary monster families between acts (with stats and rewards rebalanced for their new areas), remove skill prerequisites, boost experience per difficulty, start you with a Teleport staff or a Horadric Cube, give every mercenary a random aura, and hide the chat box. Each option has a short explanation next to it on the generator.',
+        text: 'The generator can also shuffle ordinary monster families between acts (with stats and rewards rebalanced for their new areas), shuffle only 50% or 25% of each class’s tree so the rest stays where it is in the normal game, give 2 or 3 skill points per level, remove skill prerequisites, boost experience per difficulty, start you with a Teleport staff or a Horadric Cube, let every class use class-only items such as orbs and shrunken heads, give every mercenary a random aura, and hide the chat box. Each option has a short explanation next to it on the generator.',
       },
     ],
   },
@@ -156,7 +156,24 @@ const sections: { heading: string; items: QA[] }[] = [
       },
       {
         q: 'Does it work with other mods?',
-        text: 'The game loads one mod at a time, so the randomizer replaces any other mod while it is selected. Merging it with large overhaul mods is not supported because both change the same skill files.',
+        text: 'The game loads one mod at a time, so to use another mod with the randomizer you merge them into one folder. Mods that only change files the randomizer doesn’t write, such as many sound, graphics and interface mods, usually combine fine: copy the other mod’s data folder into the randomizer’s mod folder, and where both have the same file, keep the randomizer’s copy. Item and balance overhauls usually don’t combine, because they edit the same tables the randomizer rewrites and the randomizer renumbers every skill. The randomizer always writes skills.txt, skilldesc.txt, charstats.txt, hireling.txt, monstats.txt, superuniques.txt, uniqueitems.txt, magicprefix.txt, magicsuffix.txt and itemtypes.txt in data/global/excel, the skill and item-modifier strings, the skill icons, animdata.d2 and controllerskillsettings.json. Some options add more files. Turn on Skip seasonal decorations to leave out the autumn and winter town files, which clash with mods that change towns or map art. Merged mods are not supported, so test in a new character first.',
+        body: (
+          <>
+            The game loads one mod at a time, so to use another mod with the randomizer you merge them into one
+            folder. Mods that only change files the randomizer doesn&apos;t write, such as many sound, graphics and
+            interface mods, usually combine fine: copy the other mod&apos;s <code>data</code> folder into the
+            randomizer&apos;s mod folder, and where both have the same file, keep the randomizer&apos;s copy. Item and
+            balance overhauls usually don&apos;t combine, because they edit the same tables the randomizer rewrites and
+            the randomizer renumbers every skill. The randomizer always writes <code>skills.txt</code>,{' '}
+            <code>skilldesc.txt</code>, <code>charstats.txt</code>, <code>hireling.txt</code>,{' '}
+            <code>monstats.txt</code>, <code>superuniques.txt</code>, <code>uniqueitems.txt</code>,{' '}
+            <code>magicprefix.txt</code>, <code>magicsuffix.txt</code> and <code>itemtypes.txt</code> in{' '}
+            <code>data/global/excel</code>, the skill and item-modifier strings, the skill icons,{' '}
+            <code>animdata.d2</code> and <code>controllerskillsettings.json</code>. Some options add more files. Turn
+            on <strong>Skip seasonal decorations</strong> to leave out the autumn and winter town files, which clash
+            with mods that change towns or map art. Merged mods are not supported, so test in a new character first.
+          </>
+        ),
       },
       {
         q: 'The skill trees look normal. What went wrong?',
