@@ -14,7 +14,7 @@ v0.335 adds crawlable, original pages and trust signals:
 
 - `/guide/install`, `/faq` and `/mutations` (guides), plus `/about`, `/contact` and `/terms`. They all use `src/app/components/ContentPage.tsx`, which shows a visible "Last updated" date. They use `revalidate = 3600`, not `force-static`.
 - A server-rendered "How the generator works" section on `/generate`, a Guides section on the home page, and a Guides menu in the header. Footer links to every trust page.
-- `contact@d2rrandomizer.com` on Contact, About, Terms and Privacy. The mailbox or forwarding must exist before deploy.
+- `diablo2randomizer@gmail.com` on Contact, About, Terms and Privacy. (v0.335 first listed `contact@d2rrandomizer.com`, but the domain has no mail records, so it bounced; switched to the Gmail address in November 2026.)
 - The archive's Ko-fi modal (which also said "ad-free") is now an inline card. The temporary `/challenge/preview-october` page was removed. A `not-found.tsx` page was added, and sitemap dates were updated.
 
 Before re-requesting review:

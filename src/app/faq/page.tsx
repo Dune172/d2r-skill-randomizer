@@ -176,7 +176,7 @@ const sections: { heading: string; items: QA[] }[] = [
       },
       {
         q: 'How do I report a bug or suggest a feature?',
-        text: 'Post in the D2R Randomizer Discord or email contact@d2rrandomizer.com. Include the seed, the options you used, and a screenshot if something looks wrong. Fixes are listed in the patch notes.',
+        text: 'Post in the D2R Randomizer Discord or email diablo2randomizer@gmail.com. Include the seed, the options you used, and a screenshot if something looks wrong. Fixes are listed in the patch notes.',
         body: (
           <>
             Post in the{' '}
@@ -209,7 +209,7 @@ export default function FaqPage() {
       <ContentPage
         eyebrow="Help"
         title="Frequently Asked Questions"
-        updated="2026-10-29"
+        updated="2026-11-03"
         intro={
           <p>
             Short answers about safety, how the shuffle works, the monthly challenges and getting a mod
