@@ -19,8 +19,8 @@ const howToSchema = {
   tool: [{ '@type': 'HowToTool', name: 'Diablo II: Resurrected (PC)' }],
   step: [
     { '@type': 'HowToStep', name: 'Generate and download the mod', text: 'Open the generator, pick a seed and options, and download the ZIP file.' },
-    { '@type': 'HowToStep', name: 'Extract the ZIP', text: 'Extract the ZIP anywhere, such as your Desktop. It contains one folder named after your seed or build, plus a launch shortcut.' },
-    { '@type': 'HowToStep', name: 'Copy the folder into mods', text: 'Copy the extracted mod folder into the mods folder inside your Diablo II: Resurrected install folder. Create mods if it does not exist.' },
+    { '@type': 'HowToStep', name: 'Extract the ZIP', text: 'Right-click the ZIP and choose Extract All. You get one folder named after your seed or build, such as seed12345, holding the mod, a launch shortcut and a README.' },
+    { '@type': 'HowToStep', name: 'Move the folder into mods', text: 'Move that whole folder into the mods folder inside your Diablo II: Resurrected install folder, so the path ends in mods\\seed12345\\seed12345.mpq. Create mods if it does not exist.' },
     { '@type': 'HowToStep', name: 'Add the launch options', text: 'Use the included shortcut, or add -mod followed by the folder name and -txt to the game launch options in Battle.net or Steam.' },
     { '@type': 'HowToStep', name: 'Create a new offline character', text: 'Start the game, create a new offline character, and open the skill tree to confirm the skills are randomized.' },
   ],
@@ -33,7 +33,7 @@ export default function InstallGuidePage() {
       <ContentPage
         eyebrow="Guide"
         title="How to Install a D2R Randomizer Mod"
-        updated="2026-10-29"
+        updated="2026-11-03"
         intro={
           <p>
             A D2R Randomizer mod is a small folder of game data files that Diablo II: Resurrected loads
@@ -81,27 +81,34 @@ export default function InstallGuidePage() {
 
         <h2>Step 2: Extract the ZIP</h2>
         <p>
-          Right-click the ZIP and choose <em>Extract All</em>, or use 7-Zip or WinRAR. Extract it anywhere;
-          your Desktop is fine. Inside you&apos;ll find:
+          Right-click the ZIP and choose <em>Extract All</em> (or <em>Extract to seed12345\</em> in 7-Zip or
+          WinRAR). The ZIP is named after your mod, so this gives you one folder with the same name, such as{' '}
+          <code>seed12345</code>. Class Builder mods are named after the build instead. That folder is the mod.
+          Inside it you&apos;ll find:
         </p>
         <ul>
           <li>
-            A <strong>mod folder</strong> named after your seed, such as <code>seed12345</code>. Class
-            Builder mods are named after the build instead. This folder holds the modified game data and
-            the skill tree artwork.
+            The <strong>game data</strong> folder <code>seed12345.mpq</code>, with the modified data files
+            and the skill tree artwork.
           </li>
           <li>
             A <strong>launch shortcut</strong> named <code>D2R Randomizer 12345.lnk</code>. It is an
             ordinary Windows shortcut that starts the game with the right launch options. It contains no
             program code of its own.
           </li>
+          <li>A short <code>README.txt</code> with these install steps.</li>
         </ul>
+        <p>
+          If your browser saved the file as <code>seed12345 (1).zip</code> because you downloaded it twice,
+          rename the extracted folder to <code>seed12345</code>. The folder name must match the mod.
+        </p>
 
-        <h2>Step 3: Copy the mod folder into the game&apos;s mods folder</h2>
+        <h2>Step 3: Move the mod folder into the game&apos;s mods folder</h2>
         <p>
           Open your Diablo II: Resurrected install folder. Inside it, open the <code>mods</code>{' '}folder,
-          or create it if it doesn&apos;t exist (all lower case). Copy the mod folder into it, so you end up
-          with a path like <code>Diablo II Resurrected\mods\seed12345\</code>.
+          or create it if it doesn&apos;t exist (all lower case). Move the whole <code>seed12345</code> folder
+          into it, so you end up with exactly this path:{' '}
+          <code>Diablo II Resurrected\mods\seed12345\seed12345.mpq</code>.
         </p>
         <p>Default install folders:</p>
         <ul>
@@ -113,17 +120,21 @@ export default function InstallGuidePage() {
           </li>
         </ul>
         <p>
-          Copy the folder itself, not the files inside it. A common mistake is ending up with a doubled
-          path such as <code>mods\seed12345\seed12345\</code>. If that happens, move the inner folder up
-          one level.
+          Move the folder itself, not the files inside it. If you end up with <code>mods\seed12345.mpq</code>,
+          the <code>seed12345</code> folder around it is missing; if you end up with{' '}
+          <code>mods\seed12345\seed12345\seed12345.mpq</code>, the folder is doubled. Either way the game
+          loads the normal skills, so fix the folders until the path matches the one above. (Mods downloaded
+          before November 2026 had an extra folder inside the ZIP; for those, move the inner{' '}
+          <code>seed12345</code> folder.)
         </p>
 
         <h2>Step 4: Launch the game with the mod</h2>
         <h3>Option A: the included shortcut (Battle.net, default folder)</h3>
         <p>
-          Double-click <code>D2R Randomizer 12345.lnk</code>. It starts <code>D2R.exe</code> from the
-          default Battle.net install folder with the mod already selected. Keep the Battle.net app running
-          in the background. If you installed the game somewhere else, or you play on Steam, use option B.
+          Double-click <code>D2R Randomizer 12345.lnk</code> in the mod folder. It starts <code>D2R.exe</code>{' '}
+          from the default Battle.net install folder with the mod already selected. Keep the Battle.net app
+          running in the background. If you installed the game somewhere else, the generator&apos;s install
+          steps can make a shortcut for your folder; on Steam, use option B.
         </p>
         <h3>Option B: launch options</h3>
         <p>
@@ -213,8 +224,9 @@ export default function InstallGuidePage() {
         <h3>The skill tree looks normal</h3>
         <p>
           The game didn&apos;t load the mod. Check that the folder name in <code>-mod</code> matches exactly,
-          that <code>-txt</code> is present, that the folder sits directly inside <code>mods</code> (not
-          doubled), and that you saved the launch options before starting the game.
+          that <code>-txt</code> is present, that the path is exactly{' '}
+          <code>mods\seed12345\seed12345.mpq</code> (see step 3), and that you saved the launch options
+          before starting the game.
         </p>
         <h3>The game crashes on start or shows an error</h3>
         <p>

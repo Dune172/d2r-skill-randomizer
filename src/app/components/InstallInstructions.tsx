@@ -24,7 +24,7 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
         <div className="space-y-2">
           <div className="flex items-start gap-2">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">1</span>
-            <span>Extract the ZIP anywhere — your Desktop is fine.</span>
+            <span>Right-click the ZIP and choose <em>Extract All</em>. You get one folder, <code className="text-[#a89858]">{mod}</code>.</span>
           </div>
           <div className="flex items-start gap-2">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">2</span>
@@ -38,12 +38,10 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
           <div className="flex items-start gap-2">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">3</span>
             <div>
-              Copy the extracted folder (e.g.{' '}
-              <code className="text-[#a89858]">{mod}\</code>
-              ) into the{' '}
-              <code className="text-[#a89858]">mods\</code>
-              {' '}folder.
-              <div className="mt-1 text-[#7a7858] italic">{modName ? 'The folder name identifies your build' : 'The folder name matches your seed number'} — this is normal.</div>
+              Move that whole <code className="text-[#a89858]">{mod}</code> folder into{' '}
+              <code className="text-[#a89858]">mods\</code>. It should end up as:
+              <code className="block text-[#a89858] break-all mt-0.5">mods\{mod}\{mod}.mpq</code>
+              <div className="mt-1 text-[#7a7858] italic">If the folder is called &ldquo;{mod} (1)&rdquo;, rename it to {mod}.</div>
             </div>
           </div>
         </div>
@@ -55,7 +53,7 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
               <div>
                 <span className="text-[#c8942a] font-semibold">Easy</span>{' '}
                 <span className="text-[#4a7a4a] border border-[#4a7a4a] rounded px-1 text-[10px]">recommended</span>
-                <div className="mt-0.5">Double-click the included shortcut:</div>
+                <div className="mt-0.5">Double-click the shortcut in the {mod} folder:</div>
                 <code className="block text-[#a89858] mt-0.5">D2R Randomizer {seed}.lnk</code>
                 <CustomShortcut mod={mod} seed={seed} raceMode={raceMode} />
               </div>
@@ -82,7 +80,7 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
         <div className="space-y-2">
           <div className="flex items-start gap-2">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">1</span>
-            <span>Extract the ZIP anywhere — your Desktop is fine.</span>
+            <span>Right-click the ZIP and choose <em>Extract All</em>. You get one folder, <code className="text-[#a89858]">{mod}</code>.</span>
           </div>
           <div className="flex items-start gap-2">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">2</span>
@@ -96,12 +94,10 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
           <div className="flex items-start gap-2">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-[#c8942a] text-[#c8942a] text-[10px] font-bold flex-shrink-0 mt-0.5">3</span>
             <div>
-              Copy the extracted folder (e.g.{' '}
-              <code className="text-[#a89858]">{mod}/</code>
-              ) into the{' '}
-              <code className="text-[#a89858]">mods/</code>
-              {' '}folder.
-              <div className="mt-1 text-[#7a7858] italic">{modName ? 'The folder name identifies your build' : 'The folder name matches your seed number'} — this is normal.</div>
+              Move that whole <code className="text-[#a89858]">{mod}</code> folder into{' '}
+              <code className="text-[#a89858]">mods/</code>. It should end up as:
+              <code className="block text-[#a89858] break-all mt-0.5">mods/{mod}/{mod}.mpq</code>
+              <div className="mt-1 text-[#7a7858] italic">If the folder is called &ldquo;{mod} (1)&rdquo;, rename it to {mod}.</div>
             </div>
           </div>
           <div className="flex items-start gap-2">

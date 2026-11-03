@@ -287,7 +287,19 @@ async function hashTuple(tuple) {
   return Object.fromEntries(Object.entries(entries).sort(([a], [b]) => a.localeCompare(b)));
 }
 
-function diffEntries(expected, actual) {
+/**
+ * Entry names relative to the mod folder: seedN/seedN.mpq/... (the nested zips before
+ * PIPELINE_VERSION 64, and Archipelago zips) and seedN.mpq/... (flat, hand-installed)
+ * both become seedN.mpq/..., so a fixture captured in either layout checks the other.
+ */
+function relativeToMod(entries) {
+  const mod = Object.keys(entries).map(name => name.match(/(?:^|\/)([^/]+)\.mpq\//)?.[1]).find(Boolean);
+  return Object.fromEntries(Object.entries(entries).map(([name, hash]) =>
+    [mod && name.startsWith(`${mod}/`) ? name.slice(mod.length + 1) : name, hash]));
+}
+
+function diffEntries(expectedRaw, actualRaw) {
+  const expected = relativeToMod(expectedRaw), actual = relativeToMod(actualRaw);
   const problems = [];
   for (const [file, hash] of Object.entries(expected)) {
     if (!(file in actual)) problems.push(`    MISSING  ${file}`);

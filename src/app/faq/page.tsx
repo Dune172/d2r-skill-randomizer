@@ -177,12 +177,13 @@ const sections: { heading: string; items: QA[] }[] = [
       },
       {
         q: 'The skill trees look normal. What went wrong?',
-        text: 'The game did not load the mod. Check that the folder name after -mod matches the folder in your mods directory exactly, that -txt is present, and that the folder is not nested inside a second folder of the same name.',
+        text: 'The game did not load the mod. The folders are usually at the wrong level: the path must be exactly mods\\seed12345\\seed12345.mpq (with your mod\'s name), not mods\\seed12345.mpq and not mods\\seed12345\\seed12345\\seed12345.mpq. Also check that the folder name after -mod matches exactly and that -txt is present.',
         body: (
           <>
-            The game did not load the mod. Check that the folder name after <code>-mod</code> matches the
-            folder in your <code>mods</code> directory exactly, that <code>-txt</code>{' '}is present, and that the
-            folder isn&apos;t nested inside a second folder of the same name. The{' '}
+            The game did not load the mod. The folders are usually at the wrong level: the path must be exactly{' '}
+            <code>mods\seed12345\seed12345.mpq</code> (with your mod&apos;s name), not{' '}
+            <code>mods\seed12345.mpq</code> and not <code>mods\seed12345\seed12345\seed12345.mpq</code>. Also check
+            that the folder name after <code>-mod</code> matches exactly and that <code>-txt</code>{' '}is present. The{' '}
             <Link href="/guide/install">install guide</Link> has more fixes.
           </>
         ),

@@ -44,4 +44,7 @@
 // classes instead) and re-rolls vanilla item procs whose row became an aura/passive.
 // v63 renames the skill tabs and their item strings from "Random N" to "Skill Tree N"
 // (strings only: no RNG, same trees).
-export const PIPELINE_VERSION = 63;
+// v64 flattens hand-installed zips: the zip root is the mod folder (seedN.mpq/, the
+// shortcut, a new README.txt), downloaded as seedN.zip. Archipelago zips keep the
+// seedN/ prefix their client expects. Same files and bytes otherwise.
+export const PIPELINE_VERSION = 64;

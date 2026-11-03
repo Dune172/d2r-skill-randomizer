@@ -3,27 +3,14 @@ import { seedFromString } from '@/lib/randomizer/seed';
 import { getCached, makeCacheKey, withBuildSegment } from '@/lib/zip-cache';
 import { BuildRequestError, resolveClassBuild } from '@/lib/builder/class-build-server';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
-import { getWeekName, getActiveMutations } from '@/lib/mutations/registry';
-import { getWeekStart, getCurrentWeekNumber } from '@/lib/challenge/week';
+import { getActiveMutations } from '@/lib/mutations/registry';
+import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
 import { DEFAULT_OPEN_ACTS, openActsCacheSegment, openActsFromParams } from '@/lib/randomizer/open-acts/options';
 import { mutationCacheSegment, parseMutationParam } from '@/lib/mutations/custom';
 import { parseSkillPoints, skillPointsCacheSegment } from '@/lib/skill-points';
 import { parseShuffleAmount, shuffleAmountCacheSegment } from '@/lib/shuffle-amount';
 import { DEFAULT_MOD_EXTRAS, modExtrasCacheSegment, modExtrasFromParams } from '@/lib/mod-extras';
-
-function slugifyChallenge(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-}
-
-function formatLaIsoDate(date: Date): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Los_Angeles',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
 
 export const maxDuration = 60;
 
@@ -120,15 +107,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const weekParam = searchParams.get('week');
-    const weekNumber = weekParam ? Number(weekParam) : NaN;
-    const isWeekly = weeklyParam && Number.isInteger(weekNumber) && weekNumber >= 1;
-    const mutated = customMutations.length ? '_mutated' : '';
-    const filename = classBuild
-      ? `d2rr_${classBuild.modName}${mutated}.zip`
-      : isWeekly
-        ? `d2rr_${slugifyChallenge(getWeekName(weekNumber))}_${formatLaIsoDate(getWeekStart(weekNumber))}.zip`
-        : `d2rr_export_${seed}${mutated}.zip`;
+    // The zip's root is the mod folder (src/lib/zip-builder.ts), so it is named after
+    // the mod: Windows' Extract All then makes exactly the folder that goes into mods.
+    // Must match generateMod's modName.
+    const filename = `${classBuild ? classBuild.modName : `seed${seed}`}.zip`;
 
     // A stream serves the cached bytes without rebuilding the archive or
     // copying the whole Buffer into a new response body for each download.
