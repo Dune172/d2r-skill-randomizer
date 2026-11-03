@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.338',
+    date: 'November 2026',
+    tagline: 'More skill points, shortcuts for any install folder, clearer tab names',
+    notes: [
+      'New Skill points option on the Generate page and in the Class Builder: get 1, 2 or 3 skill points each level, so you can use more of your shuffled skills. Quest rewards are unchanged, and challenges always use 1',
+      'Game installed outside the default folder? Paste your folder under the shortcut step after generating and download a shortcut that launches the game from there',
+      'Skill tabs are now called Skill Tree 1, 2 and 3 instead of Random 1, 2 and 3, in the skill window, on items and in the spoiler. Your seed still generates exactly the same trees',
+      'New Copy seed info button under the install steps. It copies the site version, mod folder, seed and link, ready to paste into a bug report on Discord',
+    ],
+  },
+  {
     version: 'v0.337',
     date: 'October 2026',
     tagline: 'Add mutations to your own mods',

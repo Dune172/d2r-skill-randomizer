@@ -10,6 +10,7 @@
     "ap:test": "python apworld/dev/test_tables.py && node scripts/verify-ap-ids.mjs && node scripts/verify-ap-options.mjs && cd tools/ap-client && go vet ./... && go test ./...",
     "test:enemies": "node scripts/verify-enemy-shuffle.mjs",
     "test:mutations": "node --test scripts/verify-custom-mutations.mjs",
+    "test:options": "node --test scripts/verify-quick-options.mjs",
     "start": "VIPS_CONCURRENCY=2 UV_THREADPOOL_SIZE=4 next start"
   },
   "dependencies": {

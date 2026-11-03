@@ -42,4 +42,6 @@
 // so gamepad skill behavior follows each skill instead of its old row.
 // v62 keeps mercenary skills out of Race Mode's Prayer filler (locked on filler
 // classes instead) and re-rolls vanilla item procs whose row became an aura/passive.
-export const PIPELINE_VERSION = 62;
+// v63 renames the skill tabs and their item strings from "Random N" to "Skill Tree N"
+// (strings only: no RNG, same trees).
+export const PIPELINE_VERSION = 63;

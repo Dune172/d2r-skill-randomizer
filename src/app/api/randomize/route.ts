@@ -13,6 +13,7 @@ import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit
 import { isMutationActiveForWeek } from '@/lib/randomizer/mutations';
 import { getMutationIds } from '@/lib/mutations/registry';
 import { normalizeMutationIds, validateMutations, mutationCacheSegment, mutationFeatureKeys } from '@/lib/mutations/custom';
+import { normalizeSkillPoints, skillPointsCacheSegment } from '@/lib/skill-points';
 import { DEFAULT_OPEN_ACTS, normalizeOpenActs, openActsCacheSegment, openActsFeatureKeys } from '@/lib/randomizer/open-acts/options';
 import { recordFeatures } from '@/lib/feature-stats';
 
@@ -85,6 +86,9 @@ export async function POST(request: NextRequest) {
     const xpDifficulties: number[] = Array.isArray(body.xpDifficulties)
       ? (body.xpDifficulties as unknown[]).map(Number).filter(n => n >= 1 && n <= 3)
       : [1, 2, 3];
+    // Challenges keep vanilla skill points so every leaderboard run plays the same rules.
+    // Mirrored in /api/download so the cache keys agree.
+    const skillPoints = weeklyEnabled || forgottenArts ? 1 : normalizeSkillPoints(body.skillPoints);
     // Weekly challenges are always full randomization — never Race Mode. Force it
     // off server-side so no caller (challenge page, warmup, or a hand-built link)
     // can produce a race-mode challenge regardless of the raceMode they pass.
@@ -111,6 +115,7 @@ export async function POST(request: NextRequest) {
     const featureKeys = [
       ...openActsFeatureKeys(openActs, { raceMode, classBuild: !!classBuild }),
       ...mutationFeatureKeys(customMutations),
+      ...(skillPoints > 1 ? [`skill-points:${skillPoints}`] : []),
     ];
     if (!classBuild && !seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -126,7 +131,7 @@ export async function POST(request: NextRequest) {
     const effectiveXpDifficulties = xpMultiplier > 1 ? xpDifficulties : [1, 2, 3];
     const cacheKey = withBuildSegment(
       makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
-        + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations),
+        + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations) + skillPointsCacheSegment(skillPoints),
       classBuild?.code,
     );
     const ready = { seed, status: 'ready', ...(classBuild ? { build: classBuild.code, modName: classBuild.modName } : {}) };
@@ -192,6 +197,7 @@ export async function POST(request: NextRequest) {
       xpMultiplier,
       xpActs,
       xpDifficulties,
+      skillPoints,
       raceMode,
       enemyShuffle,
       openActs,

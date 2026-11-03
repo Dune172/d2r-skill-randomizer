@@ -8,6 +8,7 @@ import { getWeekStart, getCurrentWeekNumber } from '@/lib/challenge/week';
 import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
 import { DEFAULT_OPEN_ACTS, openActsCacheSegment, openActsFromParams } from '@/lib/randomizer/open-acts/options';
 import { mutationCacheSegment, parseMutationParam } from '@/lib/mutations/custom';
+import { parseSkillPoints, skillPointsCacheSegment } from '@/lib/skill-points';
 
 function slugifyChallenge(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
@@ -97,9 +98,11 @@ export async function GET(request: NextRequest) {
       ? DEFAULT_OPEN_ACTS : openActsFromParams(name => searchParams.get(name), raceMode);
     // Picked mutations, normalized the same way /api/randomize does; challenges ignore them.
     const customMutations = weeklyParam ? [] : parseMutationParam(searchParams.get('mut'));
+    // Same guard as /api/randomize: challenges keep vanilla skill points.
+    const skillPoints = weeklyParam || forgottenArts ? 1 : parseSkillPoints(searchParams.get('skillPoints'));
     const cacheKey = withBuildSegment(
       makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
-        + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations),
+        + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations) + skillPointsCacheSegment(skillPoints),
       classBuild?.code,
     );
     const zipBuffer = getCached(cacheKey);

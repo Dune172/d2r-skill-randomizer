@@ -12,6 +12,8 @@ import { generateMod } from '@/lib/generate-mod';
 import AdUnit from './AdUnit';
 import { DEFAULT_OPEN_ACTS, openActsFromParams, openActsToParams, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 import { encodeMutationParam, parseMutationParam } from '@/lib/mutations/custom';
+import { parseSkillPoints } from '@/lib/skill-points';
+import { SITE_UPDATED, SITE_VERSION } from '@/lib/site-version';
 
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
 
@@ -26,6 +28,8 @@ interface Options {
   xpMultiplier: number;
   xpActs: number[];
   xpDifficulties: number[];
+  /** Skill points per level, 1–3. */
+  skillPoints: number;
   raceMode: boolean;
   enemyShuffle: boolean;
   forgottenArts: boolean;
@@ -45,6 +49,7 @@ const defaultOptions: Options = {
   xpMultiplier: 1,
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1],
+  skillPoints: 1,
   raceMode: true,
   enemyShuffle: false,
   forgottenArts: false,
@@ -80,6 +85,7 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
     xpDifficulties: p.has('xpDifficulties')
       ? p.get('xpDifficulties')!.split(',').map(Number).filter(n => n >= 1 && n <= 3)
       : [1, 2, 3],
+    skillPoints: parseSkillPoints(p.get('skillPoints')),
     raceMode: p.get('raceMode') !== '0',
     enemyShuffle: p.get('enemyShuffle') === '1',
     forgottenArts: false, // challenge-only
@@ -125,9 +131,10 @@ export default function RandomizerApp() {
     const xpDiffParam       = opts.xpMultiplier > 1 ? `&xpDifficulties=${[...opts.xpDifficulties].sort((a, b) => a - b).join(',')}` : '';
     const raceModeParam     = !opts.raceMode ? '&raceMode=0' : '';
     const enemyParam = opts.enemyShuffle ? '&enemyShuffle=1' : '';
+    const skillPointsParam = opts.skillPoints > 1 ? `&skillPoints=${opts.skillPoints}` : '';
     // Part of the download cache key: /api/download parses it back the same way.
     const mutParam = opts.mutations.length ? `&mut=${encodeMutationParam(opts.mutations)}` : '';
-    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}${openActsToParams(opts.openActs, opts.raceMode)}${mutParam}`;
+    return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${skillPointsParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}${openActsToParams(opts.openActs, opts.raceMode)}${mutParam}`;
   };
 
   const handleGenerate = async (seedInput: string, options: Options) => {
@@ -158,7 +165,7 @@ export default function RandomizerApp() {
 
       setStatus('building');
       const buildingStart = Date.now();
-      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts, openActs: options.openActs, mutations: options.mutations });
+      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, skillPoints: options.skillPoints, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts, openActs: options.openActs, mutations: options.mutations });
 
       await generateMod(buildBody, setErrorMessage);
 
@@ -249,7 +256,7 @@ export default function RandomizerApp() {
       </p>
 
       <p className="text-center font-cinzel text-[11px] tracking-[0.3em] uppercase text-[#7a5818] pt-2">
-        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}v0.337: updated October 2026
+        {modCount !== null ? <>{modCount.toLocaleString()} mods generated &mdash; </> : null}{SITE_VERSION}: updated {SITE_UPDATED}
       </p>
     </div>
   );

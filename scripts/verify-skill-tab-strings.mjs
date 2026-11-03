@@ -1,21 +1,23 @@
 /**
  * verify-skill-tab-strings.mjs
  *
- * Read-only check that the two families of "Random N" skill-tree labels agree,
+ * Read-only check that the two families of "Skill Tree N" labels agree,
  * so a "+N to Random X" item always names the tab it actually boosts.
  *
  * Two independent string families describe the same three trees:
  *
  *   Item side   charstats.txt StrSkillTab1/2/3 (column P = SkillPage P)
  *               -> StrSklTabItem* in data/local/strings/item-modifiers.json
- *   Label side  SkillCategoryXxN in SKILL_CATEGORY_OVERRIDES (src/app/api/randomize/route.ts)
+ *   Label side  SkillCategoryXxN in SKILL_CATEGORY_OVERRIDES (src/lib/randomizer/generate-mod.ts)
  *
  * SkillCategoryXxN is the Nth tab left-to-right and the engine sits it over
  * SkillPage 4-N (vanilla proof: SkillCategoryAm1 = "Javelin and Spear" while
  * `jab` is SkillPage 3). So the invariant is:
  *
- *   SkillCategoryXxN     == "Random N"
- *   item string for page P == "Random (4-P)"
+ *   SkillCategoryXxN     == "Skill Tree N"
+ *   item string for page P == "Skill Tree (4-P)"
+ *
+ * (The tabs were called "Random N" until v0.338.)
  *
  * The two families used to be inverted: an amulet reading "+1 to Random 3"
  * buffed the tab labelled "Random 1". Page 2 coincided either way, which is why
@@ -32,7 +34,7 @@ import path from 'path';
 const ROOT = process.cwd();
 const CHARSTATS = path.join(ROOT, 'data', 'txt', 'charstats.txt');
 const ITEM_MODIFIERS = path.join(ROOT, 'data', 'local', 'strings', 'item-modifiers.json');
-const ROUTE = path.join(ROOT, 'src', 'app', 'api', 'randomize', 'route.ts');
+const ROUTE = path.join(ROOT, 'src', 'lib', 'randomizer', 'generate-mod.ts');
 
 // charstats.txt class name -> SkillCategory key prefix.
 const CATEGORY_PREFIX = {
@@ -80,14 +82,14 @@ if (missingClasses.length) {
 const itemModifiers = JSON.parse(fs.readFileSync(ITEM_MODIFIERS, 'utf8').replace(/^﻿/, ''));
 const itemStrings = new Map(itemModifiers.map((e) => [e.Key, e.enUS]));
 
-// --- route.ts: SkillCategoryXxN -> enUS ---
+// --- generate-mod.ts: SkillCategoryXxN -> enUS ---
 const routeSrc = fs.readFileSync(ROUTE, 'utf8');
 const labels = new Map();
 for (const m of routeSrc.matchAll(/Key: '(SkillCategory\w\w\d)', enUS: '([^']*)'/g)) {
   labels.set(m[1], m[2]);
 }
 if (labels.size !== 24) {
-  console.error(`ABORT: expected 24 SkillCategory overrides in route.ts, found ${labels.size}`);
+  console.error(`ABORT: expected 24 SkillCategory overrides in generate-mod.ts, found ${labels.size}`);
   process.exit(1);
 }
 
@@ -98,7 +100,7 @@ for (const [className, prefix] of Object.entries(CATEGORY_PREFIX)) {
 
   for (const page of [1, 2, 3]) {
     const key = keys[page - 1];
-    const expected = `Random ${4 - page}`;
+    const expected = `Skill Tree ${4 - page}`;
 
     // Item side: the string an item's skilltab bonus renders for this page.
     const value = itemStrings.get(key);
@@ -116,11 +118,11 @@ for (const [className, prefix] of Object.entries(CATEGORY_PREFIX)) {
     }
     seen.add(label);
 
-    // Label side: SkillCategoryXxN is tab slot N and must read "Random N".
+    // Label side: SkillCategoryXxN is tab slot N and must read "Skill Tree N".
     const catKey = `SkillCategory${prefix}${page}`;
     const catValue = labels.get(catKey);
-    if (catValue !== `Random ${page}`) {
-      fail(`${catKey} = ${JSON.stringify(catValue)}, expected ${JSON.stringify(`Random ${page}`)}`);
+    if (catValue !== `Skill Tree ${page}`) {
+      fail(`${catKey} = ${JSON.stringify(catValue)}, expected ${JSON.stringify(`Skill Tree ${page}`)}`);
     }
   }
 
@@ -136,4 +138,4 @@ if (failures.length) {
 }
 
 console.log('OK — all 8 classes: item strings and tab labels agree.');
-console.log('  tab slot N reads "Random N"; the item bonus for SkillPage P reads "Random 4-P".');
+console.log('  tab slot N reads "Skill Tree N"; the item bonus for SkillPage P reads "Skill Tree 4-P".');
