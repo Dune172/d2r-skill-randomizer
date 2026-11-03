@@ -9,6 +9,8 @@ import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
 import { DEFAULT_OPEN_ACTS, openActsCacheSegment, openActsFromParams } from '@/lib/randomizer/open-acts/options';
 import { mutationCacheSegment, parseMutationParam } from '@/lib/mutations/custom';
 import { parseSkillPoints, skillPointsCacheSegment } from '@/lib/skill-points';
+import { parseShuffleAmount, shuffleAmountCacheSegment } from '@/lib/shuffle-amount';
+import { DEFAULT_MOD_EXTRAS, modExtrasCacheSegment, modExtrasFromParams } from '@/lib/mod-extras';
 
 function slugifyChallenge(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
@@ -100,9 +102,13 @@ export async function GET(request: NextRequest) {
     const customMutations = weeklyParam ? [] : parseMutationParam(searchParams.get('mut'));
     // Same guard as /api/randomize: challenges keep vanilla skill points.
     const skillPoints = weeklyParam || forgottenArts ? 1 : parseSkillPoints(searchParams.get('skillPoints'));
+    // Same guard as /api/randomize: full shuffle for challenges and builds.
+    const shuffleAmount = classBuild || weeklyParam || forgottenArts ? 100 : parseShuffleAmount(searchParams.get('shuffle'));
+    const extras = weeklyParam || forgottenArts ? DEFAULT_MOD_EXTRAS : modExtrasFromParams(name => searchParams.get(name));
     const cacheKey = withBuildSegment(
       makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
-        + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations) + skillPointsCacheSegment(skillPoints),
+        + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations) + skillPointsCacheSegment(skillPoints)
+        + shuffleAmountCacheSegment(shuffleAmount) + modExtrasCacheSegment(extras),
       classBuild?.code,
     );
     const zipBuffer = getCached(cacheKey);

@@ -130,3 +130,74 @@ export function decodeClassBuild(
   });
   return spec;
 }
+
+// ---------------------------------------------------------------------------
+// Several hand-built classes in one mod
+
+const SET_VERSION = 3;
+/** class index, two page bytes, 30 skill bytes: bytes 2..34 of a single-class code. */
+const CLASS_BLOCK = 3 + SLOTS_PER_CLASS;
+
+/**
+ * A set of hand-built classes sharing one seed. One class encodes exactly as
+ * encodeClassBuild, so every existing link (and its cached zip and mod folder) is
+ * unchanged. Two or more use version 3:
+ *
+ *   0       format version (3)
+ *   1       skill table checksum
+ *   2       class count N (2..8)
+ *   3..     N blocks of 33 bytes, in CLASS_DEFS order, each laid out as bytes
+ *           2..34 of a single-class code (class index, pages, 30 skills)
+ *   last 4  seed, big-endian u32
+ *
+ * Eight classes are 271 bytes, 362 base64url characters.
+ */
+export function encodeClassBuildSet(
+  specs: readonly ClassBuild[],
+  skills: BuildSkill[],
+  treePages: Map<string, TreePage>,
+): string {
+  if (specs.length === 0) throw new CodecError('A build needs at least one class.');
+  const ordered = [...specs].sort((a, b) =>
+    CLASS_DEFS.findIndex(d => d.code === a.classCode) - CLASS_DEFS.findIndex(d => d.code === b.classCode));
+  const seed = ordered[0].seed >>> 0;
+  if (ordered.length === 1) return encodeClassBuild(ordered[0], skills, treePages);
+  if (ordered.length > CLASS_DEFS.length) throw new CodecError('Too many classes.');
+  const bytes = new Uint8Array(3 + CLASS_BLOCK * ordered.length + 4);
+  bytes[0] = SET_VERSION;
+  bytes[1] = tableChecksum(skills);
+  bytes[2] = ordered.length;
+  ordered.forEach((spec, i) => {
+    // Reuse the single-class layout so the two formats can never drift apart.
+    const single = fromBase64Url(encodeClassBuild({ ...spec, seed }, skills, treePages));
+    bytes.set(single.subarray(2, 2 + CLASS_BLOCK), 3 + CLASS_BLOCK * i);
+  });
+  bytes.set([seed >>> 24, (seed >>> 16) & 0xff, (seed >>> 8) & 0xff, seed & 0xff], bytes.length - 4);
+  return toBase64Url(bytes);
+}
+
+/** Inverse of encodeClassBuildSet: a single-class code decodes to a one-element list. */
+export function decodeClassBuildSet(
+  code: string,
+  skills: BuildSkill[],
+  treePages: Map<string, TreePage>,
+): ClassBuild[] {
+  const bytes = fromBase64Url(code);
+  if (bytes[0] !== SET_VERSION) return [decodeClassBuild(code, skills, treePages)];
+  const n = bytes[2];
+  if (!(n >= 2 && n <= CLASS_DEFS.length) || bytes.length !== 3 + CLASS_BLOCK * n + 4) {
+    throw new CodecError('That build link is not valid.');
+  }
+  if (bytes[1] !== tableChecksum(skills)) {
+    throw new CodecError('That build link was made for a different version of the skill data.');
+  }
+  const seedBytes = bytes.subarray(bytes.length - 4);
+  return Array.from({ length: n }, (_, i) => {
+    const single = new Uint8Array(5 + SLOTS_PER_CLASS + 4);
+    single[0] = VERSION;
+    single[1] = bytes[1];
+    single.set(bytes.subarray(3 + CLASS_BLOCK * i, 3 + CLASS_BLOCK * (i + 1)), 2);
+    single.set(seedBytes, 5 + SLOTS_PER_CLASS);
+    return decodeClassBuild(toBase64Url(single), skills, treePages);
+  });
+}

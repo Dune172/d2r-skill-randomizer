@@ -2,14 +2,18 @@ import crypto from 'crypto';
 import { loadSkills, loadTreeGrid } from '@/lib/data-loader';
 import type { FixedClass } from '@/lib/randomizer/skill-placer';
 import type { TreePage } from '@/lib/randomizer/types';
-import { type BuildIssue, type ClassBuild, buildFixedPlacements, checkClassBuild, hasErrors } from './class-build';
-import { CodecError, decodeClassBuild, encodeClassBuild } from './class-build-codec';
+import { type BuildIssue, type ClassBuild, buildFixedPlacements, checkClassBuildSet, hasErrors, skillsInBuilds } from './class-build';
+import { CodecError, decodeClassBuildSet, encodeClassBuildSet } from './class-build-codec';
 
 /** A share code that can't be built — the message is safe to show the player. */
 export class BuildRequestError extends Error {}
 
+/** Longest share code accepted: eight classes are 362 characters. */
+const MAX_CODE_LENGTH = 400;
+
 export interface ResolvedClassBuild {
-  spec: ClassBuild;
+  /** Every hand-built class, in CLASS_DEFS order. Usually one. */
+  specs: ClassBuild[];
   /** Canonical share code: the build's identity in the cache key. */
   code: string;
   seed: number;
@@ -19,8 +23,10 @@ export interface ResolvedClassBuild {
    * other's install.
    */
   modName: string;
-  fixed: FixedClass;
-  pages: TreePage[];
+  /** What placeSkills keeps fixed and the pages each class's tabs use. */
+  classes: { fixed: FixedClass; pages: TreePage[] }[];
+  /** Every skill placed by hand, on any class. */
+  skillNames: string[];
   warnings: BuildIssue[];
 }
 
@@ -30,32 +36,37 @@ export interface ResolvedClassBuild {
  * so they agree on the seed and cache identity by construction.
  */
 export function resolveClassBuild(rawCode: unknown): ResolvedClassBuild {
-  if (typeof rawCode !== 'string' || rawCode.length === 0 || rawCode.length > 128) {
+  if (typeof rawCode !== 'string' || rawCode.length === 0 || rawCode.length > MAX_CODE_LENGTH) {
     throw new BuildRequestError('Missing or malformed build code.');
   }
   const skills = loadSkills();
   const treePages = loadTreeGrid();
-  let spec: ClassBuild;
+  let specs: ClassBuild[];
   try {
-    spec = decodeClassBuild(rawCode, skills, treePages);
+    specs = decodeClassBuildSet(rawCode, skills, treePages);
   } catch (e) {
     if (e instanceof CodecError) throw new BuildRequestError(e.message);
     throw e;
   }
-  const issues = checkClassBuild(spec, skills, treePages);
+  const issues = checkClassBuildSet(specs, skills, treePages);
   if (hasErrors(issues)) {
     throw new BuildRequestError(issues.find(i => i.severity === 'error')!.message);
   }
-  const code = encodeClassBuild(spec, skills, treePages);
-  const { pages, placements } = buildFixedPlacements(spec, skills, treePages);
+  const code = encodeClassBuildSet(specs, skills, treePages);
+  // Re-read from the canonical code so the classes are in CLASS_DEFS order.
+  specs = decodeClassBuildSet(code, skills, treePages);
+  const classes = specs.map(spec => {
+    const { pages, placements } = buildFixedPlacements(spec, skills, treePages);
+    return { fixed: { classCode: spec.classCode, placements }, pages };
+  });
   const hash = crypto.createHash('sha256').update(code).digest('hex').slice(0, 8);
   return {
-    spec,
+    specs,
     code,
-    seed: spec.seed,
+    seed: specs[0].seed,
     modName: `build${hash}`,
-    fixed: { classCode: spec.classCode, placements },
-    pages,
+    classes,
+    skillNames: [...skillsInBuilds(specs)],
     warnings: issues,
   };
 }

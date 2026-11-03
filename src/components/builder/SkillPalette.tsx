@@ -15,11 +15,13 @@ import { DRAG_TYPE, type DragPayload, readDrag } from './BuilderTreeGrid';
  * removes it.
  */
 export default function SkillPalette({
-  skills, classCode, placed, targetLabel, onPick, onReturn,
+  skills, classCode, placed, taken, targetLabel, onPick, onReturn,
 }: {
   skills: CatalogSkill[];
   classCode: ClassCode;
   placed: Set<string>;
+  /** Skills on the build's other hand-built classes: not available here. */
+  taken?: ReadonlySet<string>;
   /** Where a click will put the skill, for the tooltip. */
   targetLabel: string;
   onPick: (skill: string) => void;
@@ -33,11 +35,12 @@ export default function SkillPalette({
     const q = search.trim().toLowerCase();
     return skills.filter(s =>
       !placed.has(s.skill)
+      && !taken?.has(s.skill)
       && (source === 'all' || s.charclass === source)
       && (!hideBlocked || !blockReason(s.skill, classCode))
       && (!q || s.name.toLowerCase().includes(q) || s.skill.toLowerCase().includes(q)),
     );
-  }, [skills, placed, source, hideBlocked, classCode, search]);
+  }, [skills, placed, taken, source, hideBlocked, classCode, search]);
 
   const chip = (value: string, label: string, color?: string) => (
     <button

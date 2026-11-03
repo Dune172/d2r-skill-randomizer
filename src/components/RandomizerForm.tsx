@@ -23,6 +23,9 @@ interface FormState {
   xpActs: number[];
   xpDifficulties: number[];
   skillPoints: number;
+  shuffleAmount: number;
+  seasonal: boolean;
+  anyClassItems: boolean;
   raceMode: boolean;
   enemyShuffle: boolean;
   forgottenArts: boolean;
@@ -45,6 +48,9 @@ const SEASON1_PRESET: FormState = {
   xpActs: [1, 2],
   xpDifficulties: [1],
   skillPoints: 1,
+  shuffleAmount: 100,
+  seasonal: true,
+  anyClassItems: false,
   raceMode: true,
   enemyShuffle: true,
   forgottenArts: false,
@@ -67,6 +73,9 @@ const TURBO_PRESET: FormState = {
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1, 2, 3],
   skillPoints: 1,
+  shuffleAmount: 100,
+  seasonal: true,
+  anyClassItems: false,
   raceMode: false,
   enemyShuffle: false,
   forgottenArts: false,
@@ -91,6 +100,9 @@ const OPEN_ACTS_PRESET: FormState = {
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1],
   skillPoints: 1,
+  shuffleAmount: 100,
+  seasonal: true,
+  anyClassItems: false,
   raceMode: false,
   enemyShuffle: false,
   forgottenArts: false,
@@ -113,6 +125,9 @@ const DEFAULT_STATE: FormState = {
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1],
   skillPoints: 1,
+  shuffleAmount: 100,
+  seasonal: true,
+  anyClassItems: false,
   raceMode: true,
   enemyShuffle: false,
   forgottenArts: false,
@@ -121,8 +136,8 @@ const DEFAULT_STATE: FormState = {
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints?: number; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings; mutations?: number[] };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints: number; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings; mutations: number[] }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints?: number; shuffleAmount?: number; seasonal?: boolean; anyClassItems?: boolean; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings; mutations?: number[] };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints: number; shuffleAmount: number; seasonal: boolean; anyClassItems: boolean; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings; mutations: number[] }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -251,6 +266,9 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [xpActs, setXpActs] = useState<number[]>(initialOptions?.xpActs ?? SEASON1_PRESET.xpActs);
   const [xpDifficulties, setXpDifficulties] = useState<number[]>(initialOptions?.xpDifficulties ?? SEASON1_PRESET.xpDifficulties);
   const [skillPoints, setSkillPoints] = useState(initialOptions?.skillPoints ?? SEASON1_PRESET.skillPoints);
+  const [shuffleAmount, setShuffleAmount] = useState(initialOptions?.shuffleAmount ?? SEASON1_PRESET.shuffleAmount);
+  const [seasonal, setSeasonal] = useState(initialOptions?.seasonal ?? SEASON1_PRESET.seasonal);
+  const [anyClassItems, setAnyClassItems] = useState(initialOptions?.anyClassItems ?? SEASON1_PRESET.anyClassItems);
   const [raceMode, setRaceMode] = useState(initialOptions?.raceMode ?? SEASON1_PRESET.raceMode);
   // Forgotten Arts is challenge-only; the standard generator never enables it.
   const forgottenArts = false;
@@ -278,6 +296,9 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setXpActs(src.xpActs);
       setXpDifficulties(src.xpDifficulties);
       setSkillPoints(src.skillPoints);
+      setShuffleAmount(src.shuffleAmount);
+      setSeasonal(src.seasonal);
+      setAnyClassItems(src.anyClassItems);
       setRaceMode(src.raceMode);
       setEnemyShuffle(src.enemyShuffle);
       setOpenActs(withModeSpoiler(src.openActs, src.raceMode));
@@ -321,6 +342,9 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       xpActs,
       xpDifficulties,
       skillPoints,
+      shuffleAmount,
+      seasonal,
+      anyClassItems,
       raceMode: forgottenArts ? false : raceMode,
       enemyShuffle,
       forgottenArts,
@@ -394,6 +418,13 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               label="No skill prerequisites"
               tooltip="Removes skill prerequisites, letting you invest points in any skill freely without unlocking earlier ones first."
             />
+            <Checkbox
+              id="noSeason"
+              checked={!seasonal}
+              onChange={v => field(setSeasonal)(!v)}
+              label="Skip seasonal decorations"
+              tooltip="Leaves the autumn and winter town decorations out of the mod. The download gets about 50 MB smaller, and it's easier to combine with other mods that change towns or map art. Skills are unaffected."
+            />
 
           </div>
 
@@ -455,6 +486,28 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
                   <option value={1}>1 per level</option>
                   <option value={2}>2 per level</option>
                   <option value={3}>3 per level</option>
+                </select>
+                <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <label htmlFor="shuffleAmount" className="text-sm text-[#c8a870] whitespace-nowrap flex items-center">
+                Shuffle amount
+                <Tip text="How much of each class's skill tree gets shuffled. At 50% or 25%, every class keeps its own tree pages and the rest of its skills stay in their normal spots." />
+              </label>
+              <div className="relative">
+                <select
+                  id="shuffleAmount"
+                  value={shuffleAmount}
+                  onChange={e => { setPreset('custom'); setShuffleAmount(Number(e.target.value)); }}
+                  className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-2
+                    text-sm text-[#e8d5a0]
+                    focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                    transition-colors cursor-pointer"
+                >
+                  <option value={100}>100% (full)</option>
+                  <option value={50}>50%</option>
+                  <option value={25}>25%</option>
                 </select>
                 <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
               </div>
@@ -550,6 +603,15 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
               label="Start with Horadric Cube"
               tooltip="Adds a Horadric Cube to your starting inventory, giving you extra stash space from the very beginning."
             />
+            <div className="mt-3">
+              <Checkbox
+                id="anyClassItems"
+                checked={anyClassItems}
+                onChange={field(setAnyClassItems)}
+                label="Any class can use class items"
+                tooltip="Every class can equip orbs, shrunken heads, Paladin shields, Barbarian helms, Druid pelts, Amazon bows, spears and javelins, cloaks and grimoires. Their skill bonuses still only count for the class they name. Claws stay Assassin-only, because other classes have no claw attack animations."
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.339',
+    date: 'November 2026',
+    tagline: 'Build every class at once, shuffle only part of the trees, and use any class item',
+    notes: [
+      'The Class Builder can now build several classes in one mod, even all eight, for example one each for a group of friends. Each skill can only be on one class, and every class you leave alone is still randomized. Old build links work as before',
+      'New Shuffle amount option on the Generate page: shuffle 100%, 50% or 25% of each class’s tree. At 50% or 25% every class keeps its own tree pages and the rest of its skills stay exactly where they are in the normal game',
+      'New option: any class can use class items. Orbs, shrunken heads, Paladin shields, Barbarian helms, Druid pelts, Amazon bows, spears and javelins, cloaks and grimoires can be equipped by everyone. Their skill bonuses still only count for the class they name, and claws stay Assassin-only',
+      'New option: skip seasonal decorations. Leaves the autumn and winter town decorations out, so the download is about 50 MB smaller and easier to combine with other mods. The FAQ now explains which files the randomizer writes and how to merge it with another mod',
+    ],
+  },
+  {
     version: 'v0.338',
     date: 'November 2026',
     tagline: 'More skill points, shortcuts for any install folder, clearer tab names',
@@ -165,7 +176,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: 'v0.262',
     date: 'September 2026',
-    tagline: "No Guard strips enemy defence too, and Titan's Grip asks for less strength",
+    tagline: "No Guard strips enemy defence too, and Titan’s Grip asks for less strength",
     notes: [
       'No Guard now sets monster defence to zero as well as yours. Taking away all of your armour and every defensive skill while enemies kept their full defence left you missing a lot of swings on top of it — now nobody on the field has defence, and the danger is how hard the hits that do land on you hit',
       'Your own side keeps its defence under No Guard — hirelings, golems, skeletons, Valkyries and the rest are untouched, so a summoner is not left with a wall of paper',

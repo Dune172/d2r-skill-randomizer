@@ -164,7 +164,7 @@ export function placeSkills(
   rng: SeededRNG,
   skills: SkillEntry[],
   treeAssignments: Map<ClassCode, TreePage[]>,
-  opts?: { excludeSkills?: Set<string>; fixed?: FixedClass },
+  opts?: { excludeSkills?: Set<string>; fixed?: FixedClass | readonly FixedClass[]; shuffleShare?: number },
 ): { placements: SkillPlacement[]; droppedSkillNames: Set<string>; substitutes: SkillSubstitute[] } {
   // Drop categorization: a skill is dropped if (a) the user explicitly excluded it
   // via excludeSkills (e.g. "Remove Teleport") or (b) it's a HARDCODED_CLASS_SKILLS
@@ -176,9 +176,12 @@ export function placeSkills(
   // With a fixed class, every branch added for it is gated on `fixed` so a
   // normal seed consumes exactly the same RNG draws as before.
   const excludeSkills = opts?.excludeSkills;
-  const fixed = opts?.fixed;
-  const fixedCls = fixed?.classCode;
-  const fixedNames = new Set(fixed?.placements.map(p => p.skill.skill) ?? []);
+  // One or more hand-built classes (a multi-class build fixes several).
+  const fixedList: readonly FixedClass[] = !opts?.fixed ? [] : Array.isArray(opts.fixed) ? opts.fixed : [opts.fixed as FixedClass];
+  const fixed = fixedList.length > 0;
+  const fixedCodes = new Set<ClassCode>(fixedList.map(f => f.classCode));
+  const isFixed = (cls: ClassCode | undefined) => cls !== undefined && fixedCodes.has(cls);
+  const fixedNames = new Set(fixedList.flatMap(f => f.placements.map(p => p.skill.skill)));
   // Skills that must leave the fixed class but can't live anywhere else: its own
   // locked skills the player didn't place, and co-placement skills whose peers
   // all sit on the fixed class (they could only ever work there). Both become
@@ -186,7 +189,7 @@ export function placeSkills(
   const forcedDrops = new Set<string>();
   if (fixed) {
     for (const [name, cls] of Object.entries(HARDCODED_CLASS_SKILLS)) {
-      if (cls === fixedCls && !fixedNames.has(name)) forcedDrops.add(name);
+      if (isFixed(cls) && !fixedNames.has(name)) forcedDrops.add(name);
     }
     for (const [name, peers] of Object.entries(COPACEMENT_REQUIRES)) {
       if (!fixedNames.has(name) && peers.every(peer => fixedNames.has(peer))) forcedDrops.add(name);
@@ -199,7 +202,7 @@ export function placeSkills(
   const droppedSkillsByClass = new Map<ClassCode, SkillEntry[]>();
   const dropOn = (cls: ClassCode, skill: SkillEntry) => {
     droppedSkillNames.add(skill.skill);
-    if (fixed && cls === fixedCls) {
+    if (isFixed(cls)) {
       pendingRetarget.push(skill);
       return;
     }
@@ -247,8 +250,27 @@ export function placeSkills(
     }
   }
 
+  // Partial shuffle (see src/lib/shuffle-amount.ts): each class keeps a seeded
+  // (1 - share) of its own movable skills in their vanilla slots, and only the rest
+  // go into the shared pool. Needs each class on its own vanilla pages, which
+  // runPlacement guarantees. Gated so a full shuffle draws exactly the same RNG.
+  const share = opts?.shuffleShare;
+  const partial = share !== undefined && share < 1 && !fixed;
+  const homeByClass = new Map<ClassCode, SkillEntry[]>();
+  let movingPool = shufflePool;
+  if (partial) {
+    const moving = new Set<SkillEntry>();
+    for (const def of CLASS_DEFS) {
+      const own = rng.shuffle(shufflePool.filter(s => s.charclass === def.code));
+      const moveCount = Math.round(own.length * share);
+      own.slice(0, moveCount).forEach(s => moving.add(s));
+      homeByClass.set(def.code, own.slice(moveCount));
+    }
+    movingPool = shufflePool.filter(s => moving.has(s));
+  }
+
   // Shuffle the remaining skills
-  const shuffled = rng.shuffle(shufflePool);
+  const shuffled = rng.shuffle(movingPool);
   const placements: SkillPlacement[] = [];
 
   // First pass: count how many slots each class needs
@@ -269,7 +291,7 @@ export function placeSkills(
     for (const skill of pendingRetarget) {
       const open = CLASS_DEFS
         .map((def, ci) => ({ code: def.code, ci }))
-        .filter(({ code, ci }) => code !== fixedCls &&
+        .filter(({ code, ci }) => !isFixed(code) &&
           classSlotsCount[ci]
             - (pinnedByClass.get(code)?.length ?? 0)
             - (droppedSkillsByClass.get(code)?.length ?? 0) > 0);
@@ -295,9 +317,47 @@ export function placeSkills(
     const trees = treeAssignments.get(classCode)!;
     const slotCount = classSlotsCount[ci];
 
-    if (fixed && classCode === fixedCls) {
-      placements.push(...fixed.placements);
+    if (isFixed(classCode)) {
+      placements.push(...fixedList.find(f => f.classCode === classCode)!.placements);
       vacatedByClass.set(classCode, []);
+      continue;
+    }
+
+    if (partial) {
+      // Pinned and home skills sit in their own vanilla slot; each drop leaves its
+      // vanilla slot vacated for a substitute (in drop order, which is the order
+      // substitutes are injected below); the moving skills fill what is left.
+      const allSlots = orderedFilledSlots(trees);
+      const slotOf = new Map<string, number>();
+      allSlots.forEach((s, i) => {
+        const name = s.tree.slots.find(g => g.row === s.row && g.col === s.col)?.skill;
+        if (name) slotOf.set(name, i);
+      });
+      const used = new Set<number>();
+      const put = (skill: SkillEntry, i: number) => {
+        const slot = allSlots[i];
+        placements.push({
+          skill, targetClass: classCode, treePage: slot.tree, tabIndex: slot.tabIndex,
+          row: slot.row, col: slot.col, iconCel: i * 2, skillIndex: i,
+        });
+        used.add(i);
+      };
+      for (const skill of [...(pinnedByClass.get(classCode) || []), ...(homeByClass.get(classCode) || [])]) {
+        const i = slotOf.get(skill.skill);
+        if (i === undefined) throw new Error(`Partial shuffle: ${skill.skill} has no vanilla slot on ${classCode}`);
+        put(skill, i);
+      }
+      const drops = droppedSkillsByClass.get(classCode) || [];
+      const dropSlots = drops.map(d => slotOf.get(d.skill));
+      dropSlots.forEach(i => { if (i !== undefined) used.add(i); });
+      const free = allSlots.map((_, i) => i).filter(i => !used.has(i));
+      // A drop with no vanilla slot here takes the last free slot instead.
+      const resolvedDropSlots = dropSlots.map(i => i ?? free.pop()!);
+      const classShuffled = shuffled.slice(skillIdx, skillIdx + free.length)
+        .sort((a, b) => a.reqlevel - b.reqlevel);
+      skillIdx += free.length;
+      classShuffled.forEach((skill, k) => put(skill, free[k]));
+      vacatedByClass.set(classCode, resolvedDropSlots.map(i => ({ ...allSlots[i], iconCel: i * 2, skillIndex: i })));
       continue;
     }
 
@@ -373,7 +433,7 @@ export function placeSkills(
   for (const { skill: gatedSkill, anchor } of FORM_GATED_PINS) {
     const gatedIdx = placements.findIndex(p => p.skill.skill === gatedSkill);
     if (gatedIdx === -1) continue; // already dropped (HARDCODED coin-flip or excluded)
-    if (fixed && placements[gatedIdx].targetClass === fixedCls) continue; // hand-placed, validated upstream
+    if (isFixed(placements[gatedIdx].targetClass)) continue; // hand-placed, validated upstream
     const anchorPlacement = placements.find(p => p.skill.skill === anchor);
     if (!anchorPlacement) continue; // anchor missing entirely — nothing to align against
     if (anchorPlacement.targetClass === 'dru') continue; // anchor on Druid — keep gated skill
@@ -446,8 +506,8 @@ export function placeSkills(
     }
   }
 
-  resolveExclusions(placements, fixedCls);
-  resolveCoplacements(placements, droppedSkillNames, fixedCls);
+  resolveExclusions(placements, isFixed);
+  resolveCoplacements(placements, droppedSkillNames, isFixed);
 
   // reorderSkillsRows (skills-writer.ts) lays skills.txt out in contiguous
   // 30-row class blocks; a class with any other count corrupts every block
@@ -473,11 +533,11 @@ export function placeSkills(
  * placement where X is allowed on the partner's class and the partner's skill
  * is allowed on C. Swaps just the skill entries, leaving slot geometry intact.
  */
-function resolveExclusions(placements: SkillPlacement[], fixedCls?: ClassCode): void {
+function resolveExclusions(placements: SkillPlacement[], isFixed: (cls: ClassCode) => boolean): void {
   for (let i = 0; i < placements.length; i++) {
     const p = placements[i];
-    // The hand-built class is validated before it gets here and is never touched.
-    if (p.targetClass === fixedCls) continue;
+    // Hand-built classes are validated before they get here and are never touched.
+    if (isFixed(p.targetClass)) continue;
     const excluded = SKILL_CLASS_EXCLUSIONS[p.targetClass];
     if (!excluded?.has(p.skill.skill)) continue;
 
@@ -487,7 +547,7 @@ function resolveExclusions(placements: SkillPlacement[], fixedCls?: ClassCode): 
       if (j === i) continue;
       const partner = placements[j];
       if (partner.targetClass === p.targetClass) continue;
-      if (partner.targetClass === fixedCls) continue;
+      if (isFixed(partner.targetClass)) continue;
 
       // p.skill must be allowed on partner.targetClass
       const partnerClassExcluded = SKILL_CLASS_EXCLUSIONS[partner.targetClass];
@@ -544,7 +604,7 @@ export const COPACEMENT_REQUIRES: Record<string, string[]> = {
 function resolveCoplacements(
   placements: SkillPlacement[],
   droppedSkillNames: Set<string>,
-  fixedCls?: ClassCode,
+  isFixed: (cls: ClassCode) => boolean,
 ): void {
   // Build skill name → placement index for quick lookup
   const bySkill = new Map<string, number>();
@@ -573,8 +633,8 @@ function resolveCoplacements(
     if (skillIdx === undefined) continue;
 
     const currentClass = placements[skillIdx].targetClass;
-    // Never pull a skill out of the hand-built class.
-    if (currentClass === fixedCls) continue;
+    // Never pull a skill out of a hand-built class.
+    if (isFixed(currentClass)) continue;
 
     // Already satisfied if any peer is on the same class
     if (peers.some(peer => {
@@ -588,7 +648,7 @@ function resolveCoplacements(
     let destClass: ClassCode | undefined;
     for (const peer of peers) {
       const idx = bySkill.get(peer);
-      if (idx !== undefined && placements[idx].targetClass !== fixedCls) {
+      if (idx !== undefined && !isFixed(placements[idx].targetClass)) {
         destClass = placements[idx].targetClass;
         break;
       }

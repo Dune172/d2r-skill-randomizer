@@ -11,6 +11,7 @@
 import { DEFAULT_OPEN_ACTS, normalizeOpenActs, openActsFromParams, openActsToParams, type OpenActsSettings } from '@/lib/randomizer/open-acts/options';
 import { encodeMutationParam, normalizeMutationIds, parseMutationParam } from '@/lib/mutations/custom';
 import { normalizeSkillPoints, parseSkillPoints, skillPointsParam } from '@/lib/skill-points';
+import { DEFAULT_MOD_EXTRAS, modExtrasFromParams, modExtrasParams } from '@/lib/mod-extras';
 
 export interface ModOptions {
   enablePrereqs: boolean;
@@ -31,6 +32,10 @@ export interface ModOptions {
   xpDifficulties: number[];
   /** Skill points per level, 1–3. */
   skillPoints: number;
+  /** Seasonal town decorations (src/lib/mod-extras.ts). */
+  seasonal: boolean;
+  /** Every class can equip class-only items. */
+  anyClassItems: boolean;
   enemyShuffle: boolean;
   openActs: OpenActsSettings;
   /** Player-picked mutation ids (sorted). */
@@ -55,6 +60,7 @@ export const DEFAULT_MOD_OPTIONS: ModOptions = {
   xpActs: [1, 2, 3, 4, 5],
   xpDifficulties: [1, 2, 3],
   skillPoints: 1,
+  ...DEFAULT_MOD_EXTRAS,
   enemyShuffle: false,
   openActs: DEFAULT_OPEN_ACTS,
   mutations: [],
@@ -90,6 +96,7 @@ export function optionParams(opts: ModOptions): string {
     boosted && `xpActs=${sorted(opts.xpActs)}`,
     boosted && `xpDifficulties=${sorted(opts.xpDifficulties)}`,
     skillPointsParam(opts.skillPoints),
+    ...modExtrasParams(opts),
     opts.enemyShuffle && 'enemyShuffle=1',
     openActsToParams(normalizeOpenActs(opts.openActs)).slice(1),
     opts.mutations.length > 0 && `mut=${encodeMutationParam(opts.mutations)}`,
@@ -123,6 +130,7 @@ export function parseModOptions(p: URLSearchParams): ModOptions {
     xpActs: list('xpActs', 5, [1, 2, 3, 4, 5]),
     xpDifficulties: list('xpDifficulties', 3, [1, 2, 3]),
     skillPoints: parseSkillPoints(p.get('skillPoints')),
+    ...modExtrasFromParams(name => p.get(name)),
     enemyShuffle: p.get('enemyShuffle') === '1',
     openActs: openActsFromParams(name => p.get(name)),
     mutations: parseMutationParam(p.get('mut')),
@@ -144,6 +152,8 @@ export function buildRandomizeBody(code: string, opts: ModOptions): string {
     xpActs: opts.xpActs,
     xpDifficulties: opts.xpDifficulties,
     skillPoints: normalizeSkillPoints(opts.skillPoints),
+    seasonal: opts.seasonal,
+    anyClassItems: opts.anyClassItems,
     enemyShuffle: opts.enemyShuffle,
     openActs: normalizeOpenActs(opts.openActs),
     mutations: normalizeMutationIds(opts.mutations),

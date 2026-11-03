@@ -63,6 +63,8 @@ export default function BuildOptionsPanel({
     value.startingItems.horadricCube && 'cube',
     !value.hirelingAura && 'no merc aura',
     value.disableChat && 'chat off',
+    !value.seasonal && 'no seasonal decorations',
+    value.anyClassItems && 'any class items',
     value.enemyShuffle && 'monster shuffle',
     value.openActs.shuffle && 'quest shuffle',
     value.openActs.acts.length > 0 && `${openActsLabel(value.openActs.acts)} open`,
@@ -105,6 +107,13 @@ export default function BuildOptionsPanel({
                 onChange={v => set('enablePrereqs', v)}
                 label="Skill prerequisites"
                 tooltip="Keeps the arrow requirements shown on each tree. Turn off to spend points anywhere immediately."
+              />
+              <Checkbox
+                id="b-noSeason"
+                checked={!value.seasonal}
+                onChange={v => set('seasonal', !v)}
+                label="Skip seasonal decorations"
+                tooltip="Leaves the autumn and winter town decorations out of the mod. The download gets about 50 MB smaller, and it's easier to combine with other mods that change towns or map art. Skills are unaffected."
               />
 
               <div className="flex items-center gap-2.5">
@@ -240,6 +249,13 @@ export default function BuildOptionsPanel({
                 onChange={v => set('disableChat', v)}
                 label="Hide chat panel"
                 tooltip="Removes the in-game chat UI. Useful for recording."
+              />
+              <Checkbox
+                id="b-classItems"
+                checked={value.anyClassItems}
+                onChange={v => set('anyClassItems', v)}
+                label="Any class can use class items"
+                tooltip="Every class can equip orbs, shrunken heads, Paladin shields, Barbarian helms, Druid pelts, Amazon bows, spears and javelins, cloaks and grimoires. Their skill bonuses still only count for the class they name. Claws stay Assassin-only, because other classes have no claw attack animations."
               />
             </div>
           </div>
