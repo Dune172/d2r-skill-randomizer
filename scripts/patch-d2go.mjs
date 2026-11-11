@@ -232,6 +232,10 @@ func calculateOffsets(process *Process) Offset {`,
 		if WaypointsOffset == 0 {
 			WaypointsOffset = known.WaypointsOffset
 		}
+		// The unit table pattern misses the same way on 3.4, leaving no player at all.
+		if unitTableOffset == 0 {
+			unitTableOffset = known.UnitTable
+		}
 	}
 
 	return Offset{
@@ -246,6 +250,8 @@ func calculateOffsets(process *Process) Offset {`,
 // docs/archipelago/DESIGN_NOTES.md.
 var knownBuildOffsets = map[uint32]Offset{
 	0x6a6b96a4: {UI: 0x1ebd162, WaypointsOffset: 0x1d5f470}, // 3.3.93847
+	// 3.4.95032, measured 2026-11-11. UI is one past the quit-menu flag (see the sete note).
+	0x6ad81202: {UI: 0x1ece2ed, WaypointsOffset: 0x1d705f0, UnitTable: 0x1ebe5f0},
 }
 
 // D2RR PATCH: the TimeDateStamp of the loaded D2R.exe, which identifies the build.
@@ -356,7 +362,40 @@ func calculateOffsets(process *Process) Offset {`,
 			}
 		}
 	}
+	// D2RR PATCH: on D2R 3.4 no unit carries the Sharedstash state at the 3.3 offset, so
+	// all seven still look main. The real character's inventory flag (+0x30) reads 3, the
+	// stash units' 1 (measured on 3.4.95032): keep the ones with bit 0x2, if any have it.
+	if countMains(rawPlayerUnits) > 1 {
+		flag := func(u RawPlayerUnit) uint {
+			inv := uintptr(gd.Process.ReadUInt(u.Address+0x90, Uint64))
+			return gd.Process.ReadUInt(inv+0x30, Uint16)
+		}
+		withBit := 0
+		for _, u := range rawPlayerUnits {
+			if u.IsMainPlayer && flag(u)&0x2 != 0 {
+				withBit++
+			}
+		}
+		if withBit > 0 {
+			for i := range rawPlayerUnits {
+				if rawPlayerUnits[i].IsMainPlayer && flag(rawPlayerUnits[i])&0x2 == 0 {
+					rawPlayerUnits[i].IsMainPlayer = false
+				}
+			}
+		}
+	}
 	return rawPlayerUnits
+}
+
+// D2RR PATCH: how many units claim to be the main player.
+func countMains(units RawPlayerUnits) int {
+	n := 0
+	for _, u := range units {
+		if u.IsMainPlayer {
+			n++
+		}
+	}
+	return n
 }
 
 func (gd *GameReader) GetPlayerUnit(`,

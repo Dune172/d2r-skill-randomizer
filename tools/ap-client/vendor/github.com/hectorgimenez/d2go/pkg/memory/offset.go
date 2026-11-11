@@ -34,6 +34,8 @@ func ripTarget(process *Process, dispAddr uintptr) uintptr {
 // docs/archipelago/DESIGN_NOTES.md.
 var knownBuildOffsets = map[uint32]Offset{
 	0x6a6b96a4: {UI: 0x1ebd162, WaypointsOffset: 0x1d5f470}, // 3.3.93847
+	// 3.4.95032, measured 2026-11-11. UI is one past the quit-menu flag (see the sete note).
+	0x6ad81202: {UI: 0x1ece2ed, WaypointsOffset: 0x1d705f0, UnitTable: 0x1ebe5f0},
 }
 
 // D2RR PATCH: the TimeDateStamp of the loaded D2R.exe, which identifies the build.
@@ -170,6 +172,10 @@ func calculateOffsets(process *Process) Offset {
 		}
 		if WaypointsOffset == 0 {
 			WaypointsOffset = known.WaypointsOffset
+		}
+		// The unit table pattern misses the same way on 3.4, leaving no player at all.
+		if unitTableOffset == 0 {
+			unitTableOffset = known.UnitTable
 		}
 	}
 
