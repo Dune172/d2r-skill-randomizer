@@ -302,7 +302,30 @@ areas to `data/txt`.
 
 - **The client's reads still work.** `d2rr-ap probe` in town read the character, its
   base stat list (16 entries), its skills and the game's own copy; `probe -monsters`
-  read the unit table. G1 and the stat writes were NOT re-run on this build.
+  read the unit table.
+- **Nothing was granted on 3.4 until three fixes** (PE TimeDateStamp `0x6ad81202`):
+  - *The quit-menu byte moved by one.* d2go's original `sete` UI pattern matches again
+    (3.3 had dropped it), and its target is the quit-menu flag itself, where the client
+    reads the flag at uiBase+0x09 as measured on 3.3. It read the byte below, always 0,
+    so the menu always looked open and every write waited. The sete UI offset is now one
+    past its target. Measured: the target reads 1 in play, 0 with the Esc menu, 1 with
+    the inventory; `probe -ui` prints the block and the reading.
+  - *The unit table pattern misses at attach* like the waypoint one, leaving no player at
+    all ("enter a game"). `knownBuildOffsets` now has 3.4 (UI `0x1ece2ed`, waypoints
+    `0x1d705f0`, unit table `0x1ebe5f0`) and falls back to the unit table too.
+  - *No unit carries the Sharedstash state* at +0xB30 (nor +0xAF0/+0xB50/+0xB70), so all
+    seven player units looked main. The character's inventory flag (+0x30) reads 3, the
+    stash pseudo-players' 1; when more than one unit claims to be main, those with bit
+    0x2 are kept.
+- **After the fixes, in town against a real local room:** 2 starting skill points, then
+  sent skill points, Stat Points (5) and a Horadric Key all arrived; a point was spent
+  (Warmth 0 -> 1); "Server: hello from the room" and "You found your Progressive Skill
+  Point (Normal A1: Den of Evil)" showed in the game's message box. Gold waited for room
+  in the stat list, the known limit.
+- **How the offsets were measured** without a new build (Smart App Control blocked
+  them on that PC): a PowerShell script read the D2R.exe module image page by page into
+  files in three states (playing, Esc menu, inventory), and Node searched and compared
+  them. The player-unit fields were read the same way.
 - **A `-txt` mod built from 3.3 data warns "Data version mismatch"** at the title
   screen (current data version 95032, detected unknown). It comes from the mod having no
   `data/global/DataVersionBuild.txt`, and it only warns: the arena mod's monstats.txt

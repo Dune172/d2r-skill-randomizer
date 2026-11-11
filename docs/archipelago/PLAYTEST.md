@@ -24,8 +24,8 @@ From `DESIGN_NOTES.md` (D2R 3.3.93847, in town only):
 
 | Gate | Result |
 |---|---|
-| G1 skill points | **Pass in town** (2026-10-29), once both copies of the player are written. `probe -set` and the client now do that. Combat (step 4) not run. |
-| G2 adding a stat | **Pass in town** (2026-10-30): `probe -insert` gave a fresh Paladin 3 skill points and 2 stat points, spendable at once and kept after Save and Exit. Stat points need the combined list written as well as the base list. |
+| G1 skill points | **Pass in town** (2026-10-29), once both copies of the player are written. `probe -set` and the client now do that. Combat (step 4) not run. **Pass again on D2R 3.4.95032** (2026-11-11) after the 3.4 offset fixes: delivered points were spent in the tree. |
+| G2 adding a stat | **Pass on 3.4.95032** (2026-11-11): a fresh Paladin received 2 skill points and 5 stat points from the client. **Pass in town** (2026-10-30): `probe -insert` gave a fresh Paladin 3 skill points and 2 stat points, spendable at once and kept after Save and Exit. Stat points need the combined list written as well as the base list. |
 | G3 key gates | **Pass in town** (2026-10-29) on the real recipes, with test-only recipes supplying the quest parts. |
 | G4 traps, DeathLink | Not run (outside town). |
 | G5 a real room | Not run (outside town). |
