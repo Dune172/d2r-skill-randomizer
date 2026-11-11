@@ -292,10 +292,12 @@ any unreadable address instead of panicking (d2go's own `Monsters()` can).
   base stat list (16 entries), its skills and the game's own copy; `probe -monsters`
   read the unit table. G1 and the stat writes were NOT re-run on this build.
 - **A `-txt` mod built from 3.3 data warns "Data version mismatch"** at the title
-  screen (current data version 95032, detected unknown). Continuing loads the game, but
-  the Open Acts arena mod's monster changes (1 HP, no damage) did not apply: a level 2
-  Barbarian died to a Cold Plains unique pack. Whether the site's generated mods (also
-  built from 3.3 data) still take effect on 3.4 has not been checked.
+  screen (current data version 95032, detected unknown). It comes from the mod having no
+  `data/global/DataVersionBuild.txt`, and it only warns: the arena mod's monstats.txt
+  still loaded on 3.4 (a Fallen dropped a Wirt's Leg, which only its treasure classes
+  give). A level 2 Barbarian did die to a Cold Plains unique pack, most likely to
+  enchantment damage, which the arena's zeroed damage columns do not cover
+  (unconfirmed). Site mods carry 95032 and the 3.4 tables since PR #22.
 
 ### D2R 3.3 (build 3.3.93847, measured 2026-10-26)
 
