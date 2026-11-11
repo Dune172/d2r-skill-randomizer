@@ -78,10 +78,12 @@ type app struct {
 
 	// DeathLink. pendingDeaths are deaths received and not yet carried out; killStarted
 	// is when the current one was written, so a write the game ignores can be noticed.
-	pendingDeaths   int
-	deathQueuedAt   time.Time
-	killStarted     time.Time
-	killedByLink    bool
+	pendingDeaths int
+	deathQueuedAt time.Time
+	killStarted   time.Time
+	// linkKillAt is when the app emptied life for a death from the room; that death is
+	// not sent back to the room (see reportDeath).
+	linkKillAt      time.Time
 	killUnsupported bool
 	wasDead         bool
 

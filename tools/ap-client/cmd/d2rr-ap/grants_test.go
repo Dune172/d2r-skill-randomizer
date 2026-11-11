@@ -470,7 +470,7 @@ func TestARoomDeathIsNotSentBack(t *testing.T) {
 	sent := 0
 	a := &app{deathLink: true, sendDeath: func(context.Context, string) error { sent++; return nil },
 		conn: apc.NewConn("localhost", 1, "Runner", "", nil, apc.Handler{})}
-	a.killedByLink = true                      // the app has just emptied life for a room death
+	a.linkKillAt = time.Now()                  // the app has just emptied life for a room death
 	a.reportDeath(context.Background(), false) // not registered yet
 	a.reportDeath(context.Background(), false)
 	a.reportDeath(context.Background(), true) // now dead
@@ -481,5 +481,26 @@ func TestARoomDeathIsNotSentBack(t *testing.T) {
 	a.reportDeath(context.Background(), true)  // a death of the player's own
 	if sent != 1 {
 		t.Fatalf("the player's own death was sent %d time(s), want 1", sent)
+	}
+}
+
+// The app may give up waiting for a room death before the game registers it; the death
+// that then lands is still the room's, and is not sent back.
+func TestALateRoomDeathIsNotSentBack(t *testing.T) {
+	sent := 0
+	a := &app{deathLink: true, sendDeath: func(context.Context, string) error { sent++; return nil },
+		conn: apc.NewConn("localhost", 1, "Runner", "", nil, apc.Handler{})}
+	a.linkKillAt = time.Now().Add(-12 * time.Second) // past killGrace, within the window
+	a.killUnsupported = true
+	a.reportDeath(context.Background(), true)
+	if sent != 0 {
+		t.Fatal("a room death that landed late was sent back")
+	}
+	// Long after, with no respawn seen, a death is the player's own again.
+	a.wasDead = false
+	a.linkKillAt = time.Now().Add(-time.Minute)
+	a.reportDeath(context.Background(), true)
+	if sent != 1 {
+		t.Fatalf("sent %d, want 1", sent)
 	}
 }
