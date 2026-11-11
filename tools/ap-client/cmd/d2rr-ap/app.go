@@ -125,6 +125,8 @@ type app struct {
 	includeAreas     bool
 	includeLevels    bool
 	levelCap         int
+	// includeSuperUniques: the room has super-unique kill checks.
+	includeSuperUniques bool
 
 	// Latest parsed save, kept so area checks can resolve the current difficulty. The
 	// save is the only thing that proves which difficulties are even unlocked.

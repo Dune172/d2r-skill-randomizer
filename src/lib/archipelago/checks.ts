@@ -9,7 +9,7 @@
  */
 
 /** One location: [id, name, kind, difficulty, act, town]. Level milestones have -1s. */
-export type ApLocation = [number, string, 'quest' | 'waypoint' | 'area' | 'level', number, number, number];
+export type ApLocation = [number, string, 'quest' | 'waypoint' | 'area' | 'level' | 'kill', number, number, number];
 
 export interface ApNames {
   levelCaps: number[][];
@@ -25,6 +25,7 @@ export interface CheckOptions {
   waypoints: boolean;
   areas: boolean;
   levels: boolean;
+  superUniques: boolean;
 }
 
 /** How many acts of a difficulty carry checks: all five below the goal's difficulty. */
@@ -47,6 +48,9 @@ export function activeLocations(names: ApNames, o: CheckOptions): ApLocation[] {
         break;
       case 'area':
         if (!o.areas) return false;
+        break;
+      case 'kill':
+        if (!o.superUniques) return false;
         break;
     }
     return act < actsIn(difficulty, o.goalDifficulty, o.goalAct);

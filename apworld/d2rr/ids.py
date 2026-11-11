@@ -231,6 +231,30 @@ def area_index_for_level_id(level_id: int) -> int | None:
         return None
 
 
+# Super-uniques whose death is a check (the include_super_uniques option), in FROZEN
+# order: position decides the location id. Each is (display name, act). Those whose death
+# already completes a quest (the Countess, Radament, the Summoner, the Council, Izual,
+# Shenk, Nihlathak, the Ancients) are left out, and so is the Cow King, a goal of its own.
+# The client recognises each by area and monstats row; tools/ap-client/internal/ids
+# holds those and checks them against the game data.
+SUPER_UNIQUES: list[tuple[str, int]] = [
+    ("Corpsefire", 0), ("Bishibosh", 0), ("Bonebreaker", 0), ("Coldcrow", 0),
+    ("Rakanishu", 0), ("Treehead Woodfist", 0), ("Griswold", 0), ("Pitspawn Fouldog", 0),
+    ("Bone Ash", 0), ("The Smith", 0),
+    ("Bloodwitch the Wild", 1), ("Fangskin", 1), ("Beetleburst", 1), ("Creeping Feature", 1),
+    ("Coldworm the Burrower", 1), ("Fire Eye", 1), ("Dark Elder", 1), ("Ancient Kaa the Soulless", 1),
+    ("Sszark the Burning", 2), ("Witch Doctor Endugu", 2), ("Stormtree", 2),
+    ("Battlemaid Sarina", 2), ("Icehawk Riftwing", 2),
+    ("Hephasto the Armorer", 3), ("Infector of Souls", 3), ("Lord De Seis", 3),
+    ("Grand Vizier of Chaos", 3),
+    ("Dac Farren", 4), ("Eldritch the Rectifier", 4), ("Sharptooth Slayer", 4),
+    ("Eyeback the Unleashed", 4), ("Thresh Socket", 4), ("Frozenstein", 4),
+    ("Bonesaw Breaker", 4), ("Snapchip Shatter", 4), ("Pindleskin", 4),
+    ("Colenzo the Annihilator", 4), ("Achmel the Cursed", 4), ("Bartuc the Bloody", 4),
+    ("Ventar the Unholy", 4), ("Lister the Tormentor", 4),
+]
+
+
 def quests_total() -> int:
     """81: 27 quests across 3 difficulties."""
     return sum(QUESTS_PER_ACT) * DIFFICULTIES
@@ -251,10 +275,15 @@ def levels_total() -> int:
     return LEVEL_MAX - LEVEL_MIN + 1
 
 
+def kills_total() -> int:
+    """123: 41 super-uniques across 3 difficulties."""
+    return DIFFICULTIES * len(SUPER_UNIQUES)
+
+
 def locations_total() -> int:
-    """689: 81 quests + 117 waypoints + 393 areas + 98 level milestones, laid out in
-    that order, each group appended after the last."""
-    return quests_total() + waypoints_total() + areas_total() + levels_total()
+    """812: 81 quests + 117 waypoints + 393 areas + 98 level milestones + 123 super-unique
+    kills, laid out in that order, each group appended after the last."""
+    return quests_total() + waypoints_total() + areas_total() + levels_total() + kills_total()
 
 
 def _quest_seq(difficulty: int, act: int, index: int) -> int | None:
@@ -290,6 +319,17 @@ def level_location_id(clvl: int) -> int | None:
     return LOCATION_BASE + base + (clvl - LEVEL_MIN)
 
 
+def kill_location_id(difficulty: int, index: int) -> int | None:
+    if not 0 <= difficulty < DIFFICULTIES or not 0 <= index < len(SUPER_UNIQUES):
+        return None
+    base = quests_total() + waypoints_total() + areas_total() + levels_total()
+    return LOCATION_BASE + base + difficulty * len(SUPER_UNIQUES) + index
+
+
+def kill_location_name(difficulty: int, index: int) -> str:
+    return f"{DIFFICULTY_NAMES[difficulty]} Kill: {SUPER_UNIQUES[index][0]}"
+
+
 def quest_location_name(difficulty: int, act: int, index: int) -> str:
     return f"{DIFFICULTY_NAMES[difficulty]} A{act + 1}: {QUEST_NAMES[act][index]}"
 
@@ -320,6 +360,9 @@ def all_location_names() -> dict[str, int]:
             out[area_location_name(d, i)] = area_location_id(d, i)  # type: ignore[assignment]
     for clvl in range(LEVEL_MIN, LEVEL_MAX + 1):
         out[level_location_name(clvl)] = level_location_id(clvl)  # type: ignore[assignment]
+    for d in range(DIFFICULTIES):
+        for i in range(len(SUPER_UNIQUES)):
+            out[kill_location_name(d, i)] = kill_location_id(d, i)  # type: ignore[assignment]
     return out
 
 
@@ -393,7 +436,7 @@ def town_checks() -> set[str]:
 
 def active_location_names(goal_difficulty: int, include_waypoints: bool = True,
                           include_areas: bool = True, include_levels: bool = True,
-                          goal_act: int = BAAL_ACT) -> list[str]:
+                          goal_act: int = BAAL_ACT, include_super_uniques: bool = False) -> list[str]:
     """Location names for a slot with this goal.
 
     Anything past the goal is excluded: it would be unreachable, and Archipelago treats
@@ -412,6 +455,10 @@ def active_location_names(goal_difficulty: int, include_waypoints: bool = True,
             for i in range(AREAS):
                 if area_act(i) < acts:
                     out.append(area_location_name(d, i))
+        if include_super_uniques:
+            for i, (_, act) in enumerate(SUPER_UNIQUES):
+                if act < acts:
+                    out.append(kill_location_name(d, i))
     if include_levels:
         for clvl in range(LEVEL_MIN, level_cap(goal_difficulty, goal_act) + 1):
             out.append(level_location_name(clvl))

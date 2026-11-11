@@ -235,3 +235,24 @@ class TestUniversalTrackerKeepsTheGoalType(D2RRTestBase):
         world.use_tracker_slot_data(world.interpret_slot_data(slot_data))
         self.assertEqual(world.options.goal_type.value, 2)
         self.assertEqual(world.options.goal_check_percentage.value, 85)
+
+
+class TestSuperUniqueKills(D2RRTestBase):
+    options = {"include_super_uniques": True, "goal_difficulty": "nightmare", "goal_boss": "mephisto"}
+
+    def test_kills_are_checks_up_to_the_goal(self) -> None:
+        names = {location.name for location in self.multiworld.get_locations(self.player)}
+        self.assertIn("Normal Kill: Lister the Tormentor", names)
+        self.assertIn("Nightmare Kill: Icehawk Riftwing", names)
+        self.assertNotIn("Nightmare Kill: Hephasto the Armorer", names)
+        self.assertNotIn("Hell Kill: Bishibosh", names)
+        self.assertTrue(self.world.fill_slot_data()["include_super_uniques"])
+
+    def test_beatable(self) -> None:
+        self.collect_all_but([])
+        self.assertBeatable(True)
+
+
+class TestNoKillsByDefault(D2RRTestBase):
+    def test_no_kill_locations(self) -> None:
+        self.assertFalse(any(" Kill: " in location.name for location in self.multiworld.get_locations(self.player)))

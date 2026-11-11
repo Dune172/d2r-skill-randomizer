@@ -6,7 +6,7 @@ import { AP_OPTIONS, AP_RANDOM, ApOptionValues, WHOLE_DIFFICULTY_GOALS } from '@
 
 const ACT_NAMES = ['Act I', 'Act II', 'Act III', 'Act IV', 'Act V'];
 const KIND_NAMES: Record<ApLocation[2], string> = {
-  quest: 'Quests', waypoint: 'Waypoints', area: 'Areas', level: 'Character levels',
+  quest: 'Quests', waypoint: 'Waypoints', area: 'Areas', level: 'Character levels', kill: 'Super-unique kills',
 };
 
 /** The index of a choice option's value, or -1 when it is left to chance. */
@@ -44,8 +44,10 @@ export default function RoomContents({ values }: { values: ApOptionValues }) {
       waypoints: values.include_waypoints === true,
       areas: values.include_areas === true,
       levels: values.include_level_milestones === true,
+      superUniques: values.include_super_uniques === true,
     });
-  }, [names, random, goalDifficulty, goalAct, values.include_waypoints, values.include_areas, values.include_level_milestones]);
+  }, [names, random, goalDifficulty, goalAct, values.include_waypoints, values.include_areas,
+    values.include_level_milestones, values.include_super_uniques]);
 
   // Grouped as players meet them: difficulty, then act, then the kind of check.
   const groups = useMemo(() => {
@@ -56,7 +58,7 @@ export default function RoomContents({ values }: { values: ApOptionValues }) {
       let group = byKey.get(title);
       if (!group) byKey.set(title, group = { title, kinds: new Map() });
       const list = group.kinds.get(kind) ?? [];
-      list.push(name.replace(/^(Normal|Nightmare|Hell) (A\d|WP|Area): /, ''));
+      list.push(name.replace(/^(Normal|Nightmare|Hell) (A\d|WP|Area|Kill): /, ''));
       group.kinds.set(kind, list);
     }
     return [...byKey.values()];

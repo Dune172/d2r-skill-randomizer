@@ -157,6 +157,19 @@ class KeyItems(Toggle):
     default = 0
 
 
+class IncludeSuperUniques(Toggle):
+    """EXPERIMENTAL. Killing a named super-unique is a check: Bishibosh, Griswold,
+    Pindleskin and 38 more, on every difficulty you play, up to your goal.
+
+    Super-uniques whose death already finishes a quest (the Countess, Radament, the
+    Summoner, the Council, Izual, Shenk, Nihlathak, the Ancients) are not repeated here.
+    The companion app has to be running when the monster dies. The app reads monster
+    deaths correctly on D2R 3.4, but a super-unique kill has not yet been seen in a test.
+    """
+    display_name = "Super-Unique Kills"
+    default = 0
+
+
 class StatPoints(Choice):
     """Where attribute points come from.
 
@@ -248,6 +261,7 @@ class D2RROptions(PerGameCommonOptions):
     monster_shuffle: MonsterShuffle
     open_acts: OpenActs
     death_link: D2RRDeathLink
+    include_super_uniques: IncludeSuperUniques
 
 
 OPTION_GROUPS = [
@@ -255,7 +269,7 @@ OPTION_GROUPS = [
     OptionGroup("Skill Points", [SkillPoints, StartingSkillPoints, LogicDifficulty, StatPoints]),
     OptionGroup("Checks", [IncludeWaypoints, IncludeAreas, IncludeLevelMilestones]),
     OptionGroup("The Mod", [OpenActs, XPMultiplier, MonsterShuffle]),
-    OptionGroup("Experimental", [KeyItems, TrapPercentage, D2RRDeathLink]),
+    OptionGroup("Experimental", [KeyItems, TrapPercentage, D2RRDeathLink, IncludeSuperUniques]),
 ]
 
 OPTION_PRESETS = {

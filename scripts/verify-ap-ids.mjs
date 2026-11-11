@@ -99,11 +99,13 @@ function main() {
   const checks = loadTs(path.join(repoRoot, 'src', 'lib', 'archipelago', 'checks.ts'));
   const names = JSON.parse(fs.readFileSync(path.join(repoRoot, 'src', 'lib', 'archipelago', 'ap-names.json'), 'utf8'));
   for (const [key, want] of Object.entries(py.activeCounts ?? {})) {
-    const [gd, ga, w, a, lv] = key.split(':').map(Number);
+    const [gd, ga, w, a, lv, su] = key.split(':').map(Number);
     const got = checks.activeLocations(names, {
-      goalDifficulty: gd, goalAct: ga, waypoints: w === 1, areas: a === 1, levels: lv === 1,
+      goalDifficulty: gd, goalAct: ga, waypoints: w === 1, areas: a === 1, levels: lv === 1, superUniques: su === 1,
     }).length;
-    if (got !== want) problems.push(`page check count for ${key} (difficulty:act:waypoints:areas:levels) is ${got}, the apworld's ${want}`);
+    if (got !== want) {
+      problems.push(`page check count for ${key} (difficulty:act:waypoints:areas:levels:super-uniques) is ${got}, the apworld's ${want}`);
+    }
   }
   if (!py.activeCounts) problems.push('the Python dump has no activeCounts');
 
@@ -122,9 +124,11 @@ function main() {
 
   console.log(`Go and Python id tables agree exactly.`);
   console.log(`  ${itemCount} items (${go.traps.length} traps, ${go.runes.length} runes)`);
+  const levels = go.levelMax - go.levelMin + 1;
+  const kills = go.superUniques.length * 3;
   console.log(
-    `  ${locCount} locations (${go.questsTotal} quests, ${go.locationsTotal - go.questsTotal - go.areas * 3 - (go.levelMax - go.levelMin + 1)} waypoints, ` +
-      `${go.areas * 3} areas, ${go.levelMax - go.levelMin + 1} level milestones)`,
+    `  ${locCount} locations (${go.questsTotal} quests, ${go.locationsTotal - go.questsTotal - go.areas * 3 - levels - kills} waypoints, ` +
+      `${go.areas * 3} areas, ${levels} level milestones, ${kills} super-unique kills)`,
   );
 }
 

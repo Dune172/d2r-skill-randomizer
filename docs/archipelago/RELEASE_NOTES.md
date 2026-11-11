@@ -33,6 +33,9 @@ is refused when the app connects, with a message saying so.
 4. Keep the app open while you play. Points arrive by themselves, and what you receive
    and send appears in the game beside the chat.
 
+New experimental option `include_super_uniques`: killing one of 41 named super-uniques is
+a check.
+
 Goals: besides killing a chosen boss, `goal_type` can ask for all five act bosses, a
 share of your checks, or (experimental) the Cow King.
 

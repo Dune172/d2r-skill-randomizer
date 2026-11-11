@@ -148,6 +148,7 @@ func (a *app) pollProgress(ctx context.Context) {
 	a.mu.Lock()
 	wantWaypoints := a.includeWaypoints
 	wantAreas, wantLevels, cap := a.includeAreas, a.includeLevels, a.levelCap
+	wantKills := a.includeSuperUniques
 	st := a.lastState
 	goal := a.goalDifficulty
 	a.mu.Unlock()
@@ -226,6 +227,17 @@ func (a *app) pollProgress(ctx context.Context) {
 						save.DifficultyNames[res.Difficulty])
 				}
 			}
+		}
+	}
+
+	// Super-unique kills, like areas, need the difficulty to file them under.
+	if wantKills && res.OK {
+		units, err := a.gc.Monsters()
+		if err != nil {
+			a.note("kills", "super-unique kills paused: "+err.Error())
+		} else {
+			a.note("kills", "")
+			newIDs = append(newIDs, a.killChecks(units, prog.AreaLevelID, res.Difficulty)...)
 		}
 	}
 

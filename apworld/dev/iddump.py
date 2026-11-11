@@ -28,6 +28,9 @@ def main() -> None:
             locations[f"area:{d}:{i}"] = ids.area_location_id(d, i)
     for clvl in range(ids.LEVEL_MIN, ids.LEVEL_MAX + 1):
         locations[f"lvl:{clvl}"] = ids.level_location_id(clvl)
+    for d in range(ids.DIFFICULTIES):
+        for i in range(len(ids.SUPER_UNIQUES)):
+            locations[f"kill:{d}:{i}"] = ids.kill_location_id(d, i)
 
     # How many checks a slot holds for every goal and check toggle, so the page's port of
     # active_location_names (src/lib/archipelago/checks.ts) can be held to it.
@@ -37,8 +40,9 @@ def main() -> None:
             for w in (0, 1):
                 for a in (0, 1):
                     for lv in (0, 1):
-                        names = ids.active_location_names(gd, bool(w), bool(a), bool(lv), ga)
-                        active_counts[f"{gd}:{ga}:{w}:{a}:{lv}"] = len(names)
+                        for su in (0, 1):
+                            names = ids.active_location_names(gd, bool(w), bool(a), bool(lv), ga, bool(su))
+                            active_counts[f"{gd}:{ga}:{w}:{a}:{lv}:{su}"] = len(names)
 
     print(json.dumps({
         "itemBase": ids.ITEM_BASE,
@@ -66,6 +70,7 @@ def main() -> None:
         "traps": ids.TRAP_ITEMS,
         "runes": [ids.rune_item_name(i) for i in range(len(ids.RUNE_NAMES))],
         "locations": locations,
+        "superUniques": [[name, act] for name, act in ids.SUPER_UNIQUES],
         "activeCounts": active_counts,
         "locationNames": {str(i): name for name, i in ids.all_location_names().items()},
     }, indent=2, sort_keys=True))

@@ -172,10 +172,10 @@ func WaypointLocationID(difficulty, index int) (int64, bool) {
 	return int64(LocationBase + QuestsTotal() + difficulty*Waypoints + index), true
 }
 
-// LocationsTotal is every location this scheme defines: 689.
+// LocationsTotal is every location this scheme defines: 812.
 //
-// 81 quests + 117 waypoints + 393 areas + 98 level milestones, laid out in that order
-// with each group appended after the last.
+// 81 quests + 117 waypoints + 393 areas + 98 level milestones + 123 super-unique kills,
+// laid out in that order with each group appended after the last.
 func LocationsTotal() int {
-	return QuestsTotal() + WaypointsTotal() + AreasTotal() + LevelsTotal()
+	return QuestsTotal() + WaypointsTotal() + AreasTotal() + LevelsTotal() + KillsTotal()
 }

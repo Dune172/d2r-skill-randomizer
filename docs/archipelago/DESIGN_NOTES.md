@@ -277,6 +277,18 @@ any unreadable address instead of panicking (d2go's own `Monsters()` can).
   flag; d2go's 10 is it plus the unique bit 0x08) rather than the exact value 10.
 - The first trip ended with the character's death before reaching Bishibosh.
 
+**The checks** (apworld 0.7.0, slot contract 6, option `include_super_uniques`, off):
+41 super-uniques per difficulty, appended after the level milestones (ids +689..+811).
+Left out: those whose death finishes a quest (Countess, Radament, Summoner, Council,
+Izual, Shenk, Nihlathak, the Ancients), the Cow King (a goal type), and ten
+superuniques.txt rows whose place in the game is not certain (Flamespike the Crawler,
+Winged Death, the Tormentor, Taintbreeder, Riftwraith, Axe Dweller, Anodized Elite,
+Vinvear Molech, Magma Torquer, Blaze Ripper); they can be appended later. Each sits in its act's region. The client files a kill when a unit with
+the super-unique bit is dead (mode 0/12 or the corpse byte) in one of the areas listed
+for its monstats row (`ids.SuperUniques`; Ancient Kaa's are the seven tombs), on the
+difficulty area checks use. `TestSuperUniquesMatchTheGameData` holds the rows and
+areas to `data/txt`.
+
 ## After a D2R patch
 
 1. `d2rr-ap saves <save folder>`: do quests and waypoints still parse?
