@@ -30,7 +30,9 @@ The same safeguards as autumn apply: the overlay is stamped with the
 `node scripts/verify-season.mjs --season winter [--src <extraction>]`.
 
 **Before each December** (or after any D2R patch), re-extract the game files,
-run `verify-season --season winter --src`, and if it fails, rebuild.
+run `verify-season --season winter --src`, and if it fails, rebuild. If only the
+stamp is stale (every vanilla source unchanged), `node scripts/restamp-season-overlay.mjs
+--season winter --src <extraction>` re-stamps it without rebuilding.
 
 ## Rebuilding the overlay (offline)
 
