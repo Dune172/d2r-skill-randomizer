@@ -141,8 +141,11 @@ func (c *Client) QuitMenuOpen() bool {
 		}
 		c.pausePanel = addr
 	}
-	v, err := readUint(c.proc.ReadIntoBuffer, c.pausePanel+offPanelVisible, 1)
-	return err != nil || v != 0
+	var visible [1]byte
+	if err := c.proc.ReadIntoBuffer(c.pausePanel+offPanelVisible, visible[:]); err != nil {
+		return true
+	}
+	return visible[0] != 0
 }
 
 func (c *Client) openWrite() (windows.Handle, error) {
