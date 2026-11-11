@@ -41,6 +41,19 @@ func main() {
 			locations[fmt.Sprintf("area:%d:%d", d, i)] = id
 		}
 	}
+	for d := 0; d < ids.Difficulties; d++ {
+		for i := range ids.SuperUniques {
+			id, ok := ids.KillLocationID(d, i)
+			if !ok {
+				os.Exit(1)
+			}
+			locations[fmt.Sprintf("kill:%d:%d", d, i)] = id
+		}
+	}
+	superUniques := make([][]any, len(ids.SuperUniques))
+	for i, su := range ids.SuperUniques {
+		superUniques[i] = []any{su.Name, su.Act}
+	}
 	for clvl := ids.LevelMin; clvl <= ids.LevelMax; clvl++ {
 		id, ok := ids.LevelLocationID(clvl)
 		if !ok {
@@ -92,6 +105,7 @@ func main() {
 		"traps":         ids.Traps,
 		"runes":         runes,
 		"locations":     locations,
+		"superUniques":  superUniques,
 		"locationNames": names,
 	}, "", "  ")
 	fmt.Println(string(out))

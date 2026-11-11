@@ -39,7 +39,11 @@ class TestIdsAreFrozen(unittest.TestCase):
         self.assertEqual(ids.waypoint_location_id(0, 0), base + 81)
         self.assertEqual(ids.area_location_id(0, 0), base + 198)
         self.assertEqual(ids.level_location_id(ids.LEVEL_MIN), base + 591)
-        self.assertEqual(ids.locations_total(), 689)
+        self.assertEqual(ids.kill_location_id(0, 0), base + 689)
+        self.assertEqual(ids.kill_location_id(2, len(ids.SUPER_UNIQUES) - 1), base + 811)
+        self.assertEqual(ids.locations_total(), 812)
+        # Kills must stay below the item ids (base + 1000 onwards is the item space).
+        self.assertLess(ids.locations_total(), 1000)
 
     def test_item_ids_have_not_moved(self):
         items = ids.all_item_names()
@@ -63,6 +67,18 @@ class TestIdsAreFrozen(unittest.TestCase):
     def test_item_and_location_ids_do_not_overlap(self):
         # Archipelago allows it, but a shared number in a log line is needlessly ambiguous.
         self.assertFalse(set(ids.all_item_names().values()) & set(ids.all_location_names().values()))
+
+
+class TestSuperUniqueKills(unittest.TestCase):
+    def test_kills_follow_the_goal_and_the_option(self):
+        off = ids.active_location_names(0, goal_act=1)
+        on = ids.active_location_names(0, goal_act=1, include_super_uniques=True)
+        kills = [name for name in on if " Kill: " in name]
+        self.assertFalse(any(" Kill: " in name for name in off))
+        # Acts I and II on Normal only.
+        self.assertEqual(len(kills), sum(1 for _, act in ids.SUPER_UNIQUES if act <= 1))
+        self.assertIn("Normal Kill: Bishibosh", kills)
+        self.assertNotIn("Normal Kill: Sszark the Burning", kills)
 
 
 class TestWaypointsAndAreas(unittest.TestCase):

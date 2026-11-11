@@ -17,7 +17,7 @@ const GameName = "D2R Randomizer"
 
 // SlotContractVersion distinguishes spendable points from the retired skill-slot pool.
 // Separate from the downloaded mod manifest contract, even when the numbers coincide.
-const SlotContractVersion = 5
+const SlotContractVersion = 6
 
 // itemsHandlingAll asks the server for every item: those from other worlds, our own
 // found items, and starting inventory. The client is the source of truth for what the

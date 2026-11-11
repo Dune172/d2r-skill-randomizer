@@ -14,6 +14,7 @@ const (
 	KindWaypoint
 	KindArea
 	KindLevel
+	KindKill
 )
 
 // String is the kind as the site and the client name it.
@@ -27,6 +28,8 @@ func (k LocationKind) String() string {
 		return "area"
 	case KindLevel:
 		return "level"
+	case KindKill:
+		return "kill"
 	}
 	return "unknown"
 }
@@ -122,7 +125,12 @@ func Locate(id int64) (LocationInfo, bool) {
 		return LocationInfo{Kind: KindArea, Difficulty: d, Act: AreaActs[i], Index: i}, true
 	}
 	off -= AreasTotal()
-	return LocationInfo{Kind: KindLevel, Difficulty: -1, Act: -1, Index: LevelMin + off}, true
+	if off < LevelsTotal() {
+		return LocationInfo{Kind: KindLevel, Difficulty: -1, Act: -1, Index: LevelMin + off}, true
+	}
+	off -= LevelsTotal()
+	d, i := off/len(SuperUniques), off%len(SuperUniques)
+	return LocationInfo{Kind: KindKill, Difficulty: d, Act: SuperUniques[i].Act, Index: i}, true
 }
 
 // DifficultyNames are the difficulties as players and location names say them.
@@ -150,6 +158,8 @@ func LocationName(id int64) (string, bool) {
 		return DifficultyNames[info.Difficulty] + " WP: " + WaypointNames[info.Index], true
 	case KindArea:
 		return DifficultyNames[info.Difficulty] + " Area: " + AreaLabels[info.Index], true
+	case KindKill:
+		return DifficultyNames[info.Difficulty] + " Kill: " + SuperUniques[info.Index].Name, true
 	default:
 		return "Level " + strconv.Itoa(info.Index), true
 	}

@@ -256,6 +256,39 @@ without leaving town).
   maintained upstream. A D2R patch can break them; `d2rr-ap doctor` and `probe` are the
   first things to run after one.
 
+## Super-unique kill checks: probe results (2026-11-11, D2R 3.4.95032)
+
+`d2rr-ap probe -monsters [-watch N]` walks the monster unit table with
+`internal/game/monsters.go`, a read-only walk of fixed-size fields that ends a chain on
+any unreadable address instead of panicking (d2go's own `Monsters()` can).
+
+- **The walk works on 3.4.** The Rogue Encampment gave 10 units with the town NPCs'
+  monstats rows (147-155) in mode 1. The Cold Plains gave 22-30 units: Fallen (19),
+  shamans (58) and the like, among them a unique pack whose leader read type flag 8
+  (unique) and its members 16 (minion), d2go's values. So the unit data's type byte
+  (+0x1A) is in place, and a super-unique should read 10.
+- **Deaths read correctly.** On a second trip (the Arena Barbarian given 4000 strength
+  and 3000 life with `probe -set`), the Fallen and the members of a unique pack killed
+  in the Cold Plains read mode 12 with the corpse byte (+0x1AE) set, and stayed in the
+  unit table that way.
+- **Not yet seen: a super-unique.** About 15 minutes of the Cold Plains turned up two
+  unique packs (flags 8 and 16) but not Bishibosh, so the super-unique value is still
+  d2go's word. The client tests the super-unique BIT (0x02, the classic MonUMod type
+  flag; d2go's 10 is it plus the unique bit 0x08) rather than the exact value 10.
+- The first trip ended with the character's death before reaching Bishibosh.
+
+**The checks** (apworld 0.7.0, slot contract 6, option `include_super_uniques`, off):
+41 super-uniques per difficulty, appended after the level milestones (ids +689..+811).
+Left out: those whose death finishes a quest (Countess, Radament, Summoner, Council,
+Izual, Shenk, Nihlathak, the Ancients), the Cow King (a goal type), and ten
+superuniques.txt rows whose place in the game is not certain (Flamespike the Crawler,
+Winged Death, the Tormentor, Taintbreeder, Riftwraith, Axe Dweller, Anodized Elite,
+Vinvear Molech, Magma Torquer, Blaze Ripper); they can be appended later. Each sits in its act's region. The client files a kill when a unit with
+the super-unique bit is dead (mode 0/12 or the corpse byte) in one of the areas listed
+for its monstats row (`ids.SuperUniques`; Ancient Kaa's are the seven tombs), on the
+difficulty area checks use. `TestSuperUniquesMatchTheGameData` holds the rows and
+areas to `data/txt`.
+
 ## After a D2R patch
 
 1. `d2rr-ap saves <save folder>`: do quests and waypoints still parse?
@@ -264,6 +297,19 @@ without leaving town).
 4. `d2rr-ap doctor -manifest <zip> -calibrate-difficulty -difficulty 0` from a Normal
    game, to re-record the difficulty profile for the new executable.
 5. Re-measure the module offsets in `knownBuildOffsets` (`scripts/patch-d2go.mjs`).
+
+### D2R 3.4 (build 3.4.95032, first seen 2026-11-11)
+
+- **The client's reads still work.** `d2rr-ap probe` in town read the character, its
+  base stat list (16 entries), its skills and the game's own copy; `probe -monsters`
+  read the unit table. G1 and the stat writes were NOT re-run on this build.
+- **A `-txt` mod built from 3.3 data warns "Data version mismatch"** at the title
+  screen (current data version 95032, detected unknown). It comes from the mod having no
+  `data/global/DataVersionBuild.txt`, and it only warns: the arena mod's monstats.txt
+  still loaded on 3.4 (a Fallen dropped a Wirt's Leg, which only its treasure classes
+  give). A level 2 Barbarian did die to a Cold Plains unique pack, most likely to
+  enchantment damage, which the arena's zeroed damage columns do not cover
+  (unconfirmed). Site mods carry 95032 and the 3.4 tables since PR #22.
 
 ### D2R 3.3 (build 3.3.93847, measured 2026-10-26)
 

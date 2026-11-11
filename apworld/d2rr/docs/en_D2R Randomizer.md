@@ -46,6 +46,7 @@ traps are untested. Everything arrives by itself while the companion app is runn
 - Activating a waypoint (not a town's).
 - Entering an area for the first time (not a town).
 - Reaching a character level, up to about the level you would have at the goal.
+- Optionally (experimental), killing a named super-unique such as Bishibosh or Pindleskin.
 
 Each group except quests can be switched off.
 

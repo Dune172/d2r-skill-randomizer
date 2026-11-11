@@ -23,7 +23,7 @@ from . import ids, rules
 from .options import OPTION_GROUPS, OPTION_PRESETS, D2RROptions
 
 # Bumped when slot_data changes in a way the client must understand.
-SLOT_CONTRACT_VERSION = 5
+SLOT_CONTRACT_VERSION = 6
 
 # Many identical progression items: keep them off priority locations and out of
 # progression balancing, where one more copy of a point does nothing useful.
@@ -58,7 +58,8 @@ class D2RRWeb(WebWorld):
 
 def _location_groups() -> dict[str, set]:
     groups: dict[str, set] = {name: set() for name in ids.DIFFICULTY_NAMES + ids.ACT_NAMES}
-    groups.update({"Quests": set(), "Waypoints": set(), "Areas": set(), "Level Milestones": set()})
+    groups.update({"Quests": set(), "Waypoints": set(), "Areas": set(), "Level Milestones": set(),
+                   "Super-Unique Kills": set()})
     for d in range(ids.DIFFICULTIES):
         for act, count in enumerate(ids.QUESTS_PER_ACT):
             for i in range(count):
@@ -75,6 +76,11 @@ def _location_groups() -> dict[str, set]:
                 groups[group].add(name)
     for clvl in range(ids.LEVEL_MIN, ids.LEVEL_MAX + 1):
         groups["Level Milestones"].add(ids.level_location_name(clvl))
+    for d in range(ids.DIFFICULTIES):
+        for i, (_, act) in enumerate(ids.SUPER_UNIQUES):
+            name = ids.kill_location_name(d, i)
+            for group in (ids.DIFFICULTY_NAMES[d], ids.ACT_NAMES[act], "Super-Unique Kills"):
+                groups[group].add(name)
     return groups
 
 
@@ -170,6 +176,7 @@ class D2RRWorld(World):
         options.open_acts.value = int(slot_data.get("open_acts", False))
         if "logic_difficulty" in slot_data:
             options.logic_difficulty.value = slot_data["logic_difficulty"]
+        options.include_super_uniques.value = int(slot_data.get("include_super_uniques", False))
         options.goal_type.value = slot_data.get("goal_type", options.goal_type.option_boss)
         options.goal_check_percentage.value = slot_data.get("goal_check_percentage", options.goal_check_percentage.default)
 
@@ -180,6 +187,7 @@ class D2RRWorld(World):
             bool(self.options.include_areas),
             bool(self.options.include_level_milestones),
             self.goal_act,
+            bool(self.options.include_super_uniques),
         )
 
     # ------------------------------------------------------------------ regions
@@ -249,6 +257,10 @@ class D2RRWorld(World):
                     if ids.area_act(i) == act:
                         place(self._region_name(d, act, ids.area_gate(i)),
                               ids.area_location_name(d, i), ids.area_location_id(d, i))
+                # No super-unique stands behind a Cube gate, so each hangs off its act.
+                for i, (_, su_act) in enumerate(ids.SUPER_UNIQUES):
+                    if su_act == act:
+                        place(self._region_name(d, act), ids.kill_location_name(d, i), ids.kill_location_id(d, i))
 
                 # A locked event marks the boss's death. The next difficulty and the goal
                 # both read it, which keeps those rules to a state.has() lookup.
@@ -338,6 +350,7 @@ class D2RRWorld(World):
             "include_waypoints": bool(self.options.include_waypoints),
             "include_areas": bool(self.options.include_areas),
             "include_level_milestones": bool(self.options.include_level_milestones),
+            "include_super_uniques": bool(self.options.include_super_uniques),
             "skill_points": self.pool["skill_points"],
             "starting_skill_points": self.pool["starting_skill_points"],
             "fragments_per_point": ids.FRAGMENTS_PER_POINT,

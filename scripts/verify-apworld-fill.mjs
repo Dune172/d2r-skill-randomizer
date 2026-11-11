@@ -45,7 +45,7 @@ const DEFAULTS = {
   skill_points: 110, starting_skill_points: 1, logic_difficulty: 'standard',
   include_waypoints: true, include_areas: true, include_level_milestones: true,
   key_items: false, stat_points: 'pooled', trap_percentage: 0,
-  xp_multiplier: 3, monster_shuffle: true, death_link: false,
+  xp_multiplier: 3, monster_shuffle: true, death_link: false, include_super_uniques: false,
 };
 const QUESTS_ONLY = { include_waypoints: false, include_areas: false, include_level_milestones: false };
 const EVERYTHING = { key_items: true, stat_points: 'pooled', trap_percentage: 15 };
@@ -92,6 +92,9 @@ function cases() {
   out.push({ name: 'goal-percent-100-quests', goal_type: 'check_percentage', goal_check_percentage: 100, goal_boss: 'mephisto', ...QUESTS_ONLY, ...EVERYTHING });
   out.push({ name: 'goal-cow-king-normal', goal_type: 'cow_king', goal_boss: 'andariel' });
   out.push({ name: 'goal-cow-king-nightmare-all', goal_type: 'cow_king', goal_difficulty: 'nightmare', ...EVERYTHING });
+  out.push({ name: 'kills-normal-andariel', include_super_uniques: true, goal_boss: 'andariel' });
+  out.push({ name: 'kills-hell-all', include_super_uniques: true, goal_difficulty: 'hell', skill_points: 600, ...EVERYTHING });
+  out.push({ name: 'kills-quests-only', include_super_uniques: true, goal_boss: 'diablo', ...QUESTS_ONLY });
   out.push({ name: 'keys-only', key_items: true });
   out.push({ name: 'stats-vanilla', stat_points: 'vanilla' });
   out.push({ name: 'traps-100', trap_percentage: 100 });
@@ -199,7 +202,7 @@ function audit(c, slot, spoiler, multi) {
 
   // Nothing past the goal may be a location.
   for (const p of mine) {
-    const m = /^(Normal|Nightmare|Hell) (?:A(\d)|WP|Area)/.exec(p.location);
+    const m = /^(Normal|Nightmare|Hell) (?:A(\d)|WP|Area|Kill)/.exec(p.location);
     if (!m) continue;
     const d = DIFFICULTIES.indexOf(m[1].toLowerCase());
     if (d > goalDifficulty || (d === goalDifficulty && m[2] && Number(m[2]) - 1 > goalAct)) {

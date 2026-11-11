@@ -40,6 +40,7 @@ func (a *app) applySlotData(slotData map[string]any) (deathLink bool) {
 	a.includeWaypoints = boolFromSlotData(slotData, "include_waypoints", true)
 	a.includeAreas = boolFromSlotData(slotData, "include_areas", true)
 	a.includeLevels = boolFromSlotData(slotData, "include_level_milestones", true)
+	a.includeSuperUniques = boolFromSlotData(slotData, "include_super_uniques", false)
 	a.levelCap = ids.LevelCap(0, 0)
 	if v, ok := slotData["level_cap"].(float64); ok {
 		a.levelCap = int(v)

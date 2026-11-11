@@ -94,7 +94,7 @@ async function main() {
     `name: ${SLOT}`, 'game: D2R Randomizer', 'D2R Randomizer:',
     '  character_class: paladin', '  goal_boss: duriel', '  key_items: true',
     '  stat_points: pooled', '  trap_percentage: 10',
-    '  xp_multiplier: 2', '  death_link: true', '',
+    '  xp_multiplier: 2', '  death_link: true', '  include_super_uniques: true', '',
   ].join('\n'));
 
   const procs = [];
@@ -172,6 +172,9 @@ async function main() {
       client.say('/missing act ii');
       // Log lines carry a timestamp.
       await client.waitFor(/checks still to find:\s+\S+\s+Normal Act II:/, 'the /missing act ii list');
+      // Super-unique kills are in the room, filed under their act.
+      client.say('/missing kill');
+      await client.waitFor(/Normal Kill: Bishibosh/, 'a kill check in /missing kill');
       return `${m[1]} of ${m[2]}`;
     });
     await step('a hint reaches the game box and /hints', async () => {

@@ -123,6 +123,11 @@ to `vanilla` to get five per level as usual instead.
 - **Horadric Keys**: they arrive by themselves while the app is running. Once you hold
   enough, the Cube assembles the Horadric Staff and Khalim's Will as usual.
 
+- **Super-unique kills** (`include_super_uniques`): killing one of 41 named super-uniques
+  (Bishibosh, Griswold, Pindleskin, ...) is a check on each difficulty you play. Those a
+  quest already counts are left out. The app has to be running when it dies; walking
+  back past its corpse also counts. A super-unique kill has not yet been seen in a test.
+
 Keys and pooled stat points have been checked in the game in town, but not yet over a
 full run. Leave keys off for a run that has to finish. Runes are not in the game for
 now.
