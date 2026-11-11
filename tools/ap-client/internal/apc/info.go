@@ -72,6 +72,14 @@ func (c *Conn) Progress() (all, missing []int64, ok bool) {
 	return all, missing, true
 }
 
+// ProgressCounts is how many locations the room has for this slot and how many are still
+// unchecked; ok is false until the room has said.
+func (c *Conn) ProgressCounts() (all, missing int, ok bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return len(c.locations), len(c.missing), c.locations != nil
+}
+
 // LocationName names one of this slot's locations, from the room's tables.
 func (c *Conn) LocationName(id int64) string {
 	c.mu.Lock()

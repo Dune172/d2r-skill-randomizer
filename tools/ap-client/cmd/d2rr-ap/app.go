@@ -100,6 +100,10 @@ type app struct {
 	// is -1 until Connected arrives, so the goal is never reported against a guess.
 	goalDifficulty int
 	goalAct        int
+	// What finishes the slot (goalBoss, goalAllBosses, ...) and, for a share of checks,
+	// the percentage.
+	goalType    int
+	goalPercent int
 
 	// Retained so the mod fetch can be retried without another Connected packet.
 	slotData      map[string]any
@@ -193,6 +197,8 @@ func (a *app) run(ctx context.Context) {
 			a.handleCommand(cmd)
 		case <-ticker.C:
 			a.writeStatus()
+			// Needs only the room, so it runs before the game is ready too.
+			a.maybeReportCheckGoal(ctx)
 			if !a.ready() {
 				// Retry rather than wait forever. ensureMod used to run ONLY on
 				// connect, so a transient failure (D2RR server not up yet) wedged the

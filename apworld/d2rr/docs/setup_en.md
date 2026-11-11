@@ -31,7 +31,9 @@ D2R Randomizer:
   xp_multiplier: 3
 ```
 
-`goal_boss: andariel` on Normal is about an hour and suits a first try. Everything
+`goal_boss: andariel` on Normal is about an hour and suits a first try. `goal_type`
+changes what finishes your slot: `all_bosses`, `check_percentage` (with
+`goal_check_percentage`) or the experimental `cow_king`. Everything
 marked EXPERIMENTAL in the options is off by default; leave it off for a run that has
 to finish.
 
@@ -78,7 +80,9 @@ The app also runs from a command prompt:
   the other `!` commands work as in any Archipelago client. `/help` lists the app's own
   commands.
 - The app sends checks as you complete quests, activate waypoints, enter areas and
-  gain levels, and reports the goal when your goal boss dies. Towns are never checks,
+  gain levels, and reports the goal when your goal is done: the goal boss dies (or
+  all five act bosses, or the Cow King), or, for `check_percentage`, the room counts
+  enough of your checks. Towns are never checks,
   neither the town nor its waypoint.
 
 ### The app's window

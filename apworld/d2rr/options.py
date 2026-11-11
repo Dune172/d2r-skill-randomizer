@@ -51,6 +51,34 @@ class GoalBoss(Choice):
     default = 4
 
 
+class GoalType(Choice):
+    """What finishes the slot.
+
+    Boss: kill the goal boss on the goal difficulty.
+    All Bosses: kill all five act bosses on the goal difficulty. Goal Boss is ignored;
+    every act carries checks.
+    Check Percentage: find this share of your own checks (Goal Check Percentage). Checks
+    stop at the goal boss as usual, but killing it is not required.
+    Cow King: EXPERIMENTAL. Kill the Cow King on the goal difficulty, which needs that
+    difficulty's Baal dead first. Goal Boss is ignored; every act carries checks. The kill
+    is read from the save file, so it counts once the game has saved.
+    """
+    display_name = "Goal Type"
+    option_boss = 0
+    option_all_bosses = 1
+    option_check_percentage = 2
+    option_cow_king = 3
+    default = 0
+
+
+class GoalCheckPercentage(Range):
+    """With the Check Percentage goal: the share of your own checks to find."""
+    display_name = "Goal Check Percentage"
+    range_start = 10
+    range_end = 100
+    default = 60
+
+
 class SkillPoints(Range):
     """How many skill points Archipelago hands out over the run.
 
@@ -205,6 +233,8 @@ class D2RROptions(PerGameCommonOptions):
     character_class: CharacterClass
     goal_difficulty: GoalDifficulty
     goal_boss: GoalBoss
+    goal_type: GoalType
+    goal_check_percentage: GoalCheckPercentage
     skill_points: SkillPoints
     starting_skill_points: StartingSkillPoints
     logic_difficulty: LogicDifficulty
@@ -221,7 +251,7 @@ class D2RROptions(PerGameCommonOptions):
 
 
 OPTION_GROUPS = [
-    OptionGroup("Goal", [CharacterClass, GoalDifficulty, GoalBoss]),
+    OptionGroup("Goal", [CharacterClass, GoalDifficulty, GoalBoss, GoalType, GoalCheckPercentage]),
     OptionGroup("Skill Points", [SkillPoints, StartingSkillPoints, LogicDifficulty, StatPoints]),
     OptionGroup("Checks", [IncludeWaypoints, IncludeAreas, IncludeLevelMilestones]),
     OptionGroup("The Mod", [OpenActs, XPMultiplier, MonsterShuffle]),

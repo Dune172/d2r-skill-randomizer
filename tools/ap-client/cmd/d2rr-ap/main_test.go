@@ -127,18 +127,18 @@ func TestGoalIsTheQuestThatRecordsTheBossOnTheGoalDifficulty(t *testing.T) {
 		return &save.State{CompletedQuests: []save.Quest{{Difficulty: d, Act: act, Index: index}}}
 	}
 	for act, index := range ids.GoalQuestIndex {
-		if !goalReached(quest(1, act, index), 1, act) {
+		if !goalReached(quest(1, act, index), goalBoss, 1, act) {
 			t.Errorf("act %d: the boss quest did not complete the goal", act)
 		}
-		if goalReached(quest(0, act, index), 1, act) {
+		if goalReached(quest(0, act, index), goalBoss, 1, act) {
 			t.Errorf("act %d: the boss on an easier difficulty completed the goal", act)
 		}
-		if goalReached(quest(1, act, 0), 1, act) && index != 0 {
+		if goalReached(quest(1, act, 0), goalBoss, 1, act) && index != 0 {
 			t.Errorf("act %d: another quest of the act completed the goal", act)
 		}
 	}
 	// Baal must not complete a Diablo goal, and an out-of-range act must not panic.
-	if goalReached(quest(0, 4, 5), 0, 3) || goalReached(quest(0, 4, 5), 0, 9) {
+	if goalReached(quest(0, 4, 5), goalBoss, 0, 3) || goalReached(quest(0, 4, 5), goalBoss, 0, 9) {
 		t.Fatal("the wrong boss completed the goal")
 	}
 }
@@ -197,5 +197,53 @@ func TestAttachRetryDelayBacksOff(t *testing.T) {
 	}
 	if got := attachRetryDelay(100); got != 30*time.Second {
 		t.Fatalf("cap: %s", got)
+	}
+}
+
+func TestOtherGoalTypes(t *testing.T) {
+	var all save.State
+	for act, index := range ids.GoalQuestIndex {
+		if act != 2 {
+			all.CompletedQuests = append(all.CompletedQuests, save.Quest{Difficulty: 2, Act: act, Index: index})
+		}
+	}
+	if goalReached(&all, goalAllBosses, 2, 4) {
+		t.Fatal("All Bosses finished without Mephisto")
+	}
+	all.CompletedQuests = append(all.CompletedQuests, save.Quest{Difficulty: 2, Act: 2, Index: ids.GoalQuestIndex[2]})
+	if !goalReached(&all, goalAllBosses, 2, 4) || goalReached(&all, goalAllBosses, 1, 4) {
+		t.Fatal("All Bosses: wrong answer on Hell or Nightmare")
+	}
+
+	cows := &save.State{}
+	cows.CowKingKilled[1] = true
+	if !goalReached(cows, goalCowKing, 1, 4) || goalReached(cows, goalCowKing, 0, 4) {
+		t.Fatal("Cow King read from the wrong difficulty")
+	}
+	// The save never finishes a percentage goal: the room's count does.
+	if goalReached(&all, goalCheckPercentage, 2, 4) {
+		t.Fatal("a save finished a percentage goal")
+	}
+
+	for _, c := range []struct {
+		found, all, pct int
+		want            bool
+	}{{59, 100, 60, false}, {60, 100, 60, true}, {7, 11, 60, true}, {6, 11, 60, false}, {0, 0, 10, false}, {11, 11, 100, true}} {
+		if got := checkGoalReached(c.found, c.all, c.pct); got != c.want {
+			t.Errorf("%d of %d at %d%%: %v", c.found, c.all, c.pct, got)
+		}
+	}
+}
+
+func TestSlotDataSetsTheGoalType(t *testing.T) {
+	a := &app{session: boundSession(t, t.TempDir())}
+	a.applySlotData(map[string]any{"goal_difficulty": float64(1), "goal_act": float64(2),
+		"goal_type": float64(goalCheckPercentage), "goal_check_percentage": float64(75)})
+	if a.goalType != goalCheckPercentage || a.goalPercent != 75 || a.goalAct != 2 {
+		t.Fatalf("type %d percent %d act %d", a.goalType, a.goalPercent, a.goalAct)
+	}
+	a.applySlotData(map[string]any{"goal_difficulty": float64(0), "goal_act": float64(4)})
+	if a.goalType != goalBoss {
+		t.Fatal("a room without goal_type is not a boss goal")
 	}
 }

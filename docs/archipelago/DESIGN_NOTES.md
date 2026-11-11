@@ -189,6 +189,17 @@ without leaving town).
   to 115 bytes so five fit the box's 600-byte buffer; hints and goals stay 20 s, the rest
   12 s. The /chat and /joins choices are kept in `messages.json` in the app's folder. The
   client's own window shows every server line regardless.
+- **Goal types** (apworld 0.6.0, slot contract 5). `goal_type` is boss (as before),
+  all_bosses, check_percentage or cow_king. All Bosses and Cow King play every act of the
+  goal difficulty (goal_act becomes Baal's). Logic: All Bosses needs every act boss's
+  event; Cow King needs a "Cow King Defeated" event in a Moo Moo Farm region off Act I,
+  behind that difficulty's Baal event; Check Percentage needs only the goal act's boss
+  region to be reachable, since a world cannot count its own checks in logic and the fill
+  makes every location reachable anyway. The client reports All Bosses and Cow King from
+  the save (the Cow King's death is bit 10 of the Act I "Search for Cain" quest word, the
+  flag that shuts the Cow Level; taken from the classic .d2s layout and NOT yet confirmed
+  on a D2R 3.3 save, hence experimental), and Check Percentage from the room's own count
+  (found = all - missing, the same sets /checks uses), every poll, game or no game.
 - **Info commands read the room, not the game.** `/missing` and `/checks` start from the
   Connected packet's missing list, less every check the app sends and every one a
   RoomUpdate reports (a `!collect`, say). They are grouped by difficulty and act from the

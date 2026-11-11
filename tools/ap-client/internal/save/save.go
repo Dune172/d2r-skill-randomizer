@@ -91,7 +91,14 @@ type State struct {
 	Name            string
 	CompletedQuests []Quest
 	ActiveWaypoints []Waypoint
+	// CowKingKilled is per difficulty: the game marks the Cow King's death in the Act I
+	// "Search for Cain" quest word (bit 10), which is also what keeps the Cow Level shut
+	// for that character afterwards.
+	CowKingKilled [Difficulties]bool
 }
+
+// cowKingBit is the Cow King's flag in the Search for Cain quest word.
+const cowKingBit = 1 << 10
 
 // Parse reads a .d2s. It never writes.
 func Parse(data []byte) (*State, error) {
@@ -124,6 +131,9 @@ func Parse(data []byte) (*State, error) {
 				}
 			}
 		}
+
+		cain := base + questWordOffsets[0][3]
+		s.CowKingKilled[d] = binary.LittleEndian.Uint16(data[cain:cain+2])&cowKingBit != 0
 
 		wpBase := waypointDataStart + d*waypointBlockSize + waypointBitsOffset
 		for i := 0; i < waypointCount; i++ {
