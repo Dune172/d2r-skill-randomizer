@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/game"
 	"github.com/hectorgimenez/d2go/pkg/data/stat"
@@ -55,6 +56,9 @@ func (w *statWrites) Set(s string) error {
 //	d2rr-ap probe -unit 0x1F2A -set 5=3   write to that one unit only
 //	d2rr-ap probe -game                list the game's own copy instead of the display copy
 //	d2rr-ap probe -insert 5=3          add an entry the character does not have (both copies)
+//	d2rr-ap probe -monsters            list the monster units near the player (read-only)
+//	d2rr-ap probe -monsters -watch 120 keep listing for two minutes, saying when a
+//	                                   super-unique is seen and when it dies
 func probe(args []string) int {
 	f := flag.NewFlagSet("probe", flag.ContinueOnError)
 	unitFlag := f.String("unit", "", "unit address to inspect or write (default: the player)")
@@ -63,6 +67,8 @@ func probe(args []string) int {
 	asJSON := f.Bool("json", false, "machine-readable output")
 	panels := f.Bool("panels", false, "list the game's UI tree and exit")
 	dumpLists := f.Bool("dump-lists", false, "print every stat array in the unit's stat container (playtest)")
+	monsters := f.Bool("monsters", false, "list the monster units near the player and exit (read-only)")
+	watch := f.Int("watch", 0, "with -monsters: keep watching this many seconds")
 	var writes statWrites
 	f.Var(&writes, "set", "overwrite a base stat: id=value (repeatable)")
 	var inserts statWrites
@@ -84,6 +90,9 @@ func probe(args []string) int {
 	if gc.IsOnline() {
 		fmt.Println("ERROR: D2R is online. This tool only works on offline characters.")
 		return 1
+	}
+	if *monsters {
+		return probeMonsters(gc, time.Duration(*watch)*time.Second)
 	}
 	if *panels {
 		for _, p := range gc.Panels() {
@@ -241,6 +250,71 @@ func probe(args []string) int {
 	}
 	if failed {
 		return 1
+	}
+	return 0
+}
+
+// probeMonsters is probe -monsters: what the kill checks would see. Once, or for a while
+// with -watch, printing only changes: a super-unique coming into view, and its death.
+func probeMonsters(gc *game.Client, watch time.Duration) int {
+	list := func() ([]game.MonsterUnit, int, bool) {
+		units, err := gc.Monsters()
+		if err != nil {
+			fmt.Println("ERROR:", err)
+			return nil, 0, false
+		}
+		area := 0
+		if p, ok := gc.Progress(); ok {
+			area = p.AreaLevelID
+		}
+		return units, area, true
+	}
+	units, area, ok := list()
+	if !ok {
+		return 1
+	}
+	fmt.Printf("area %d (%s): %d monster units\n", area, areaLabel(area), len(units))
+	for _, m := range units {
+		kind := ""
+		if m.SuperUnique() {
+			kind = " SUPER-UNIQUE"
+		}
+		fmt.Printf("  0x%x txt %4d id %8d mode %2d flags %3d corpse %v%s\n",
+			m.Addr, m.Txt, m.UnitID, m.Mode, m.TypeFlags, m.Corpse, kind)
+	}
+	if watch <= 0 {
+		return 0
+	}
+	fmt.Printf("watching for %s; super-uniques only\n", watch)
+	seen := map[uint32]bool{}
+	dead := map[uint32]bool{}
+	failures := 0
+	for end := time.Now().Add(watch); time.Now().Before(end); time.Sleep(250 * time.Millisecond) {
+		units, area, ok := list()
+		if !ok {
+			// The game closing ends the watch rather than filling the screen with errors.
+			if failures++; failures >= 8 {
+				fmt.Println("the game stopped answering; watch ended")
+				return 1
+			}
+			continue
+		}
+		failures = 0
+		for _, m := range units {
+			if !m.SuperUnique() {
+				continue
+			}
+			if !seen[m.UnitID] {
+				seen[m.UnitID] = true
+				fmt.Printf("%s seen: txt %d id %d mode %d in area %d (%s)\n",
+					time.Now().Format("15:04:05"), m.Txt, m.UnitID, m.Mode, area, areaLabel(area))
+			}
+			if m.Dead() && !dead[m.UnitID] {
+				dead[m.UnitID] = true
+				fmt.Printf("%s DIED: txt %d id %d mode %d corpse %v in area %d (%s)\n",
+					time.Now().Format("15:04:05"), m.Txt, m.UnitID, m.Mode, m.Corpse, area, areaLabel(area))
+			}
+		}
 	}
 	return 0
 }

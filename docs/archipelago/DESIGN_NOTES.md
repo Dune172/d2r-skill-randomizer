@@ -256,6 +256,23 @@ without leaving town).
   maintained upstream. A D2R patch can break them; `d2rr-ap doctor` and `probe` are the
   first things to run after one.
 
+## Super-unique kill checks: probe results (2026-11-11, D2R 3.4.95032)
+
+`d2rr-ap probe -monsters [-watch N]` walks the monster unit table with
+`internal/game/monsters.go`, a read-only walk of fixed-size fields that ends a chain on
+any unreadable address instead of panicking (d2go's own `Monsters()` can).
+
+- **The walk works on 3.4.** The Rogue Encampment gave 10 units with the town NPCs'
+  monstats rows (147-155) in mode 1. The Cold Plains gave 22-30 units: Fallen (19),
+  shamans (58) and the like, among them a unique pack whose leader read type flag 8
+  (unique) and its members 16 (minion), d2go's values. So the unit data's type byte
+  (+0x1A) is in place, and a super-unique should read 10.
+- **Not yet seen: a super-unique, or a death.** The one trip out of town ended when the
+  character died before reaching Bishibosh, so the identity rule (area + monstats row +
+  flag 10) and the death signal (mode 0/12 or the corpse byte +0x1AE) are unconfirmed.
+  The kill checks wait on a run that does both, with a character strong enough to
+  survive the Cold Plains.
+
 ## After a D2R patch
 
 1. `d2rr-ap saves <save folder>`: do quests and waypoints still parse?
@@ -264,6 +281,17 @@ without leaving town).
 4. `d2rr-ap doctor -manifest <zip> -calibrate-difficulty -difficulty 0` from a Normal
    game, to re-record the difficulty profile for the new executable.
 5. Re-measure the module offsets in `knownBuildOffsets` (`scripts/patch-d2go.mjs`).
+
+### D2R 3.4 (build 3.4.95032, first seen 2026-11-11)
+
+- **The client's reads still work.** `d2rr-ap probe` in town read the character, its
+  base stat list (16 entries), its skills and the game's own copy; `probe -monsters`
+  read the unit table. G1 and the stat writes were NOT re-run on this build.
+- **A `-txt` mod built from 3.3 data warns "Data version mismatch"** at the title
+  screen (current data version 95032, detected unknown). Continuing loads the game, but
+  the Open Acts arena mod's monster changes (1 HP, no damage) did not apply: a level 2
+  Barbarian died to a Cold Plains unique pack. Whether the site's generated mods (also
+  built from 3.3 data) still take effect on 3.4 has not been checked.
 
 ### D2R 3.3 (build 3.3.93847, measured 2026-10-26)
 
