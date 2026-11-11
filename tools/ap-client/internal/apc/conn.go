@@ -43,8 +43,9 @@ type Handler struct {
 	OnItems func(session *Session)
 	// OnPrint surfaces server chat/log lines.
 	OnPrint func(text string)
-	// OnItemEvent fires for an item sent to or from this slot, as well as OnPrint.
-	OnItemEvent func(ItemEvent)
+	// OnMessage fires, as well as OnPrint, for a server message worth showing in the
+	// game: an item sent to or from this slot, a hint about it, chat, and so on.
+	OnMessage func(GameMessage)
 	// OnDeathLink fires when another player's death arrives. Only called once DeathLink
 	// has been enabled, and never for a death this client sent.
 	OnDeathLink func(source, cause string)
@@ -74,8 +75,14 @@ type Conn struct {
 	// What the room says exists, from the Connected packet. A check for a location the
 	// slot does not have (past its goal, or in a group it switched off) is never sent.
 	locations map[int64]bool
-	names     nameTable
-	deathLink bool
+	// missing is what the room still waits for this slot to check: the Connected list,
+	// less every check sent since and every one the server reports in a RoomUpdate.
+	missing map[int64]bool
+	// received is every item the room has sent this slot, in the server's order.
+	received   []NetworkItem
+	team, slot int64
+	names      nameTable
+	deathLink  bool
 	// Deaths this client sent, by timestamp, so its own bounce is not acted on.
 	sentDeaths map[float64]bool
 }
@@ -297,8 +304,15 @@ func (c *Conn) handle(ctx context.Context, p map[string]any) error {
 				known[n] = true
 			}
 		}
+		missing := map[int64]bool{}
+		for _, v := range toSlice(p["missing_locations"]) {
+			if n, ok := toInt64(v); ok {
+				missing[n] = true
+			}
+		}
 		c.mu.Lock()
-		c.locations = known
+		c.locations, c.missing = known, missing
+		c.team, c.slot = team, slot
 		c.names.setPlayers(p["players"], p["slot_info"], team, slot)
 		c.mu.Unlock()
 		// Fold the server's view in, then send OURS in full. Locations checked while
@@ -382,6 +396,7 @@ func (c *Conn) handle(ctx context.Context, p map[string]any) error {
 		if err != nil {
 			return fmt.Errorf("applying received items: %w", err)
 		}
+		c.logReceived(int(index), items)
 		if applied && c.handler.OnItems != nil {
 			c.handler.OnItems(c.session)
 		}
@@ -431,6 +446,20 @@ func (c *Conn) handle(ctx context.Context, p map[string]any) error {
 		cause, _ := data["cause"].(string)
 		c.handler.OnDeathLink(source, cause)
 
+	case "RoomUpdate":
+		// Checks the server learned of some other way (a !collect, another client on the
+		// same slot) leave the missing list too.
+		c.mu.Lock()
+		for _, v := range toSlice(p["checked_locations"]) {
+			if n, ok := toInt64(v); ok {
+				delete(c.missing, n)
+			}
+		}
+		c.mu.Unlock()
+
+	case "Retrieved":
+		c.printHints(p["keys"])
+
 	case "PrintJSON":
 		if c.handler.OnPrint != nil {
 			c.mu.Lock()
@@ -440,12 +469,12 @@ func (c *Conn) handle(ctx context.Context, p map[string]any) error {
 				c.handler.OnPrint(text)
 			}
 		}
-		if c.handler.OnItemEvent != nil {
+		if c.handler.OnMessage != nil {
 			c.mu.Lock()
-			event, ok := c.names.itemEvent(p)
+			msg, ok := c.names.gameMessage(p)
 			c.mu.Unlock()
 			if ok {
-				c.handler.OnItemEvent(event)
+				c.handler.OnMessage(msg)
 			}
 		}
 	}
@@ -507,6 +536,11 @@ func (c *Conn) SendChecks(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
+	c.mu.Lock()
+	for _, id := range ids {
+		delete(c.missing, id)
+	}
+	c.mu.Unlock()
 	return c.send(ctx, map[string]any{"cmd": "LocationChecks", "locations": ids})
 }
 

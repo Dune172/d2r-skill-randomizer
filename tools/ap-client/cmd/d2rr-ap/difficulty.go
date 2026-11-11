@@ -107,19 +107,6 @@ func (a *app) sampleDifficulty(d int) bool {
 	return ok
 }
 
-// handleCommand carries out a line typed in the window. It runs on the poll loop, so it
-// may touch the game state the poll uses.
-func (a *app) handleCommand(cmd consoleCommand) {
-	switch cmd.name {
-	case "help":
-		printConsoleHelp()
-	case "connected":
-		a.loadDifficultyChoice()
-	case "difficulty":
-		a.chooseDifficulty(cmd.arg)
-	}
-}
-
 // loadDifficultyChoice applies this room's saved /difficulty choice and, for a room whose
 // goal is past Normal, says once how to keep area checks right.
 func (a *app) loadDifficultyChoice() {

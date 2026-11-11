@@ -14,6 +14,8 @@
  *   - server messages are printed with names, not ids
  *   - chat typed into the client reaches the room
  *   - another player's DeathLink arrives
+ *   - the app's own commands (/received, /checks, /missing, /hints) answer from the room,
+ *     and hints and server chat are picked for the game's message box
  *
  * Needs: Archipelago installed with the apworld (node scripts/build-apworld.mjs --install),
  * the client built (dist/d2rr-ap.exe), and a dev server (node scripts/dev-cold-cache.mjs).
@@ -158,6 +160,30 @@ async function main() {
     await step('a server command answers in the client', async () => {
       client.say('!status');
       await client.waitFor(/Solo.*\(\d+\/\d+\)|Solo has \d+ connection/i, 'the !status reply');
+    });
+
+    await step('/received counts the items the room sent', async () => {
+      client.say('/received');
+      await client.waitFor(/You have received \d+ items:[\s\S]*x Progressive Skill Point/, 'the /received list');
+    });
+    await step('/checks and /missing answer from the room', async () => {
+      client.say('/checks');
+      const m = await client.waitFor(/Checks found: (\d+) of (\d+)/, 'the /checks total');
+      client.say('/missing act ii');
+      // Log lines carry a timestamp.
+      await client.waitFor(/checks still to find:\s+\S+\s+Normal Act II:/, 'the /missing act ii list');
+      return `${m[1]} of ${m[2]}`;
+    });
+    await step('a hint reaches the game box and /hints', async () => {
+      // A hint from the host costs nothing; the slot has no hint points yet.
+      server.say('/hint Solo Progressive Skill Point');
+      await client.waitFor(/in-game message: Hint: your Progressive Skill Point is at/, 'the hint as a game message');
+      client.say('/hints');
+      await client.waitFor(/Open hints \(\d+; \d+ more already found\):/, 'the /hints answer');
+    });
+    await step('server chat reaches the game box', async () => {
+      server.say('hello from the host');
+      await client.waitFor(/in-game message: Server: hello from the host/, 'the server chat as a game message');
     });
 
     await step('another player\'s death arrives', async () => {

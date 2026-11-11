@@ -81,6 +81,23 @@ The app also runs from a command prompt:
   gain levels, and reports the goal when your goal boss dies. Towns are never checks,
   neither the town nor its waypoint.
 
+### The app's window
+
+Type into the app's window to chat with the room. `!hint <item>` and the other `!`
+commands go to the server as in any Archipelago client. The app also answers these
+itself:
+
+- `/missing` lists the checks you have left, by difficulty and act. Add words to narrow
+  it down: `/missing act ii`, `/missing waypoint`, `/missing hell`.
+- `/checks` counts the checks you have found, act by act.
+- `/received` counts the items the room has sent you and lists the latest.
+- `/hints` shows the hints about your items and your checks.
+- `/chat off` keeps room chat out of the game (`/chat on` brings it back), and
+  `/joins on` shows players joining and leaving. The app remembers both.
+
+Besides your own items, the game's message box shows hints that concern you, other
+players finishing and room chat.
+
 ### After Normal
 
 The game does not tell the app which difficulty you are playing, and area checks need it.

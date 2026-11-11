@@ -49,6 +49,18 @@ func main() {
 		locations[fmt.Sprintf("lvl:%d", clvl)] = id
 	}
 
+	// Every location's name too: the site's check list is built from this client's
+	// names, so they must be the apworld's exactly.
+	names := map[string]string{}
+	for off := 0; off < ids.LocationsTotal(); off++ {
+		id := int64(ids.LocationBase + off)
+		name, ok := ids.LocationName(id)
+		if !ok {
+			os.Exit(1)
+		}
+		names[fmt.Sprint(id)] = name
+	}
+
 	runes := make([]string, len(ids.RuneNames))
 	for i := range ids.RuneNames {
 		runes[i] = ids.RuneItemName(i)
@@ -73,13 +85,14 @@ func main() {
 		// Dumped in full, not just counted: a transcription difference between the two
 		// generated area tables would otherwise only show up as a player entering an
 		// area and checking the wrong location.
-		"areaLevelIds": ids.AreaLevelIDs,
-		"areaLabels":   ids.AreaLabels,
-		"areaActs":     ids.AreaActs,
-		"items":        ids.ItemNames(),
-		"traps":        ids.Traps,
-		"runes":        runes,
-		"locations":    locations,
+		"areaLevelIds":  ids.AreaLevelIDs,
+		"areaLabels":    ids.AreaLabels,
+		"areaActs":      ids.AreaActs,
+		"items":         ids.ItemNames(),
+		"traps":         ids.Traps,
+		"runes":         runes,
+		"locations":     locations,
+		"locationNames": names,
 	}, "", "  ")
 	fmt.Println(string(out))
 }

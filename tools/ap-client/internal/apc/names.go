@@ -66,19 +66,7 @@ func (n *nameTable) itemEvent(p map[string]any) (ItemEvent, bool) {
 	if !okR || !okI || !okF || (receiving != n.me && finder != n.me) {
 		return ItemEvent{}, false
 	}
-	name, ok := n.items[n.games[receiving]][id]
-	if !ok {
-		name = fmt.Sprintf("item %d", id)
-	}
-	who := func(slot int64) string {
-		if slot == 0 {
-			return "the server"
-		}
-		if alias, ok := n.players[slot]; ok {
-			return alias
-		}
-		return fmt.Sprintf("player %d", slot)
-	}
+	name := n.itemName(receiving, id)
 	// A location belongs to the finder's game, which is this slot's whenever it is named.
 	where := ""
 	if loc, ok := toInt64(item["location"]); ok && finder == n.me {
@@ -88,9 +76,148 @@ func (n *nameTable) itemEvent(p map[string]any) (ItemEvent, bool) {
 	case receiving == n.me && finder == n.me:
 		return ItemEvent{Item: name, Received: true, Location: where}, true
 	case receiving == n.me:
-		return ItemEvent{Item: name, Other: who(finder), Received: true}, true
+		return ItemEvent{Item: name, Other: n.who(finder), Received: true}, true
 	default:
-		return ItemEvent{Item: name, Other: who(receiving), Location: where}, true
+		return ItemEvent{Item: name, Other: n.who(receiving), Location: where}, true
+	}
+}
+
+// MessageKind is what a line in the game's message box is about. The app chooses how
+// long each kind stays and which kinds the player has switched off.
+type MessageKind int
+
+const (
+	MessageItem MessageKind = iota
+	MessageHint
+	MessageGoal
+	MessageChat
+	MessageJoin
+	MessageCountdown
+)
+
+// GameMessage is one line for the game's message box.
+type GameMessage struct {
+	Kind MessageKind
+	Text string
+}
+
+// who names a slot for a player to read.
+func (n *nameTable) who(slot int64) string {
+	if slot == 0 {
+		return "the server"
+	}
+	if alias, ok := n.players[slot]; ok {
+		return alias
+	}
+	return fmt.Sprintf("player %d", slot)
+}
+
+// itemName names an item in the game of the slot that receives it.
+func (n *nameTable) itemName(owner, id int64) string {
+	if name, ok := n.items[n.games[owner]][id]; ok {
+		return name
+	}
+	return fmt.Sprintf("item %d", id)
+}
+
+// locationName names a location in the game of the slot that holds it.
+func (n *nameTable) locationName(owner, id int64) string {
+	if name, ok := n.locations[n.games[owner]][id]; ok {
+		return name
+	}
+	return fmt.Sprintf("location %d", id)
+}
+
+// oneLine keeps a message to a single line: the box shows lines, and a chat message
+// could carry its own breaks.
+func oneLine(s string) string {
+	return strings.Join(strings.Fields(s), " ")
+}
+
+// gameMessage turns a PrintJSON packet into a line for the game, when it is one a player
+// here wants to see: items to and from this slot, hints that concern it, other players
+// finishing, the countdown, chat, and players joining or leaving. Everything is also
+// printed in the app's window; this only picks what reaches the game screen.
+func (n *nameTable) gameMessage(p map[string]any) (GameMessage, bool) {
+	switch p["type"] {
+	case "ItemSend", "ItemCheat":
+		e, ok := n.itemEvent(p)
+		return GameMessage{Kind: MessageItem, Text: e.Text()}, ok
+
+	case "Hint":
+		if found, _ := p["found"].(bool); found {
+			return GameMessage{}, false
+		}
+		receiving, okR := toInt64(p["receiving"])
+		item, _ := p["item"].(map[string]any)
+		id, okI := toInt64(item["item"])
+		finder, okF := toInt64(item["player"])
+		loc, okL := toInt64(item["location"])
+		if !okR || !okI || !okF || !okL || (receiving != n.me && finder != n.me) {
+			return GameMessage{}, false
+		}
+		return GameMessage{Kind: MessageHint, Text: n.hintText(receiving, finder, id, loc)}, true
+
+	case "Goal":
+		slot, ok := toInt64(p["slot"])
+		if !ok {
+			return GameMessage{}, false
+		}
+		if slot == n.me {
+			return GameMessage{Kind: MessageGoal, Text: "Goal complete!"}, true
+		}
+		return GameMessage{Kind: MessageGoal, Text: n.who(slot) + " has finished!"}, true
+
+	case "Countdown":
+		text := oneLine(n.render(toSlice(p["data"])))
+		return GameMessage{Kind: MessageCountdown, Text: text}, text != ""
+
+	case "Chat":
+		slot, ok := toInt64(p["slot"])
+		msg, _ := p["message"].(string)
+		if !ok || slot == n.me || oneLine(msg) == "" {
+			return GameMessage{}, false
+		}
+		return GameMessage{Kind: MessageChat, Text: n.who(slot) + ": " + oneLine(msg)}, true
+
+	case "ServerChat":
+		msg, _ := p["message"].(string)
+		if oneLine(msg) == "" {
+			return GameMessage{}, false
+		}
+		return GameMessage{Kind: MessageChat, Text: "Server: " + oneLine(msg)}, true
+
+	case "Join", "Part":
+		slot, ok := toInt64(p["slot"])
+		if !ok || slot == n.me {
+			return GameMessage{}, false
+		}
+		// Trackers and text clients join too; only a player's game is worth a line.
+		for _, t := range toSlice(p["tags"]) {
+			if t == "Tracker" || t == "TextOnly" {
+				return GameMessage{}, false
+			}
+		}
+		verb := " joined"
+		if p["type"] == "Part" {
+			verb = " left"
+		}
+		return GameMessage{Kind: MessageJoin, Text: n.who(slot) + verb}, true
+	}
+	return GameMessage{}, false
+}
+
+// hintText says a hint from this slot's side. The item belongs to the receiver's game and
+// the location to the finder's.
+func (n *nameTable) hintText(receiving, finder, item, location int64) string {
+	what, where := n.itemName(receiving, item), n.locationName(finder, location)
+	switch {
+	case receiving == n.me && finder == n.me:
+		return "Hint: your " + what + " is at your " + where
+	case receiving == n.me:
+		return "Hint: your " + what + " is at " + where + " (" + n.who(finder) + ")"
+	default:
+		return "Hint: " + n.who(receiving) + " wants " + what + " from your " + where
 	}
 }
 

@@ -33,6 +33,10 @@ for node in tree.body:
     classes[node.name] = {"base": node.bases[0].id if node.bases else "", "attrs": attrs}
     if node.name == "D2RROptions":
         order = [(s.target.id, s.annotation.id) for s in node.body if isinstance(s, ast.AnnAssign)]
+presets = {}
+for node in tree.body:
+    if isinstance(node, ast.Assign) and getattr(node.targets[0], "id", "") == "OPTION_PRESETS":
+        presets = ast.literal_eval(node.value)
 out = []
 for key, cls in order:
     info = classes[cls]
@@ -45,7 +49,7 @@ for key, cls in order:
         out.append({"key": key, "type": "range", "min": a["range_start"], "max": a["range_end"], "default": a["default"]})
     else:  # Toggle, DeathLink
         out.append({"key": key, "type": "toggle", "default": bool(a.get("default", 0))})
-print(json.dumps(out))
+print(json.dumps({"options": out, "presets": presets}))
 `;
 
 function python() {
@@ -64,7 +68,8 @@ function loadTs(file) {
   return mod.exports;
 }
 
-const fromPython = JSON.parse(execFileSync(python(), ['-c', PY, pyOptions], { encoding: 'utf8' }));
+const pyDump = JSON.parse(execFileSync(python(), ['-c', PY, pyOptions], { encoding: 'utf8' }));
+const fromPython = pyDump.options;
 const page = loadTs(path.join(repoRoot, 'src', 'lib', 'archipelago', 'options.ts'));
 const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'apworld', 'd2rr', 'archipelago.json'), 'utf8'));
 
@@ -85,6 +90,28 @@ for (const py of fromPython) {
   if (mine.default !== py.default) problems.push(`${py.key}: default ${py.default} vs ${mine.default}`);
 }
 for (const key of pageByKey.keys()) problems.push(`${key}: on the page, not in the apworld`);
+
+// Presets: the same names, in the same order, setting the same values.
+const pyPresets = Object.entries(pyDump.presets);
+const pagePresets = page.AP_PRESETS.map(p => [p.name, p.values]);
+if (JSON.stringify(pyPresets.map(([n]) => n)) !== JSON.stringify(pagePresets.map(([n]) => n))) {
+  problems.push(`presets [${pyPresets.map(([n]) => n)}] vs [${pagePresets.map(([n]) => n)}]`);
+} else {
+  pyPresets.forEach(([name, values], i) => {
+    const mine = pagePresets[i][1];
+    const keys = new Set([...Object.keys(values), ...Object.keys(mine)]);
+    for (const k of keys) {
+      if (values[k] !== mine[k]) problems.push(`preset "${name}": ${k} is ${values[k]} in the apworld, ${mine[k]} on the page`);
+    }
+  });
+}
+
+// Random values must be what Archipelago's generator reads.
+const randomYaml = page.buildApYaml('R', { ...page.defaultApOptions(), goal_boss: 'random', skill_points: 'random' });
+if (!randomYaml.split('\n').includes('  goal_boss: random') ||
+  !randomYaml.split('\n').includes('  skill_points: random-range-20-600')) {
+  problems.push('random values are not written as random / random-range-<min>-<max>');
+}
 
 if (page.AP_GAME_NAME !== manifest.game) problems.push(`game name "${manifest.game}" vs "${page.AP_GAME_NAME}"`);
 if (page.AP_WORLD_VERSION !== manifest.world_version) problems.push(`world version ${manifest.world_version} vs ${page.AP_WORLD_VERSION}`);

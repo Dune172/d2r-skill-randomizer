@@ -29,6 +29,17 @@ def main() -> None:
     for clvl in range(ids.LEVEL_MIN, ids.LEVEL_MAX + 1):
         locations[f"lvl:{clvl}"] = ids.level_location_id(clvl)
 
+    # How many checks a slot holds for every goal and check toggle, so the page's port of
+    # active_location_names (src/lib/archipelago/checks.ts) can be held to it.
+    active_counts = {}
+    for gd in range(ids.DIFFICULTIES):
+        for ga in range(ids.ACTS):
+            for w in (0, 1):
+                for a in (0, 1):
+                    for lv in (0, 1):
+                        names = ids.active_location_names(gd, bool(w), bool(a), bool(lv), ga)
+                        active_counts[f"{gd}:{ga}:{w}:{a}:{lv}"] = len(names)
+
     print(json.dumps({
         "itemBase": ids.ITEM_BASE,
         "locationBase": ids.LOCATION_BASE,
@@ -55,6 +66,8 @@ def main() -> None:
         "traps": ids.TRAP_ITEMS,
         "runes": [ids.rune_item_name(i) for i in range(len(ids.RUNE_NAMES))],
         "locations": locations,
+        "activeCounts": active_counts,
+        "locationNames": {str(i): name for name, i in ids.all_location_names().items()},
     }, indent=2, sort_keys=True))
 
 

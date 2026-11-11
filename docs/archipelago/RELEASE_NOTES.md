@@ -33,6 +33,10 @@ is refused when the app connects, with a message saying so.
 4. Keep the app open while you play. Points arrive by themselves, and what you receive
    and send appears in the game beside the chat.
 
+Type `/missing` in the app's window for the checks you have left, `/checks` for a count act
+by act, `/received` for your items and `/hints` for your hints. Hints about your items,
+room chat and other players finishing also show in the game (`/chat off` hides chat).
+
 Past Normal, type `/difficulty nightmare` or `/difficulty hell` in the app's window when
 you start that difficulty: the game does not say which one you are on, and area checks
 need it. The full guide ships inside the apworld.

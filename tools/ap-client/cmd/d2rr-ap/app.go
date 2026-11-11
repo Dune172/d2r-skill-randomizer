@@ -66,6 +66,8 @@ type app struct {
 	messageShown string
 	messageOK    bool
 	messageRetry time.Time
+	// Which optional kinds of message the player wants in the game (/chat, /joins).
+	messagePrefs messagePrefs
 
 	// Test seams: a character made of a map, and a death that goes nowhere.
 	fakeGame  gameView
