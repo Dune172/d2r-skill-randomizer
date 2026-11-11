@@ -78,7 +78,9 @@ func calculateOffsets(process *Process) Offset {
 	var uiOffsetPtr uintptr
 	if pattern = process.FindPattern(memory, "\x40\x84\xed\x0f\x94\x05", "xxxxxx"); pattern != 0 {
 		uiOffset := process.ReadUInt(pattern+6, Uint32)
-		uiOffsetPtr = (pattern - process.moduleBaseAddressPtr) + 10 + uintptr(uiOffset)
+		// The sete target is the quit-menu flag itself (measured on D2R 3.4.95032), which
+		// the client reads at uiBase+0x09 as measured on 3.3. One past it keeps that layout.
+		uiOffsetPtr = (pattern - process.moduleBaseAddressPtr) + 10 + uintptr(uiOffset) + 1
 	} else if pattern = process.FindPattern(memory, "\x41\x0F\xB6\xE8\x48\x8D\x35\x00\x00\x00\x00\x85\xD2\x74", "xxxxxxx????xxx"); pattern != 0 {
 		uiOffsetPtr = ripTarget(process, pattern+7) + 0xA
 	} else if pattern = process.FindPattern(memory, "\x45\x33\xF6\x48\x8D\x35\x00\x00\x00\x00\x41\x8B\xDE\x48\x8D\x3D", "xxxxxx????xxxxxx"); pattern != 0 {
