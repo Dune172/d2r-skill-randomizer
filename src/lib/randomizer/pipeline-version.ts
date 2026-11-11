@@ -47,4 +47,9 @@
 // v64 flattens hand-installed zips: the zip root is the mod folder (seedN.mpq/, the
 // shortcut, a new README.txt), downloaded as seedN.zip. Archipelago zips keep the
 // seedN/ prefix their client expects. Same files and bytes otherwise.
-export const PIPELINE_VERSION = 64;
+// v65 updates the game tables to D2R 3.4.95032 (skills, monstats, cubemain,
+// treasureclassex, uniqueitems) and strings (skills, item-names, item-modifiers),
+// and stamps DataVersionBuild 95032. No RNG change:
+// the only loader-visible difference (EType on Summon Tainted and Sigil Death)
+// is on aura skills that no filter picks, so layouts stay the same.
+export const PIPELINE_VERSION = 65;

@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.341',
+    date: 'November 2026',
+    tagline: 'Updated for D2R patch 3.4 (Season 16)',
+    notes: [
+      'New mods are built from the game data of patch 3.4.95032, so the game no longer asks about a data version mismatch when you launch one',
+      'Mods now carry the patch’s own changes instead of older copies: the reworked uniques (Griswold’s Edge, The Atlantian, Veil of Steel and more), the new Worldstone Shard drops and retuned Hell drop rates, Bind Demon’s flat damage bonus, the Hell rift upgrade recipes at level 75, and updated translations',
+      'Your seed still generates the same skill trees. Mods you already installed keep working; download yours again to get the 3.4 data',
+    ],
+  },
+  {
     version: 'v0.340',
     date: 'November 2026',
     tagline: 'Simpler install: the downloaded folder is the mod',
