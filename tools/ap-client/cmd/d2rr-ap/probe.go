@@ -95,7 +95,7 @@ func probe(args []string) int {
 	if *uiBytes {
 		buf := gc.UIBuffer()
 		fmt.Printf("ui block (%d bytes): % x\n", len(buf), buf)
-		fmt.Printf("quit menu open: %v\n", gc.QuitMenuOpen())
+		fmt.Printf("quit menu open: %v (pause panel); the UI byte says %v\n", gc.QuitMenuOpen(), gc.QuitMenuByte())
 		return 0
 	}
 	if *monsters {
