@@ -180,10 +180,21 @@ without leaving town).
 - **No runes for now** (2026-10-30). Delivering an item needed the Sigil mailbox, which
   went with the potions. The rune item names and ids stay reserved in the id tables and
   are never placed, so ids do not move if runes come back.
-- **Item messages in the game.** The mod adds a text box to the chat layout; the client
-  writes "You received X from Y" / "You sent X to Y" into it, and the game redraws the
-  text in place. Color codes are not interpreted there, so the text is plain white. The
-  client's own window shows the same lines.
+- **Room messages in the game.** The mod adds a text box to the chat layout; the client
+  writes lines into it and the game redraws the text in place. It shows items to and
+  from this slot, hints that concern it (not yet found), other players finishing, the
+  countdown, room chat (`/chat off` hides it) and, when `/joins on`, players joining and
+  leaving. Color codes are not interpreted there, so the text is plain white; the kinds
+  are told apart by their wording ("Hint: ...", "Link: ..."). Five lines at most, each cut
+  to 115 bytes so five fit the box's 600-byte buffer; hints and goals stay 20 s, the rest
+  12 s. The /chat and /joins choices are kept in `messages.json` in the app's folder. The
+  client's own window shows every server line regardless.
+- **Info commands read the room, not the game.** `/missing` and `/checks` start from the
+  Connected packet's missing list, less every check the app sends and every one a
+  RoomUpdate reports (a `!collect`, say). They are grouped by difficulty and act from the
+  id alone (`ids.Locate`). `/received` keeps the ReceivedItems stream in the server's
+  order, rebuilt on every full replay. `/hints` asks the server's data storage for
+  `_read_hints_<team>_<slot>` with a Get and prints the Retrieved reply.
 - **No seasonal overlay in AP mods**, and the zip is cached on disk only: a room's mod
   must not change with the month, and one-off 47 MB zips must not evict public seeds.
 - **The room decides which locations exist.** The client sends a check only if the

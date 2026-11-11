@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
 )
 
 const (
@@ -55,13 +57,7 @@ var questWordOffsets = [][]int{
 }
 
 // QuestNames is indexed [act][questIndex], matching questWordOffsets.
-var QuestNames = [][]string{
-	{"Den of Evil", "Sisters' Burial Grounds", "Tools of the Trade", "The Search for Cain", "The Forgotten Tower", "Sisters to the Slaughter"},
-	{"Radament's Lair", "The Horadric Staff", "Tainted Sun", "Arcane Sanctuary", "The Summoner", "The Seven Tombs"},
-	{"Lam Esen's Tome", "Khalim's Will", "Blade of the Old Religion", "The Golden Bird", "The Blackened Temple", "The Guardian"},
-	{"The Fallen Angel", "Terror's End", "Hell's Forge"},
-	{"Siege on Harrogath", "Rescue on Mount Arreat", "Prison of Ice", "Betrayal of Harrogath", "Rite of Passage", "Eve of Destruction"},
-}
+var QuestNames = ids.QuestNames
 
 var DifficultyNames = [Difficulties]string{"normal", "nightmare", "hell"}
 
