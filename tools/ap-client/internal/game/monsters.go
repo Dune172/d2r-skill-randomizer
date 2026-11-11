@@ -31,7 +31,10 @@ const (
 	// A guard against a chain that loops or runs into freed memory.
 	maxUnitsPerBucket = 1024
 
-	// MonsterTypeSuperUnique is the unit data flag d2go reads as a super-unique.
+	// Monster type flags in the unit data. d2go reads 10 as a super-unique: the
+	// super-unique bit with the unique bit. Unique (8) and minion (16) were seen on 3.4.
+	monsterFlagSuperUnique = 0x02
+	// MonsterTypeSuperUnique is the whole byte d2go matches for a super-unique.
 	MonsterTypeSuperUnique = 10
 
 	// Monster modes (monmode.txt): DT is dying, DD is dead.
@@ -52,7 +55,7 @@ type MonsterUnit struct {
 }
 
 // SuperUnique reports whether the unit is a super-unique (Bishibosh, Griswold, ...).
-func (m MonsterUnit) SuperUnique() bool { return m.TypeFlags == MonsterTypeSuperUnique }
+func (m MonsterUnit) SuperUnique() bool { return m.TypeFlags&monsterFlagSuperUnique != 0 }
 
 // Dead reports whether the unit is dying, dead or already a corpse.
 func (m MonsterUnit) Dead() bool {

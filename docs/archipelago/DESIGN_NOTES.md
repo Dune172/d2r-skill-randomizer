@@ -267,11 +267,15 @@ any unreadable address instead of panicking (d2go's own `Monsters()` can).
   shamans (58) and the like, among them a unique pack whose leader read type flag 8
   (unique) and its members 16 (minion), d2go's values. So the unit data's type byte
   (+0x1A) is in place, and a super-unique should read 10.
-- **Not yet seen: a super-unique, or a death.** The one trip out of town ended when the
-  character died before reaching Bishibosh, so the identity rule (area + monstats row +
-  flag 10) and the death signal (mode 0/12 or the corpse byte +0x1AE) are unconfirmed.
-  The kill checks wait on a run that does both, with a character strong enough to
-  survive the Cold Plains.
+- **Deaths read correctly.** On a second trip (the Arena Barbarian given 4000 strength
+  and 3000 life with `probe -set`), the Fallen and the members of a unique pack killed
+  in the Cold Plains read mode 12 with the corpse byte (+0x1AE) set, and stayed in the
+  unit table that way.
+- **Not yet seen: a super-unique.** About 15 minutes of the Cold Plains turned up two
+  unique packs (flags 8 and 16) but not Bishibosh, so the super-unique value is still
+  d2go's word. The client tests the super-unique BIT (0x02, the classic MonUMod type
+  flag; d2go's 10 is it plus the unique bit 0x08) rather than the exact value 10.
+- The first trip ended with the character's death before reaching Bishibosh.
 
 ## After a D2R patch
 
