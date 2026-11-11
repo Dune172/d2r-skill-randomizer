@@ -197,7 +197,10 @@ func (a *app) reportDeath(ctx context.Context, dead bool) {
 	a.wasDead = dead
 	enabled := a.deathLink
 	ours := a.killedByLink
-	if !dead {
+	// A death the room sent is ours until the character has died AND come back. The game
+	// takes a poll or two to register a death after life is emptied, and clearing the
+	// mark in that window made the app send the room's own death back to it.
+	if !dead && wasDead {
 		a.killedByLink = false
 	}
 	a.mu.Unlock()

@@ -463,3 +463,23 @@ func TestGoldLeavesTheLastSlotForPoints(t *testing.T) {
 		t.Fatalf("the key stat should take the last slot: %d", char.stats[keyStat])
 	}
 }
+
+// A death from the room is not sent back to it, even when the game takes a few polls to
+// register it after life is emptied.
+func TestARoomDeathIsNotSentBack(t *testing.T) {
+	sent := 0
+	a := &app{deathLink: true, sendDeath: func(context.Context, string) error { sent++; return nil },
+		conn: apc.NewConn("localhost", 1, "Runner", "", nil, apc.Handler{})}
+	a.killedByLink = true                      // the app has just emptied life for a room death
+	a.reportDeath(context.Background(), false) // not registered yet
+	a.reportDeath(context.Background(), false)
+	a.reportDeath(context.Background(), true) // now dead
+	if sent != 0 {
+		t.Fatalf("the room's own death was sent back %d time(s)", sent)
+	}
+	a.reportDeath(context.Background(), false) // respawned
+	a.reportDeath(context.Background(), true)  // a death of the player's own
+	if sent != 1 {
+		t.Fatalf("the player's own death was sent %d time(s), want 1", sent)
+	}
+}
