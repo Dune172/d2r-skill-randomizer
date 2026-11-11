@@ -299,3 +299,20 @@ func TestANewCharactersStubSaveIsRecognised(t *testing.T) {
 		t.Fatal("a missing file is not a new character")
 	}
 }
+
+func TestCowKingFlagIsReadPerDifficulty(t *testing.T) {
+	data := syntheticSave("Cows")
+	off := questDataStart + 1*questBlockSize + questWordOffsets[0][3] // Nightmare, Search for Cain
+	binary.LittleEndian.PutUint16(data[off:], cowKingBit)
+	st, err := Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.CowKingKilled != [Difficulties]bool{false, true, false} {
+		t.Fatalf("%v", st.CowKingKilled)
+	}
+	// The flag alone does not complete the quest.
+	if len(st.CompletedQuests) != 0 {
+		t.Fatalf("quests %v", st.CompletedQuests)
+	}
+}

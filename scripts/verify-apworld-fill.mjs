@@ -10,7 +10,9 @@
  *
  * Generating is not enough on its own: a world whose every location is reachable from
  * the start also generates. So each run's spoiler is read back and checked:
- *   - the goal boss's event is in the playthrough (the slot is beatable, and by that boss)
+ *   - the goal's events are in the playthrough (the slot is beatable, and by that goal):
+ *     the goal boss, all five act bosses, or the Cow King; a check-percentage goal has
+ *     none, and only has to generate
  *   - nothing past the goal was placed
  *   - Horadric Keys, when on, are in the pool in the number the goal needs, and the
  *     playthrough collects them before the goal
@@ -39,7 +41,7 @@ const LOGIC = ['relaxed', 'standard', 'strict'];
 const title = s => s[0].toUpperCase() + s.slice(1);
 
 const DEFAULTS = {
-  character_class: 'paladin', goal_difficulty: 'normal', goal_boss: 'baal',
+  character_class: 'paladin', goal_difficulty: 'normal', goal_boss: 'baal', goal_type: 'boss', goal_check_percentage: 60,
   skill_points: 110, starting_skill_points: 1, logic_difficulty: 'standard',
   include_waypoints: true, include_areas: true, include_level_milestones: true,
   key_items: false, stat_points: 'pooled', trap_percentage: 0,
@@ -84,6 +86,12 @@ function cases() {
   for (const starting of [0, 5]) {
     out.push({ name: `starting-${starting}`, skill_points: 20, starting_skill_points: starting, logic_difficulty: 'strict', ...QUESTS_ONLY });
   }
+  out.push({ name: 'goal-all-bosses-normal', goal_type: 'all_bosses', goal_boss: 'andariel' });
+  out.push({ name: 'goal-all-bosses-hell-all', goal_type: 'all_bosses', goal_difficulty: 'hell', skill_points: 600, ...EVERYTHING });
+  out.push({ name: 'goal-percent-duriel', goal_type: 'check_percentage', goal_check_percentage: 40, goal_boss: 'duriel' });
+  out.push({ name: 'goal-percent-100-quests', goal_type: 'check_percentage', goal_check_percentage: 100, goal_boss: 'mephisto', ...QUESTS_ONLY, ...EVERYTHING });
+  out.push({ name: 'goal-cow-king-normal', goal_type: 'cow_king', goal_boss: 'andariel' });
+  out.push({ name: 'goal-cow-king-nightmare-all', goal_type: 'cow_king', goal_difficulty: 'nightmare', ...EVERYTHING });
   out.push({ name: 'keys-only', key_items: true });
   out.push({ name: 'stats-vanilla', stat_points: 'vanilla' });
   out.push({ name: 'traps-100', trap_percentage: 100 });
@@ -97,6 +105,11 @@ const MULTIWORLDS = [
     { ...DEFAULTS, character_class: 'sorceress', goal_boss: 'andariel', ...EVERYTHING },
     { ...DEFAULTS, character_class: 'necromancer', goal_boss: 'mephisto', key_items: true },
     { ...DEFAULTS, character_class: 'warlock', goal_difficulty: 'nightmare', goal_boss: 'duriel', ...EVERYTHING },
+  ] },
+  { name: 'multi-goal-types', slots: [
+    { ...DEFAULTS, goal_type: 'all_bosses' },
+    { ...DEFAULTS, goal_type: 'check_percentage', goal_check_percentage: 50, goal_boss: 'mephisto' },
+    { ...DEFAULTS, goal_type: 'cow_king', key_items: true },
   ] },
   { name: 'multi-with-checksfinder', other: 'ChecksFinder', slots: [
     { ...DEFAULTS, goal_boss: 'duriel', ...EVERYTHING },
@@ -167,11 +180,22 @@ function audit(c, slot, spoiler, multi) {
   if (mine.length === 0) return ['spoiler lists no locations for this slot'];
 
   const goalDifficulty = DIFFICULTIES.indexOf(c.goal_difficulty);
-  const goalAct = BOSSES.indexOf(c.goal_boss);
-  const goalEvent = `${title(c.goal_boss)} Defeated (${title(c.goal_difficulty)})`;
+  const wholeDifficulty = c.goal_type === 'all_bosses' || c.goal_type === 'cow_king';
+  const goalAct = wholeDifficulty ? 4 : BOSSES.indexOf(c.goal_boss);
+  const diff = title(c.goal_difficulty);
+  const goalEvents = {
+    boss: [`${title(c.goal_boss)} Defeated (${diff})`],
+    all_bosses: BOSSES.map(b => `${title(b)} Defeated (${diff})`),
+    cow_king: [`Baal Defeated (${diff})`, `Cow King Defeated (${diff})`],
+    check_percentage: [],
+  }[c.goal_type ?? 'boss'];
   const order = spheres.flatMap((s, i) => s.filter(p => !multi || p.itemSlot === slot).map(p => ({ ...p, sphere: i })));
-  const goalAt = order.find(p => p.item === goalEvent);
-  if (!goalAt) problems.push(`the playthrough never collects "${goalEvent}"`);
+  let goalAt = null;
+  for (const event of goalEvents) {
+    const at = order.find(p => p.item === event);
+    if (!at) problems.push(`the playthrough never collects "${event}"`);
+    else if (!goalAt || at.sphere > goalAt.sphere) goalAt = at;
+  }
 
   // Nothing past the goal may be a location.
   for (const p of mine) {

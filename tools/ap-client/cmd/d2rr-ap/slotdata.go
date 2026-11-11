@@ -2,7 +2,11 @@
 
 package main
 
-import "github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
+import (
+	"fmt"
+
+	"github.com/Dune172/d2r-skill-randomizer/tools/ap-client/internal/ids"
+)
 
 // applySlotData adopts the room's settings from the Connected packet's slot_data, and
 // reports whether the room wants DeathLink.
@@ -15,8 +19,19 @@ func (a *app) applySlotData(slotData map[string]any) (deathLink bool) {
 		if g, ok := slotData["goal_act"].(float64); ok && g >= 0 && int(g) < len(ids.GoalQuestIndex) {
 			act = int(g)
 		}
+		kind := goalBoss
+		if t, ok := slotData["goal_type"].(float64); ok && t >= 0 && int(t) <= goalCowKing {
+			kind = int(t)
+		}
+		percent := 100
+		if p, ok := slotData["goal_check_percentage"].(float64); ok && p >= 1 && p <= 100 {
+			percent = int(p)
+		}
 		a.setGoal(int(v), act)
-		logf("goal: kill %s on %s", goalBossNames[act], difficultyName(int(v)))
+		a.mu.Lock()
+		a.goalType, a.goalPercent = kind, percent
+		a.mu.Unlock()
+		logf("goal: %s", goalText(kind, int(v), act, percent))
 	}
 	// Optional check groups. Defaulting to ON matches the apworld defaults; a
 	// room that disabled them says so explicitly.
@@ -50,6 +65,28 @@ func boolFromSlotData(slotData map[string]any, key string, fallback bool) bool {
 }
 
 var goalBossNames = []string{"Andariel", "Duriel", "Mephisto", "Diablo", "Baal"}
+
+// Goal types, as the apworld's goal_type option numbers them.
+const (
+	goalBoss = iota
+	goalAllBosses
+	goalCheckPercentage
+	goalCowKing
+)
+
+// goalText says what finishes the slot.
+func goalText(kind, difficulty, act, percent int) string {
+	d := difficultyName(difficulty)
+	switch kind {
+	case goalAllBosses:
+		return "kill all five act bosses on " + d
+	case goalCheckPercentage:
+		return fmt.Sprintf("find %d%% of your checks (they stop at %s on %s)", percent, goalBossNames[act], d)
+	case goalCowKing:
+		return "kill the Cow King on " + d + " (after Baal on " + d + ")"
+	}
+	return "kill " + goalBossNames[act] + " on " + d
+}
 
 func (a *app) setGoal(difficulty, act int) {
 	a.mu.Lock()

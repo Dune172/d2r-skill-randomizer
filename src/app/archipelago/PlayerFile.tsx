@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import {
   AP_OPTIONS, AP_PRESETS, AP_RANDOM, ApOption, ApOptionValues, applyPreset, buildApYaml, canRandomize,
-  cleanSlotName, defaultApOptions,
+  cleanSlotName, defaultApOptions, optionApplies,
 } from '@/lib/archipelago/options';
 import RoomContents from './RoomContents';
 
@@ -180,7 +180,7 @@ export default function PlayerFile() {
               : 'Up to 16 letters, numbers, spaces, - or _. You type the same name into the app to connect.'}
           </p>
         </div>
-        {AP_OPTIONS.filter(o => o.group === ESSENTIAL_GROUP).map(option => (
+        {AP_OPTIONS.filter(o => o.group === ESSENTIAL_GROUP && optionApplies(o.key, values)).map(option => (
           <Control
             key={option.key} option={option}
             value={values[option.key] ?? option.default}

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ApLocation, ApNames, activeLocations } from '@/lib/archipelago/checks';
-import { AP_OPTIONS, AP_RANDOM, ApOptionValues } from '@/lib/archipelago/options';
+import { AP_OPTIONS, AP_RANDOM, ApOptionValues, WHOLE_DIFFICULTY_GOALS } from '@/lib/archipelago/options';
 
 const ACT_NAMES = ['Act I', 'Act II', 'Act III', 'Act IV', 'Act V'];
 const KIND_NAMES: Record<ApLocation[2], string> = {
@@ -33,8 +33,9 @@ export default function RoomContents({ values }: { values: ApOptionValues }) {
   }, [open, names]);
 
   const goalDifficulty = choiceIndex('goal_difficulty', values.goal_difficulty);
-  const goalAct = choiceIndex('goal_boss', values.goal_boss);
-  const random = goalDifficulty < 0 || goalAct < 0;
+  const wholeDifficulty = WHOLE_DIFFICULTY_GOALS.includes(String(values.goal_type));
+  const goalAct = wholeDifficulty ? 4 : choiceIndex('goal_boss', values.goal_boss);
+  const random = goalDifficulty < 0 || goalAct < 0 || values.goal_type === AP_RANDOM;
 
   const checks = useMemo(() => {
     if (!names || random) return null;

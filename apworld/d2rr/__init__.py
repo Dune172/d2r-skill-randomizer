@@ -23,7 +23,7 @@ from . import ids, rules
 from .options import OPTION_GROUPS, OPTION_PRESETS, D2RROptions
 
 # Bumped when slot_data changes in a way the client must understand.
-SLOT_CONTRACT_VERSION = 4
+SLOT_CONTRACT_VERSION = 5
 
 # Many identical progression items: keep them off priority locations and out of
 # progression balancing, where one more copy of a point does nothing useful.
@@ -121,6 +121,10 @@ class D2RRWorld(World):
         self.class_code = ids.CLASSES[self.options.character_class.value]
         self.goal_difficulty = self.options.goal_difficulty.value
         self.goal_act = self.options.goal_boss.value
+        # These goals need every act of the goal difficulty, whatever Goal Boss says.
+        goal_type = self.options.goal_type
+        if goal_type.value in (goal_type.option_all_bosses, goal_type.option_cow_king):
+            self.goal_act = ids.BAAL_ACT
 
         # The seed is chosen HERE, not by the player: it must be reproducible from the
         # multiworld, and the client asks d2rrandomizer.com for exactly this mod.
@@ -166,6 +170,8 @@ class D2RRWorld(World):
         options.open_acts.value = int(slot_data.get("open_acts", False))
         if "logic_difficulty" in slot_data:
             options.logic_difficulty.value = slot_data["logic_difficulty"]
+        options.goal_type.value = slot_data.get("goal_type", options.goal_type.option_boss)
+        options.goal_check_percentage.value = slot_data.get("goal_check_percentage", options.goal_check_percentage.default)
 
     def _active_location_names(self) -> list[str]:
         return ids.active_location_names(
@@ -177,6 +183,11 @@ class D2RRWorld(World):
         )
 
     # ------------------------------------------------------------------ regions
+
+    def goal_region_name(self) -> str:
+        """The region holding the goal act's boss quest on the goal difficulty."""
+        gate = ids.quest_gate(self.goal_act, ids.GOAL_QUEST_INDEX[self.goal_act])
+        return self._region_name(self.goal_difficulty, self.goal_act, gate)
 
     def _region_name(self, difficulty: int, act: int, gate: str | None = None) -> str:
         if gate == ids.TAL_RASHA:
@@ -241,7 +252,10 @@ class D2RRWorld(World):
 
                 # A locked event marks the boss's death. The next difficulty and the goal
                 # both read it, which keeps those rules to a state.has() lookup.
-                is_goal = d == self.goal_difficulty and act == self.goal_act
+                # With All Bosses every boss of the goal difficulty is part of the goal.
+                is_goal = d == self.goal_difficulty and (
+                    act == self.goal_act
+                    or self.options.goal_type.value == self.options.goal_type.option_all_bosses)
                 if act == ids.BAAL_ACT or is_goal:
                     boss_region = region(self._region_name(d, act, ids.quest_gate(act, ids.GOAL_QUEST_INDEX[act])))
                     event = rules.boss_event_name(act, d)
@@ -249,6 +263,18 @@ class D2RRWorld(World):
                     location.place_locked_item(
                         D2RRItem(event, ItemClassification.progression, None, self.player))
                     boss_region.locations.append(location)
+
+        # The Cow King: the Cow Level opens from Act I once that difficulty's Baal is dead.
+        if self.options.goal_type.value == self.options.goal_type.option_cow_king:
+            d = self.goal_difficulty
+            baal = rules.boss_event_name(ids.BAAL_ACT, d)
+            cow_region = region(f"{ids.DIFFICULTY_NAMES[d]} Moo Moo Farm")
+            region(self._region_name(d, 0)).connect(
+                cow_region, None, lambda state, baal=baal: state.has(baal, self.player))
+            event = rules.cow_king_event_name(d)
+            location = D2RRLocation(self.player, event, None, cow_region)
+            location.place_locked_item(D2RRItem(event, ItemClassification.progression, None, self.player))
+            cow_region.locations.append(location)
 
         for clvl in range(ids.LEVEL_MIN, ids.LEVEL_MAX + 1):
             home = ids.level_milestone_region(clvl, self.goal_difficulty, self.goal_act)
@@ -305,6 +331,9 @@ class D2RRWorld(World):
             "goal_difficulty": self.goal_difficulty,
             "goal_act": self.goal_act,
             "goal_quest": ids.GOAL_QUEST_INDEX[self.goal_act],
+            # boss, all_bosses, check_percentage or cow_king, as the option's value.
+            "goal_type": self.options.goal_type.value,
+            "goal_check_percentage": self.options.goal_check_percentage.value,
             "level_cap": ids.level_cap(self.goal_difficulty, self.goal_act),
             "include_waypoints": bool(self.options.include_waypoints),
             "include_areas": bool(self.options.include_areas),

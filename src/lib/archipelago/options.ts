@@ -10,7 +10,7 @@
 export const AP_GAME_NAME = 'D2R Randomizer';
 
 /** Versions the page states. Kept beside the options so one check covers both. */
-export const AP_WORLD_VERSION = '0.5.1';
+export const AP_WORLD_VERSION = '0.6.0';
 export const AP_MINIMUM_ARCHIPELAGO = '0.6.7';
 
 interface BaseOption {
@@ -59,6 +59,21 @@ export const AP_OPTIONS: ApOption[] = [
     key: 'goal_boss', label: 'Goal boss', group: 'Goal', type: 'choice',
     choices: choice(['andariel', 'duriel', 'mephisto', 'diablo', 'baal']), default: 'baal',
     help: 'Killing this boss on the goal difficulty finishes your slot. Andariel on Normal is about an hour.',
+  },
+  {
+    key: 'goal_type', label: 'Goal type', group: 'Goal', type: 'choice',
+    choices: [
+      { value: 'boss', label: 'Kill the goal boss' },
+      { value: 'all_bosses', label: 'Kill all five act bosses' },
+      { value: 'check_percentage', label: 'Find a share of your checks' },
+      { value: 'cow_king', label: 'Kill the Cow King (experimental)' },
+    ],
+    default: 'boss',
+    help: 'All five bosses and the Cow King play every act of the goal difficulty, whatever the goal boss. The Cow King needs that difficulty’s Baal dead first, and counts once the game has saved.',
+  },
+  {
+    key: 'goal_check_percentage', label: 'Goal check percentage', group: 'Goal', type: 'range', min: 10, max: 100, default: 60,
+    help: 'With "Find a share of your checks": how many of your own checks finish the slot. Checks still stop at the goal boss.',
   },
   {
     key: 'skill_points', label: 'Skill points', group: 'Skill Points', type: 'range', min: 20, max: 600, default: 110,
@@ -127,6 +142,21 @@ export const AP_RANDOM = 'random';
 /** Whether an option can be left to chance on the page. Toggles stay plain on/off. */
 export function canRandomize(option: ApOption): boolean {
   return option.type !== 'toggle';
+}
+
+/** Goal types that play every act of the goal difficulty, whatever the goal boss. */
+export const WHOLE_DIFFICULTY_GOALS = ['all_bosses', 'cow_king'];
+
+/**
+ * Whether an option matters with these values. The page hides the goal boss when the goal
+ * type ignores it, and the percentage unless the goal is a share of checks. Either still
+ * goes into the file, where Archipelago ignores it.
+ */
+export function optionApplies(key: string, values: ApOptionValues): boolean {
+  const goalType = values.goal_type;
+  if (key === 'goal_boss') return !WHOLE_DIFFICULTY_GOALS.includes(String(goalType));
+  if (key === 'goal_check_percentage') return goalType === 'check_percentage' || goalType === AP_RANDOM;
+  return true;
 }
 
 /** The YAML value for an option. */
