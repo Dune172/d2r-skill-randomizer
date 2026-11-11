@@ -18,6 +18,8 @@ const [repo, questsPath, modsDir] = process.argv.slice(2);
 const MOD = 'd2rr_openacts_arena';
 const SAVEPATH = 'd2rr_openacts_test';
 const txtDir = path.join(repo, 'data', 'txt');
+// Stamped like generated mods (zip-builder) so D2R shows no "data version mismatch" prompt.
+const dataVersion = fs.readFileSync(path.join(repo, 'data', 'dataversionbuild.txt'), 'utf-8').trim();
 
 function load(name) {
   const raw = fs.readFileSync(path.join(txtDir, name), 'latin1');
@@ -107,4 +109,5 @@ fs.mkdirSync(strings, { recursive: true });
 for (const t of [objects, su, tc, misc, mon]) save(t, excel);
 fs.writeFileSync(path.join(strings, 'quests.json'), JSON.stringify(quests, null, 2), 'utf8');
 fs.writeFileSync(path.join(mpq, 'modinfo.json'), JSON.stringify({ name: MOD, savepath: SAVEPATH }));
-console.log(`wrote ${mpq}: ${wrappers.size} TC wrappers, ${dmgCols.length} damage columns zeroed`);
+fs.writeFileSync(path.join(mpq, 'data', 'global', 'DataVersionBuild.txt'), dataVersion);
+console.log(`wrote ${mpq} (DataVersionBuild ${dataVersion}): ${wrappers.size} TC wrappers, ${dmgCols.length} damage columns zeroed`);
