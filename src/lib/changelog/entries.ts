@@ -12,6 +12,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.343',
+    date: 'November 2026',
+    tagline: 'Game version switch at the top',
+    notes: [
+      'The Reign of the Warlock option is now an on/off switch at the top of the Random Seed tab (next to the presets) and of the Class Builder. It is on by default; switch it off if you don’t own the expansion',
+      'In the Class Builder the switch shows on every step, so you can see which classes and skills you can use before you start building',
+    ],
+  },
+  {
     version: 'v0.342',
     date: 'November 2026',
     tagline: 'Play without Reign of the Warlock',
