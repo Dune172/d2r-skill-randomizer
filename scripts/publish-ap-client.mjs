@@ -1,7 +1,7 @@
 /**
  * publish-ap-client.mjs — build the Archipelago companion app into the site.
  *
- * Testers download it from the Generate page's Archipelago toggle, so it is served from
+ * Testers download it from the Generate page's Archipelago tab, so it is served from
  * public/archipelago/d2rr-ap.exe and committed with the site. That keeps the app and the
  * server it talks to in one commit: they cannot ship apart, and an app built for an older
  * manifest contract cannot be live against a newer site. CI runs the committed copy's

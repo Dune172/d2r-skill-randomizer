@@ -57,7 +57,7 @@ function Divider() {
 }
 
 /**
- * The Generate page's Archipelago mode (the toggle in GenerateModes): instead of a mod,
+ * The Generate page's Archipelago tab (GenerateModes): instead of a mod,
  * the player makes an Archipelago player file (YAML), and the app builds the mod from the
  * room. Server-rendered into the static Generate page; versions and the app's size are
  * read at build time, so a view never reaches the origin. /archipelago redirects here

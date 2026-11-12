@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        // The Archipelago page became a toggle on /generate. The app's "out of date"
+        // The Archipelago page became a tab on /generate. The app's "out of date"
         // message, the apworld's setup guide and the release notes link here, so the
         // old address keeps working.
         source: '/archipelago',

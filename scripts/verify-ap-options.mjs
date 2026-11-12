@@ -1,5 +1,5 @@
 /**
- * verify-ap-options.mjs — the options builder (Generate page, Archipelago toggle) must offer exactly what
+ * verify-ap-options.mjs — the options builder (Generate page, Archipelago tab) must offer exactly what
  * the apworld accepts.
  *
  * The page's option list (src/lib/archipelago/options.ts) is a hand-written mirror of
