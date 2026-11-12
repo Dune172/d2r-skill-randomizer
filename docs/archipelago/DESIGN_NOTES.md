@@ -322,6 +322,15 @@ areas to `data/txt`.
   (Warmth 0 -> 1); "Server: hello from the room" and "You found your Progressive Skill
   Point (Normal A1: Den of Evil)" showed in the game's message box. Gold waited for room
   in the stat list, the known limit.
+- **The Esc menu is read from the pause panel.** In the out-of-town run the UI-block
+  byte stuck at "open" after the character died, so nothing more was granted.
+  `/PauseLayoutGarden` is visible (+0x51) exactly while the menu is open; the client
+  finds it by name and re-checks it each poll. Verified after a death: the byte said
+  open, the panel said closed, and delivery went on.
+- **A DeathLink kill takes about 3 s to register on 3.4**, which was exactly the old
+  `killGrace`. The app then gave up, switched later deaths to Brush with Death and sent
+  the room's own death back to it. `killGrace` is now 10 s and the room-death mark is a
+  timestamp (30 s, or until the character has died and come back).
 - **How the offsets were measured** without a new build (Smart App Control blocked
   them on that PC): a PowerShell script read the D2R.exe module image page by page into
   files in three states (playing, Esc menu, inventory), and Node searched and compared

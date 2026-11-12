@@ -27,8 +27,8 @@ From `DESIGN_NOTES.md` (D2R 3.3.93847, in town only):
 | G1 skill points | **Pass in town** (2026-10-29), once both copies of the player are written. `probe -set` and the client now do that. Combat (step 4) not run. **Pass again on D2R 3.4.95032** (2026-11-11) after the 3.4 offset fixes: delivered points were spent in the tree. |
 | G2 adding a stat | **Pass on 3.4.95032** (2026-11-11): a fresh Paladin received 2 skill points and 5 stat points from the client. **Pass in town** (2026-10-30): `probe -insert` gave a fresh Paladin 3 skill points and 2 stat points, spendable at once and kept after Save and Exit. Stat points need the combined list written as well as the base list. |
 | G3 key gates | **Pass in town** (2026-10-29) on the real recipes, with test-only recipes supplying the quest parts. |
-| G4 traps, DeathLink | Not run (outside town). |
-| G5 a real room | Not run (outside town). |
+| G4 traps, DeathLink | **Pass on 3.4.95032** (2026-11-11, Blood Moor): an Exhaustion Trap and three Skill Lock Traps fired on leaving town (Skill Lock hid the "New Skill" button); an incoming DeathLink death killed the character about 3 s after life was emptied, was not sent back to the room, and items kept arriving after the respawn. Mana Burn, Brush with Death and Gold Tax were not drawn. |
+| G5 a real room | **Mostly passed on 3.4.95032** (2026-11-11): a Paladin in a real local room, goal "15% of checks". Area checks (Blood Moor, Den of Evil) and level checks (2, 3) fired out of town; the items on them arrived with "You found your ..." in the game; pooled stat points spent on Strength were tracked. The last 7 checks were sent from the server console (owner's choice), and the app reported the goal at exactly 11 of 72. Not seen: a quest or a super-unique kill completed by play. |
 
 The Draught, Sigil, Receipt and Tonic gates of 2026-10-29 were retired on 2026-10-30
 with the potions and runes themselves; `KEYS_AND_RUNES.md` keeps them as a record.
