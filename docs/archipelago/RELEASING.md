@@ -33,7 +33,7 @@ tables and a slot contract and a mismatched pair is refused when the client conn
 
 ## The app on the page
 
-`/archipelago` serves `public/archipelago/d2rr-ap.exe`, which is committed. Rebuild it
+The Archipelago tab serves `public/archipelago/d2rr-ap.exe`, which is committed. Rebuild it
 whenever the client changes, and commit it with the change:
 
 ```bash
@@ -64,9 +64,11 @@ It is published as a pre-release. Untick that on GitHub once the gates have pass
 
 ## After
 
-- `/archipelago` stays the main download: it serves the committed app and the apworld
-  built at deploy, which always match the site. The GitHub release is the archive.
-- To launch: list the page in `SiteNav.tsx` and `sitemap.ts`, remove its `noindex`
-  (`page.tsx`) and the `robots.ts` entry, and change its "Tester preview" badge.
+- The Generate page's Archipelago tab (`/generate?mode=archipelago`; `/archipelago`
+  redirects there) stays the main download: it serves the committed app and the apworld
+  built at deploy from `/archipelago/`, which always match the site. The GitHub release
+  is the archive.
+- Listed since v0.345: the tab is public on `/generate`, which is in `sitemap.ts`.
+  `robots.ts` still disallows `/archipelago` (the redirect and the app download).
 - Ids are frozen from the first public release: add items, locations and areas at the
   end of their tables, never renumber.

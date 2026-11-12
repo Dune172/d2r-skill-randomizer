@@ -12,6 +12,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.345',
+    date: 'November 2026',
+    tagline: 'Archipelago: play D2R Randomizer in a multiworld',
+    notes: [
+      'New Archipelago tab on the Generate page, beside Random Seed and Class Builder. Your skill tree is shuffled as usual, but your skill points become items scattered across everyone’s games in an Archipelago multiworld: quests, waypoints, new areas and character levels send items to the other players, and theirs send points to you',
+      'Make your player file (the YAML Archipelago asks for) right on the page: pick a preset or set the goal, the skill points and the other options yourself',
+      'A small Windows app connects your offline game to the room. It downloads and installs your mod, makes your character and starts the game, and the skill points other players find arrive by themselves while you play',
+      'Hosting? Download the apworld from the same tab to add D2R Randomizer to Archipelago 0.6.7 or newer',
+      'It is a preview: generating, connecting and checks and items both ways have been tested in a real room, but a whole game has not been played to the goal yet. Tell us how your run goes on the Discord',
+    ],
+  },
+  {
     version: 'v0.343',
     date: 'November 2026',
     tagline: 'Game version switch at the top',

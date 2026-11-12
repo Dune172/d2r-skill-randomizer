@@ -69,7 +69,7 @@ export default function ArchipelagoPanel() {
     <div className="pt-6">
       <section className="max-w-3xl mx-auto px-4 pb-6 text-center">
         <p className="inline-block rounded-full border border-[#7a3a1a] bg-[#2a1008]/60 px-3 py-0.5 mb-3 font-cinzel text-[10px] tracking-[0.25em] uppercase text-[#d0a070]">
-          Tester preview
+          Preview
         </p>
         <p className="text-sm text-[#e8d5a0]/90 leading-relaxed max-w-xl mx-auto">
           Play D2R Randomizer in an{' '}
