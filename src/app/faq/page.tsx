@@ -33,7 +33,7 @@ const sections: { heading: string; items: QA[] }[] = [
       },
       {
         q: 'Which version of the game do I need?',
-        text: 'The PC version of Diablo II: Resurrected, from Battle.net, Steam or Game Pass. The Reign of the Warlock expansion is supported, so the Warlock is shuffled along with the seven original classes. Don’t own it? Tick “I don’t own Reign of the Warlock” on the Generate page: the mod is built for the base game and shuffles the seven original classes. Mutations, Open Acts and the challenges need the expansion. Mods are built for the current game patch.',
+        text: 'The PC version of Diablo II: Resurrected, from Battle.net, Steam or Game Pass. The Reign of the Warlock expansion is supported, so the Warlock is shuffled along with the seven original classes. Don’t own it? Switch “Reign of the Warlock” off at the top of the Generate page: the mod is built for the base game and shuffles the seven original classes. Mutations, Open Acts and the challenges need the expansion. Mods are built for the current game patch.',
       },
     ],
   },

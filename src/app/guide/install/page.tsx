@@ -54,7 +54,7 @@ export default function InstallGuidePage() {
           <li>
             You need the PC version of <strong>Diablo II: Resurrected</strong>. The Reign of the Warlock
             expansion is supported, and the Warlock class is shuffled along with the original seven. If you
-            don&apos;t own the expansion, tick <strong>I don&apos;t own Reign of the Warlock</strong> on the Generate
+            don&apos;t own the expansion, switch <strong>Reign of the Warlock</strong> off at the top of the Generate
             page and play a non-expansion character: that mod is built for the base game and leaves the Warlock out.
           </li>
           <li>
