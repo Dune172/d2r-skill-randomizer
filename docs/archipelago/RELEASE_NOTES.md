@@ -1,6 +1,7 @@
-**Preview.** Generating a multiworld, connecting to a room and receiving skill points,
-stat points and keys all work, checked in the game in town. A full run from start to goal
-has not been played yet, so treat a run as a test and tell us how it went.
+**Preview, for D2R 3.4.95032.** Generating a multiworld, connecting to a room, and
+checks and items in both directions work. They were checked in a real room outside
+town, together with traps, DeathLink and the goal. A complete game played from start to
+goal has not been finished yet, so treat a run as a test and tell us how it went.
 
 ## Files
 
@@ -49,14 +50,18 @@ need it. The full guide ships inside the apworld.
 
 ## Known limits
 
-- Pooled stat points are on by default and Horadric Keys are off; both are checked in
-  town but not over a full run. Traps and DeathLink have not been tried in the game.
+- Pooled stat points are on by default and Horadric Keys are off. Keys are checked in
+  town only. Traps and DeathLink were tried outside town; only some trap kinds came up.
+- Super-unique kills and the Cow King goal have not yet been seen in a test.
+- Gold, and stat points spent down to nothing, can wait for the game to make room in
+  the character's stats (next level-up, quest reward or item pickup).
 - A skill still takes at most one point per level past its requirement. The game
   enforces that in its own code, so points that arrive early wait.
 - The app is unsigned, and it reads and writes the game's memory, so Windows SmartScreen
   and some antivirus software warn about it. PCs with Smart App Control on may refuse to
   run it.
-- A D2R patch can break the app until it is updated.
+- A D2R patch can break the app until it is updated. This release is measured on D2R
+  3.4.95032.
 
 Problems and questions: https://github.com/Dune172/d2r-skill-randomizer/issues. Each run
 of the app writes a log under `%AppData%\d2rr-ap\logs`; please attach it.
