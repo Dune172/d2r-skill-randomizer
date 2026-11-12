@@ -72,8 +72,30 @@ def can_open_gate(world: "D2RRWorld", gate: str) -> Callable[[CollectionState], 
     return lambda state: state.has(ids.HORADRIC_KEY_ITEM, player, need)
 
 
+COW_KING_EVENT = "Cow King Defeated ({})"
+
+
+def cow_king_event_name(difficulty: int) -> str:
+    return COW_KING_EVENT.format(ids.DIFFICULTY_NAMES[difficulty])
+
+
 def set_completion(world: "D2RRWorld") -> None:
-    """The slot is done when the goal boss's event is collected."""
-    goal_event = boss_event_name(world.options.goal_boss.value, world.options.goal_difficulty.value)
+    """When the slot is done, by goal type."""
+    goal_type = world.options.goal_type
     player = world.player
-    world.multiworld.completion_condition[player] = lambda state: state.has(goal_event, player)
+    difficulty = world.goal_difficulty
+    if goal_type.value == goal_type.option_all_bosses:
+        events = [boss_event_name(act, difficulty) for act in range(ids.ACTS)]
+        world.multiworld.completion_condition[player] = lambda state: state.has_all(events, player)
+    elif goal_type.value == goal_type.option_cow_king:
+        event = cow_king_event_name(difficulty)
+        world.multiworld.completion_condition[player] = lambda state: state.has(event, player)
+    elif goal_type.value == goal_type.option_check_percentage:
+        # The world cannot count its own checks in logic. The client reports the goal once
+        # enough are found; for the fill it is enough that the last act is reachable, since
+        # every location must be reachable anyway.
+        goal_region = world.goal_region_name()
+        world.multiworld.completion_condition[player] = lambda state: state.can_reach(goal_region, "Region", player)
+    else:
+        goal_event = boss_event_name(world.goal_act, difficulty)
+        world.multiworld.completion_condition[player] = lambda state: state.has(goal_event, player)

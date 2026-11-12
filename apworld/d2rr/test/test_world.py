@@ -178,3 +178,81 @@ class TestVanillaStatPoints(D2RRTestBase):
     def test_vanilla_places_no_stat_points(self) -> None:
         self.assertEqual(self.get_items_by_name(ids.STAT_POINTS_ITEM), [])
         self.assertFalse(self.world.fill_slot_data()["mod_options"]["pooledStats"])
+
+
+class TestAllBossesGoal(D2RRTestBase):
+    options = {"goal_type": "all_bosses", "goal_boss": "andariel", "goal_difficulty": "normal"}
+
+    def test_every_act_has_checks_and_every_boss_counts(self) -> None:
+        names = {location.name for location in self.multiworld.get_locations(self.player)}
+        for act in range(ids.ACTS):
+            self.assertIn(rules.boss_event_name(act, 0), names)
+        self.assertIn(ids.quest_location_name(0, 4, 0), names)
+        self.assertEqual(self.world.fill_slot_data()["goal_act"], ids.BAAL_ACT)
+
+    def test_beatable_only_with_everything(self) -> None:
+        self.assertBeatable(False)
+        self.collect_all_but([])
+        self.assertBeatable(True)
+
+
+class TestCheckPercentageGoal(D2RRTestBase):
+    options = {"goal_type": "check_percentage", "goal_check_percentage": 40, "goal_boss": "duriel"}
+
+    def test_checks_stop_at_the_goal_boss_and_slot_data_says_how_many(self) -> None:
+        names = {location.name for location in self.multiworld.get_locations(self.player)}
+        self.assertNotIn(ids.quest_location_name(0, 2, 0), names)
+        slot_data = self.world.fill_slot_data()
+        self.assertEqual(slot_data["goal_type"], 2)
+        self.assertEqual(slot_data["goal_check_percentage"], 40)
+
+    def test_beatable_once_the_last_act_is_reachable(self) -> None:
+        self.assertBeatable(False)
+        self.collect_all_but([])
+        self.assertBeatable(True)
+
+
+class TestCowKingGoal(D2RRTestBase):
+    options = {"goal_type": "cow_king", "goal_difficulty": "nightmare", "goal_boss": "mephisto"}
+
+    def test_the_cow_king_waits_for_baal(self) -> None:
+        names = {location.name for location in self.multiworld.get_locations(self.player)}
+        self.assertIn(rules.cow_king_event_name(1), names)
+        self.assertIn(ids.quest_location_name(1, 4, 0), names)
+        self.assertBeatable(False)
+        self.collect_all_but([])
+        self.assertBeatable(True)
+
+
+class TestUniversalTrackerKeepsTheGoalType(D2RRTestBase):
+    options = {"goal_type": "check_percentage", "goal_check_percentage": 85}
+
+    def test_goal_type_survives_slot_data(self) -> None:
+        world = self.world
+        slot_data = world.fill_slot_data()
+        world.options.goal_type.value = 0
+        world.options.goal_check_percentage.value = 10
+        world.use_tracker_slot_data(world.interpret_slot_data(slot_data))
+        self.assertEqual(world.options.goal_type.value, 2)
+        self.assertEqual(world.options.goal_check_percentage.value, 85)
+
+
+class TestSuperUniqueKills(D2RRTestBase):
+    options = {"include_super_uniques": True, "goal_difficulty": "nightmare", "goal_boss": "mephisto"}
+
+    def test_kills_are_checks_up_to_the_goal(self) -> None:
+        names = {location.name for location in self.multiworld.get_locations(self.player)}
+        self.assertIn("Normal Kill: Lister the Tormentor", names)
+        self.assertIn("Nightmare Kill: Icehawk Riftwing", names)
+        self.assertNotIn("Nightmare Kill: Hephasto the Armorer", names)
+        self.assertNotIn("Hell Kill: Bishibosh", names)
+        self.assertTrue(self.world.fill_slot_data()["include_super_uniques"])
+
+    def test_beatable(self) -> None:
+        self.collect_all_but([])
+        self.assertBeatable(True)
+
+
+class TestNoKillsByDefault(D2RRTestBase):
+    def test_no_kill_locations(self) -> None:
+        self.assertFalse(any(" Kill: " in location.name for location in self.multiworld.get_locations(self.player)))

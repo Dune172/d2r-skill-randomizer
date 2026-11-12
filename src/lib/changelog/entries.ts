@@ -12,7 +12,7 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: 'v0.341',
+    version: 'v0.342',
     date: 'November 2026',
     tagline: 'Play without Reign of the Warlock',
     notes: [
@@ -20,6 +20,16 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Before, a mod only changed the expansion’s data, so without Reign of the Warlock the skill trees showed shuffled icons over the normal skills',
       'The seven original classes are shuffled and the Warlock is left out. Race Mode, monster shuffle and the other options work as usual; mutations, Open Acts and the challenges still need the expansion',
       'Base-game mods get their own folder name (for example seed12345base) and their own save folder, so they never mix with the expansion version of the same seed',
+    ],
+  },
+  {
+    version: 'v0.341',
+    date: 'November 2026',
+    tagline: 'Updated for D2R patch 3.4 (Season 16)',
+    notes: [
+      'New mods are built from the game data of patch 3.4.95032, so the game no longer asks about a data version mismatch when you launch one',
+      'Mods now carry the patch’s own changes instead of older copies: the reworked uniques (Griswold’s Edge, The Atlantian, Veil of Steel and more), the new Worldstone Shard drops and retuned Hell drop rates, Bind Demon’s flat damage bonus, the Hell rift upgrade recipes at level 75, and updated translations',
+      'Your seed still generates the same skill trees. Mods you already installed keep working; download yours again to get the 3.4 data',
     ],
   },
   {

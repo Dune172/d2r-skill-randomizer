@@ -180,10 +180,32 @@ without leaving town).
 - **No runes for now** (2026-10-30). Delivering an item needed the Sigil mailbox, which
   went with the potions. The rune item names and ids stay reserved in the id tables and
   are never placed, so ids do not move if runes come back.
-- **Item messages in the game.** The mod adds a text box to the chat layout; the client
-  writes "You received X from Y" / "You sent X to Y" into it, and the game redraws the
-  text in place. Color codes are not interpreted there, so the text is plain white. The
-  client's own window shows the same lines.
+- **Room messages in the game.** The mod adds a text box to the chat layout; the client
+  writes lines into it and the game redraws the text in place. It shows items to and
+  from this slot, hints that concern it (not yet found), other players finishing, the
+  countdown, room chat (`/chat off` hides it) and, when `/joins on`, players joining and
+  leaving. Color codes are not interpreted there, so the text is plain white; the kinds
+  are told apart by their wording ("Hint: ...", "Link: ..."). Five lines at most, each cut
+  to 115 bytes so five fit the box's 600-byte buffer; hints and goals stay 20 s, the rest
+  12 s. The /chat and /joins choices are kept in `messages.json` in the app's folder. The
+  client's own window shows every server line regardless.
+- **Goal types** (apworld 0.6.0, slot contract 5). `goal_type` is boss (as before),
+  all_bosses, check_percentage or cow_king. All Bosses and Cow King play every act of the
+  goal difficulty (goal_act becomes Baal's). Logic: All Bosses needs every act boss's
+  event; Cow King needs a "Cow King Defeated" event in a Moo Moo Farm region off Act I,
+  behind that difficulty's Baal event; Check Percentage needs only the goal act's boss
+  region to be reachable, since a world cannot count its own checks in logic and the fill
+  makes every location reachable anyway. The client reports All Bosses and Cow King from
+  the save (the Cow King's death is bit 10 of the Act I "Search for Cain" quest word, the
+  flag that shuts the Cow Level; taken from the classic .d2s layout and NOT yet confirmed
+  on a D2R 3.3 save, hence experimental), and Check Percentage from the room's own count
+  (found = all - missing, the same sets /checks uses), every poll, game or no game.
+- **Info commands read the room, not the game.** `/missing` and `/checks` start from the
+  Connected packet's missing list, less every check the app sends and every one a
+  RoomUpdate reports (a `!collect`, say). They are grouped by difficulty and act from the
+  id alone (`ids.Locate`). `/received` keeps the ReceivedItems stream in the server's
+  order, rebuilt on every full replay. `/hints` asks the server's data storage for
+  `_read_hints_<team>_<slot>` with a Get and prints the Retrieved reply.
 - **No seasonal overlay in AP mods**, and the zip is cached on disk only: a room's mod
   must not change with the month, and one-off 47 MB zips must not evict public seeds.
 - **The room decides which locations exist.** The client sends a check only if the
@@ -234,6 +256,39 @@ without leaving town).
   maintained upstream. A D2R patch can break them; `d2rr-ap doctor` and `probe` are the
   first things to run after one.
 
+## Super-unique kill checks: probe results (2026-11-11, D2R 3.4.95032)
+
+`d2rr-ap probe -monsters [-watch N]` walks the monster unit table with
+`internal/game/monsters.go`, a read-only walk of fixed-size fields that ends a chain on
+any unreadable address instead of panicking (d2go's own `Monsters()` can).
+
+- **The walk works on 3.4.** The Rogue Encampment gave 10 units with the town NPCs'
+  monstats rows (147-155) in mode 1. The Cold Plains gave 22-30 units: Fallen (19),
+  shamans (58) and the like, among them a unique pack whose leader read type flag 8
+  (unique) and its members 16 (minion), d2go's values. So the unit data's type byte
+  (+0x1A) is in place, and a super-unique should read 10.
+- **Deaths read correctly.** On a second trip (the Arena Barbarian given 4000 strength
+  and 3000 life with `probe -set`), the Fallen and the members of a unique pack killed
+  in the Cold Plains read mode 12 with the corpse byte (+0x1AE) set, and stayed in the
+  unit table that way.
+- **Not yet seen: a super-unique.** About 15 minutes of the Cold Plains turned up two
+  unique packs (flags 8 and 16) but not Bishibosh, so the super-unique value is still
+  d2go's word. The client tests the super-unique BIT (0x02, the classic MonUMod type
+  flag; d2go's 10 is it plus the unique bit 0x08) rather than the exact value 10.
+- The first trip ended with the character's death before reaching Bishibosh.
+
+**The checks** (apworld 0.7.0, slot contract 6, option `include_super_uniques`, off):
+41 super-uniques per difficulty, appended after the level milestones (ids +689..+811).
+Left out: those whose death finishes a quest (Countess, Radament, Summoner, Council,
+Izual, Shenk, Nihlathak, the Ancients), the Cow King (a goal type), and ten
+superuniques.txt rows whose place in the game is not certain (Flamespike the Crawler,
+Winged Death, the Tormentor, Taintbreeder, Riftwraith, Axe Dweller, Anodized Elite,
+Vinvear Molech, Magma Torquer, Blaze Ripper); they can be appended later. Each sits in its act's region. The client files a kill when a unit with
+the super-unique bit is dead (mode 0/12 or the corpse byte) in one of the areas listed
+for its monstats row (`ids.SuperUniques`; Ancient Kaa's are the seven tombs), on the
+difficulty area checks use. `TestSuperUniquesMatchTheGameData` holds the rows and
+areas to `data/txt`.
+
 ## After a D2R patch
 
 1. `d2rr-ap saves <save folder>`: do quests and waypoints still parse?
@@ -242,6 +297,51 @@ without leaving town).
 4. `d2rr-ap doctor -manifest <zip> -calibrate-difficulty -difficulty 0` from a Normal
    game, to re-record the difficulty profile for the new executable.
 5. Re-measure the module offsets in `knownBuildOffsets` (`scripts/patch-d2go.mjs`).
+
+### D2R 3.4 (build 3.4.95032, first seen 2026-11-11)
+
+- **The client's reads still work.** `d2rr-ap probe` in town read the character, its
+  base stat list (16 entries), its skills and the game's own copy; `probe -monsters`
+  read the unit table.
+- **Nothing was granted on 3.4 until three fixes** (PE TimeDateStamp `0x6ad81202`):
+  - *The quit-menu byte moved by one.* d2go's original `sete` UI pattern matches again
+    (3.3 had dropped it), and its target is the quit-menu flag itself, where the client
+    reads the flag at uiBase+0x09 as measured on 3.3. It read the byte below, always 0,
+    so the menu always looked open and every write waited. The sete UI offset is now one
+    past its target. Measured: the target reads 1 in play, 0 with the Esc menu, 1 with
+    the inventory; `probe -ui` prints the block and the reading.
+  - *The unit table pattern misses at attach* like the waypoint one, leaving no player at
+    all ("enter a game"). `knownBuildOffsets` now has 3.4 (UI `0x1ece2ed`, waypoints
+    `0x1d705f0`, unit table `0x1ebe5f0`) and falls back to the unit table too.
+  - *No unit carries the Sharedstash state* at +0xB30 (nor +0xAF0/+0xB50/+0xB70), so all
+    seven player units looked main. The character's inventory flag (+0x30) reads 3, the
+    stash pseudo-players' 1; when more than one unit claims to be main, those with bit
+    0x2 are kept.
+- **After the fixes, in town against a real local room:** 2 starting skill points, then
+  sent skill points, Stat Points (5) and a Horadric Key all arrived; a point was spent
+  (Warmth 0 -> 1); "Server: hello from the room" and "You found your Progressive Skill
+  Point (Normal A1: Den of Evil)" showed in the game's message box. Gold waited for room
+  in the stat list, the known limit.
+- **The Esc menu is read from the pause panel.** In the out-of-town run the UI-block
+  byte stuck at "open" after the character died, so nothing more was granted.
+  `/PauseLayoutGarden` is visible (+0x51) exactly while the menu is open; the client
+  finds it by name and re-checks it each poll. Verified after a death: the byte said
+  open, the panel said closed, and delivery went on.
+- **A DeathLink kill takes about 3 s to register on 3.4**, which was exactly the old
+  `killGrace`. The app then gave up, switched later deaths to Brush with Death and sent
+  the room's own death back to it. `killGrace` is now 10 s and the room-death mark is a
+  timestamp (30 s, or until the character has died and come back).
+- **How the offsets were measured** without a new build (Smart App Control blocked
+  them on that PC): a PowerShell script read the D2R.exe module image page by page into
+  files in three states (playing, Esc menu, inventory), and Node searched and compared
+  them. The player-unit fields were read the same way.
+- **A `-txt` mod built from 3.3 data warns "Data version mismatch"** at the title
+  screen (current data version 95032, detected unknown). It comes from the mod having no
+  `data/global/DataVersionBuild.txt`, and it only warns: the arena mod's monstats.txt
+  still loaded on 3.4 (a Fallen dropped a Wirt's Leg, which only its treasure classes
+  give). A level 2 Barbarian did die to a Cold Plains unique pack, most likely to
+  enchantment damage, which the arena's zeroed damage columns do not cover
+  (unconfirmed). Site mods carry 95032 and the 3.4 tables since PR #22.
 
 ### D2R 3.3 (build 3.3.93847, measured 2026-10-26)
 

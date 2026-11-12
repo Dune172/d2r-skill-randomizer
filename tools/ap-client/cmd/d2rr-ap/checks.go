@@ -148,6 +148,7 @@ func (a *app) pollProgress(ctx context.Context) {
 	a.mu.Lock()
 	wantWaypoints := a.includeWaypoints
 	wantAreas, wantLevels, cap := a.includeAreas, a.includeLevels, a.levelCap
+	wantKills := a.includeSuperUniques
 	st := a.lastState
 	goal := a.goalDifficulty
 	a.mu.Unlock()
@@ -226,6 +227,17 @@ func (a *app) pollProgress(ctx context.Context) {
 						save.DifficultyNames[res.Difficulty])
 				}
 			}
+		}
+	}
+
+	// Super-unique kills, like areas, need the difficulty to file them under.
+	if wantKills && res.OK {
+		units, err := a.gc.Monsters()
+		if err != nil {
+			a.note("kills", "super-unique kills paused: "+err.Error())
+		} else {
+			a.note("kills", "")
+			newIDs = append(newIDs, a.killChecks(units, prog.AreaLevelID, res.Difficulty)...)
 		}
 	}
 
@@ -327,22 +339,69 @@ func (a *app) warnNoQuestLayout(saveCount int) {
 // finished on location checks alone — the client has to say so explicitly.
 func (a *app) maybeReportGoal(ctx context.Context, st *save.State) {
 	a.mu.Lock()
-	goal, act := a.goalDifficulty, a.goalAct
+	goal, act, kind := a.goalDifficulty, a.goalAct, a.goalType
 	a.mu.Unlock()
-	if goal < 0 || a.session.HasGoal() || !a.conn.Connected() {
+	if goal < 0 || kind == goalCheckPercentage || a.session.HasGoal() || !a.conn.Connected() {
 		return
 	}
-	if goalReached(st, goal, act) {
-		if err := a.conn.SendGoal(ctx); err != nil {
-			logf("reporting goal failed: %v", err)
-			return
-		}
-		logf("GOAL COMPLETE: %s defeated on %s", goalBossNames[act], difficultyName(goal))
+	if goalReached(st, kind, goal, act) {
+		a.reportGoal(ctx, goalText(kind, goal, act, 0))
 	}
 }
 
-// goalReached reports whether the save records the goal boss's death.
-func goalReached(st *save.State, difficulty, act int) bool {
+// maybeReportCheckGoal is the Check Percentage goal: the room's own count of this slot's
+// checks, which includes any the server learned of some other way.
+func (a *app) maybeReportCheckGoal(ctx context.Context) {
+	a.mu.Lock()
+	goal, kind, percent, act := a.goalDifficulty, a.goalType, a.goalPercent, a.goalAct
+	a.mu.Unlock()
+	if goal < 0 || kind != goalCheckPercentage || a.conn == nil || a.session.HasGoal() || !a.conn.Connected() {
+		return
+	}
+	all, missing, ok := a.conn.ProgressCounts()
+	if !ok || !checkGoalReached(all-missing, all, percent) {
+		return
+	}
+	a.reportGoal(ctx, goalText(kind, goal, act, percent))
+}
+
+// checkGoalReached: found is at least percent of all, rounding the target up.
+func checkGoalReached(found, all, percent int) bool {
+	if all <= 0 {
+		return false
+	}
+	return found*100 >= all*percent
+}
+
+func (a *app) reportGoal(ctx context.Context, what string) {
+	if err := a.conn.SendGoal(ctx); err != nil {
+		logf("reporting goal failed: %v", err)
+		return
+	}
+	logf("GOAL COMPLETE: %s", what)
+}
+
+// goalReached reports whether the save records what the goal asks for: the goal boss's
+// death, every act boss's on the goal difficulty, or the Cow King's.
+func goalReached(st *save.State, kind, difficulty, act int) bool {
+	switch kind {
+	case goalAllBosses:
+		for boss := range ids.GoalQuestIndex {
+			if !bossDead(st, difficulty, boss) {
+				return false
+			}
+		}
+		return true
+	case goalCowKing:
+		return difficulty >= 0 && difficulty < len(st.CowKingKilled) && st.CowKingKilled[difficulty]
+	case goalCheckPercentage:
+		return false
+	}
+	return bossDead(st, difficulty, act)
+}
+
+// bossDead reports whether the save records an act boss's death on a difficulty.
+func bossDead(st *save.State, difficulty, act int) bool {
 	if act < 0 || act >= len(ids.GoalQuestIndex) {
 		return false
 	}

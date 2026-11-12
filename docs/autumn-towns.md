@@ -40,7 +40,11 @@ of every vanilla source file it used. Safeguards:
   `--src <fresh extraction>` it also names every vanilla source that changed.
 
 **Before each October** (or after any D2R patch), re-extract the game files, run
-`verify-autumn --src`, and if it fails, rebuild with the steps below.
+`verify-autumn --src`, and if it fails, rebuild with the steps below. If only the
+stamp is stale (a patch that left every vanilla source unchanged, as 3.4.95032
+did), `node scripts/restamp-season-overlay.mjs --season autumn --src <extraction>`
+re-stamps the manifest for the new build without rebuilding; it refuses if any
+source changed.
 
 ## Rebuilding the overlay (offline)
 

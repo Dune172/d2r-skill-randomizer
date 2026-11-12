@@ -179,7 +179,8 @@ func play(cfg playConfig) error {
 		saveDirFlag:        cfg.saveDir,
 		characterFlag:      cfg.character, gameDir: cfg.gameDir, installMod: cfg.install || cfg.launch, launchGame: cfg.launch,
 		localManifest: cfg.manPath, stateDir: cfg.stateDir, statusFile: cfg.statusFile,
-		commands: make(chan consoleCommand, 4),
+		commands:     make(chan consoleCommand, 4),
+		messagePrefs: loadMessagePrefs(cfg.stateDir),
 	}
 	if man != nil {
 		if err := app.useManifest(man); err != nil {
@@ -215,8 +216,8 @@ func play(cfg playConfig) error {
 		OnItems: func(s *apc.Session) {
 			app.recomputeDesired()
 		},
-		OnPrint:     func(text string) { logf("%s", strings.TrimSpace(text)) },
-		OnItemEvent: app.addMessage,
+		OnPrint:   func(text string) { logf("%s", strings.TrimSpace(text)) },
+		OnMessage: app.addMessage,
 	})
 	app.conn = conn
 

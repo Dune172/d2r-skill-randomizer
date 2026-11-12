@@ -9,6 +9,7 @@ package game
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/hectorgimenez/d2go/pkg/memory"
 	"golang.org/x/sys/windows"
@@ -43,6 +44,10 @@ type Client struct {
 
 	// The game's own copy of the player (see SimulationCopy), cached for simFor.
 	simFor, sim uintptr
+
+	// The Esc menu's panel, found by name, and when to look for it again.
+	pausePanel      uintptr
+	pausePanelRetry time.Time
 }
 
 // Attach finds and opens the running D2R process.
@@ -104,11 +109,43 @@ func (c *Client) Skills(player uintptr) ([]SkillNode, error) {
 // deliberately unused, because it does fire on the inventory.
 const uiQuitMenuByte = 0x09
 
-// QuitMenuOpen pauses reconciliation while the measured quit-menu byte is open.
-// An unreadable or unresolved UI block is treated as unavailable for writes as well.
-func (c *Client) QuitMenuOpen() bool {
+// QuitMenuByte reports the old UI-block reading, for the playtest probe. It is not used
+// to gate writes any more: on D2R 3.4 it stopped tracking the menu after a death.
+func (c *Client) QuitMenuByte() bool {
 	buf := c.UIBuffer()
 	return len(buf) <= uiQuitMenuByte || buf[uiQuitMenuByte] == 0
+}
+
+// The Esc ("pause") menu is a panel in the game's UI tree that is visible exactly while
+// the menu is open. Measured on D2R 3.4.95032, where the UI-block byte above went to 0 for
+// good after the character died, which paused every grant for the rest of the game.
+const (
+	pausePanelName  = "PauseLayoutGarden"
+	offPanelVisible = 0x51 // d2go pkg/memory/panels.go
+)
+
+// QuitMenuOpen pauses reconciliation while the Esc menu is open, read from the pause
+// panel's visibility. Until the panel has been found (the UI tree is still being built)
+// it reports true, so nothing is written to a game that may be half there.
+func (c *Client) QuitMenuOpen() bool {
+	if c.pausePanel == 0 || !c.WidgetNamed(c.pausePanel, pausePanelName) {
+		c.pausePanel = 0
+		if time.Now().Before(c.pausePanelRetry) {
+			return true
+		}
+		// Finding it walks the whole UI tree, so a miss waits a moment before the next try.
+		c.pausePanelRetry = time.Now().Add(2 * time.Second)
+		addr, err := c.FindWidget(pausePanelName)
+		if err != nil {
+			return true
+		}
+		c.pausePanel = addr
+	}
+	var visible [1]byte
+	if err := c.proc.ReadIntoBuffer(c.pausePanel+offPanelVisible, visible[:]); err != nil {
+		return true
+	}
+	return visible[0] != 0
 }
 
 func (c *Client) openWrite() (windows.Handle, error) {

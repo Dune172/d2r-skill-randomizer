@@ -31,7 +31,9 @@ D2R Randomizer:
   xp_multiplier: 3
 ```
 
-`goal_boss: andariel` on Normal is about an hour and suits a first try. Everything
+`goal_boss: andariel` on Normal is about an hour and suits a first try. `goal_type`
+changes what finishes your slot: `all_bosses`, `check_percentage` (with
+`goal_check_percentage`) or the experimental `cow_king`. Everything
 marked EXPERIMENTAL in the options is off by default; leave it off for a run that has
 to finish.
 
@@ -78,8 +80,27 @@ The app also runs from a command prompt:
   the other `!` commands work as in any Archipelago client. `/help` lists the app's own
   commands.
 - The app sends checks as you complete quests, activate waypoints, enter areas and
-  gain levels, and reports the goal when your goal boss dies. Towns are never checks,
+  gain levels, and reports the goal when your goal is done: the goal boss dies (or
+  all five act bosses, or the Cow King), or, for `check_percentage`, the room counts
+  enough of your checks. Towns are never checks,
   neither the town nor its waypoint.
+
+### The app's window
+
+Type into the app's window to chat with the room. `!hint <item>` and the other `!`
+commands go to the server as in any Archipelago client. The app also answers these
+itself:
+
+- `/missing` lists the checks you have left, by difficulty and act. Add words to narrow
+  it down: `/missing act ii`, `/missing waypoint`, `/missing hell`.
+- `/checks` counts the checks you have found, act by act.
+- `/received` counts the items the room has sent you and lists the latest.
+- `/hints` shows the hints about your items and your checks.
+- `/chat off` keeps room chat out of the game (`/chat on` brings it back), and
+  `/joins on` shows players joining and leaving. The app remembers both.
+
+Besides your own items, the game's message box shows hints that concern you, other
+players finishing and room chat.
 
 ### After Normal
 
@@ -101,6 +122,11 @@ to `vanilla` to get five per level as usual instead.
 
 - **Horadric Keys**: they arrive by themselves while the app is running. Once you hold
   enough, the Cube assembles the Horadric Staff and Khalim's Will as usual.
+
+- **Super-unique kills** (`include_super_uniques`): killing one of 41 named super-uniques
+  (Bishibosh, Griswold, Pindleskin, ...) is a check on each difficulty you play. Those a
+  quest already counts are left out. The app has to be running when it dies; walking
+  back past its corpse also counts. A super-unique kill has not yet been seen in a test.
 
 Keys and pooled stat points have been checked in the game in town, but not yet over a
 full run. Leave keys off for a run that has to finish. Runes are not in the game for

@@ -51,6 +51,34 @@ class GoalBoss(Choice):
     default = 4
 
 
+class GoalType(Choice):
+    """What finishes the slot.
+
+    Boss: kill the goal boss on the goal difficulty.
+    All Bosses: kill all five act bosses on the goal difficulty. Goal Boss is ignored;
+    every act carries checks.
+    Check Percentage: find this share of your own checks (Goal Check Percentage). Checks
+    stop at the goal boss as usual, but killing it is not required.
+    Cow King: EXPERIMENTAL. Kill the Cow King on the goal difficulty, which needs that
+    difficulty's Baal dead first. Goal Boss is ignored; every act carries checks. The kill
+    is read from the save file, so it counts once the game has saved.
+    """
+    display_name = "Goal Type"
+    option_boss = 0
+    option_all_bosses = 1
+    option_check_percentage = 2
+    option_cow_king = 3
+    default = 0
+
+
+class GoalCheckPercentage(Range):
+    """With the Check Percentage goal: the share of your own checks to find."""
+    display_name = "Goal Check Percentage"
+    range_start = 10
+    range_end = 100
+    default = 60
+
+
 class SkillPoints(Range):
     """How many skill points Archipelago hands out over the run.
 
@@ -126,6 +154,19 @@ class KeyItems(Toggle):
     The gates were checked in the game in town; a full run with them has not been played.
     """
     display_name = "Horadric Keys"
+    default = 0
+
+
+class IncludeSuperUniques(Toggle):
+    """EXPERIMENTAL. Killing a named super-unique is a check: Bishibosh, Griswold,
+    Pindleskin and 38 more, on every difficulty you play, up to your goal.
+
+    Super-uniques whose death already finishes a quest (the Countess, Radament, the
+    Summoner, the Council, Izual, Shenk, Nihlathak, the Ancients) are not repeated here.
+    The companion app has to be running when the monster dies. The app reads monster
+    deaths correctly on D2R 3.4, but a super-unique kill has not yet been seen in a test.
+    """
+    display_name = "Super-Unique Kills"
     default = 0
 
 
@@ -205,6 +246,8 @@ class D2RROptions(PerGameCommonOptions):
     character_class: CharacterClass
     goal_difficulty: GoalDifficulty
     goal_boss: GoalBoss
+    goal_type: GoalType
+    goal_check_percentage: GoalCheckPercentage
     skill_points: SkillPoints
     starting_skill_points: StartingSkillPoints
     logic_difficulty: LogicDifficulty
@@ -218,14 +261,15 @@ class D2RROptions(PerGameCommonOptions):
     monster_shuffle: MonsterShuffle
     open_acts: OpenActs
     death_link: D2RRDeathLink
+    include_super_uniques: IncludeSuperUniques
 
 
 OPTION_GROUPS = [
-    OptionGroup("Goal", [CharacterClass, GoalDifficulty, GoalBoss]),
+    OptionGroup("Goal", [CharacterClass, GoalDifficulty, GoalBoss, GoalType, GoalCheckPercentage]),
     OptionGroup("Skill Points", [SkillPoints, StartingSkillPoints, LogicDifficulty, StatPoints]),
     OptionGroup("Checks", [IncludeWaypoints, IncludeAreas, IncludeLevelMilestones]),
     OptionGroup("The Mod", [OpenActs, XPMultiplier, MonsterShuffle]),
-    OptionGroup("Experimental", [KeyItems, TrapPercentage, D2RRDeathLink]),
+    OptionGroup("Experimental", [KeyItems, TrapPercentage, D2RRDeathLink, IncludeSuperUniques]),
 ]
 
 OPTION_PRESETS = {

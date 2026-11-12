@@ -21,6 +21,7 @@
 import { execFileSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import ts from 'typescript';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const goDir = path.join(repoRoot, 'tools', 'ap-client');
@@ -43,6 +44,15 @@ function pythonCmd() {
     } catch { /* try the next one */ }
   }
   throw new Error('no python interpreter found on PATH');
+}
+
+function loadTs(file) {
+  const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const mod = { exports: {} };
+  new Function('module', 'exports', code)(mod, mod.exports);
+  return mod.exports;
 }
 
 function diffTables(label, a, b, problems) {
@@ -75,13 +85,29 @@ function main() {
   // difference at once, instead of hundreds of individual diffs.
   const keys = new Set([...Object.keys(go), ...Object.keys(py)]);
   for (const key of [...keys].sort()) {
-    if (key === 'items' || key === 'locations') continue;
+    if (['items', 'locations', 'locationNames', 'activeCounts'].includes(key)) continue;
     const a = JSON.stringify(go[key]), b = JSON.stringify(py[key]);
     if (a !== b) problems.push(`${key}: Go ${String(a).slice(0, 90)} != Python ${String(b).slice(0, 90)}`);
   }
 
   diffTables('item', go.items, py.items, problems);
   diffTables('location', go.locations, py.locations, problems);
+  diffTables('location name', go.locationNames, py.locationNames, problems);
+
+  // The page's list of checks (checks.ts over ap-names.json) must count what the apworld
+  // generates, for every goal and every check toggle.
+  const checks = loadTs(path.join(repoRoot, 'src', 'lib', 'archipelago', 'checks.ts'));
+  const names = JSON.parse(fs.readFileSync(path.join(repoRoot, 'src', 'lib', 'archipelago', 'ap-names.json'), 'utf8'));
+  for (const [key, want] of Object.entries(py.activeCounts ?? {})) {
+    const [gd, ga, w, a, lv, su] = key.split(':').map(Number);
+    const got = checks.activeLocations(names, {
+      goalDifficulty: gd, goalAct: ga, waypoints: w === 1, areas: a === 1, levels: lv === 1, superUniques: su === 1,
+    }).length;
+    if (got !== want) {
+      problems.push(`page check count for ${key} (difficulty:act:waypoints:areas:levels:super-uniques) is ${got}, the apworld's ${want}`);
+    }
+  }
+  if (!py.activeCounts) problems.push('the Python dump has no activeCounts');
 
   const itemCount = Object.keys(go.items).length;
   const locCount = Object.keys(go.locations).length;
@@ -98,9 +124,11 @@ function main() {
 
   console.log(`Go and Python id tables agree exactly.`);
   console.log(`  ${itemCount} items (${go.traps.length} traps, ${go.runes.length} runes)`);
+  const levels = go.levelMax - go.levelMin + 1;
+  const kills = go.superUniques.length * 3;
   console.log(
-    `  ${locCount} locations (${go.questsTotal} quests, ${go.locationsTotal - go.questsTotal - go.areas * 3 - (go.levelMax - go.levelMin + 1)} waypoints, ` +
-      `${go.areas * 3} areas, ${go.levelMax - go.levelMin + 1} level milestones)`,
+    `  ${locCount} locations (${go.questsTotal} quests, ${go.locationsTotal - go.questsTotal - go.areas * 3 - levels - kills} waypoints, ` +
+      `${go.areas * 3} areas, ${levels} level milestones, ${kills} super-unique kills)`,
   );
 }
 

@@ -46,18 +46,27 @@ traps are untested. Everything arrives by itself while the companion app is runn
 - Activating a waypoint (not a town's).
 - Entering an area for the first time (not a town).
 - Reaching a character level, up to about the level you would have at the goal.
+- Optionally (experimental), killing a named super-unique such as Bishibosh or Pindleskin.
 
 Each group except quests can be switched off.
 
 ## What is the goal?
 
-Killing an act boss of your choice (Andariel, Duriel, Mephisto, Diablo or Baal) on the
-difficulty of your choice. Earlier difficulties are played in full first.
+By default, killing an act boss of your choice (Andariel, Duriel, Mephisto, Diablo or
+Baal) on the difficulty of your choice. Earlier difficulties are played in full first.
+`goal_type` offers other goals:
+
+- `all_bosses`: kill all five act bosses on the goal difficulty.
+- `check_percentage`: find a share of your own checks (`goal_check_percentage`, 60 by
+  default). Checks still stop at the goal boss, but killing it is not required.
+- `cow_king` (experimental): kill the Cow King on the goal difficulty, after that
+  difficulty's Baal. It counts once the game has saved.
 
 ## What does another player's item look like?
 
 Nothing drops in the game. A line such as "You sent Progressive Skill Point to Alice"
-appears in a text box beside the chat, and the companion app's window shows it too.
+appears in a text box beside the chat, and the companion app's window shows it too. Hints
+about your items, room chat and other players finishing appear there as well.
 
 ## What do I need?
 

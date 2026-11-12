@@ -2,8 +2,10 @@
 
 import { useMemo, useRef, useState } from 'react';
 import {
-  AP_OPTIONS, ApOption, ApOptionValues, buildApYaml, cleanSlotName, defaultApOptions,
+  AP_OPTIONS, AP_PRESETS, AP_RANDOM, ApOption, ApOptionValues, applyPreset, buildApYaml, canRandomize,
+  cleanSlotName, defaultApOptions, optionApplies,
 } from '@/lib/archipelago/options';
+import RoomContents from './RoomContents';
 
 /** Shown up front: who you are and what finishes your game. The rest waits in "More options". */
 const ESSENTIAL_GROUP = 'Goal';
@@ -47,6 +49,7 @@ function Control({ option, value, onChange }: {
   onChange: (value: string | number | boolean) => void;
 }) {
   const id = `ap-${option.key}`;
+  const random = value === AP_RANDOM && canRandomize(option);
   if (option.type === 'toggle') {
     return (
       <label htmlFor={id} className="flex items-start gap-3 cursor-pointer">
@@ -68,9 +71,24 @@ function Control({ option, value, onChange }: {
       {option.type === 'choice' ? (
         <select id={id} value={String(value)} onChange={e => onChange(e.target.value)} className={field}>
           {option.choices.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          <option value={AP_RANDOM}>Random</option>
         </select>
       ) : (
-        <RangeInput id={id} min={option.min} max={option.max} value={Number(value)} onChange={onChange} />
+        <div className="flex items-center gap-3">
+          {random ? (
+            <div className={`${field} text-[#a89060]`}>Random, {option.min}–{option.max}</div>
+          ) : (
+            <RangeInput id={id} min={option.min} max={option.max} value={Number(value)} onChange={onChange} />
+          )}
+          <label className="flex shrink-0 items-center gap-1.5 text-xs text-[#a89060] cursor-pointer">
+            <input
+              type="checkbox" checked={random} aria-label={`Random ${option.label.toLowerCase()}`}
+              onChange={e => onChange(e.target.checked ? AP_RANDOM : option.default)}
+              className="h-3.5 w-3.5 accent-[#c8942a]"
+            />
+            Random
+          </label>
+        </div>
       )}
       <p className="mt-1 text-xs text-[#a89060] leading-relaxed">
         {option.help}{option.type === 'range' ? ` (${option.min}–${option.max})` : ''}
@@ -98,7 +116,17 @@ export default function PlayerFile() {
   const changed = () => { setCreated(null); setCopied(false); };
   const set = (key: string, value: string | number | boolean) => {
     setValues(current => ({ ...current, [key]: value }));
+    setPreset('');
     changed();
+  };
+  const [preset, setPreset] = useState('');
+  const choosePreset = (name: string) => {
+    const chosen = AP_PRESETS.find(p => p.name === name);
+    if (chosen) {
+      setValues(current => applyPreset(chosen, current));
+      changed();
+    }
+    setPreset(name);
   };
 
   const create = () => {
@@ -129,6 +157,16 @@ export default function PlayerFile() {
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
+          <label htmlFor="ap-preset" className={label}>Start from a preset</label>
+          <select id="ap-preset" value={preset} onChange={e => choosePreset(e.target.value)} className={field}>
+            <option value="">Choose one (optional)</option>
+            {AP_PRESETS.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+          </select>
+          <p className="mt-1 text-xs text-[#a89060]">
+            Sets the goal and the skill points for a game of that length. You can change anything afterwards.
+          </p>
+        </div>
+        <div className="sm:col-span-2">
           <label htmlFor="ap-name" className={label}>Your name</label>
           <input
             id="ap-name" ref={nameInput} type="text" value={name} maxLength={16} placeholder="e.g. Swanny"
@@ -142,7 +180,7 @@ export default function PlayerFile() {
               : 'Up to 16 letters, numbers, spaces, - or _. You type the same name into the app to connect.'}
           </p>
         </div>
-        {AP_OPTIONS.filter(o => o.group === ESSENTIAL_GROUP).map(option => (
+        {AP_OPTIONS.filter(o => o.group === ESSENTIAL_GROUP && optionApplies(o.key, values)).map(option => (
           <Control
             key={option.key} option={option}
             value={values[option.key] ?? option.default}
@@ -183,6 +221,8 @@ export default function PlayerFile() {
           ))}
         </div>
       </details>
+
+      <RoomContents values={values} />
 
       <button
         type="button" onClick={create}

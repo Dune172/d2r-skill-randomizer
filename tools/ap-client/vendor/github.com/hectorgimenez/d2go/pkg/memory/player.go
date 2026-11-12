@@ -87,7 +87,40 @@ func (gd *GameReader) GetRawPlayerUnits() RawPlayerUnits {
 			}
 		}
 	}
+	// D2RR PATCH: on D2R 3.4 no unit carries the Sharedstash state at the 3.3 offset, so
+	// all seven still look main. The real character's inventory flag (+0x30) reads 3, the
+	// stash units' 1 (measured on 3.4.95032): keep the ones with bit 0x2, if any have it.
+	if countMains(rawPlayerUnits) > 1 {
+		flag := func(u RawPlayerUnit) uint {
+			inv := uintptr(gd.Process.ReadUInt(u.Address+0x90, Uint64))
+			return gd.Process.ReadUInt(inv+0x30, Uint16)
+		}
+		withBit := 0
+		for _, u := range rawPlayerUnits {
+			if u.IsMainPlayer && flag(u)&0x2 != 0 {
+				withBit++
+			}
+		}
+		if withBit > 0 {
+			for i := range rawPlayerUnits {
+				if rawPlayerUnits[i].IsMainPlayer && flag(rawPlayerUnits[i])&0x2 == 0 {
+					rawPlayerUnits[i].IsMainPlayer = false
+				}
+			}
+		}
+	}
 	return rawPlayerUnits
+}
+
+// D2RR PATCH: how many units claim to be the main player.
+func countMains(units RawPlayerUnits) int {
+	n := 0
+	for _, u := range units {
+		if u.IsMainPlayer {
+			n++
+		}
+	}
+	return n
 }
 
 func (gd *GameReader) GetPlayerUnit(mainPlayerUnit RawPlayerUnit) data.PlayerUnit {

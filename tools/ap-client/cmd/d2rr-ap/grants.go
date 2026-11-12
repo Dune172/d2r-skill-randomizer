@@ -18,7 +18,11 @@ const (
 	skillLockDuration = time.Minute
 	// How long to wait for the game to register a DeathLink kill before concluding it
 	// does not honour the write.
-	killGrace = 3 * time.Second
+	// Measured on D2R 3.4: about 3 s, so 3 s was too tight.
+	killGrace = 10 * time.Second
+	// How long a death after a room kill is taken to be that kill, even if the app gave
+	// up waiting for it.
+	linkKillWindow = 30 * time.Second
 )
 
 // gameView is the part of the running game the grant and skill-point code reads and
@@ -196,9 +200,12 @@ func (a *app) reportDeath(ctx context.Context, dead bool) {
 	wasDead := a.wasDead
 	a.wasDead = dead
 	enabled := a.deathLink
-	ours := a.killedByLink
-	if !dead {
-		a.killedByLink = false
+	// A death the room sent is not the player's own: it is not sent back. The game takes
+	// a few seconds to register a death after life is emptied, so the mark lasts until
+	// the character has died and come back, or linkKillWindow has passed.
+	ours := !a.linkKillAt.IsZero() && time.Since(a.linkKillAt) < linkKillWindow
+	if !dead && wasDead {
+		a.linkKillAt = time.Time{}
 	}
 	a.mu.Unlock()
 	if !enabled || !dead || wasDead || ours {
@@ -255,7 +262,7 @@ func (a *app) applyIncomingDeath(player uintptr) {
 		}
 		a.mu.Lock()
 		a.killStarted = time.Now()
-		a.killedByLink = true
+		a.linkKillAt = time.Now()
 		a.mu.Unlock()
 		return
 	}
@@ -263,7 +270,6 @@ func (a *app) applyIncomingDeath(player uintptr) {
 	if time.Since(since) > killGrace {
 		a.mu.Lock()
 		a.killUnsupported = true
-		a.killedByLink = false
 		a.mu.Unlock()
 		logf("DeathLink: the game did not treat an emptied life pool as a death.")
 		logf("  Incoming deaths will leave you on one life instead.")

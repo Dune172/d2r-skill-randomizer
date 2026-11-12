@@ -66,6 +66,8 @@ type app struct {
 	messageShown string
 	messageOK    bool
 	messageRetry time.Time
+	// Which optional kinds of message the player wants in the game (/chat, /joins).
+	messagePrefs messagePrefs
 
 	// Test seams: a character made of a map, and a death that goes nowhere.
 	fakeGame  gameView
@@ -76,10 +78,12 @@ type app struct {
 
 	// DeathLink. pendingDeaths are deaths received and not yet carried out; killStarted
 	// is when the current one was written, so a write the game ignores can be noticed.
-	pendingDeaths   int
-	deathQueuedAt   time.Time
-	killStarted     time.Time
-	killedByLink    bool
+	pendingDeaths int
+	deathQueuedAt time.Time
+	killStarted   time.Time
+	// linkKillAt is when the app emptied life for a death from the room; that death is
+	// not sent back to the room (see reportDeath).
+	linkKillAt      time.Time
 	killUnsupported bool
 	wasDead         bool
 
@@ -98,6 +102,10 @@ type app struct {
 	// is -1 until Connected arrives, so the goal is never reported against a guess.
 	goalDifficulty int
 	goalAct        int
+	// What finishes the slot (goalBoss, goalAllBosses, ...) and, for a share of checks,
+	// the percentage.
+	goalType    int
+	goalPercent int
 
 	// Retained so the mod fetch can be retried without another Connected packet.
 	slotData      map[string]any
@@ -119,6 +127,8 @@ type app struct {
 	includeAreas     bool
 	includeLevels    bool
 	levelCap         int
+	// includeSuperUniques: the room has super-unique kill checks.
+	includeSuperUniques bool
 
 	// Latest parsed save, kept so area checks can resolve the current difficulty. The
 	// save is the only thing that proves which difficulties are even unlocked.
@@ -191,6 +201,8 @@ func (a *app) run(ctx context.Context) {
 			a.handleCommand(cmd)
 		case <-ticker.C:
 			a.writeStatus()
+			// Needs only the room, so it runs before the game is ready too.
+			a.maybeReportCheckGoal(ctx)
 			if !a.ready() {
 				// Retry rather than wait forever. ensureMod used to run ONLY on
 				// connect, so a transient failure (D2RR server not up yet) wedged the

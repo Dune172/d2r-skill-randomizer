@@ -124,6 +124,18 @@ func TestLocationIDsAreUnique(t *testing.T) {
 		}
 		seen[id] = "level"
 	}
+	for d := 0; d < Difficulties; d++ {
+		for i := range SuperUniques {
+			id, ok := KillLocationID(d, i)
+			if !ok {
+				t.Fatalf("KillLocationID(%d,%d) not ok", d, i)
+			}
+			if prev, dup := seen[id]; dup {
+				t.Fatalf("location id %d collides with a %s", id, prev)
+			}
+			seen[id] = "kill"
+		}
+	}
 	if len(seen) != LocationsTotal() {
 		t.Errorf("got %d location ids, want %d", len(seen), LocationsTotal())
 	}
@@ -145,8 +157,8 @@ func TestLocationCounts(t *testing.T) {
 	if got := LevelsTotal(); got != 98 {
 		t.Errorf("LevelsTotal() = %d, want 98 (clvl 2..99)", got)
 	}
-	if got := LocationsTotal(); got != 81+117+393+98 {
-		t.Errorf("LocationsTotal() = %d, want 689", got)
+	if got := LocationsTotal(); got != 81+117+393+98+123 {
+		t.Errorf("LocationsTotal() = %d, want 812", got)
 	}
 }
 
@@ -164,6 +176,8 @@ func TestGroupBoundariesAreFrozen(t *testing.T) {
 		{"first waypoint", func() (int64, bool) { return WaypointLocationID(0, 0) }, LocationBase + 81},
 		{"first area", func() (int64, bool) { return AreaLocationID(0, 0) }, LocationBase + 198},
 		{"first level", func() (int64, bool) { return LevelLocationID(LevelMin) }, LocationBase + 591},
+		{"first kill", func() (int64, bool) { return KillLocationID(0, 0) }, LocationBase + 689},
+		{"last kill", func() (int64, bool) { return KillLocationID(2, len(SuperUniques)-1) }, LocationBase + 811},
 	} {
 		got, ok := c.got()
 		if !ok {

@@ -128,6 +128,8 @@ jobs:
         run: node scripts/verify-ap-options.mjs
       - name: Area tables match levels.txt
         run: node scripts/gen-ap-areas.mjs --check
+      - name: The page's item and check list is up to date
+        run: node scripts/gen-ap-names.mjs --check
 
   generation:
     name: Generated mods keep the AP invariants

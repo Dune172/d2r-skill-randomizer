@@ -163,13 +163,18 @@ export default function ArchipelagoPage() {
           <p className="mt-4 rounded p-3 bg-[#0a2010]/60 border border-[#2a5a2a] text-xs text-[#6abf6a] leading-relaxed">
             ✓ If it worked, the app says <code className="text-[#8ad08a]">connected as &quot;YourName&quot;</code>,
             and skill points appear in your tree as other players find them. What you receive and send shows
-            up in the game, beside the chat. Next time, double-click the app and press Enter to rejoin the
+            up in the game, beside the chat, along with hints about your items, room chat and other players
+            finishing. Next time, double-click the app and press Enter to rejoin the
             same room.
           </p>
           <p className="mt-3 text-xs text-[#a89060] leading-relaxed">
             Type into the app&apos;s window to chat with the room; <code className={code}>!hint Progressive Skill Point</code>{' '}
-            and the other <code className={code}>!</code> commands work as in any Archipelago client, and{' '}
-            <code className={code}>/help</code> lists the app&apos;s own.
+            and the other <code className={code}>!</code> commands work as in any Archipelago client. The app
+            has its own too: <code className={code}>/missing</code> lists the checks you have left (try{' '}
+            <code className={code}>/missing act ii</code>), <code className={code}>/checks</code> counts them act by
+            act, <code className={code}>/received</code> lists your items, <code className={code}>/hints</code> shows
+            your hints, and <code className={code}>/chat off</code> keeps room chat out of the game.{' '}
+            <code className={code}>/help</code> lists them all.
           </p>
           <p className="mt-3 text-xs text-[#a89060] leading-relaxed">
             <span className="text-[#c8942a]">Going past Normal?</span> The game doesn&apos;t tell the app which

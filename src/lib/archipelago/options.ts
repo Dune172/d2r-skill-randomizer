@@ -10,7 +10,7 @@
 export const AP_GAME_NAME = 'D2R Randomizer';
 
 /** Versions the page states. Kept beside the options so one check covers both. */
-export const AP_WORLD_VERSION = '0.5.1';
+export const AP_WORLD_VERSION = '0.7.0';
 export const AP_MINIMUM_ARCHIPELAGO = '0.6.7';
 
 interface BaseOption {
@@ -59,6 +59,21 @@ export const AP_OPTIONS: ApOption[] = [
     key: 'goal_boss', label: 'Goal boss', group: 'Goal', type: 'choice',
     choices: choice(['andariel', 'duriel', 'mephisto', 'diablo', 'baal']), default: 'baal',
     help: 'Killing this boss on the goal difficulty finishes your slot. Andariel on Normal is about an hour.',
+  },
+  {
+    key: 'goal_type', label: 'Goal type', group: 'Goal', type: 'choice',
+    choices: [
+      { value: 'boss', label: 'Kill the goal boss' },
+      { value: 'all_bosses', label: 'Kill all five act bosses' },
+      { value: 'check_percentage', label: 'Find a share of your checks' },
+      { value: 'cow_king', label: 'Kill the Cow King (experimental)' },
+    ],
+    default: 'boss',
+    help: 'All five bosses and the Cow King play every act of the goal difficulty, whatever the goal boss. The Cow King needs that difficulty’s Baal dead first, and counts once the game has saved.',
+  },
+  {
+    key: 'goal_check_percentage', label: 'Goal check percentage', group: 'Goal', type: 'range', min: 10, max: 100, default: 60,
+    help: 'With "Find a share of your checks": how many of your own checks finish the slot. Checks still stop at the goal boss.',
   },
   {
     key: 'skill_points', label: 'Skill points', group: 'Skill Points', type: 'range', min: 20, max: 600, default: 110,
@@ -114,9 +129,72 @@ export const AP_OPTIONS: ApOption[] = [
     key: 'death_link', label: 'DeathLink', group: 'Experimental', type: 'toggle', default: false,
     help: 'When you die, everyone else with DeathLink dies, and the reverse.',
   },
+  {
+    key: 'include_super_uniques', label: 'Super-unique kills', group: 'Experimental', type: 'toggle', default: false,
+    help: 'Killing a named super-unique (Bishibosh, Griswold, Pindleskin and 38 more) is a check, except those a quest already counts. The app has to be running when it dies.',
+  },
 ];
 
 export type ApOptionValues = Record<string, string | number | boolean>;
+
+/**
+ * A choice or range left to chance. Archipelago's generator rolls it: "random" for a
+ * choice, "random-range-<min>-<max>" for a range.
+ */
+export const AP_RANDOM = 'random';
+
+/** Whether an option can be left to chance on the page. Toggles stay plain on/off. */
+export function canRandomize(option: ApOption): boolean {
+  return option.type !== 'toggle';
+}
+
+/** Goal types that play every act of the goal difficulty, whatever the goal boss. */
+export const WHOLE_DIFFICULTY_GOALS = ['all_bosses', 'cow_king'];
+
+/**
+ * Whether an option matters with these values. The page hides the goal boss when the goal
+ * type ignores it, and the percentage unless the goal is a share of checks. Either still
+ * goes into the file, where Archipelago ignores it.
+ */
+export function optionApplies(key: string, values: ApOptionValues): boolean {
+  const goalType = values.goal_type;
+  if (key === 'goal_boss') return !WHOLE_DIFFICULTY_GOALS.includes(String(goalType));
+  if (key === 'goal_check_percentage') return goalType === 'check_percentage' || goalType === AP_RANDOM;
+  return true;
+}
+
+/** The YAML value for an option. */
+export function yamlValue(option: ApOption, value: string | number | boolean): string {
+  if (value === AP_RANDOM && canRandomize(option)) {
+    return option.type === 'range' ? `random-range-${option.min}-${option.max}` : AP_RANDOM;
+  }
+  return String(value);
+}
+
+/**
+ * The apworld's presets, as Archipelago's options page offers them. Mirror of
+ * OPTION_PRESETS in apworld/d2rr/options.py; scripts/verify-ap-options.mjs compares them.
+ * A preset sets these options and returns the rest to their defaults.
+ */
+export const AP_PRESETS: { name: string; values: ApOptionValues }[] = [
+  {
+    name: 'Quick Sync (Normal Andariel)',
+    values: { goal_difficulty: 'normal', goal_boss: 'andariel', skill_points: 40, starting_skill_points: 2 },
+  },
+  {
+    name: 'An Evening (Normal Baal)',
+    values: { goal_difficulty: 'normal', goal_boss: 'baal', skill_points: 110 },
+  },
+  {
+    name: 'Full Playthrough (Hell Baal)',
+    values: { goal_difficulty: 'hell', goal_boss: 'baal', skill_points: 220, logic_difficulty: 'strict' },
+  },
+];
+
+/** A preset's values over the defaults, keeping the class already picked. */
+export function applyPreset(preset: { values: ApOptionValues }, current: ApOptionValues): ApOptionValues {
+  return { ...defaultApOptions(), character_class: current.character_class, ...preset.values };
+}
 
 export function defaultApOptions(): ApOptionValues {
   return Object.fromEntries(AP_OPTIONS.map(o => [o.key, o.default]));
@@ -140,7 +218,7 @@ export function buildApYaml(slotName: string, values: ApOptionValues): string {
   const lines = [`name: ${yamlString(cleanSlotName(slotName) || 'Player')}`, `game: ${AP_GAME_NAME}`, `${AP_GAME_NAME}:`];
   for (const option of AP_OPTIONS) {
     const value = values[option.key] ?? option.default;
-    lines.push(`  ${option.key}: ${value}`);
+    lines.push(`  ${option.key}: ${yamlValue(option, value)}`);
   }
   return lines.join('\n') + '\n';
 }

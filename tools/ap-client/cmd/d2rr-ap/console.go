@@ -72,10 +72,10 @@ func parseConsoleCommand(line string) (consoleCommand, bool) {
 	}
 	name := strings.ToLower(strings.TrimPrefix(fields[0], "/"))
 	switch name {
-	case "difficulty", "help":
+	case "difficulty", "help", "chat", "joins", "received", "missing", "checks", "hints":
 		arg := ""
 		if len(fields) > 1 {
-			arg = strings.ToLower(fields[1])
+			arg = strings.ToLower(strings.Join(fields[1:], " "))
 		}
 		return consoleCommand{name: name, arg: arg}, true
 	}
@@ -102,6 +102,11 @@ func printConsoleHelp() {
 	logf("Commands typed in this window:")
 	logf("  /difficulty normal|nightmare|hell   say which difficulty you are playing now")
 	logf("  /difficulty auto                    let the app work it out again")
+	logf("  /received                           the items the room has sent you")
+	logf("  /missing [filter]                   your checks still to find, e.g. /missing act ii")
+	logf("  /checks                             how many checks you have found, act by act")
+	logf("  /hints                              hints about your items and your checks")
+	logf("  /chat on|off, /joins on|off         show room chat, or players joining, in the game")
 	logf("  !hint <item>, !help                 Archipelago's own commands, sent to the room")
 	logf("  anything else                       chat to the room")
 }

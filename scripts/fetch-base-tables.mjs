@@ -7,7 +7,7 @@
 // from these files.
 //
 // Source: a raw CascLib dump of a retail install, pinned to the same game build
-// as data/txt/ (3.2.92777). The script checks that the dump's top-level tables
+// as data/txt/ (3.4.95032). The script checks that the dump's top-level tables
 // still match data/txt/ before writing anything, so a mismatched build fails loudly.
 //
 // Usage: node scripts/fetch-base-tables.mjs
@@ -16,7 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const REPO = 'pinkufairy/D2R-Excel';
-const COMMIT = 'cb27a8f';          // "3.2.92777"
+const COMMIT = '7871977';          // "3.4.95032"
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const TXT = path.join(ROOT, 'data', 'txt');
 const OUT = path.join(TXT, 'base');

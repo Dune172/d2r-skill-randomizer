@@ -23,7 +23,7 @@ from . import ids, rules
 from .options import OPTION_GROUPS, OPTION_PRESETS, D2RROptions
 
 # Bumped when slot_data changes in a way the client must understand.
-SLOT_CONTRACT_VERSION = 4
+SLOT_CONTRACT_VERSION = 6
 
 # Many identical progression items: keep them off priority locations and out of
 # progression balancing, where one more copy of a point does nothing useful.
@@ -58,7 +58,8 @@ class D2RRWeb(WebWorld):
 
 def _location_groups() -> dict[str, set]:
     groups: dict[str, set] = {name: set() for name in ids.DIFFICULTY_NAMES + ids.ACT_NAMES}
-    groups.update({"Quests": set(), "Waypoints": set(), "Areas": set(), "Level Milestones": set()})
+    groups.update({"Quests": set(), "Waypoints": set(), "Areas": set(), "Level Milestones": set(),
+                   "Super-Unique Kills": set()})
     for d in range(ids.DIFFICULTIES):
         for act, count in enumerate(ids.QUESTS_PER_ACT):
             for i in range(count):
@@ -75,6 +76,11 @@ def _location_groups() -> dict[str, set]:
                 groups[group].add(name)
     for clvl in range(ids.LEVEL_MIN, ids.LEVEL_MAX + 1):
         groups["Level Milestones"].add(ids.level_location_name(clvl))
+    for d in range(ids.DIFFICULTIES):
+        for i, (_, act) in enumerate(ids.SUPER_UNIQUES):
+            name = ids.kill_location_name(d, i)
+            for group in (ids.DIFFICULTY_NAMES[d], ids.ACT_NAMES[act], "Super-Unique Kills"):
+                groups[group].add(name)
     return groups
 
 
@@ -121,6 +127,10 @@ class D2RRWorld(World):
         self.class_code = ids.CLASSES[self.options.character_class.value]
         self.goal_difficulty = self.options.goal_difficulty.value
         self.goal_act = self.options.goal_boss.value
+        # These goals need every act of the goal difficulty, whatever Goal Boss says.
+        goal_type = self.options.goal_type
+        if goal_type.value in (goal_type.option_all_bosses, goal_type.option_cow_king):
+            self.goal_act = ids.BAAL_ACT
 
         # The seed is chosen HERE, not by the player: it must be reproducible from the
         # multiworld, and the client asks d2rrandomizer.com for exactly this mod.
@@ -166,6 +176,9 @@ class D2RRWorld(World):
         options.open_acts.value = int(slot_data.get("open_acts", False))
         if "logic_difficulty" in slot_data:
             options.logic_difficulty.value = slot_data["logic_difficulty"]
+        options.include_super_uniques.value = int(slot_data.get("include_super_uniques", False))
+        options.goal_type.value = slot_data.get("goal_type", options.goal_type.option_boss)
+        options.goal_check_percentage.value = slot_data.get("goal_check_percentage", options.goal_check_percentage.default)
 
     def _active_location_names(self) -> list[str]:
         return ids.active_location_names(
@@ -174,9 +187,15 @@ class D2RRWorld(World):
             bool(self.options.include_areas),
             bool(self.options.include_level_milestones),
             self.goal_act,
+            bool(self.options.include_super_uniques),
         )
 
     # ------------------------------------------------------------------ regions
+
+    def goal_region_name(self) -> str:
+        """The region holding the goal act's boss quest on the goal difficulty."""
+        gate = ids.quest_gate(self.goal_act, ids.GOAL_QUEST_INDEX[self.goal_act])
+        return self._region_name(self.goal_difficulty, self.goal_act, gate)
 
     def _region_name(self, difficulty: int, act: int, gate: str | None = None) -> str:
         if gate == ids.TAL_RASHA:
@@ -238,10 +257,17 @@ class D2RRWorld(World):
                     if ids.area_act(i) == act:
                         place(self._region_name(d, act, ids.area_gate(i)),
                               ids.area_location_name(d, i), ids.area_location_id(d, i))
+                # No super-unique stands behind a Cube gate, so each hangs off its act.
+                for i, (_, su_act) in enumerate(ids.SUPER_UNIQUES):
+                    if su_act == act:
+                        place(self._region_name(d, act), ids.kill_location_name(d, i), ids.kill_location_id(d, i))
 
                 # A locked event marks the boss's death. The next difficulty and the goal
                 # both read it, which keeps those rules to a state.has() lookup.
-                is_goal = d == self.goal_difficulty and act == self.goal_act
+                # With All Bosses every boss of the goal difficulty is part of the goal.
+                is_goal = d == self.goal_difficulty and (
+                    act == self.goal_act
+                    or self.options.goal_type.value == self.options.goal_type.option_all_bosses)
                 if act == ids.BAAL_ACT or is_goal:
                     boss_region = region(self._region_name(d, act, ids.quest_gate(act, ids.GOAL_QUEST_INDEX[act])))
                     event = rules.boss_event_name(act, d)
@@ -249,6 +275,18 @@ class D2RRWorld(World):
                     location.place_locked_item(
                         D2RRItem(event, ItemClassification.progression, None, self.player))
                     boss_region.locations.append(location)
+
+        # The Cow King: the Cow Level opens from Act I once that difficulty's Baal is dead.
+        if self.options.goal_type.value == self.options.goal_type.option_cow_king:
+            d = self.goal_difficulty
+            baal = rules.boss_event_name(ids.BAAL_ACT, d)
+            cow_region = region(f"{ids.DIFFICULTY_NAMES[d]} Moo Moo Farm")
+            region(self._region_name(d, 0)).connect(
+                cow_region, None, lambda state, baal=baal: state.has(baal, self.player))
+            event = rules.cow_king_event_name(d)
+            location = D2RRLocation(self.player, event, None, cow_region)
+            location.place_locked_item(D2RRItem(event, ItemClassification.progression, None, self.player))
+            cow_region.locations.append(location)
 
         for clvl in range(ids.LEVEL_MIN, ids.LEVEL_MAX + 1):
             home = ids.level_milestone_region(clvl, self.goal_difficulty, self.goal_act)
@@ -305,10 +343,14 @@ class D2RRWorld(World):
             "goal_difficulty": self.goal_difficulty,
             "goal_act": self.goal_act,
             "goal_quest": ids.GOAL_QUEST_INDEX[self.goal_act],
+            # boss, all_bosses, check_percentage or cow_king, as the option's value.
+            "goal_type": self.options.goal_type.value,
+            "goal_check_percentage": self.options.goal_check_percentage.value,
             "level_cap": ids.level_cap(self.goal_difficulty, self.goal_act),
             "include_waypoints": bool(self.options.include_waypoints),
             "include_areas": bool(self.options.include_areas),
             "include_level_milestones": bool(self.options.include_level_milestones),
+            "include_super_uniques": bool(self.options.include_super_uniques),
             "skill_points": self.pool["skill_points"],
             "starting_skill_points": self.pool["starting_skill_points"],
             "fragments_per_point": ids.FRAGMENTS_PER_POINT,
