@@ -203,9 +203,9 @@ export default function PlayerFile() {
               </legend>
               {group === 'Experimental' && (
                 <p className="text-xs text-[#d0a070] leading-relaxed mb-4">
-                  Horadric Keys and pooled stat points have been checked in the game in town but
-                  not over a full run; traps and DeathLink are untested. Leave these off for a run that
-                  has to finish.
+                  Horadric Keys have only been checked in town, and a super-unique kill has not
+                  come up in a test yet. Traps and DeathLink have been tried outside town. Leave these
+                  off for a run that has to finish.
                 </p>
               )}
               <div className="grid gap-4 sm:grid-cols-2">

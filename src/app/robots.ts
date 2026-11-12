@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      // Unlisted until the Archipelago integration is released: nothing links to it, it is
-      // absent from sitemap.ts, and the page also sets noindex.
+      // /archipelago only redirects to the Generate page's Archipelago tab now; this keeps
+      // crawlers off the redirect and the app download (/archipelago/d2rr-ap.exe) beside it.
       disallow: ['/archipelago'],
     },
     sitemap: 'https://d2rrandomizer.com/sitemap.xml',

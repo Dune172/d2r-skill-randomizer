@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import Link from 'next/link';
 import GenerateModes from '@/app/components/GenerateModes';
+import ArchipelagoPanel from '@/app/components/archipelago/ArchipelagoPanel';
 import { loadBuilderCatalog } from '@/lib/builder/catalog';
 
 export const dynamic = 'force-static';
@@ -35,14 +36,15 @@ export default function GeneratePage() {
         <p className="text-[#a89060]/80 text-sm leading-relaxed max-w-xl mx-auto">
           Enter any seed number — or leave it blank for a random one. The same seed always produces
           the same skill tree shuffle, so you can share seeds with friends for a shared run. Or open
-          the Class Builder to design your own class and let the rest randomize.
+          the Class Builder to design your own class and let the rest randomize, or Archipelago to
+          make a player file for a multiworld.
         </p>
       </div>
 
-      {/* The Class Builder's skill catalog is rendered into this static page, so
-          neither mode makes an API request on page view. */}
+      {/* The Class Builder's skill catalog and the Archipelago panel are rendered
+          into this static page, so no mode makes an API request on page view. */}
       <Suspense>
-        <GenerateModes catalog={loadBuilderCatalog()} />
+        <GenerateModes catalog={loadBuilderCatalog()} archipelago={<ArchipelagoPanel />} />
       </Suspense>
 
       {/* Server-rendered so the explanation is in the static HTML, outside the
@@ -69,7 +71,7 @@ export default function GeneratePage() {
           for a random seed.
         </p>
 
-        <h3 className="font-cinzel font-semibold text-[#e8c87a] tracking-[0.05em] mt-7 mb-2">Seed mode, Race Mode and the Class Builder</h3>
+        <h3 className="font-cinzel font-semibold text-[#e8c87a] tracking-[0.05em] mt-7 mb-2">Seed mode, Race Mode, the Class Builder and Archipelago</h3>
         <ul className="list-disc pl-5 space-y-2 mb-4">
           <li>
             <span className="text-[#e8c87a]">Seed mode</span>{' '}randomizes all eight classes. A spoiler preview
@@ -83,6 +85,12 @@ export default function GeneratePage() {
           <li>
             <span className="text-[#e8c87a]">Class Builder</span>{' '}lets you design one class by hand, choosing
             its tree layouts and every skill slot, while the other seven randomize from what you left out.
+          </li>
+          <li>
+            <span className="text-[#e8c87a]">Archipelago</span>{' '}makes a player file for an{' '}
+            <a href="https://archipelago.gg/" target="_blank" rel="noopener noreferrer" className="text-[#c8942a] underline underline-offset-4 hover:text-[#e0ac4a]">Archipelago</a>{' '}
+            multiworld instead of a mod. Your skill points become items found across everyone&apos;s games,
+            and a small Windows app connects your offline game to the room and builds your mod from it.
           </li>
         </ul>
 

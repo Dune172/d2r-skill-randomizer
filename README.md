@@ -187,7 +187,7 @@ grants no skill points, and each point is an item found somewhere across everyon
 | World | `apworld/d2rr/` | Items, locations, logic and options for Archipelago's generator, packaged as `d2rr.apworld` |
 | Client | `tools/ap-client/` | A Go program that reads checks from the game and save file and grants what the room sends |
 | Mod | `src/lib/randomizer/ap-mode.ts`, `POST /api/archipelago/mod` | The mod an Archipelago slot plays |
-| Page | `/archipelago` | Player file builder, the app download and the setup guide (unlisted until release) |
+| Page | `/generate`, Archipelago tab (`/generate?mode=archipelago`; `/archipelago` redirects there) | Player file builder, the app download and the setup guide |
 
 It is a **preview**: generation, the room connection and the in-town parts of play are tested
 against a real Archipelago server and the game; a full run outside town is not. Start with

@@ -1,5 +1,5 @@
 /**
- * gen-ap-names.mjs: write the item and check list the /archipelago page shows.
+ * gen-ap-names.mjs: write the item and check list the Archipelago player file builder shows.
  *
  * The list comes from the client's id tables (tools/ap-client/cmd/namedump), whose names
  * scripts/verify-ap-ids.mjs proves equal to the apworld's. --check fails when the
