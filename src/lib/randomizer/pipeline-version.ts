@@ -52,4 +52,6 @@
 // and stamps DataVersionBuild 95032. No RNG change:
 // the only loader-visible difference (EType on Summon Tainted and Sigil Death)
 // is on aura skills that no filter picks, so layouts stay the same.
-export const PIPELINE_VERSION = 65;
+// v66 switches monster shuffle to v5 selection (melee donors allowed in ranged
+// slots, fixed 10-family rosters, stronger reuse penalty); challenges 16–17 keep v4.
+export const PIPELINE_VERSION = 66;
