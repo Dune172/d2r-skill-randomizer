@@ -6,6 +6,7 @@ import OpenActsFields from './OpenActsFields';
 import MutationPicker from './mutations/MutationPicker';
 import { mutationOptionConflict } from '@/lib/mutations/custom';
 import { baseGameConflict } from '@/lib/base-game';
+import RotwSwitch from './RotwSwitch';
 
 type Preset = 'custom' | 'season1race' | 'turbo' | 'openacts';
 
@@ -380,28 +381,36 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   return (
     <form onSubmit={handleSubmit} className="space-y-1">
 
-      {/* Preset */}
-      <div className="flex items-center justify-end gap-2 pb-0">
-        <label htmlFor="preset" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] flex items-center">
-          Preset
-          {presetDesc && <Tip text={presetDesc} align="right" width="w-72" below />}
-        </label>
-        <div className="relative">
-          <select
-            id="preset"
-            value={preset}
-            onChange={e => applyPreset(e.target.value as Preset)}
-            className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-2
-              text-sm text-[#e8d5a0]
-              focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
-              transition-colors cursor-pointer"
-          >
-            <option value="custom">Custom</option>
-            <option value="season1race" title="Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!">Season Beta Race</option>
-            <option value="turbo" title="Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.">Turbo</option>
-            <option value="openacts" disabled={baseGame} title="Open Acts: A quest-item hunt. Starter characters begin with Acts II and III open, and the Scroll of Inifuss, Horadric Cube, Staff of Kings and Khalim’s parts are shuffled across Acts I–III, with quest-log hints and a spoiler file. 1.5× XP in Normal.">Open Acts</option>
-          </select>
-          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+      {/* Game version (first: it decides which options exist) + preset */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-0">
+        <RotwSwitch
+          id="rotw"
+          baseGame={baseGame}
+          onChange={toggleBaseGame}
+          offNote="Base-game mod: play a non-expansion character. No Warlock, Open Acts or mutations."
+        />
+        <div className="flex items-center gap-2 ml-auto">
+          <label htmlFor="preset" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] flex items-center">
+            Preset
+            {presetDesc && <Tip text={presetDesc} align="right" width="w-72" below />}
+          </label>
+          <div className="relative">
+            <select
+              id="preset"
+              value={preset}
+              onChange={e => applyPreset(e.target.value as Preset)}
+              className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-2
+                text-sm text-[#e8d5a0]
+                focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                transition-colors cursor-pointer"
+            >
+              <option value="custom">Custom</option>
+              <option value="season1race" title="Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!">Season Beta Race</option>
+              <option value="turbo" title="Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.">Turbo</option>
+              <option value="openacts" disabled={baseGame} title="Open Acts: A quest-item hunt. Starter characters begin with Acts II and III open, and the Scroll of Inifuss, Horadric Cube, Staff of Kings and Khalim’s parts are shuffled across Acts I–III, with quest-log hints and a spoiler file. 1.5× XP in Normal.">Open Acts</option>
+            </select>
+            <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+        </div>
         </div>
       </div>
 
@@ -683,13 +692,6 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           label="Race Mode"
           tooltip="Includes -seed in the launch shortcut and manual args, locking the map seed so all racers see the same maps. Also hides the spoiler so the randomized skill trees stay secret."
         />
-        <Checkbox
-          id="baseGame"
-          checked={baseGame}
-          onChange={toggleBaseGame}
-          label="I don't own Reign of the Warlock"
-          tooltip="Builds the mod for the base game, so it works without the Reign of the Warlock expansion. Play a non-expansion character. The Warlock is left out, and Open Acts and mutations are not available."
-        />
         <div className="flex items-center gap-3">
           <label htmlFor="seed" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap flex-shrink-0">
             Seed
@@ -727,7 +729,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           <p className="mt-2 text-center text-[11px] text-[#8a7040] italic">
             {baseGame
               ? 'Built for the base game: play a non-expansion character.'
-              : 'Built for Reign of the Warlock. No expansion? Tick “I don’t own Reign of the Warlock” above.'}
+              : 'Built for Reign of the Warlock. No expansion? Switch “Reign of the Warlock” off at the top.'}
           </p>
         </div>
       )}

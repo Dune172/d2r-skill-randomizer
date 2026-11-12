@@ -82,6 +82,13 @@ const sorted = (list: number[]) => [...list].sort((a, b) => a - b).join(',');
  * a boost, staff params only with the staff — exactly as RandomizerApp's
  * buildQueryParams does for seeds.
  */
+/** Sets the game version. Open Acts and mutations need Reign of the Warlock, so the base game clears them. */
+export function withBaseGame(opts: ModOptions, baseGame: boolean): ModOptions {
+  return baseGame
+    ? { ...opts, baseGame: true, openActs: { ...DEFAULT_OPEN_ACTS, spoiler: opts.openActs.spoiler }, mutations: [] }
+    : { ...opts, baseGame: false };
+}
+
 export function optionParams(opts: ModOptions): string {
   const multiplayer = opts.playersEnabled && opts.playersCount > 1;
   const boosted = opts.xpMultiplier > 1;
