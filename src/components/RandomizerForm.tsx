@@ -5,6 +5,7 @@ import { DEFAULT_OPEN_ACTS, defaultSpoiler, type OpenActsSettings } from '@/lib/
 import OpenActsFields from './OpenActsFields';
 import MutationPicker from './mutations/MutationPicker';
 import { mutationOptionConflict } from '@/lib/mutations/custom';
+import { baseGameConflict } from '@/lib/base-game';
 
 type Preset = 'custom' | 'season1race' | 'turbo' | 'openacts';
 
@@ -136,8 +137,8 @@ const DEFAULT_STATE: FormState = {
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints?: number; shuffleAmount?: number; seasonal?: boolean; anyClassItems?: boolean; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings; mutations?: number[] };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints: number; shuffleAmount: number; seasonal: boolean; anyClassItems: boolean; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings; mutations: number[] }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints?: number; shuffleAmount?: number; seasonal?: boolean; anyClassItems?: boolean; baseGame?: boolean; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings; mutations?: number[] };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints: number; shuffleAmount: number; seasonal: boolean; anyClassItems: boolean; baseGame: boolean; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings; mutations: number[] }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -278,10 +279,23 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [openActs, setOpenActs] = useState<OpenActsSettings>(
     initialOptions?.openActs ?? withModeSpoiler(SEASON1_PRESET.openActs, SEASON1_PRESET.raceMode));
   const [mutations, setMutations] = useState<number[]>(initialOptions?.mutations ?? SEASON1_PRESET.mutations);
+  // For players without Reign of the Warlock (src/lib/base-game.ts). Not part of any
+  // preset: it describes the player's game, so a preset never changes it.
+  const [baseGame, setBaseGame] = useState(initialOptions?.baseGame ?? false);
+  const openActsBlocked = baseGameConflict({ baseGame, openActs: true });
+  const mutationsBlocked = baseGameConflict({ baseGame, mutations: 1 });
+  const toggleBaseGame = (v: boolean) => {
+    setBaseGame(v);
+    if (!v) return;
+    // Open Acts and mutations need Reign of the Warlock: clear them.
+    if (openActs.acts.length || openActs.shuffle) { setPreset('custom'); setOpenActs(prev => ({ ...DEFAULT_OPEN_ACTS, spoiler: prev.spoiler })); }
+    if (mutations.length) { setPreset('custom'); setMutations([]); }
+  };
   const applyPreset = (p: Preset) => {
     setPreset(p);
     const src = p === 'season1race' ? SEASON1_PRESET : p === 'turbo' ? TURBO_PRESET : p === 'openacts' ? OPEN_ACTS_PRESET : null;
     if (src) {
+      // Open Acts needs Reign of the Warlock; the form disables that preset in base-game mode.
       setEnablePrereqs(src.enablePrereqs);
       setPlayersCount(src.playersCount);
       setPlayersActs(src.playersActs);
@@ -345,11 +359,12 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       shuffleAmount,
       seasonal,
       anyClassItems,
+      baseGame,
       raceMode: forgottenArts ? false : raceMode,
       enemyShuffle,
       forgottenArts,
-      openActs,
-      mutations,
+      openActs: baseGame ? { ...DEFAULT_OPEN_ACTS, spoiler: openActs.spoiler } : openActs,
+      mutations: baseGame ? [] : mutations,
     });
   };
 
@@ -384,7 +399,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
             <option value="custom">Custom</option>
             <option value="season1race" title="Season Beta Race: Competitive preset for Normal difficulty Baal kill races. This is a beta, any and all feedback is appreciated!">Season Beta Race</option>
             <option value="turbo" title="Turbo: A power-levelling preset — 3× XP across all acts, Horadric Cube from the start, a Teleport Staff (req. level 6) dropped by Corpsefire, +15% Faster Run/Walk, and auras on all mercenaries.">Turbo</option>
-            <option value="openacts" title="Open Acts: A quest-item hunt. Starter characters begin with Acts II and III open, and the Scroll of Inifuss, Horadric Cube, Staff of Kings and Khalim’s parts are shuffled across Acts I–III, with quest-log hints and a spoiler file. 1.5× XP in Normal.">Open Acts</option>
+            <option value="openacts" disabled={baseGame} title="Open Acts: A quest-item hunt. Starter characters begin with Acts II and III open, and the Scroll of Inifuss, Horadric Cube, Staff of Kings and Khalim’s parts are shuffled across Acts I–III, with quest-log hints and a spoiler file. 1.5× XP in Normal.">Open Acts</option>
           </select>
           <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
         </div>
@@ -619,21 +634,27 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       {/* Open Acts section */}
       <div className="space-y-3 pt-1 pb-2">
         <SectionDivider label="Open Acts" />
-        <OpenActsFields
-          value={openActs}
-          onChange={v => { setPreset('custom'); setOpenActs(v); }}
-          raceMode={raceMode}
-        />
+        {openActsBlocked && <p className="text-xs text-[#8a7040] italic">{openActsBlocked}</p>}
+        <fieldset disabled={!!openActsBlocked} className={openActsBlocked ? 'opacity-40 pointer-events-none' : undefined}>
+          <OpenActsFields
+            value={openActs}
+            onChange={v => { setPreset('custom'); setOpenActs(v); }}
+            raceMode={raceMode}
+          />
+        </fieldset>
       </div>
 
       {/* Mutations section */}
       <div className="space-y-3 pt-1 pb-2">
         <SectionDivider label="Mutations" />
-        <MutationPicker
-          value={mutations}
-          onChange={field(setMutations)}
-          blocked={id => mutationOptionConflict(id, { openActsShuffle: openActs.shuffle })}
-        />
+        {mutationsBlocked && <p className="text-xs text-[#8a7040] italic">{mutationsBlocked}</p>}
+        <fieldset disabled={!!mutationsBlocked} className={mutationsBlocked ? 'opacity-40 pointer-events-none' : undefined}>
+          <MutationPicker
+            value={mutations}
+            onChange={field(setMutations)}
+            blocked={id => mutationsBlocked ?? mutationOptionConflict(id, { openActsShuffle: openActs.shuffle })}
+          />
+        </fieldset>
       </div>
 
       {/* Hirelings section */}
@@ -661,6 +682,13 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
           onChange={v => { field(setRaceMode)(v); setOpenActs(prev => withModeSpoiler(prev, v)); }}
           label="Race Mode"
           tooltip="Includes -seed in the launch shortcut and manual args, locking the map seed so all racers see the same maps. Also hides the spoiler so the randomized skill trees stay secret."
+        />
+        <Checkbox
+          id="baseGame"
+          checked={baseGame}
+          onChange={toggleBaseGame}
+          label="I don't own Reign of the Warlock"
+          tooltip="Builds the mod for the base game, so it works without the Reign of the Warlock expansion. Play a non-expansion character. The Warlock is left out, and Open Acts and mutations are not available."
         />
         <div className="flex items-center gap-3">
           <label htmlFor="seed" className="font-cinzel text-[11px] tracking-[0.25em] uppercase text-[#c8a870] whitespace-nowrap flex-shrink-0">
@@ -697,7 +725,9 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
             {isLoading ? 'Generating…' : 'Generate Mod'}
           </button>
           <p className="mt-2 text-center text-[11px] text-[#8a7040] italic">
-            Requires the Reign of the Warlock expansion.
+            {baseGame
+              ? 'Built for the base game: play a non-expansion character.'
+              : 'Built for Reign of the Warlock. No expansion? Tick “I don’t own Reign of the Warlock” above.'}
           </p>
         </div>
       )}

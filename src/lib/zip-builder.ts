@@ -6,6 +6,8 @@ export interface ZipContents {
   seed: number;
   raceMode: boolean;
   savepath?: string;                // save folder in modinfo.json; defaults to the shared 'D2RRandomizer'
+  baseGame?: boolean;               // tables go to data/global/excel/base/ (games without Reign of the Warlock)
+  readmeNote?: readonly string[];   // extra README.txt lines (base-game mods say which characters to play)
   skillsTxt: string;
   skillDescTxt: string;
   treeSprites: Map<string, Buffer>; // filename → sprite buffer
@@ -101,6 +103,10 @@ export function buildZip(contents: ZipContents): Buffer {
   // Flat unless the companion client installs it (see above).
   const root = contents.apManifestJson ? `${m}/` : '';
   const d = `${root}${m}.mpq`; // data root — D2R requires this subfolder name
+  // Game tables (under data/). Reign of the Warlock games read global/excel/; Classic and
+  // Lord of Destruction games, the only ones players without the DLC have, read
+  // global/excel/base/. Everything else in the mod (art, strings) is shared by both.
+  const xl = contents.baseGame ? 'global/excel/base' : 'global/excel';
 
   const str = (s: string) => Buffer.from(s, 'utf-8');
 
@@ -144,15 +150,15 @@ export function buildZip(contents: ZipContents): Buffer {
   for (const [relativePath, value] of [
     ['hd/items/items.json', contents.itemGraphicsJson],
     ['hd/items/uniques.json', contents.uniqueGraphicsJson],
-    ['global/excel/cubemain.txt', contents.cubemainTxt],
-    ['global/excel/objects.txt', contents.objectsTxt],
-    ['global/excel/itemstatcost.txt', contents.itemStatCostTxt],
-    ['global/excel/properties.txt', contents.propertiesTxt],
+    [`${xl}/cubemain.txt`, contents.cubemainTxt],
+    [`${xl}/objects.txt`, contents.objectsTxt],
+    [`${xl}/itemstatcost.txt`, contents.itemStatCostTxt],
+    [`${xl}/properties.txt`, contents.propertiesTxt],
   ]) {
     if (value) zip.addFile(`${d}/data/${relativePath}`, str(value));
   }
   if (contents.missilesTxt) {
-    zip.addFile(`${d}/data/global/excel/missiles.txt`, str(contents.missilesTxt));
+    zip.addFile(`${d}/data/${xl}/missiles.txt`, str(contents.missilesTxt));
   }
   if (contents.seasonFiles) {
     for (const [relativePath, buffer] of contents.seasonFiles) {
@@ -166,7 +172,7 @@ export function buildZip(contents: ZipContents): Buffer {
   if (!contents.apManifestJson) {
     zip.addFile(`D2R Randomizer ${contents.seed}.lnk`,
       createD2RShortcut(m, contents.seed >>> 0, contents.raceMode));
-    zip.addFile('README.txt', str(installReadme(m)));
+    zip.addFile('README.txt', str(installReadme(m, contents.readmeNote)));
   }
 
   // Beside the .mpq folder, not inside it: it is for the companion client, not the game.
@@ -179,8 +185,8 @@ export function buildZip(contents: ZipContents): Buffer {
   zip.addFile(`${d}/modinfo.json`, str(modinfo));
 
   // Add text files
-  zip.addFile(`${d}/data/global/excel/skills.txt`, str(contents.skillsTxt));
-  zip.addFile(`${d}/data/global/excel/skilldesc.txt`, str(contents.skillDescTxt));
+  zip.addFile(`${d}/data/${xl}/skills.txt`, str(contents.skillsTxt));
+  zip.addFile(`${d}/data/${xl}/skilldesc.txt`, str(contents.skillDescTxt));
 
   // Skill string table — include in both current and legacy paths so D2R
   // resolves skill names for proc items regardless of which path it uses.
@@ -191,7 +197,7 @@ export function buildZip(contents: ZipContents): Buffer {
 
   // Charstats with randomised StartSkill per class
   if (contents.charstatsTxt) {
-    zip.addFile(`${d}/data/global/excel/charstats.txt`, str(contents.charstatsTxt));
+    zip.addFile(`${d}/data/${xl}/charstats.txt`, str(contents.charstatsTxt));
   }
 
   // Skill tab label strings (StrSklTabItem1–24 for all 8 classes)
@@ -201,27 +207,27 @@ export function buildZip(contents: ZipContents): Buffer {
 
   // Hireling auras
   if (contents.hirelingTxt) {
-    zip.addFile(`${d}/data/global/excel/hireling.txt`, str(contents.hirelingTxt));
+    zip.addFile(`${d}/data/${xl}/hireling.txt`, str(contents.hirelingTxt));
   }
 
   // Monster stats scaled for players simulation
   if (contents.monstatsTxt) {
-    zip.addFile(`${d}/data/global/excel/monstats.txt`, str(contents.monstatsTxt));
+    zip.addFile(`${d}/data/${xl}/monstats.txt`, str(contents.monstatsTxt));
   }
 
   // Unique items with Teleport Staff added
   if (contents.uniqueitemsTxt) {
-    zip.addFile(`${d}/data/global/excel/uniqueitems.txt`, str(contents.uniqueitemsTxt));
+    zip.addFile(`${d}/data/${xl}/uniqueitems.txt`, str(contents.uniqueitemsTxt));
   }
 
   // Treasure class for Blood Raven quest drop
   if (contents.treasureClassExTxt) {
-    zip.addFile(`${d}/data/global/excel/treasureclassex.txt`, str(contents.treasureClassExTxt));
+    zip.addFile(`${d}/data/${xl}/treasureclassex.txt`, str(contents.treasureClassExTxt));
   }
 
   // Super uniques with Blood Raven entry
   if (contents.superuniquesTxt) {
-    zip.addFile(`${d}/data/global/excel/superuniques.txt`, str(contents.superuniquesTxt));
+    zip.addFile(`${d}/data/${xl}/superuniques.txt`, str(contents.superuniquesTxt));
   }
 
   // Item name strings (display name for unique staff)
@@ -231,13 +237,13 @@ export function buildZip(contents: ZipContents): Buffer {
 
   // Magic affix files with remapped class-skill references
   if (contents.magicPrefixTxt) {
-    zip.addFile(`${d}/data/global/excel/magicprefix.txt`, str(contents.magicPrefixTxt));
+    zip.addFile(`${d}/data/${xl}/magicprefix.txt`, str(contents.magicPrefixTxt));
   }
   if (contents.magicSuffixTxt) {
-    zip.addFile(`${d}/data/global/excel/magicsuffix.txt`, str(contents.magicSuffixTxt));
+    zip.addFile(`${d}/data/${xl}/magicsuffix.txt`, str(contents.magicSuffixTxt));
   }
   if (contents.itemtypesTxt) {
-    zip.addFile(`${d}/data/global/excel/itemtypes.txt`, str(contents.itemtypesTxt));
+    zip.addFile(`${d}/data/${xl}/itemtypes.txt`, str(contents.itemtypesTxt));
   }
 
   // Data version file — prevents "out of date data" prompt on startup
@@ -261,22 +267,22 @@ export function buildZip(contents: ZipContents): Buffer {
 
   // Weekly mutation files
   if (contents.armorTxt) {
-    zip.addFile(`${d}/data/global/excel/armor.txt`, str(contents.armorTxt));
+    zip.addFile(`${d}/data/${xl}/armor.txt`, str(contents.armorTxt));
   }
   if (contents.weaponsTxt) {
-    zip.addFile(`${d}/data/global/excel/weapons.txt`, str(contents.weaponsTxt));
+    zip.addFile(`${d}/data/${xl}/weapons.txt`, str(contents.weaponsTxt));
   }
   if (contents.experienceTxt) {
-    zip.addFile(`${d}/data/global/excel/experience.txt`, str(contents.experienceTxt));
+    zip.addFile(`${d}/data/${xl}/experience.txt`, str(contents.experienceTxt));
   }
   if (contents.miscTxt) {
-    zip.addFile(`${d}/data/global/excel/misc.txt`, str(contents.miscTxt));
+    zip.addFile(`${d}/data/${xl}/misc.txt`, str(contents.miscTxt));
   }
   if (contents.levelsTxt) {
-    zip.addFile(`${d}/data/global/excel/levels.txt`, str(contents.levelsTxt));
+    zip.addFile(`${d}/data/${xl}/levels.txt`, str(contents.levelsTxt));
   }
   if (contents.gambleTxt) {
-    zip.addFile(`${d}/data/global/excel/gamble.txt`, str(contents.gambleTxt));
+    zip.addFile(`${d}/data/${xl}/gamble.txt`, str(contents.gambleTxt));
   }
 
   // Disable chat input to prevent /players x commands (optional)
@@ -331,7 +337,7 @@ export function buildZip(contents: ZipContents): Buffer {
  * README.txt at the root of a hand-installed mod zip. Plain words, CRLF (Notepad),
  * the folder names spelled out, because the zip root is the mod folder itself.
  */
-export function installReadme(modName: string): string {
+export function installReadme(modName: string, note: readonly string[] = []): string {
   const bs = '\\';
   const path = (...parts: string[]) => parts.join(bs);
   return [
@@ -350,6 +356,7 @@ export function installReadme(modName: string): string {
     `4. Start the game with the "D2R Randomizer" shortcut in this folder.`,
     '',
     'If the skill trees look like the normal game, the folders are at the wrong level (step 3).',
+    ...note,
     'More help: https://d2rrandomizer.com/guide/install',
     '',
   ].join('\r\n');

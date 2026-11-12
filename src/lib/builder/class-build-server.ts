@@ -31,6 +31,17 @@ export interface ResolvedClassBuild {
 }
 
 /**
+ * Whether a build has the Warlock or any Warlock skill. A base-game mod (no Reign of
+ * the Warlock, src/lib/base-game.ts) can't hold either: the base tables have no
+ * Warlock skill descriptions.
+ */
+export function buildUsesWarlock(build: Pick<ResolvedClassBuild, 'specs' | 'skillNames'>): boolean {
+  if (build.specs.some(spec => spec.classCode === 'war')) return true;
+  const warlockSkills = new Set(loadSkills().filter(s => s.charclass === 'war').map(s => s.skill));
+  return build.skillNames.some(name => warlockSkills.has(name));
+}
+
+/**
  * Decode, validate and canonicalize a share code into everything the pipeline
  * needs. /api/randomize, /api/download and /api/preview all go through here,
  * so they agree on the seed and cache identity by construction.

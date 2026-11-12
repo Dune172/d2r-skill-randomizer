@@ -58,7 +58,8 @@ export default function GeneratePage() {
         <p className="mb-4">
           Each mod starts from the original Diablo II: Resurrected data tables. The generator uses your seed to
           give every class three skill tree layouts and a fresh set of skills drawn from all eight classes:
-          Amazon, Sorceress, Necromancer, Paladin, Barbarian, Druid, Assassin and Warlock. Skills are placed
+          Amazon, Sorceress, Necromancer, Paladin, Barbarian, Druid, Assassin and Warlock (the first seven
+          if you don&apos;t own Reign of the Warlock and build for the base game). Skills are placed
           by required level, so early skills stay near the top of the tree. Synergies are rewritten to point
           at skills you actually have, and prerequisites are rebuilt so every skill can be reached.
         </p>

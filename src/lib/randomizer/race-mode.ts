@@ -23,8 +23,8 @@ import { pickRaceClassIndex } from '../classes';
 // Seed → ClassCode. Shares pickRaceClassIndex with the client (src/lib/classes.ts) so the
 // announced class name and the generated class can't drift. CLASS_DEFS order mirrors
 // CLASS_NAMES order.
-export function pickRaceClassCode(seed: number): ClassCode {
-  return CLASS_DEFS[pickRaceClassIndex(seed)].code;
+export function pickRaceClassCode(seed: number, baseGame = false): ClassCode {
+  return CLASS_DEFS[pickRaceClassIndex(seed, baseGame)].code;
 }
 
 // Required level that no character can reach — keeps a merc skill left on a filler class
@@ -64,6 +64,7 @@ export function applyRaceMode(
   substitutes: SkillSubstitute[],
   skills: SkillEntry[],
   keepSkills: ReadonlySet<string> = new Set(),
+  baseGame = false,
 ): {
   placements: SkillPlacement[];
   substitutes: SkillSubstitute[];
@@ -71,7 +72,7 @@ export function applyRaceMode(
   fillerSkills: Set<string>;
   lockedSkills: Set<string>;
 } {
-  const raceClass = pickRaceClassCode(seed);
+  const raceClass = pickRaceClassCode(seed, baseGame);
   const fillerSkills = new Set<string>();
   const lockedSkills = new Set<string>();
   const prayer = skills.find(s => s.skill === 'Prayer');

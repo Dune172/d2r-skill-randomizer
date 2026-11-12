@@ -6,8 +6,9 @@ import { loadTreeGrid, loadSkills, loadSkillDescs, loadSkillStrings } from '@/li
 import { groupByClass } from '@/lib/randomizer/skill-placer';
 import { runPlacement } from '@/lib/randomizer/placement-step';
 import { normalizeShuffleAmount, shuffleShareOf } from '@/lib/shuffle-amount';
-import { BuildRequestError, resolveClassBuild } from '@/lib/builder/class-build-server';
-import { CLASS_DEFS } from '@/lib/randomizer/config';
+import { BuildRequestError, buildUsesWarlock, resolveClassBuild } from '@/lib/builder/class-build-server';
+import { activeClassDefs } from '@/lib/randomizer/config';
+import { baseGameConflict, normalizeBaseGame } from '@/lib/base-game';
 import { MYSTERY_ICON } from '@/lib/randomizer/mutations/mystery-box';
 import { getMutationExcludedSkillsFor, hasMutation } from '@/lib/randomizer/mutations';
 import { getMutationIds } from '@/lib/mutations/registry';
@@ -37,6 +38,12 @@ export async function POST(request: NextRequest) {
     // A challenge previews its own set; otherwise the player's picks (builds included,
     // since No Guard also reshapes the seven randomized classes).
     const mutationIds = weekNumber > 0 ? getMutationIds(weekNumber) : normalizeMutationIds(body.mutations);
+    // Same guard as /api/randomize: challenges are always Reign of the Warlock.
+    const baseGame = weekNumber > 0 ? false : normalizeBaseGame(body);
+    const classDefs = activeClassDefs(baseGame);
+    if (baseGame && classBuild && buildUsesWarlock(classBuild)) {
+      return NextResponse.json({ error: baseGameConflict({ baseGame, warlockInBuild: true }) }, { status: 400 });
+    }
     const maskSkills = maskFlag || hasMutation(mutationIds, 'mystery-box');
 
     if (!classBuild && !seedInput && seedInput !== 0) {
@@ -64,6 +71,7 @@ export async function POST(request: NextRequest) {
       build: classBuild ?? undefined,
       // Same guard as /api/randomize: challenges and builds always shuffle fully.
       shuffleShare: classBuild || weekNumber > 0 ? undefined : shuffleShareOf(normalizeShuffleAmount(body.shuffleAmount)),
+      ...(baseGame ? { classes: classDefs } : {}),
     });
     const placementsByClass = groupByClass(placements);
 
@@ -123,7 +131,7 @@ export async function POST(request: NextRequest) {
     const preview: PreviewData = {
       seed,
       masked: maskSkills,
-      classes: CLASS_DEFS.map(classDef => ({
+      classes: classDefs.map(classDef => ({
         code: classDef.code,
         name: classDef.name,
         tabs: (treeAssignments.get(classDef.code) || []).map((tree, tabIdx) => {

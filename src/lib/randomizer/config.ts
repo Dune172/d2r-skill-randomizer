@@ -14,7 +14,17 @@ export const CLASS_DEFS: ClassDef[] = [
   { name: 'Warlock', code: 'war', charclass: 'war', spritePrefix: 'wa', iconFolder: 'Warlock' },
 ];
 
-export const CLASS_BY_CODE = new Map<ClassCode, ClassDef>(
+// A base-game mod (for players without Reign of the Warlock) leaves the Warlock out:
+// they can't play it, and the game's base tables have no Warlock skill descriptions.
+// The Warlock is last in CLASS_DEFS, so this keeps every other class's index.
+export const BASE_GAME_CLASS_DEFS: ClassDef[] = CLASS_DEFS.filter(c => c.code !== 'war');
+
+/** The classes a mod shuffles: all eight, or the original seven for a base-game mod. */
+export function activeClassDefs(baseGame: boolean): ClassDef[] {
+  return baseGame ? BASE_GAME_CLASS_DEFS : CLASS_DEFS;
+}
+
+export const CLASS_BY_CODE =new Map<ClassCode, ClassDef>(
   CLASS_DEFS.map(c => [c.code, c])
 );
 

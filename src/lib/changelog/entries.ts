@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.342',
+    date: 'November 2026',
+    tagline: 'Play without Reign of the Warlock',
+    notes: [
+      'New option on the Generate page and in the Class Builder: I don’t own Reign of the Warlock. The mod is built from the base game’s own data, so it works for players without the expansion. Play a non-expansion character',
+      'Before, a mod only changed the expansion’s data, so without Reign of the Warlock the skill trees showed shuffled icons over the normal skills',
+      'The seven original classes are shuffled and the Warlock is left out. Race Mode, monster shuffle and the other options work as usual; mutations, Open Acts and the challenges still need the expansion',
+      'Base-game mods get their own folder name (for example seed12345base) and their own save folder, so they never mix with the expansion version of the same seed',
+    ],
+  },
+  {
     version: 'v0.341',
     date: 'November 2026',
     tagline: 'Updated for D2R patch 3.4 (Season 16)',
