@@ -4,6 +4,18 @@ const nextConfig: NextConfig = {
   experimental: {
     cpus: 2,
   },
+  async redirects() {
+    return [
+      {
+        // The Archipelago page became a toggle on /generate. The app's "out of date"
+        // message, the apworld's setup guide and the release notes link here, so the
+        // old address keeps working.
+        source: '/archipelago',
+        destination: '/generate?mode=archipelago',
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

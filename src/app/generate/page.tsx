@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import Link from 'next/link';
 import GenerateModes from '@/app/components/GenerateModes';
+import ArchipelagoPanel from '@/app/components/archipelago/ArchipelagoPanel';
 import { loadBuilderCatalog } from '@/lib/builder/catalog';
 
 export const dynamic = 'force-static';
@@ -39,10 +40,10 @@ export default function GeneratePage() {
         </p>
       </div>
 
-      {/* The Class Builder's skill catalog is rendered into this static page, so
-          neither mode makes an API request on page view. */}
+      {/* The Class Builder's skill catalog and the Archipelago panel are rendered
+          into this static page, so no mode makes an API request on page view. */}
       <Suspense>
-        <GenerateModes catalog={loadBuilderCatalog()} />
+        <GenerateModes catalog={loadBuilderCatalog()} archipelago={<ArchipelagoPanel />} />
       </Suspense>
 
       {/* Server-rendered so the explanation is in the static HTML, outside the

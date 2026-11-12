@@ -1,27 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import type { Metadata } from 'next';
 import PlayerFile from './PlayerFile';
 import { AP_MINIMUM_ARCHIPELAGO, AP_WORLD_VERSION } from '@/lib/archipelago/options';
 import { AP_CONTRACT_VERSION } from '@/lib/randomizer/ap-mode';
-
-// Nothing on this page is fetched: versions and the app's size are read at build time,
-// so a view never reaches the origin.
-export const dynamic = 'force-static';
-
-const title = 'D2R Randomizer for Archipelago';
-const description = 'Play D2R Randomizer in an Archipelago multiworld: skill points become items found across everyone’s games.';
-
-/**
- * UNLISTED until launch: absent from the nav and from sitemap.ts, disallowed in
- * robots.ts, and noindex here. Reachable only by typing or sharing the URL, which is how
- * testers get it.
- */
-export const metadata: Metadata = {
-  title,
-  description,
-  robots: { index: false, follow: false, nocache: true },
-};
 
 const ARCHIPELAGO_URL = 'https://archipelago.gg/';
 const ARCHIPELAGO_RELEASES = 'https://github.com/ArchipelagoMW/Archipelago/releases';
@@ -75,23 +56,27 @@ function Divider() {
   );
 }
 
-export default function ArchipelagoPage() {
+/**
+ * The Generate page's Archipelago mode (the toggle in GenerateModes): instead of a mod,
+ * the player makes an Archipelago player file (YAML), and the app builds the mod from the
+ * room. Server-rendered into the static Generate page; versions and the app's size are
+ * read at build time, so a view never reaches the origin. /archipelago redirects here
+ * (next.config.ts), because the app and the apworld docs link to it.
+ */
+export default function ArchipelagoPanel() {
   const size = appSizeMb();
   return (
-    <main className="min-h-screen">
-      <section className="max-w-3xl mx-auto px-4 pt-12 pb-6 text-center">
-        <p className="inline-block rounded-full border border-[#7a3a1a] bg-[#2a1008]/60 px-3 py-0.5 mb-4 font-cinzel text-[10px] tracking-[0.25em] uppercase text-[#d0a070]">
+    <div className="pt-6">
+      <section className="max-w-3xl mx-auto px-4 pb-6 text-center">
+        <p className="inline-block rounded-full border border-[#7a3a1a] bg-[#2a1008]/60 px-3 py-0.5 mb-3 font-cinzel text-[10px] tracking-[0.25em] uppercase text-[#d0a070]">
           Tester preview
         </p>
-        <h1 className="font-cinzel font-black tracking-[0.14em] text-3xl md:text-4xl text-[#c8942a] glow-gold uppercase mb-3">
-          Archipelago
-        </h1>
         <p className="text-sm text-[#e8d5a0]/90 leading-relaxed max-w-xl mx-auto">
           Play D2R Randomizer in an{' '}
           <a href={ARCHIPELAGO_URL} target="_blank" rel="noopener noreferrer" className={extLink}>Archipelago</a>{' '}
           multiworld. Your tree is shuffled as usual, but your skill points are items scattered across
           everyone&apos;s games: quests, waypoints, new areas and levels send items to the others, and
-          theirs send points to you.
+          theirs send points to you. You make a player file here; the app builds your mod from the room.
         </p>
       </section>
 
@@ -186,7 +171,7 @@ export default function ArchipelagoPage() {
         </div>
       </section>
 
-      <section className="max-w-3xl mx-auto px-4 pb-16">
+      <section className="max-w-3xl mx-auto px-4 pb-6">
         <h2 id="host" className={`${h2} scroll-mt-6`}>Hosting a game</h2>
         <div className="space-y-3 text-sm text-[#e8d5a0]/90 leading-relaxed">
           <MiniStep n={1}>
@@ -267,6 +252,6 @@ export default function ArchipelagoPage() {
           always match it. D2R Randomizer is not affiliated with Archipelago or Blizzard Entertainment.
         </p>
       </section>
-    </main>
+    </div>
   );
 }
