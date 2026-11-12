@@ -18,7 +18,8 @@ for (const week of [14, 15, 16]) {
   // Try to force the opposite of the prescribed rule. Neither route may allow it.
   const bytes = await generate(week, week < 15);
   const zip = new AdmZip(bytes);
-  const manifestEntry = zip.getEntries().find(e => e.entryName.endsWith('/enemy-shuffle.json'));
+  // Flat zips (v0.340) keep enemy-shuffle.json at the root, with no leading folder.
+  const manifestEntry = zip.getEntries().find(e => `/${e.entryName}`.endsWith('/enemy-shuffle.json'));
   const monText = zip.getEntries().find(e => e.entryName.endsWith('/monstats.txt')).getData().toString('utf8');
   if (week === 14) {
     assert.equal(manifestEntry, undefined);

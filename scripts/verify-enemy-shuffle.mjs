@@ -54,6 +54,7 @@ const run = seed => {
 
 let first;
 const donatedFamilies = new Set();
+let seedsWithProjectiles = 0;
 for (const seed of [0, 1, 2, 42, 12345, 2147483647, -1, -2147483648]) {
   const r = run(seed);
   first ??= r;
@@ -69,7 +70,7 @@ for (const seed of [0, 1, 2, 42, 12345, 2147483647, -1, -2147483648]) {
     assert.equal(missile.VelLev, '0');
     for (const key of r.missiles.headers.filter(h => /^(MinDamage|MaxDamage|MinLevDam\d|MaxLevDam\d|EMin|EMax|MinELev\d|MaxELev\d)$/.test(h))) assert.equal(+missile[key], 0, 'no independent projectile damage');
   }
-  assert.ok(r.manifest.projectiles.length > 0, 'quill projectiles are included');
+  if (r.manifest.projectiles.length) seedsWithProjectiles++;
   assert.deepEqual(new Set(r.manifest.replacements.map(p => p.act)), new Set([1, 2, 3, 4, 5]));
   assert.ok(r.manifest.profiles.length > 0 && r.manifest.profiles.length <= 512);
   assert.equal(new Set(r.monstats.rows.map(row => row[0])).size, r.monstats.rows.length);
@@ -165,6 +166,8 @@ for (const seed of [0, 1, 2, 42, 12345, 2147483647, -1, -2147483648]) {
   assert.ok(!r.manifest.replacements.some(p => [37, 39, 73, 102, 108, 110, 120, 131, 132, 133, 134, 135, 136].includes(p.areaId)));
   console.log(`seed ${seed}: ${r.manifest.profiles.length} isolated monsters, ${r.manifest.replacements.length} slots (${r.manifest.replacements.filter(p => /^mon\d+$/.test(p.slot)).length} Normal), ${r.manifest.projectiles.length} private projectiles across all five acts`);
 }
+assert.ok(seedsWithProjectiles > 0, 'quill projectiles are included');
+assert.ok(seedsWithProjectiles > 0, 'quill projectiles are included');
 for (const family of ['mummy1', 'minion1', 'zealot1']) assert.ok(donatedFamilies.has(family), `${family} appears in the expanded donor pool`);
 assert.deepEqual(run(0), first, 'same seed produces identical output');
 assert.notDeepEqual(run(1).manifest.replacements, first.manifest.replacements, 'different seeds vary the roster');
@@ -261,3 +264,42 @@ badMon.headers[badMon.headers.indexOf('Level')] = 'broken';
 assert.throws(() => randomizeEnemies(0, badMon, clone(baseLevels), monstats2, missiles, graphics), /missing Level/);
 assert.throws(() => randomizeEnemies(0, clone(baseMon), clone(baseLevels), monstats2, missiles, {}), /no compatible/);
 console.log('PASS: determinism, protected rows, level scaling/rewards, references, modifiers, cache separation and ZIP exports');
+
+// Published challenges keep their selection version, byte for byte.
+const { challengeMonsterSelection } = load('src/lib/challenge/rules.ts');
+const { CURRENT_MONSTER_SELECTION } = load('src/lib/randomizer/enemy-randomizer.ts');
+assert.deepEqual([15, 16, 17, 18, 30].map(challengeMonsterSelection), [3, 4, 4, 5, 5]);
+assert.equal(challengeMonsterSelection(18), CURRENT_MONSTER_SELECTION);
+const crypto = require('node:crypto');
+const digest = (seed, selection) => {
+  const mon = clone(baseMon), lv = clone(baseLevels);
+  const r = randomizeEnemies(seed, mon, lv, monstats2, missiles, graphics, new Set(), selection);
+  return crypto.createHash('sha256').update(JSON.stringify([mon.rows, lv.rows, r.missiles.rows, r.manifest])).digest('hex').slice(0, 16);
+};
+// Captured from the v3/v4 code before v5 existed (3.4.95032 tables).
+assert.equal(digest(15 * 1337, 3), 'a60b672552787c7f', 'challenge 15 keeps v3 monsters');
+assert.equal(digest(16 * 1337, 4), '122f4d85074488b1', 'challenge 16 keeps v4 monsters');
+assert.equal(digest(17 * 1337, 4), '18da14f65ec78318', 'challenge 17 keeps v4 monsters');
+
+// v5: ranged slots may take melee donors (never the reverse), and no family
+// is guaranteed in an act. v4 put the few ranged families in nearly every seed.
+const RANGED = new Set(['cr_archer1', 'sk_archer1', 'slinger1', 'quillrat1']);
+const SEEDS = 60;
+const seen = new Map();
+let meleeInRanged = 0, rangedInRanged = 0;
+for (let seed = 1; seed <= SEEDS; seed++) {
+  const r = run(seed * 7919);
+  assert.equal(r.manifest.version, 7);
+  const perAct = new Set();
+  for (const p of r.manifest.replacements) {
+    const target = byId.get(p.original), donor = byId.get(p.replacement).BaseId;
+    if (+target.rangedtype) RANGED.has(donor) ? rangedInRanged++ : meleeInRanged++;
+    else assert.ok(!RANGED.has(donor), `melee slot ${p.original} never gets ranged donor ${donor}`);
+    if (/^mon\d+$/.test(p.slot)) perAct.add(`${p.act}:${donor}`);
+  }
+  for (const key of perAct) seen.set(key, (seen.get(key) ?? 0) + 1);
+}
+assert.ok(meleeInRanged > 0 && rangedInRanged > meleeInRanged / 2, `ranged slots mix roles (${rangedInRanged} ranged, ${meleeInRanged} melee)`);
+const [worstKey, worst] = [...seen].sort((a, b) => b[1] - a[1])[0];
+assert.ok(worst <= SEEDS * 0.8, `${worstKey} appears in ${worst}/${SEEDS} seeds`);
+console.log(`PASS: v3/v4 challenges unchanged; v5 most frequent act family ${worstKey} in ${worst}/${SEEDS} seeds, ranged slots ${rangedInRanged} ranged / ${meleeInRanged} melee`);
