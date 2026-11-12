@@ -16,7 +16,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createRNG } from '@/lib/randomizer/seed';
-import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings } from '@/lib/data-loader';
+import { loadTreeGrid, loadSkills, loadSkillDescs, loadTxtFile, serializeTxtFile, loadSkillStrings, txtDir, type GameData } from '@/lib/data-loader';
 import { groupByClass } from '@/lib/randomizer/skill-placer';
 import { runPlacement } from '@/lib/randomizer/placement-step';
 import type { ResolvedClassBuild } from '@/lib/builder/class-build-server';
@@ -37,7 +37,8 @@ import { remapMonstatsSkillIds, stripSubstitutedMonsterSkills } from '@/lib/rand
 import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
 import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
-import { CLASS_DEFS } from '@/lib/randomizer/config';
+import { activeClassDefs } from '@/lib/randomizer/config';
+import { baseGameModName, baseGameSavepath, BASE_GAME_README } from '@/lib/base-game';
 import { applySkillPoints } from '@/lib/skill-points';
 import { shuffleShareOf } from '@/lib/shuffle-amount';
 import { DEFAULT_MOD_EXTRAS, openClassItems, type ModExtras } from '@/lib/mod-extras';
@@ -94,6 +95,12 @@ export interface GenerateModOptions {
   extras?: ModExtras;
   raceMode: boolean;
   enemyShuffle: boolean;
+  /**
+   * A mod for players without Reign of the Warlock (src/lib/base-game.ts): built from the
+   * base-game tables (data/txt/base/), written to data/global/excel/base/, with the Warlock
+   * left out. Absent or false is the normal Reign of the Warlock mod, byte for byte.
+   */
+  baseGame?: boolean;
   /** Open Acts settings; DEFAULT_OPEN_ACTS when off. */
   openActs: OpenActsSettings;
   /** Every mutation applied: the challenge's set, or the player's picks. */
@@ -140,11 +147,24 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     extras = DEFAULT_MOD_EXTRAS,
     raceMode,
     enemyShuffle,
+    baseGame = false,
     openActs,
     mutationIds,
     customMutations,
     ap,
   } = opts;
+
+  // Base-game mods are the plain randomizer: challenges, mutations, Open Acts and
+  // Archipelago were all built on the Reign of the Warlock tables (Open Acts starter
+  // characters were made in a Reign of the Warlock game, Forgotten Arts uses Warlock
+  // summons). The routes refuse these combinations before they get here.
+  if (baseGame && (ap || weeklyEnabled || forgottenArts || mutationIds.length
+    || openActs.acts.length || openActs.shuffle)) {
+    throw new Error('A base-game mod cannot be combined with challenges, mutations, Open Acts or Archipelago');
+  }
+  const gameData: GameData = baseGame ? 'base' : 'rotw';
+  const txt = (filename: string) => loadTxtFile(filename, gameData);
+  const classDefs = activeClassDefs(baseGame);
 
   // AP mode rebuilds itemstatcost, misc and cubemain from the vanilla files, which would
   // silently undo any feature that also edits them. The AP route never asks for these.
@@ -166,8 +186,8 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   const treePages = loadTreeGrid();
   const skills = loadSkills();
   const skillDescs = loadSkillDescs();
-  const skillsTxt = loadTxtFile('skills.txt');
-  const skillDescTxt = loadTxtFile('skilldesc.txt');
+  const skillsTxt = txt('skills.txt');
+  const skillDescTxt = txt('skilldesc.txt');
 
   // Step 5-6: Randomize trees and place skills
   // Mutation pre-hook: No Guard pulls every defense-granting skill out of the
@@ -178,6 +198,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     excludeSkills: getMutationExcludedSkillsFor(mutationIds),
     build: classBuild ?? undefined,
     shuffleShare: shuffleShareOf(shuffleAmount),
+    ...(baseGame ? { classes: classDefs } : {}),
   });
   const treeAssignments = placed.treeAssignments;
   const droppedSkillNames = placed.droppedSkillNames;
@@ -191,10 +212,10 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   let raceFillerSkills = new Set<string>();
   let raceLockedSkills = new Set<string>();
   if (raceMode) {
-    const vanillaHireling = loadTxtFile('hireling.txt');
+    const vanillaHireling = txt('hireling.txt');
     const mercSkills = getHirelingSkillNames(vanillaHireling.headers, vanillaHireling.rows);
     ({ placements, substitutes, fillerSkills: raceFillerSkills, lockedSkills: raceLockedSkills } =
-      applyRaceMode(seed, placements, substitutes, skills, mercSkills));
+      applyRaceMode(seed, placements, substitutes, skills, mercSkills, baseGame));
   }
   const placementsByClass = groupByClass(placements);
 
@@ -388,7 +409,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   // re-serialized after mutations run.
   let hirelingTxtFile: ReturnType<typeof loadTxtFile> | null = null;
   if (hirelingAura) {
-    hirelingTxtFile = loadTxtFile('hireling.txt');
+    hirelingTxtFile = txt('hireling.txt');
     // Race Mode filler rows are Prayer clones posing as paladin auras — keep them out
     // of the merc aura pool so mercs roll real auras.
     const hirelingPlacements = raceFillerSkills.size > 0
@@ -416,8 +437,8 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   // Remap class-restricted item skill affixes (magicprefix / magicsuffix).
   // Procs (CTC + charged) are randomized from castable pools using a
   // dedicated sub-RNG so we don't disturb the main pipeline's RNG order.
-  const magicPrefixTxt = loadTxtFile('magicprefix.txt');
-  const magicSuffixTxt = loadTxtFile('magicsuffix.txt');
+  const magicPrefixTxt = txt('magicprefix.txt');
+  const magicSuffixTxt = txt('magicsuffix.txt');
   preApplyMagicAffixMutationsFor(mutationIds, magicPrefixTxt, magicSuffixTxt);
   // Dedicated sub-RNG (derived from, but independent of, the main seed) so
   // injected-proc skill selection doesn't disturb the main pipeline's RNG order.
@@ -433,7 +454,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   // itemtypes.txt — include as-is to ensure StaffMods is correct for all class item types
   // (e.g. grim=war so white warlock grimoires get warlock staff mods, not Sorceress mods)
   let itemtypesTxt: string | undefined;
-  const itemtypesPath = path.join(DATA_DIR, 'txt', 'itemtypes.txt');
+  const itemtypesPath = path.join(txtDir(gameData), 'itemtypes.txt');
   if (fs.existsSync(itemtypesPath)) {
     itemtypesTxt = fs.readFileSync(itemtypesPath, 'utf-8');
   }
@@ -577,15 +598,16 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   let tcTxt: string | undefined;
   let superuniquesTxt: string | undefined;
   // Hoist charstats and ui so the weekly mutations block can reference them
-  const charstats = loadTxtFile('charstats.txt');
-  const charstatsPath = path.join(DATA_DIR, 'txt', 'charstats.txt');
+  const charstats = txt('charstats.txt');
+  const charstatsPath = path.join(txtDir(gameData), 'charstats.txt');
   let ui: ReturnType<typeof loadTxtFile> | null = null;
   if (fs.existsSync(charstatsPath)) {
     const classCol = charstats.headers.indexOf('class');
     const startSkillCol = charstats.headers.indexOf('StartSkill');
     if (classCol !== -1 && startSkillCol !== -1) {
       for (const row of charstats.rows) {
-        const classDef = CLASS_DEFS.find(d => d.name === row[classCol]);
+        // A base-game mod leaves the Warlock row (and its vanilla StartSkill) alone.
+        const classDef = classDefs.find(d => d.name === row[classCol]);
         if (classDef) {
           const candidates = row1SkillsByClass.get(classDef.code) ?? [];
           const startSkill = candidates.length > 0
@@ -596,8 +618,8 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
       }
     }
 
-    const uiPath = path.join(DATA_DIR, 'txt', 'uniqueitems.txt');
-    ui = fs.existsSync(uiPath) ? loadTxtFile('uniqueitems.txt') : null;
+    const uiPath = path.join(txtDir(gameData), 'uniqueitems.txt');
+    ui = fs.existsSync(uiPath) ? txt('uniqueitems.txt') : null;
     if (ui) {
       ui.rows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping, procRerollRng);
       if (startingTeleportStaff) {
@@ -676,13 +698,13 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   // Step 11b: monstats — always included to remap skill IDs after row reordering,
   // plus optional players scaling and/or xp boost.
   let monstatsTxt: string | undefined;
-  const monstatsSrc = loadTxtFile('monstats.txt');
+  const monstatsSrc = txt('monstats.txt');
   const summonIds = new Set(skills.flatMap(s => s.summon ? [s.summon] : []));
   // One shared levels table, so density mutations compose with spawn rewrites.
   const levelsSrc = enemyShuffle || hasMutation(mutationIds, 'court-of-kings')
-    ? loadTxtFile('levels.txt') : null;
+    ? txt('levels.txt') : null;
   const enemies = enemyShuffle && levelsSrc ? randomizeEnemies(
-    seed, monstatsSrc, levelsSrc, loadTxtFile('monstats2.txt'), loadTxtFile('missiles.txt'),
+    seed, monstatsSrc, levelsSrc, txt('monstats2.txt'), txt('missiles.txt'),
     JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'hd', 'character', 'monsters.json'), 'utf8')),
     summonIds, weeklyEnabled && challengeUsesLegacyMonsterSelection(weekNumber),
   ) : null;
@@ -702,8 +724,8 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   monstatsSrc.rows = scaledMonRows;
 
   // Step 11c: superuniques — Corpsefire TC drop (always included in zip)
-  const suSrc = loadTxtFile('superuniques.txt');
-  const tcSrc = loadTxtFile('treasureclassex.txt');
+  const suSrc = txt('superuniques.txt');
+  const tcSrc = txt('treasureclassex.txt');
   if (startingTeleportStaff) {
     applyBloodRavenQuestDrop(suSrc.headers, suSrc.rows, tcSrc.headers, tcSrc.rows, teleportStaffDropSource);
   }
@@ -713,7 +735,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   let openActsObjects: ReturnType<typeof loadTxtFile> | null = null;
   let openActsShuffle: OpenActsShuffle | null = null;
   if (openActs.shuffle) {
-    openActsObjects = loadTxtFile('objects.txt');
+    openActsObjects = txt('objects.txt');
     openActsShuffle = runOpenActsShuffle(seed, openActs, startingHoradricCube, {
       objects: openActsObjects, monstats: monstatsSrc, superuniques: suSrc, treasureclass: tcSrc,
     });
@@ -728,17 +750,17 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   let levelsTxt: string | undefined;
 
   if (mutationIds.length) {
-    const expSrc = loadTxtFile('experience.txt');
-    const armorSrc = loadTxtFile('armor.txt');
-    const weaponsSrc = loadTxtFile('weapons.txt');
-    const miscSrc = loadTxtFile('misc.txt');
+    const expSrc = txt('experience.txt');
+    const armorSrc = txt('armor.txt');
+    const weaponsSrc = txt('weapons.txt');
+    const miscSrc = txt('misc.txt');
     // Band of Brothers scales hireling rows. When the hireling-aura option is
     // off nothing has loaded the file yet, so load it here; when it is on we
     // reuse the same rows writeHirelingRows already populated. Loading is gated
     // on the mutation being active so a weekly run without it keeps shipping no
     // hireling.txt at all, exactly as before.
     if (!hirelingTxtFile && hasMutation(mutationIds, 'band-of-brothers')) {
-      hirelingTxtFile = loadTxtFile('hireling.txt');
+      hirelingTxtFile = txt('hireling.txt');
     }
 
     applyMutations(mutationIds, {
@@ -810,13 +832,13 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   let uniqueGraphicsJson: string | undefined;
   if (forgottenArts) {
     if (!ui) throw new Error('Forgotten Arts requires uniqueitems.txt');
-    const itemtypes = loadTxtFile('itemtypes.txt');
-    const misc = loadTxtFile('misc.txt');
-    const cubemain = loadTxtFile('cubemain.txt');
-    const objects = loadTxtFile('objects.txt');
-    const itemstatcost = loadTxtFile('itemstatcost.txt');
-    const vanillaSkilldesc = loadTxtFile('skilldesc.txt');
-    const vanillaSkills = loadTxtFile('skills.txt');
+    const itemtypes = txt('itemtypes.txt');
+    const misc = txt('misc.txt');
+    const cubemain = txt('cubemain.txt');
+    const objects = txt('objects.txt');
+    const itemstatcost = txt('itemstatcost.txt');
+    const vanillaSkilldesc = txt('skilldesc.txt');
+    const vanillaSkills = txt('skills.txt');
     const displayNames = new Map<string, string>();
     const strings = new Map(loadSkillStrings().map(entry => [entry.Key, entry.enUS]));
     const nameColumn = vanillaSkilldesc.headers.indexOf('str name');
@@ -848,7 +870,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     ui.rows = applyTeleportStaffUnique(ui.headers, ui.rows, 18, idMapping, false, true);
     applyBloodRavenQuestDrop(suSrc.headers, suSrc.rows, tcSrc.headers, tcSrc.rows, 'Corpsefire', true);
     configureForgottenArtsShop({ misc, uniqueitems: ui, cubemain }, books);
-    const properties = loadTxtFile('properties.txt');
+    const properties = txt('properties.txt');
     const synergies = addSpellSynergyTooltips({ itemstatcost, properties, uniqueitems: ui, cubemain, vanillaSkills, displayNames }, books);
     propertiesTxt = serializeTxtFile(properties.headers, properties.rows);
     inventorySpellsJson = JSON.stringify({
@@ -931,7 +953,9 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   if (openActsObjects) objectsTxt = serializeTxtFile(openActsObjects.headers, openActsObjects.rows);
 
   // Step 12: Build zip
-  const modName = classBuild ? classBuild.modName : `seed${seed}`;
+  // A base-game mod gets its own name and save folder (src/lib/base-game.ts), so it never
+  // shares a folder with the same seed's Reign of the Warlock mod.
+  const modName = baseGameModName(classBuild ? classBuild.modName : `seed${seed}`, baseGame);
   // Race mode and the weekly challenge get isolated save folders so competitive
   // characters don't mix with casual ones. Race: seed + race class (e.g. seed123pal).
   // Weekly: the mod name — unique per challenge since the weekly seed is week-derived.
@@ -941,8 +965,8 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   // An Archipelago slot gets its own folder too, so its character is never mixed with others.
   const savepath = ap ? ap.savepath : weeklyEnabled ? modName : forgottenArts ? `${modName}_forgotten_arts_v7`
     : (openActs.acts.length ? openActsSavepath(modName, raceMode ? pickRaceClassCode(seed) : null)
-      : raceMode ? `${modName}${pickRaceClassCode(seed)}`
-      : 'D2RRandomizer') + mutationSavepathSuffix(customMutations);
+      : raceMode ? `${modName}${pickRaceClassCode(seed, baseGame)}`
+      : baseGameSavepath('D2RRandomizer', baseGame)) + mutationSavepathSuffix(customMutations);
   const openActsFiles = buildOpenActsFiles({
     dataDir: DATA_DIR, seed, modName, savepath, settings: openActs, shuffle: openActsShuffle,
     // An Archipelago slot plays one class: only its character is made.
@@ -956,8 +980,8 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   let apTables: ApTables | undefined;
   let apLayoutFiles: Map<string, Buffer> | undefined;
   if (ap) {
-    const itemstatcost = loadTxtFile('itemstatcost.txt');
-    const cubemain = loadTxtFile('cubemain.txt');
+    const itemstatcost = txt('itemstatcost.txt');
+    const cubemain = txt('cubemain.txt');
     apTables = applyApTables({ ap, itemstatcost, cubemain, charstats });
     const starter = [...(openActsFiles.starterSaves?.keys() ?? [])];
     if (ap.openActs && starter.length !== 1) throw new Error(`apMode: Open Acts made ${starter.length} starter saves, expected 1`);
@@ -980,6 +1004,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     seed,
     raceMode,
     savepath,
+    ...(baseGame ? { baseGame: true, readmeNote: BASE_GAME_README } : {}),
     skillsTxt: skillsTxtContent,
     skillDescTxt: skillDescTxtContent,
     treeSprites,

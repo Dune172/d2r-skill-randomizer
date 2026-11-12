@@ -14,7 +14,7 @@ const require = createRequire(import.meta.url);
 // a test passes them in.
 const REAL = new Set([
   '@/lib/mutations/custom', '@/lib/mutations/registry', '@/lib/skill-points',
-  '@/lib/shuffle-amount', '@/lib/mod-extras',
+  '@/lib/shuffle-amount', '@/lib/mod-extras', '@/lib/base-game',
 ]);
 function load(file, dependencies = {}) {
   const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
@@ -161,6 +161,20 @@ test('enemy shuffle has a distinct download key and stays off for challenges bef
     const response = await route.GET(new Request(`http://localhost/api/download?seed=42&enemyShuffle=1${weekly ? '&weekly=1' : ''}`));
     assert.equal(response.status, 200);
   }
+});
+
+test('the base-game option has its own download key and name, and challenges ignore it', async () => {
+  for (const weekly of [false, true]) {
+    const route = downloadRoute(key => {
+      assert.equal(key.endsWith(':base'), !weekly, key);
+      return build(42, false);
+    });
+    const response = await route.GET(new Request(`http://localhost/api/download?seed=42&baseGame=1${weekly ? '&weekly=1' : ''}`));
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('Content-Disposition'), weekly ? /seed42.zip/ : /seed42base.zip/);
+  }
+  const plain = downloadRoute(key => { assert.ok(!key.includes(':base'), key); return build(42, false); });
+  assert.equal((await plain.GET(new Request('http://localhost/api/download?seed=42'))).status, 200);
 });
 
 test('challenge 15 starts September 21; rollout follows absolute challenge number across rotations', () => {

@@ -4,6 +4,18 @@ import { TreePage, GridSlot, SkillEntry, SkillDescEntry } from './randomizer/typ
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
+/**
+ * Which set of game tables to read. 'rotw' is data/txt/ (the game's data/global/excel/,
+ * read by Reign of the Warlock games); 'base' is data/txt/base/ (data/global/excel/base/,
+ * read by Classic and Lord of Destruction games, the only ones players without the DLC have).
+ */
+export type GameData = 'rotw' | 'base';
+
+/** Folder that holds a game-data variant's tables. */
+export function txtDir(gameData: GameData = 'rotw'): string {
+  return gameData === 'base' ? path.join(DATA_DIR, 'txt', 'base') : path.join(DATA_DIR, 'txt');
+}
+
 export type StringEntry = Record<string, unknown> & { Key: string; enUS: string };
 
 // Module-level caches — these files never change at runtime
@@ -167,14 +179,15 @@ export function loadSkillDescs(): Map<string, SkillDescEntry> {
  * Parsed results are cached at module level; rows are cloned per-call so callers can
  * mutate them without corrupting the cache.
  */
-export function loadTxtFile(filename: string): { headers: string[]; rows: string[][] } {
+export function loadTxtFile(filename: string, gameData: GameData = 'rotw'): { headers: string[]; rows: string[][] } {
   if (!_txtCache) _txtCache = new Map();
-  const cached = _txtCache.get(filename);
+  const cacheKey = gameData === 'base' ? `base/${filename}` : filename;
+  const cached = _txtCache.get(cacheKey);
   if (cached) {
     return { headers: [...cached.headers], rows: cached.rows.map(r => [...r]) };
   }
 
-  const filePath = path.join(DATA_DIR, 'txt', filename);
+  const filePath = path.join(txtDir(gameData), filename);
   const content = fs.readFileSync(filePath, 'utf-8').replace(/^\uFEFF/, '');
   // Handle mixed line endings: normalize all to \n
   const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
@@ -188,7 +201,7 @@ export function loadTxtFile(filename: string): { headers: string[]; rows: string
     const cols = lines[i].split('\t');
 
     // Normalize column count to match header:
-    // - Truncate extra columns (e.g. Warlock rows with 322 cols vs 262 header)
+    // - Truncate extra columns
     // - Pad missing columns with empty strings
     if (cols.length > headerCount) {
       rows.push(cols.slice(0, headerCount));
@@ -199,16 +212,16 @@ export function loadTxtFile(filename: string): { headers: string[]; rows: string
     }
   }
 
-  _txtCache.set(filename, { headers, rows });
+  _txtCache.set(cacheKey, { headers, rows });
   return { headers: [...headers], rows: rows.map(r => [...r]) };
 }
 
 /**
- * Clear the TXT file cache. Pass a filename to clear one entry, or omit to clear all.
+ * Clear the TXT file cache. Pass a filename to clear it for both variants, or omit to clear all.
  */
 export function clearTxtCache(filename?: string): void {
   if (!_txtCache) return;
-  if (filename) _txtCache.delete(filename);
+  if (filename) { _txtCache.delete(filename); _txtCache.delete(`base/${filename}`); }
   else _txtCache.clear();
 }
 

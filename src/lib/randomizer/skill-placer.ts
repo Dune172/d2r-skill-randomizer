@@ -1,4 +1,4 @@
-import { ClassCode, SkillEntry, SkillPlacement, TreePage } from './types';
+import { ClassCode, ClassDef, SkillEntry, SkillPlacement, TreePage } from './types';
 import { SeededRNG } from './seed';
 import { CLASS_DEFS } from './config';
 
@@ -164,7 +164,7 @@ export function placeSkills(
   rng: SeededRNG,
   skills: SkillEntry[],
   treeAssignments: Map<ClassCode, TreePage[]>,
-  opts?: { excludeSkills?: Set<string>; fixed?: FixedClass | readonly FixedClass[]; shuffleShare?: number },
+  opts?: { excludeSkills?: Set<string>; fixed?: FixedClass | readonly FixedClass[]; shuffleShare?: number; classes?: readonly ClassDef[] },
 ): { placements: SkillPlacement[]; droppedSkillNames: Set<string>; substitutes: SkillSubstitute[] } {
   // Drop categorization: a skill is dropped if (a) the user explicitly excluded it
   // via excludeSkills (e.g. "Remove Teleport") or (b) it's a HARDCODED_CLASS_SKILLS
@@ -176,6 +176,8 @@ export function placeSkills(
   // With a fixed class, every branch added for it is gated on `fixed` so a
   // normal seed consumes exactly the same RNG draws as before.
   const excludeSkills = opts?.excludeSkills;
+  // The classes being shuffled (all eight, or the original seven for a base-game mod).
+  const classDefs = opts?.classes ?? CLASS_DEFS;
   // One or more hand-built classes (a multi-class build fixes several).
   const fixedList: readonly FixedClass[] = !opts?.fixed ? [] : Array.isArray(opts.fixed) ? opts.fixed : [opts.fixed as FixedClass];
   const fixed = fixedList.length > 0;
@@ -260,7 +262,7 @@ export function placeSkills(
   let movingPool = shufflePool;
   if (partial) {
     const moving = new Set<SkillEntry>();
-    for (const def of CLASS_DEFS) {
+    for (const def of classDefs) {
       const own = rng.shuffle(shufflePool.filter(s => s.charclass === def.code));
       const moveCount = Math.round(own.length * share);
       own.slice(0, moveCount).forEach(s => moving.add(s));
@@ -275,7 +277,7 @@ export function placeSkills(
 
   // First pass: count how many slots each class needs
   const classSlotsCount: number[] = [];
-  for (const classDef of CLASS_DEFS) {
+  for (const classDef of classDefs) {
     const trees = treeAssignments.get(classDef.code)!;
     let count = 0;
     for (const tree of trees) {
@@ -289,7 +291,7 @@ export function placeSkills(
   // on non-native classes; nothing downstream keys them to the native class.
   if (fixed) {
     for (const skill of pendingRetarget) {
-      const open = CLASS_DEFS
+      const open = classDefs
         .map((def, ci) => ({ code: def.code, ci }))
         .filter(({ code, ci }) => !isFixed(code) &&
           classSlotsCount[ci]
@@ -311,8 +313,8 @@ export function placeSkills(
   // so the dropped skills' native-class slots end up vacated rather than a random
   // tail class being shortchanged.
   let skillIdx = 0;
-  for (let ci = 0; ci < CLASS_DEFS.length; ci++) {
-    const classDef = CLASS_DEFS[ci];
+  for (let ci = 0; ci < classDefs.length; ci++) {
+    const classDef = classDefs[ci];
     const classCode = classDef.code;
     const trees = treeAssignments.get(classCode)!;
     const slotCount = classSlotsCount[ci];
@@ -516,7 +518,7 @@ export function placeSkills(
   if (fixed) {
     const counts = new Map<ClassCode, number>();
     for (const p of placements) counts.set(p.targetClass, (counts.get(p.targetClass) ?? 0) + 1);
-    CLASS_DEFS.forEach((def, ci) => {
+    classDefs.forEach((def, ci) => {
       const n = counts.get(def.code) ?? 0;
       if (n !== classSlotsCount[ci]) {
         throw new Error(`Class ${def.code} got ${n} skills around the fixed class, expected ${classSlotsCount[ci]}`);

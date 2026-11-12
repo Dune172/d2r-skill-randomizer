@@ -1,4 +1,4 @@
-import { ClassCode, TreePage } from './types';
+import { ClassCode, ClassDef, TreePage } from './types';
 import { SeededRNG } from './seed';
 import { CLASS_DEFS, SPRITE_CLASSES } from './config';
 
@@ -10,16 +10,19 @@ import { CLASS_DEFS, SPRITE_CLASSES } from './config';
 /**
  * Assign 3 tree pages per class from the pool of available tree pages.
  * Tree index is preserved: tab 1 gets a tree-1 page, tab 2 gets a tree-2 page, etc.
- * Pool: 7 sprite classes × 3 trees each (Warlock excluded - no sprites).
- * Allow reuse across classes.
+ * Pool: every active sprite class × 3 trees each. Allow reuse across classes.
+ * `classDefs` defaults to all eight; a base-game mod passes the original seven, which
+ * also keeps the Warlock's pages out of the pool.
  */
 export function randomizeTrees(
   rng: SeededRNG,
   treePages: Map<string, TreePage>,
+  classDefs: readonly ClassDef[] = CLASS_DEFS,
 ): Map<ClassCode, TreePage[]> {
   // Build separate pools for each tree index (1, 2, 3)
   const pools: string[][] = [[], [], []];
-  for (const classCode of SPRITE_CLASSES) {
+  const active = new Set(classDefs.map(d => d.code));
+  for (const classCode of SPRITE_CLASSES.filter(c => active.has(c))) {
     for (let tree = 1; tree <= 3; tree++) {
       const key = `${classCode}-${tree}`;
       if (treePages.has(key)) {
@@ -30,7 +33,7 @@ export function randomizeTrees(
 
   const assignments = new Map<ClassCode, TreePage[]>();
 
-  for (const classDef of CLASS_DEFS) {
+  for (const classDef of classDefs) {
     const classCode = classDef.code;
     const selected: string[] = [];
 

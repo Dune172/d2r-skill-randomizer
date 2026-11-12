@@ -5,12 +5,14 @@ import { openActsLabel, openActsSavepath, starterName, type OpenActsSettings } f
 import { mutationName, mutationSavepathSuffix } from '@/lib/mutations/custom';
 import { CustomShortcut } from './CustomShortcut';
 import { CopySeedInfo } from './CopySeedInfo';
+import { baseGameModName } from '@/lib/base-game';
 
-export function InstallInstructions({ seed, raceMode = true, forgottenArts = false, modName, openActs, mutations = [] }: { seed: number; raceMode?: boolean; forgottenArts?: boolean; modName?: string; openActs?: OpenActsSettings; mutations?: number[] }) {
+export function InstallInstructions({ seed, raceMode = true, forgottenArts = false, baseGame = false, modName, openActs, mutations = [] }: { seed: number; raceMode?: boolean; forgottenArts?: boolean; baseGame?: boolean; modName?: string; openActs?: OpenActsSettings; mutations?: number[] }) {
   const seedUnsigned = seed >>> 0;
-  // Class Builder mods are named by their build, not their seed.
-  const mod = modName ?? `seed${seed}`;
-  const raceClass = raceMode ? CLASS_DEFS[pickRaceClassIndex(seed)] : null;
+  // Class Builder mods are named by their build, not their seed (the server already
+  // added the base-game suffix to a build's name).
+  const mod = modName ?? baseGameModName(`seed${seed}`, baseGame);
+  const raceClass = raceMode ? CLASS_DEFS[pickRaceClassIndex(seed, baseGame)] : null;
   const starters = openActs?.acts.length ? openActs : null;
   // Picked mutations give the mod its own save folder (see /api/randomize).
   const mutSuffix = mutationSavepathSuffix(mutations);
@@ -117,6 +119,16 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
           <span className="text-[#c8a870] font-semibold">Game Pass?</span> Use the Microsoft Store install path instead. If you&apos;re unsure where D2R is installed, search <code className="text-[#a89858]">Diablo II Resurrected</code> in File Explorer.
         </div>
       </div>
+
+      {baseGame && (
+        <div className="md:col-span-2 rounded p-3 bg-[#080203]/40 border border-[#5c1818] space-y-1">
+          <p>
+            <span className="text-[#c8942a] font-semibold">No Reign of the Warlock:</span>{' '}
+            this mod is built for the base game. <strong>Create a new non-expansion character</strong> (it keeps its own save folder) and
+            don&apos;t convert it to Reign of the Warlock: converted characters won&apos;t see the randomized skills. The Warlock is left out.
+          </p>
+        </div>
+      )}
 
       {mutations.length > 0 && (
         <div className="md:col-span-2 rounded p-3 bg-[#080203]/40 border border-[#5c1818] space-y-1">

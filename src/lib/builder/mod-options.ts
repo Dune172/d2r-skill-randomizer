@@ -12,6 +12,7 @@ import { DEFAULT_OPEN_ACTS, normalizeOpenActs, openActsFromParams, openActsToPar
 import { encodeMutationParam, normalizeMutationIds, parseMutationParam } from '@/lib/mutations/custom';
 import { normalizeSkillPoints, parseSkillPoints, skillPointsParam } from '@/lib/skill-points';
 import { DEFAULT_MOD_EXTRAS, modExtrasFromParams, modExtrasParams } from '@/lib/mod-extras';
+import { baseGameFromParams, baseGameParams } from '@/lib/base-game';
 
 export interface ModOptions {
   enablePrereqs: boolean;
@@ -36,6 +37,8 @@ export interface ModOptions {
   seasonal: boolean;
   /** Every class can equip class-only items. */
   anyClassItems: boolean;
+  /** Built for players without Reign of the Warlock (src/lib/base-game.ts). */
+  baseGame: boolean;
   enemyShuffle: boolean;
   openActs: OpenActsSettings;
   /** Player-picked mutation ids (sorted). */
@@ -61,6 +64,7 @@ export const DEFAULT_MOD_OPTIONS: ModOptions = {
   xpDifficulties: [1, 2, 3],
   skillPoints: 1,
   ...DEFAULT_MOD_EXTRAS,
+  baseGame: false,
   enemyShuffle: false,
   openActs: DEFAULT_OPEN_ACTS,
   mutations: [],
@@ -97,6 +101,7 @@ export function optionParams(opts: ModOptions): string {
     boosted && `xpDifficulties=${sorted(opts.xpDifficulties)}`,
     skillPointsParam(opts.skillPoints),
     ...modExtrasParams(opts),
+    ...baseGameParams(opts.baseGame),
     opts.enemyShuffle && 'enemyShuffle=1',
     openActsToParams(normalizeOpenActs(opts.openActs)).slice(1),
     opts.mutations.length > 0 && `mut=${encodeMutationParam(opts.mutations)}`,
@@ -131,6 +136,7 @@ export function parseModOptions(p: URLSearchParams): ModOptions {
     xpDifficulties: list('xpDifficulties', 3, [1, 2, 3]),
     skillPoints: parseSkillPoints(p.get('skillPoints')),
     ...modExtrasFromParams(name => p.get(name)),
+    baseGame: baseGameFromParams(name => p.get(name)),
     enemyShuffle: p.get('enemyShuffle') === '1',
     openActs: openActsFromParams(name => p.get(name)),
     mutations: parseMutationParam(p.get('mut')),
@@ -154,6 +160,7 @@ export function buildRandomizeBody(code: string, opts: ModOptions): string {
     skillPoints: normalizeSkillPoints(opts.skillPoints),
     seasonal: opts.seasonal,
     anyClassItems: opts.anyClassItems,
+    baseGame: opts.baseGame,
     enemyShuffle: opts.enemyShuffle,
     openActs: normalizeOpenActs(opts.openActs),
     mutations: normalizeMutationIds(opts.mutations),

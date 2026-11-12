@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 export const maxDuration = 60;
 import { seedFromString } from '@/lib/randomizer/seed';
 import { generateMod } from '@/lib/randomizer/generate-mod';
-import { BuildRequestError, resolveClassBuild } from '@/lib/builder/class-build-server';
+import { BuildRequestError, buildUsesWarlock, resolveClassBuild } from '@/lib/builder/class-build-server';
+import { baseGameCacheSegment, baseGameConflict, baseGameFeatureKeys, baseGameModName, normalizeBaseGame } from '@/lib/base-game';
 import { getCurrentWeekNumber } from '@/lib/challenge/week';
 import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
 import { getZipCacheStats, hasCached, setCached, makeCacheKey, withBuildSegment } from '@/lib/zip-cache';
@@ -119,6 +120,16 @@ export async function POST(request: NextRequest) {
       buildSkills: classBuild ? classBuild.skillNames : undefined,
     });
     if (mutationError) return NextResponse.json({ error: mutationError }, { status: 400 });
+    // Base game (no Reign of the Warlock): Generate page and Class Builder only. Challenges
+    // stay Reign of the Warlock whatever the client sends. Mirrored in /api/download.
+    const baseGame = weeklyEnabled || forgottenArts ? false : normalizeBaseGame(body);
+    const baseGameError = baseGameConflict({
+      baseGame,
+      openActs: openActs.acts.length > 0 || openActs.shuffle,
+      mutations: customMutations.length,
+      warlockInBuild: classBuild ? buildUsesWarlock(classBuild) : false,
+    });
+    if (baseGameError) return NextResponse.json({ error: baseGameError }, { status: 400 });
     const mutationIds: readonly number[] = weeklyEnabled ? getMutationIds(weekNumber) : customMutations;
     const featureKeys = [
       ...openActsFeatureKeys(openActs, { raceMode, classBuild: !!classBuild }),
@@ -126,6 +137,7 @@ export async function POST(request: NextRequest) {
       ...(skillPoints > 1 ? [`skill-points:${skillPoints}`] : []),
       ...(shuffleAmount < 100 ? [`shuffle:${shuffleAmount}`] : []),
       ...modExtrasFeatureKeys(extras),
+      ...baseGameFeatureKeys(baseGame),
     ];
     if (!classBuild && !seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -142,10 +154,10 @@ export async function POST(request: NextRequest) {
     const cacheKey = withBuildSegment(
       makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
         + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations) + skillPointsCacheSegment(skillPoints)
-        + shuffleAmountCacheSegment(shuffleAmount) + modExtrasCacheSegment(extras),
+        + shuffleAmountCacheSegment(shuffleAmount) + modExtrasCacheSegment(extras) + baseGameCacheSegment(baseGame),
       classBuild?.code,
     );
-    const ready = { seed, status: 'ready', ...(classBuild ? { build: classBuild.code, modName: classBuild.modName } : {}) };
+    const ready = { seed, status: 'ready', ...(classBuild ? { build: classBuild.code, modName: baseGameModName(classBuild.modName, baseGame) } : {}) };
 
     // Check cache (fast path — bypasses queue AND rate limit so users can
     // re-download a seed they already generated without being throttled)
@@ -213,6 +225,7 @@ export async function POST(request: NextRequest) {
       extras,
       raceMode,
       enemyShuffle,
+      baseGame,
       openActs,
       mutationIds,
       customMutations,

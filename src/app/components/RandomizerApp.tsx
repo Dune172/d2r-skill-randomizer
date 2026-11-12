@@ -15,6 +15,7 @@ import { encodeMutationParam, parseMutationParam } from '@/lib/mutations/custom'
 import { parseSkillPoints } from '@/lib/skill-points';
 import { parseShuffleAmount, shuffleAmountParam } from '@/lib/shuffle-amount';
 import { modExtrasFromParams, modExtrasParams } from '@/lib/mod-extras';
+import { baseGameFromParams, baseGameParams } from '@/lib/base-game';
 import { SITE_UPDATED, SITE_VERSION } from '@/lib/site-version';
 
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
@@ -38,6 +39,8 @@ interface Options {
   seasonal: boolean;
   /** Every class can equip class-only items. */
   anyClassItems: boolean;
+  /** Built for players without Reign of the Warlock (src/lib/base-game.ts). */
+  baseGame: boolean;
   raceMode: boolean;
   enemyShuffle: boolean;
   forgottenArts: boolean;
@@ -61,6 +64,7 @@ const defaultOptions: Options = {
   shuffleAmount: 100,
   seasonal: true,
   anyClassItems: false,
+  baseGame: false,
   raceMode: true,
   enemyShuffle: false,
   forgottenArts: false,
@@ -99,6 +103,7 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
     skillPoints: parseSkillPoints(p.get('skillPoints')),
     shuffleAmount: parseShuffleAmount(p.get('shuffle')),
     ...modExtrasFromParams(name => p.get(name)),
+    baseGame: baseGameFromParams(name => p.get(name)),
     raceMode: p.get('raceMode') !== '0',
     enemyShuffle: p.get('enemyShuffle') === '1',
     forgottenArts: false, // challenge-only
@@ -146,7 +151,7 @@ export default function RandomizerApp() {
     const enemyParam = opts.enemyShuffle ? '&enemyShuffle=1' : '';
     const skillPointsParam = opts.skillPoints > 1 ? `&skillPoints=${opts.skillPoints}` : '';
     const shuffleParam = shuffleAmountParam(opts.shuffleAmount) ? `&${shuffleAmountParam(opts.shuffleAmount)}` : '';
-    const extrasParam = modExtrasParams(opts).map(p => `&${p}`).join('');
+    const extrasParam = [...modExtrasParams(opts), ...baseGameParams(opts.baseGame)].map(p => `&${p}`).join('');
     // Part of the download cache key: /api/download parses it back the same way.
     const mutParam = opts.mutations.length ? `&mut=${encodeMutationParam(opts.mutations)}` : '';
     return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${skillPointsParam}${shuffleParam}${extrasParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}${openActsToParams(opts.openActs, opts.raceMode)}${mutParam}`;
@@ -162,7 +167,7 @@ export default function RandomizerApp() {
       const previewRes = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: seedInput, forgottenArts: options.forgottenArts, mutations: options.mutations, shuffleAmount: options.shuffleAmount }),
+        body: JSON.stringify({ seed: seedInput, forgottenArts: options.forgottenArts, mutations: options.mutations, shuffleAmount: options.shuffleAmount, baseGame: options.baseGame }),
       });
 
       if (!previewRes.ok) {
@@ -180,7 +185,7 @@ export default function RandomizerApp() {
 
       setStatus('building');
       const buildingStart = Date.now();
-      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, skillPoints: options.skillPoints, shuffleAmount: options.shuffleAmount, seasonal: options.seasonal, anyClassItems: options.anyClassItems, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts, openActs: options.openActs, mutations: options.mutations });
+      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, skillPoints: options.skillPoints, shuffleAmount: options.shuffleAmount, seasonal: options.seasonal, anyClassItems: options.anyClassItems, baseGame: options.baseGame, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts, openActs: options.openActs, mutations: options.mutations });
 
       await generateMod(buildBody, setErrorMessage);
 
@@ -231,16 +236,16 @@ export default function RandomizerApp() {
             {currentOptions.raceMode && currentSeed !== null && (
               <div className="rounded p-3 bg-[#0a2010]/60 border border-[#2a5a2a] text-center space-y-1">
                 <div className="font-cinzel font-bold tracking-[0.22em] text-sm uppercase text-[#c8942a]">
-                  Race Class: {pickRaceClassName(currentSeed)}
+                  Race Class: {pickRaceClassName(currentSeed, currentOptions.baseGame)}
                 </div>
                 <div className="text-[11px] text-[#6abf6a]">
-                  Everyone on this seed plays the {pickRaceClassName(currentSeed)}. All other classes are Prayer filler.
+                  Everyone on this seed plays the {pickRaceClassName(currentSeed, currentOptions.baseGame)}. All other classes are Prayer filler.
                 </div>
               </div>
             )}
 
             <div className="pt-0.5">
-              <InstallInstructions seed={currentSeed!} raceMode={currentOptions.raceMode} forgottenArts={currentOptions.forgottenArts} openActs={currentOptions.openActs} mutations={currentOptions.mutations} />
+              <InstallInstructions seed={currentSeed!} baseGame={currentOptions.baseGame} raceMode={currentOptions.raceMode} forgottenArts={currentOptions.forgottenArts} openActs={currentOptions.openActs} mutations={currentOptions.mutations} />
             </div>
           </div>
         )}

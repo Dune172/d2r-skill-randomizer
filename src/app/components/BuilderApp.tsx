@@ -36,6 +36,7 @@ import {
 } from '@/lib/builder/mod-options';
 import { generateMod } from '@/lib/generate-mod';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
+import { baseGameConflict } from '@/lib/base-game';
 import type { ClassCode, PreviewData, TreePage } from '@/lib/randomizer/types';
 import { classTheme } from '@/lib/ui/class-theme';
 
@@ -113,7 +114,16 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
   const takenByOthers = useMemo(() => skillsInBuilds(others), [others]);
   const allPlaced = useMemo(() => skillsInBuilds(allSpecs), [allSpecs]);
   const builtCodes = new Set(allSpecs.map(s => s.classCode));
-  const randomCount = CLASS_DEFS.length - allSpecs.length;
+  // A base-game mod (no Reign of the Warlock) has no Warlock and no Warlock skills.
+  const warlockSkills = useMemo(
+    () => new Set(catalog.skills.filter(s => s.charclass === 'war').map(s => s.skill)),
+    [catalog.skills],
+  );
+  const baseGameError = baseGameConflict({
+    baseGame: options.baseGame,
+    warlockInBuild: builtCodes.has('war') || [...allPlaced].some(name => warlockSkills.has(name)),
+  });
+  const randomCount = (options.baseGame ? CLASS_DEFS.length - 1 : CLASS_DEFS.length) - allSpecs.length;
 
   const editIssues = useMemo(
     () => (spec ? checkClassBuildSet(allSpecs, catalog.skills, treePages, { requireComplete: false }) : []),
@@ -130,7 +140,7 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
   const warnings = editIssues.filter(i => i.severity === 'warning');
   const complete = placedCount === SLOTS_PER_CLASS;
   const othersIncomplete = others.filter(o => Object.keys(o.slots).length < SLOTS_PER_CLASS);
-  const buildable = !!spec && complete && othersIncomplete.length === 0 && !hasErrors(editIssues);
+  const buildable = !!spec && complete && othersIncomplete.length === 0 && !hasErrors(editIssues) && !baseGameError;
 
   const code = useMemo(() => {
     if (!spec) return null;
@@ -296,7 +306,7 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
       const res = await fetch('/api/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classBuild: code, mutations: options.mutations }),
+        body: JSON.stringify({ classBuild: code, mutations: options.mutations, baseGame: options.baseGame }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Preview failed.');
@@ -424,20 +434,23 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
               const current = spec?.classCode === def.code;
               const other = others.find(o => o.classCode === def.code);
               const inBuild = current || !!other;
+              const needsExpansion = options.baseGame && def.code === 'war' && !inBuild;
               return (
                 <button
                   key={def.code}
                   type="button"
                   onClick={() => pickClass(def.code)}
+                  disabled={needsExpansion}
                   aria-pressed={current}
                   style={{ borderColor: current ? '#f0c040' : t.frame, borderStyle: inBuild ? 'solid' : 'dashed' }}
-                  className="rounded-lg border-2 bg-[#0c0304] px-3 py-5 text-center hover:bg-[#1a0808] transition-colors"
+                  className="rounded-lg border-2 bg-[#0c0304] px-3 py-5 text-center hover:bg-[#1a0808] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <span className="block font-cinzel font-bold tracking-[0.14em] uppercase text-sm" style={{ color: t.frame }}>
                     {def.name}
                   </span>
                   <span className="block mt-1 text-[10px] text-[#7a6a4a]">
-                    {current ? `Editing · ${placedCount}/${SLOTS_PER_CLASS} placed`
+                    {needsExpansion ? 'Needs Reign of the Warlock'
+                      : current ? `Editing · ${placedCount}/${SLOTS_PER_CLASS} placed`
                       : other ? `In this build · ${Object.keys(other.slots).length}/${SLOTS_PER_CLASS}`
                         : spec ? 'Add to this build' : 'Start building'}
                   </span>
@@ -511,7 +524,8 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
           <h2 id="step-skills" className="sr-only">Place skills</h2>
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button type="button" className={BTN_QUIET} disabled={complete}
-              onClick={() => { update(s => fillEmptySlots(s, catalog.skills, treePages, randomSeed(), takenByOthers)); setSelectedKey(null); }}>
+              onClick={() => { update(s => fillEmptySlots(s, catalog.skills, treePages, randomSeed(),
+                options.baseGame ? new Set([...takenByOthers, ...warlockSkills]) : takenByOthers)); setSelectedKey(null); }}>
               Fill empty slots
             </button>
             <button type="button" className={BTN_QUIET} disabled={placedCount === 0}
@@ -544,6 +558,9 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
           </div>
 
           <IssueList errors={errors} warnings={warnings} />
+          {baseGameError && (
+            <p className="text-center text-[11px] text-[#e0a060]">{baseGameError}</p>
+          )}
         </section>
       )}
 
@@ -691,7 +708,7 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
           {isBuilt && built && (
             <div className="rounded-lg border border-[#3a1510] bg-[#0c0304] p-4">
               <h3 className="font-cinzel font-bold text-[11px] tracking-[0.18em] uppercase text-[#c8942a] mb-3">Install</h3>
-              <InstallInstructions seed={built.seed} raceMode={false} modName={built.modName || undefined} openActs={options.openActs} mutations={options.mutations} />
+              <InstallInstructions seed={built.seed} raceMode={false} baseGame={options.baseGame} modName={built.modName || undefined} openActs={options.openActs} mutations={options.mutations} />
             </div>
           )}
         </section>

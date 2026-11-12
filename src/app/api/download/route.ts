@@ -11,6 +11,7 @@ import { mutationCacheSegment, parseMutationParam } from '@/lib/mutations/custom
 import { parseSkillPoints, skillPointsCacheSegment } from '@/lib/skill-points';
 import { parseShuffleAmount, shuffleAmountCacheSegment } from '@/lib/shuffle-amount';
 import { DEFAULT_MOD_EXTRAS, modExtrasCacheSegment, modExtrasFromParams } from '@/lib/mod-extras';
+import { baseGameCacheSegment, baseGameFromParams, baseGameModName } from '@/lib/base-game';
 
 export const maxDuration = 60;
 
@@ -92,10 +93,12 @@ export async function GET(request: NextRequest) {
     // Same guard as /api/randomize: full shuffle for challenges and builds.
     const shuffleAmount = classBuild || weeklyParam || forgottenArts ? 100 : parseShuffleAmount(searchParams.get('shuffle'));
     const extras = weeklyParam || forgottenArts ? DEFAULT_MOD_EXTRAS : modExtrasFromParams(name => searchParams.get(name));
+    // Same guard as /api/randomize: challenges are always Reign of the Warlock.
+    const baseGame = weeklyParam || forgottenArts ? false : baseGameFromParams(name => searchParams.get(name));
     const cacheKey = withBuildSegment(
       makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
         + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations) + skillPointsCacheSegment(skillPoints)
-        + shuffleAmountCacheSegment(shuffleAmount) + modExtrasCacheSegment(extras),
+        + shuffleAmountCacheSegment(shuffleAmount) + modExtrasCacheSegment(extras) + baseGameCacheSegment(baseGame),
       classBuild?.code,
     );
     const zipBuffer = getCached(cacheKey);
@@ -110,7 +113,7 @@ export async function GET(request: NextRequest) {
     // The zip's root is the mod folder (src/lib/zip-builder.ts), so it is named after
     // the mod: Windows' Extract All then makes exactly the folder that goes into mods.
     // Must match generateMod's modName.
-    const filename = `${classBuild ? classBuild.modName : `seed${seed}`}.zip`;
+    const filename = `${baseGameModName(classBuild ? classBuild.modName : `seed${seed}`, baseGame)}.zip`;
 
     // A stream serves the cached bytes without rebuilding the archive or
     // copying the whole Buffer into a new response body for each download.

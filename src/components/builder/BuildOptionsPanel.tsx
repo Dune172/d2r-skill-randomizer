@@ -7,6 +7,8 @@ import { openActsLabel } from '@/lib/randomizer/open-acts/options';
 import OpenActsFields from '../OpenActsFields';
 import MutationPicker from '../mutations/MutationPicker';
 import { mutationName, mutationOptionConflict } from '@/lib/mutations/custom';
+import { DEFAULT_OPEN_ACTS } from '@/lib/randomizer/open-acts/options';
+import { baseGameConflict } from '@/lib/base-game';
 
 const SELECT_CLASS =
   'appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1.5 text-sm text-[#e8d5a0] ' +
@@ -50,11 +52,19 @@ export default function BuildOptionsPanel({
   const setItem = <K extends keyof ModOptions['startingItems']>(key: K, v: ModOptions['startingItems'][K]) =>
     onChange({ ...value, startingItems: { ...value.startingItems, [key]: v } });
 
+  // Open Acts and mutations need Reign of the Warlock, so turning the base game on clears them.
+  const setBaseGame = (on: boolean) => onChange(on
+    ? { ...value, baseGame: true, openActs: { ...DEFAULT_OPEN_ACTS, spoiler: value.openActs.spoiler }, mutations: [] }
+    : { ...value, baseGame: false });
+  const openActsBlocked = baseGameConflict({ baseGame: value.baseGame, openActs: true });
+  const mutationsBlocked = baseGameConflict({ baseGame: value.baseGame, mutations: 1 });
+
   const toggleIn = (list: number[], n: number) =>
     list.includes(n) ? list.filter(x => x !== n) : [...list, n];
 
   // A short summary so the collapsed panel still shows what is on.
   const summary = [
+    value.baseGame && 'no Reign of the Warlock',
     !value.enablePrereqs && 'no prerequisites',
     value.playersEnabled && value.playersCount > 1 && `players ${value.playersCount}`,
     value.xpMultiplier > 1 && `${value.xpMultiplier}× XP`,
@@ -94,6 +104,13 @@ export default function BuildOptionsPanel({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
+              <Checkbox
+                id="b-baseGame"
+                checked={value.baseGame}
+                onChange={setBaseGame}
+                label="I don't own Reign of the Warlock"
+                tooltip="Builds the mod for the base game, so it works without the Reign of the Warlock expansion. Play a non-expansion character. The Warlock and its skills can't be in the build, and Open Acts and mutations are not available."
+              />
               <Checkbox
                 id="b-enemies"
                 checked={value.enemyShuffle}
@@ -261,15 +278,21 @@ export default function BuildOptionsPanel({
           </div>
 
           <SectionDivider label="Open Acts" />
-          <OpenActsFields value={value.openActs} onChange={v => set('openActs', v)} />
+          {openActsBlocked && <p className="text-xs text-[#8a7040] italic">{openActsBlocked}</p>}
+          <fieldset disabled={!!openActsBlocked} className={openActsBlocked ? 'opacity-40 pointer-events-none' : undefined}>
+            <OpenActsFields value={value.openActs} onChange={v => set('openActs', v)} />
+          </fieldset>
 
           <SectionDivider label="Mutations" />
+          {mutationsBlocked && <p className="text-xs text-[#8a7040] italic">{mutationsBlocked}</p>}
+          <fieldset disabled={!!mutationsBlocked} className={mutationsBlocked ? 'opacity-40 pointer-events-none' : undefined}>
           <MutationPicker
             idPrefix="b-mut"
             value={value.mutations}
             onChange={v => set('mutations', v)}
-            blocked={id => mutationOptionConflict(id, { openActsShuffle: value.openActs.shuffle, buildSkills })}
+            blocked={id => mutationsBlocked ?? mutationOptionConflict(id, { openActsShuffle: value.openActs.shuffle, buildSkills })}
           />
+          </fieldset>
         </div>
       )}
     </div>
