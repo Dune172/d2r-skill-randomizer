@@ -33,7 +33,9 @@ import {
   buildShareQuery,
   optionParams,
   parseModOptions,
+  withBaseGame,
 } from '@/lib/builder/mod-options';
+import RotwSwitch from '@/components/RotwSwitch';
 import { generateMod } from '@/lib/generate-mod';
 import { CLASS_DEFS } from '@/lib/randomizer/config';
 import { baseGameConflict } from '@/lib/base-game';
@@ -416,6 +418,16 @@ export default function BuilderApp({ catalog }: { catalog: BuilderCatalog }) {
         </ol>
         {message && <p role="status" className="text-center text-[#e08080] text-xs mt-2">{message}</p>}
       </nav>
+
+      {/* Game version: on every step, since it decides which classes and skills you can use. */}
+      <div className="-mt-2 mb-6">
+        <RotwSwitch
+          id="b-rotw"
+          baseGame={options.baseGame}
+          onChange={on => setOptions(o => withBaseGame(o, on))}
+          offNote={baseGameError ?? 'Base-game mod: play a non-expansion character. No Warlock or Warlock skills, Open Acts or mutations.'}
+        />
+      </div>
 
       {/* 1. Class */}
       {step === 'class' && (

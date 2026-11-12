@@ -12,7 +12,7 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: 'v0.343',
+    version: 'v0.344',
     date: 'November 2026',
     tagline: 'More variety from monster shuffle',
     notes: [
@@ -20,6 +20,15 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Ranged monsters can now be replaced by melee monsters too, so no monster family is guaranteed in an act. Ranged replacements are still the most likely',
       'Each act now always picks from 10 of the 17 monster families, instead of a random number of them, so an unlucky seed no longer leaves an act with only a few kinds of monsters',
       'Challenge 17 and earlier keep their monsters. Monster shuffle seeds you generated before give different monsters if you download them again',
+    ],
+  },
+  {
+    version: 'v0.343',
+    date: 'November 2026',
+    tagline: 'Game version switch at the top',
+    notes: [
+      'The Reign of the Warlock option is now an on/off switch at the top of the Random Seed tab (next to the presets) and of the Class Builder. It is on by default; switch it off if you don’t own the expansion',
+      'In the Class Builder the switch shows on every step, so you can see which classes and skills you can use before you start building',
     ],
   },
   {

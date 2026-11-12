@@ -7,7 +7,6 @@ import { openActsLabel } from '@/lib/randomizer/open-acts/options';
 import OpenActsFields from '../OpenActsFields';
 import MutationPicker from '../mutations/MutationPicker';
 import { mutationName, mutationOptionConflict } from '@/lib/mutations/custom';
-import { DEFAULT_OPEN_ACTS } from '@/lib/randomizer/open-acts/options';
 import { baseGameConflict } from '@/lib/base-game';
 
 const SELECT_CLASS =
@@ -52,10 +51,7 @@ export default function BuildOptionsPanel({
   const setItem = <K extends keyof ModOptions['startingItems']>(key: K, v: ModOptions['startingItems'][K]) =>
     onChange({ ...value, startingItems: { ...value.startingItems, [key]: v } });
 
-  // Open Acts and mutations need Reign of the Warlock, so turning the base game on clears them.
-  const setBaseGame = (on: boolean) => onChange(on
-    ? { ...value, baseGame: true, openActs: { ...DEFAULT_OPEN_ACTS, spoiler: value.openActs.spoiler }, mutations: [] }
-    : { ...value, baseGame: false });
+  // The game version is the switch at the top of the builder; here it only greys out what needs the expansion.
   const openActsBlocked = baseGameConflict({ baseGame: value.baseGame, openActs: true });
   const mutationsBlocked = baseGameConflict({ baseGame: value.baseGame, mutations: 1 });
 
@@ -64,7 +60,6 @@ export default function BuildOptionsPanel({
 
   // A short summary so the collapsed panel still shows what is on.
   const summary = [
-    value.baseGame && 'no Reign of the Warlock',
     !value.enablePrereqs && 'no prerequisites',
     value.playersEnabled && value.playersCount > 1 && `players ${value.playersCount}`,
     value.xpMultiplier > 1 && `${value.xpMultiplier}× XP`,
@@ -104,13 +99,6 @@ export default function BuildOptionsPanel({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
-              <Checkbox
-                id="b-baseGame"
-                checked={value.baseGame}
-                onChange={setBaseGame}
-                label="I don't own Reign of the Warlock"
-                tooltip="Builds the mod for the base game, so it works without the Reign of the Warlock expansion. Play a non-expansion character. The Warlock and its skills can't be in the build, and Open Acts and mutations are not available."
-              />
               <Checkbox
                 id="b-enemies"
                 checked={value.enemyShuffle}
