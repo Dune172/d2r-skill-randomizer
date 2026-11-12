@@ -66,6 +66,6 @@ export const BASE_GAME_README: readonly string[] = [
   '',
   'This mod is for Diablo II: Resurrected WITHOUT Reign of the Warlock.',
   'Play a non-expansion character (Classic or Lord of Destruction). The Warlock is left out.',
-  'A character converted to Reign of the Warlock will not see the randomized skills.',
+  'A Reign of the Warlock character loads, but its skill tree shows the normal skills on the wrong tree art.',
   '',
 ];

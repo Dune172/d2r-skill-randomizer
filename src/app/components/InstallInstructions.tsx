@@ -125,7 +125,7 @@ export function InstallInstructions({ seed, raceMode = true, forgottenArts = fal
           <p>
             <span className="text-[#c8942a] font-semibold">No Reign of the Warlock:</span>{' '}
             this mod is built for the base game. <strong>Create a new non-expansion character</strong> (it keeps its own save folder) and
-            don&apos;t convert it to Reign of the Warlock: converted characters won&apos;t see the randomized skills. The Warlock is left out.
+            don&apos;t convert it to Reign of the Warlock: a Reign of the Warlock character shows the normal skills on mismatched tree art. The Warlock is left out.
           </p>
         </div>
       )}
