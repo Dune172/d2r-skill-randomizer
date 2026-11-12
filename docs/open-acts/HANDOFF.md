@@ -42,7 +42,7 @@ A generator option where **Acts I–III are open from the start** and the **key 
      - Q1 PASS: after Akara gives Den of Evil, its quest-log text ends "HINT: Khalim's Eye is somewhere in Act I." Akara's shop opens and lists normally.
      - L1 FAIL: Smart App Control blocked the shortcut, so Lnktest was copied by hand (the grader's PASS only checks that the file exists). L2 PASS: Lnktest loads.
      - Arena run (played by the user, same day): **D1–D3 PASS** (Eye, Brain and Leg dropped on all 11 kills and were picked up), **H1 PASS** (Staff of Kings from an outdoor chest; later chests gave normal loot once it was held, as designed). H2–H4 and R1–R4 were not played; the user judged the mechanism proven and chose to skip them.
-     - The arena mod triggers a "data version mismatch" prompt on launch (Continue works); it ships no `DataVersionBuild.txt`, unlike generated mods.
+     - The arena mod triggered a "data version mismatch" prompt on launch (Continue works) because it shipped no `DataVersionBuild.txt`. Since 2026-11-11 `build-arena.mjs` stamps it from `data/dataversionbuild.txt`, as generated mods do. The prompt only warns: on 3.3 and on 3.4.95032 the mod's tables still loaded after Continue (on 3.4 a Cold Plains kill dropped Wirt's Leg, which only the arena monstats.txt adds).
 2. **Apply the decision gates in PLAN.md Phase 0:**
    - Boss drops fail (D1–D3) → set `bossLocations: false`. The fill already supports it, and Tristram stays as the gate.
    - Nightmare tabs fail (S2) → raise with the user.
@@ -124,6 +124,7 @@ All tooling is in [`scripts/open-acts-spike/`](../../scripts/open-acts-spike/REA
 - **Offline (any PC):** `node scripts/verify-open-acts-fill.mjs 5000`. It compiles the module with tsc into a temp dir and checks the shuffle, the patcher (against `scripts/open-acts-spike/saves/` fixtures) and the hints (against `data/local/strings/quests.json`).
 - **Arena mod:** `node scripts/open-acts-spike/build-arena.mjs . data/local/strings/quests.json "C:/Program Files (x86)/Diablo II Resurrected/mods"`.
   - Monsters: 1 HP, no damage. Every kill drops Khalim's Eye, Khalim's Brain (made spawnable) and Wirt's Leg.
+  - Only the monstats.txt damage columns are zeroed. Damage from unique and champion enchantments (fire, lightning, cold) doesn't come from those columns. That probably explains why a level 2 Barbarian died to a Cold Plains unique pack on 2026-11-11 (not confirmed).
   - Stand-in hosts: outdoor chests → Staff of Kings; large chests (`Mode1=0`) → Heart; rogue corpses → Inifuss scroll.
   - Real hosts: Malus → Cube, tree → Lam Esen's Tome, Wirt's body → Horadric Scroll, Griswold → Flail.
   - The Den of Evil hint is included. Savepath is `d2rr_openacts_test`.
