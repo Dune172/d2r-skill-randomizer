@@ -29,7 +29,8 @@ async function generate(enemyShuffle, boost = false) {
   return { zip: new AdmZip(bytes), bytes };
 }
 function entry(zip, suffix) {
-  const found = zip.getEntries().find(e => e.entryName.endsWith(suffix));
+  // Flat zips (v0.340) keep enemy-shuffle.json at the root, with no leading folder.
+  const found = zip.getEntries().find(e => `/${e.entryName}`.endsWith(suffix));
   assert.ok(found, `missing ${suffix}`);
   return found.getData().toString('utf8');
 }
@@ -47,12 +48,12 @@ const originalMon = table(entry(off.zip, '/monstats.txt'));
 const shuffledMon = table(entry(on.zip, '/monstats.txt'));
 assert.deepEqual(shuffledMon.slice(0, originalMon.length), originalMon);
 const manifest = JSON.parse(entry(on.zip, '/enemy-shuffle.json'));
-assert.equal(manifest.version, 5);
+assert.equal(manifest.version, 7, 'non-challenge mods use v5 selection');
 assert.equal(manifest.replacements.filter(p => p.areaId === 2 && /^mon\d+$/.test(p.slot)).length, 3);
 const missiles = table(entry(on.zip, '/missiles.txt'));
 const originalMissiles = table(fs.readFileSync('data/txt/missiles.txt', 'utf8'));
 assert.deepEqual(missiles.slice(0, originalMissiles.length), originalMissiles);
-assert.ok(manifest.projectiles.length);
+// v5 no longer guarantees quill rats in every seed; check any private projectiles.
 for (const p of manifest.projectiles) {
   const missile = missiles.find(m => m.Missile === p.id);
   assert.equal(missile.SrcDamage, '128');
@@ -60,7 +61,7 @@ for (const p of manifest.projectiles) {
   assert.equal(missile.MaxDamage, '0');
   assert.ok(shuffledMon.some(m => m.MissA2 === p.id));
 }
-console.log('PASS: real ZIP contains all three Blood Moor replacements and isolated quill projectiles; original rows and unrelated files are identical');
+console.log(`PASS: real ZIP contains all three Blood Moor replacements and ${manifest.projectiles.length} isolated quill projectiles; original rows and unrelated files are identical`);
 const boosted = await generate(true, true);
 const boostedManifest = JSON.parse(entry(boosted.zip, '/enemy-shuffle.json'));
 for (const p of boostedManifest.profiles) {

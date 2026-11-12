@@ -49,6 +49,17 @@ const MAX_CLONES = 512;
 // itself varies, and foreign families are favoured rather than required.
 const ROSTER_SHARE = 0.5;
 const FOREIGN_WEIGHT = 3;
+// v5: only four donor families are ranged, so ranged-only slots put the same
+// archers and slingers in nearly every seed. Ranged spawn slots may now take a
+// melee donor too (never the reverse); a ranged donor stays more likely per family.
+const RANGED_SLOT_RANGED_WEIGHT = 2;
+// v5 also spreads an act over more of its roster before repeating a family,
+// and every act rosters exactly this many of the 17 donor families.
+const REUSE_PENALTY_V5 = 3;
+const ROSTER_SIZE_V5 = 10;
+/** 3 = round-robin (challenge 15), 4 = per-act rosters, 5 = v4 plus melee donors in ranged slots. */
+export type MonsterSelection = 3 | 4 | 5;
+export const CURRENT_MONSTER_SELECTION: MonsterSelection = 5;
 const DAMAGE_ELEMENTS = new Set(['fire', 'ltng', 'cold', 'mag', 'rand', 'pois']);
 const n = (v: string | undefined) => Number(v) || 0;
 const records = (t: EnemyTable): Monster[] => t.rows.map(r =>
@@ -148,9 +159,10 @@ export function randomizeEnemies(
   graphics: Record<string, string>,
   summonIds: ReadonlySet<string> = new Set(),
   // v3 round-robin exhausted every act's donor pool, so each act showed the same
-  // families every seed. Kept only to reproduce already-published challenges.
-  legacySelection = false,
+  // families every seed. v3 and v4 are kept only to reproduce published challenges.
+  selection: MonsterSelection = CURRENT_MONSTER_SELECTION,
 ): EnemyShuffleResult {
+  const legacySelection = selection === 3;
   for (const [table, required] of [[monstats, ['Id', '*hcIdx', 'BaseId', 'MonStatsEx', 'Level', 'A1MaxD']],
     [levels, ['Id', 'Act', 'MonDen', 'mon1', 'nmon1', 'umon1']],
     [missilesTable, ['Missile', '*ID', 'SrcDamage', 'HitShift', 'MinDamage', 'MaxDamage',
@@ -183,16 +195,19 @@ export function randomizeEnemies(
     if (!familyOrigins.has(m.BaseId)) familyOrigins.set(m.BaseId, new Set());
     familyOrigins.get(m.BaseId)!.add(act);
   }
-  const rng = createRNG(seedFromString(`enemies:${legacySelection ? 'v3' : 'v4'}:${seed | 0}`));
+  const rng = createRNG(seedFromString(`enemies:v${selection}:${seed | 0}`));
   const familyOrder = legacySelection ? rng.shuffle(Object.keys(FAMILIES).sort()) : [];
-  const rosters = new Map(legacySelection ? [] : [1, 2, 3, 4, 5].map(act =>
-    [act, new Set(Object.keys(FAMILIES).sort().filter(() => rng.next() < ROSTER_SHARE))]));
+  // v4 flipped a coin per family, so an unlucky act could bench nearly all of
+  // them; v5 always benches the same number and only varies which ones.
+  const rosters = new Map(legacySelection ? [] : [1, 2, 3, 4, 5].map(act => [act, new Set(selection >= 5
+    ? rng.shuffle(Object.keys(FAMILIES).sort()).slice(0, ROSTER_SIZE_V5)
+    : Object.keys(FAMILIES).sort().filter(() => rng.next() < ROSTER_SHARE))]));
   const choices = new Map<string, string>();
   const reuse = new Map<string, number>();
   const clones = new Map<string, string>();
   const destinationActs = new Map<string, number>();
   const resultGraphics = { ...graphics };
-  const manifest: EnemyManifest = { version: legacySelection ? 5 : 6, seed, status: 'experimental; requires in-game validation', replacements: [], skipped: [], profiles: [], projectiles: [] };
+  const manifest: EnemyManifest = { version: selection + 2, seed, status: 'experimental; requires in-game validation', replacements: [], skipped: [], profiles: [], projectiles: [] };
   const outputMissiles: EnemyTable = { headers: [...missilesTable.headers], rows: missilesTable.rows.map(r => [...r]) };
   const projectileClones = new Map<string, string>();
   const isolateProjectile = (original: string): string => {
@@ -249,9 +264,10 @@ export function randomizeEnemies(
       const skip = (why: string) => manifest.skipped.push({ areaId, slot, original, reason: why });
       if (reason || !target) { skip(reason ?? 'unknown-monster'); continue; }
       const shape = extended.get(target.MonStatsEx)!;
+      const role = targetRole(target);
       const compatible = donors.filter(d => d.BaseId !== target.BaseId && !origins.get(d.Id)!.has(act) &&
         !linkedFamilies.has(d.BaseId) &&
-        FAMILIES[d.BaseId].role === targetRole(target) &&
+        (FAMILIES[d.BaseId].role === role || (selection >= 5 && role === 'ranged')) &&
         n(extended.get(d.MonStatsEx)!.SizeX) <= n(shape.SizeX) && n(extended.get(d.MonStatsEx)!.SizeY) <= n(shape.SizeY));
       // Prefer an entirely foreign family; fall back to a foreign variant of a
       // different family when the small first roster cannot provide one.
@@ -272,7 +288,9 @@ export function randomizeEnemies(
         } else {
           // Weighted draw: reuse within the act is discouraged, not forbidden.
           const families = [...new Set(pool.map(d => d.BaseId))].sort();
-          const weights = families.map(f => (isForeign(f) ? FOREIGN_WEIGHT : 1) / (1 + (reuse.get(`${act}:${f}`) ?? 0)) ** 2);
+          const roleWeight = (f: string) => selection >= 5 && role === 'ranged' && FAMILIES[f].role === 'ranged' ? RANGED_SLOT_RANGED_WEIGHT : 1;
+          const weights = families.map(f => (isForeign(f) ? FOREIGN_WEIGHT : 1) * roleWeight(f) /
+            (1 + (reuse.get(`${act}:${f}`) ?? 0)) ** (selection >= 5 ? REUSE_PENALTY_V5 : 2));
           let roll = rng.next() * weights.reduce((a, b) => a + b, 0);
           chosenFamily = families.find((_, i) => (roll -= weights[i]) < 0) ?? families[families.length - 1];
         }

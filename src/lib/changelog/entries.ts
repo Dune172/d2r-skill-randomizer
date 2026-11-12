@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.343',
+    date: 'November 2026',
+    tagline: 'More variety from monster shuffle',
+    notes: [
+      'Monster shuffle no longer gives you the same few monsters every seed. Before, archers, slingers and quill rats could only replace other ranged monsters, so they appeared in almost every game',
+      'Ranged monsters can now be replaced by melee monsters too, so no monster family is guaranteed in an act. Ranged replacements are still the most likely',
+      'Each act now always picks from 10 of the 17 monster families, instead of a random number of them, so an unlucky seed no longer leaves an act with only a few kinds of monsters',
+      'Challenge 17 and earlier keep their monsters. Monster shuffle seeds you generated before give different monsters if you download them again',
+    ],
+  },
+  {
     version: 'v0.342',
     date: 'November 2026',
     tagline: 'Play without Reign of the Warlock',
