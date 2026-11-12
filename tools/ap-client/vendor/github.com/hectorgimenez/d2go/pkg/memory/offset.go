@@ -34,6 +34,8 @@ func ripTarget(process *Process, dispAddr uintptr) uintptr {
 // docs/archipelago/DESIGN_NOTES.md.
 var knownBuildOffsets = map[uint32]Offset{
 	0x6a6b96a4: {UI: 0x1ebd162, WaypointsOffset: 0x1d5f470}, // 3.3.93847
+	// 3.4.95032, measured 2026-11-11. UI is one past the quit-menu flag (see the sete note).
+	0x6ad81202: {UI: 0x1ece2ed, WaypointsOffset: 0x1d705f0, UnitTable: 0x1ebe5f0},
 }
 
 // D2RR PATCH: the TimeDateStamp of the loaded D2R.exe, which identifies the build.
@@ -78,7 +80,9 @@ func calculateOffsets(process *Process) Offset {
 	var uiOffsetPtr uintptr
 	if pattern = process.FindPattern(memory, "\x40\x84\xed\x0f\x94\x05", "xxxxxx"); pattern != 0 {
 		uiOffset := process.ReadUInt(pattern+6, Uint32)
-		uiOffsetPtr = (pattern - process.moduleBaseAddressPtr) + 10 + uintptr(uiOffset)
+		// The sete target is the quit-menu flag itself (measured on D2R 3.4.95032), which
+		// the client reads at uiBase+0x09 as measured on 3.3. One past it keeps that layout.
+		uiOffsetPtr = (pattern - process.moduleBaseAddressPtr) + 10 + uintptr(uiOffset) + 1
 	} else if pattern = process.FindPattern(memory, "\x41\x0F\xB6\xE8\x48\x8D\x35\x00\x00\x00\x00\x85\xD2\x74", "xxxxxxx????xxx"); pattern != 0 {
 		uiOffsetPtr = ripTarget(process, pattern+7) + 0xA
 	} else if pattern = process.FindPattern(memory, "\x45\x33\xF6\x48\x8D\x35\x00\x00\x00\x00\x41\x8B\xDE\x48\x8D\x3D", "xxxxxx????xxxxxx"); pattern != 0 {
@@ -168,6 +172,10 @@ func calculateOffsets(process *Process) Offset {
 		}
 		if WaypointsOffset == 0 {
 			WaypointsOffset = known.WaypointsOffset
+		}
+		// The unit table pattern misses the same way on 3.4, leaving no player at all.
+		if unitTableOffset == 0 {
+			unitTableOffset = known.UnitTable
 		}
 	}
 

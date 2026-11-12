@@ -69,6 +69,7 @@ func probe(args []string) int {
 	dumpLists := f.Bool("dump-lists", false, "print every stat array in the unit's stat container (playtest)")
 	monsters := f.Bool("monsters", false, "list the monster units near the player and exit (read-only)")
 	watch := f.Int("watch", 0, "with -monsters: keep watching this many seconds")
+	uiBytes := f.Bool("ui", false, "print the UI flag block and whether the quit menu reads as open, then exit")
 	var writes statWrites
 	f.Var(&writes, "set", "overwrite a base stat: id=value (repeatable)")
 	var inserts statWrites
@@ -90,6 +91,12 @@ func probe(args []string) int {
 	if gc.IsOnline() {
 		fmt.Println("ERROR: D2R is online. This tool only works on offline characters.")
 		return 1
+	}
+	if *uiBytes {
+		buf := gc.UIBuffer()
+		fmt.Printf("ui block (%d bytes): % x\n", len(buf), buf)
+		fmt.Printf("quit menu open: %v (pause panel); the UI byte says %v\n", gc.QuitMenuOpen(), gc.QuitMenuByte())
+		return 0
 	}
 	if *monsters {
 		return probeMonsters(gc, time.Duration(*watch)*time.Second)
