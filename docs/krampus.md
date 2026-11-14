@@ -103,3 +103,11 @@ pinkufairy/D2R-Excel@7871977.
 
 Checks: `node --test scripts/verify-custom-mutations.mjs` (December lineup against the
 real tables), `node scripts/verify-monthly-challenges.mjs`.
+
+## Card art
+
+`public/mutations/krampus.webp` and `cold-snap.webp` reuse the carved frame of
+`court-of-kings.webp` around a new interior: generated dark cracked stone with a
+themed glow. Krampus is a cutout of the real unit captured in town (scaled up on a
+test NPC for resolution); Cold Snap is a drawn ice burst. Both also appear on the
+challenge's Discord/OG announcement card (`src/lib/og/challengeCard.tsx`).
