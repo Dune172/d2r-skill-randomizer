@@ -47,9 +47,10 @@ const {
   mutationOptionConflict, validateMutations, mutationFeatureKeys,
 } = custom;
 
-test('every registry mutation but Forgotten Arts is pickable', () => {
+test('every registry mutation but the challenge-only ones is pickable', () => {
   const all = Object.keys(MUTATIONS).map(Number).sort((a, b) => a - b);
-  assert.deepEqual(PICKABLE_MUTATION_IDS, all.filter(id => id !== 19));
+  // Forgotten Arts (19), Krampus Is Coming (20) and Cold Snap (21) are challenge-only.
+  assert.deepEqual(PICKABLE_MUTATION_IDS, all.filter(id => ![19, 20, 21].includes(id)));
   for (const id of PICKABLE_MUTATION_IDS) {
     assert.ok(fs.existsSync(path.join(root, 'public/mutations', `${MUTATIONS[id].id}.webp`)), `image for ${id}`);
   }
@@ -129,7 +130,7 @@ const TABLES = {
   monstats: 'monstats', charstats: 'charstats', skills: 'skills', superuniques: 'superuniques',
   treasureclass: 'treasureclassex', experience: 'experience', armor: 'armor', weapons: 'weapons',
   misc: 'misc', uniqueitems: 'uniqueitems', magicprefix: 'magicprefix', magicsuffix: 'magicsuffix',
-  levels: 'levels', hireling: 'hireling',
+  levels: 'levels', hireling: 'hireling', monumod: 'monumod', monprop: 'monprop',
 };
 const base = Object.fromEntries(Object.entries(TABLES).map(([k, f]) => [k, loadTxtFile(`${f}.txt`)]));
 const freshCtx = () => Object.fromEntries(Object.entries(base).map(([k, t]) => [k, { headers: [...t.headers], rows: t.rows.map(r => [...r]) }]));
@@ -173,4 +174,88 @@ test('every allowed pair applies cleanly', () => {
     }
   }
   assert.ok(pairs > 100, `${pairs} pairs`);
+});
+
+// ── December 2026 (Krampusnacht): challenge-only Krampus Is Coming + Cold Snap ──
+const graphicsBase = JSON.parse(fs.readFileSync(path.join(root, 'data/hd/character/monsters.json'), 'utf8').replace(/^\uFEFF/, ''));
+const cell = (t, row, col) => row[t.headers.indexOf(col)];
+const findRow = (t, key, col = t.headers[0]) => t.rows.find(r => cell(t, r, col) === key);
+
+test('December lineup applies cleanly to the real tables', () => {
+  const ctx = { ...freshCtx(), monsterGraphics: { ...graphicsBase } };
+  orchestrator.applyMutations(getMutationIds(18), ctx);
+  const { monstats: ms, superuniques: su, monumod: mu, skills: sk, treasureclass: tc } = ctx;
+
+  // Krampus: four superuniques, each a balanced goat-demon with a goat-man escort.
+  const krampus = load('src/lib/randomizer/mutations/krampus.ts');
+  const tcNames = new Set(tc.rows.map(r => r[0]));
+  for (const spawn of krampus.KRAMPUS_SPAWNS) {
+    const row = findRow(su, spawn.superunique, 'Superunique');
+    const id = krampus.krampusId(spawn.act);
+    assert.equal(cell(su, row, 'Class'), id, spawn.superunique);
+    assert.equal(cell(su, row, 'Name'), krampus.KRAMPUS_NAME_KEY);
+    assert.deepEqual(['Mod1', 'Mod2', 'Mod3'].map(c => cell(su, row, c)), ['18', '7', '5']);
+    for (const c of ['TC', 'TC(N)', 'TC(H)']) assert.ok(tcNames.has(cell(su, row, c)), `${spawn.superunique} ${c}`);
+    for (const c of ['TC Desecrated', 'TC(N) Desecrated', 'TC(H) Desecrated']) {
+      const v = cell(su, row, c);
+      assert.ok(!v || tcNames.has(v), `${spawn.superunique} ${c} = ${v}`);
+    }
+    const m = findRow(ms, id);
+    const vanillaClass = cell(base.superuniques, findRow(base.superuniques, spawn.superunique, 'Superunique'), 'Class');
+    const dest = findRow(base.monstats, vanillaClass);
+    assert.equal(cell(ms, m, 'BaseId'), 'goatman1');
+    assert.equal(cell(ms, m, 'Level'), cell(base.monstats, dest, 'Level'), 'Normal level follows the spot');
+    assert.equal(cell(ms, m, 'minion1'), krampus.krampusMinionId(spawn.act));
+    assert.ok(findRow(ms, krampus.krampusMinionId(spawn.act)), 'minion row exists');
+    assert.ok(ctx.monsterGraphics[id], 'HD token for Krampus');
+    assert.ok(ctx.monsterGraphics[krampus.krampusMinionId(spawn.act)], 'HD token for his goat-men');
+  }
+  const hc = ms.rows.map(r => cell(ms, r, '*hcIdx')).filter(Boolean); // the Expansion divider is blank
+  assert.equal(new Set(hc).size, hc.length, 'unique monstats hcIdx');
+
+  // Cold Snap: Cold Enchanted wins unique and champion picks; every superunique has it.
+  const cold = findRow(mu, '18', 'id');
+  assert.equal(cell(mu, cold, 'uniquemod'), 'cold');
+  assert.equal(cell(mu, cold, 'champion'), '1');
+  for (const c of ['upick', 'upick (N)', 'upick (H)', 'cpick', 'cpick (N)', 'cpick (H)']) assert.equal(cell(mu, cold, c), '10000');
+  for (const row of su.rows.filter(r => cell(su, r, 'Class'))) {
+    assert.ok(['Mod1', 'Mod2', 'Mod3'].some(c => cell(su, row, c) === '18'), `${row[0]} is Cold Enchanted`);
+  }
+  // Cold pierce 10: every hostile monster, in every difficulty; summons and mercenaries left out.
+  assert.deepEqual(sk.rows, base.skills.rows, 'skills.txt untouched');
+  const skillCols = t => t.rows.map(r => Array.from({ length: 10 }, (_, i) => cell(t, r, `Skill ${i + 1}`)));
+  assert.deepEqual(skillCols(ctx.charstats), skillCols(base.charstats), 'starting skills untouched');
+  const mp = ctx.monprop;
+  const pierces = row => ['', ' (N)', ' (H)'].every(d => Array.from({ length: 6 }, (_, i) => i + 1)
+    .some(i => cell(mp, row, `prop${i}${d}`) === 'pierce-cold' && cell(mp, row, `chance${i}${d}`) === '100'
+      && cell(mp, row, `min${i}${d}`) === '10' && cell(mp, row, `max${i}${d}`) === '10'));
+  const summons = new Set(base.skills.rows.map(r => cell(base.skills, r, 'summon')).filter(Boolean));
+  const skip = new Set([...summons, 'roguehire', 'act2hire', 'act3hire', 'act5hire1', 'act5hire2']);
+  for (const row of ms.rows.filter(r => r[0] && r[0] !== 'Expansion')) {
+    const prop = cell(ms, row, 'MonProp');
+    if (skip.has(row[0])) {
+      assert.equal(prop, cell(base.monstats, findRow(base.monstats, row[0]) ?? [], 'MonProp') ?? '', `${row[0]} keeps its MonProp`);
+      continue;
+    }
+    const target = findRow(mp, prop);
+    assert.ok(target && pierces(target), `${row[0]} pierces cold (MonProp ${prop})`);
+  }
+  // Existing rows keep their own properties (Blood Raven's knockback, the Council's extra fire).
+  const vanillaRaven = findRow(base.monprop, 'bloodraven').filter(Boolean);
+  const raven = findRow(mp, 'bloodraven');
+  assert.ok(vanillaRaven.includes('knock') && vanillaRaven.every(v => raven.includes(v)), 'Blood Raven keeps her knockback');
+  assert.ok(pierces(findRow(mp, 'councilmember1')));
+  assert.ok(!pierces(findRow(mp, 'irongolem')), 'the Iron Golem (a summon) is left alone');
+});
+
+test('Krampus and Cold Snap each apply alone, and Krampus refuses a second pass', () => {
+  for (const id of [20, 21]) {
+    assert.doesNotThrow(() => orchestrator.applyMutations([id], { ...freshCtx(), monsterGraphics: { ...graphicsBase } }), `mutation ${id}`);
+  }
+  const ctx = { ...freshCtx(), monsterGraphics: { ...graphicsBase } };
+  orchestrator.applyMutations([20], ctx);
+  assert.throws(() => orchestrator.applyMutations([20], ctx), /applied twice/);
+  const cold = freshCtx();
+  orchestrator.applyMutations([21], cold);
+  assert.throws(() => orchestrator.applyMutations([21], cold), /applied twice/);
 });

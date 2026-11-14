@@ -11,8 +11,13 @@
 import { MUTATIONS, EXCLUSIVE_MUTATION_PAIRS } from './registry';
 import { NO_GUARD_EXCLUDED_SKILLS } from './no-guard-skills';
 
-/** Forgotten Arts (19) rewrites skills, items and art, so it stays challenge-only. */
-const CHALLENGE_ONLY = new Set([19]);
+/**
+ * Forgotten Arts (19) rewrites skills, items and art, so it stays challenge-only.
+ * Krampus Is Coming (20) and Cold Snap (21) are December 2026's event mutations. They
+ * rewrite superuniques (Open Acts edits those too) and Cold Snap's champion change is
+ * unplayed, so they stay challenge-only until they have been through a challenge.
+ */
+const CHALLENGE_ONLY = new Set([19, 20, 21]);
 
 /** Every mutation a player can pick, in id order. */
 export const PICKABLE_MUTATION_IDS: readonly number[] = Object.keys(MUTATIONS)

@@ -50,6 +50,10 @@ export interface ZipContents {
   experienceTxt?: string;           // experience.txt modified by weekly mutations
   miscTxt?: string;                 // misc.txt modified by weekly mutations (e.g. antidote potion cost)
   levelsTxt?: string;               // levels.txt modified by weekly mutations (monster density / special pack counts)
+  monumodTxt?: string;              // monumod.txt — Cold Snap's Cold Enchanted weights
+  monpropTxt?: string;              // monprop.txt — Cold Snap's monster cold pierce
+  monsterStringsJson?: string;      // monsters string table with Krampus's name
+  mutationAssets?: Map<string, Buffer>; // mutation HD files (Krampus unit), paths under data/
   gambleTxt?: string;               // gamble.txt — comprehensive gamble pool (House Always Wins only)
   animDataD2?: Buffer;              // animdata.d2 with Warlock A1/A2 records synced to their COFs
   charCofs?: Map<string, Buffer>;   // zip path under data/ → COF with injected trigger frame (must match animDataD2)
@@ -162,6 +166,21 @@ export function buildZip(contents: ZipContents): Buffer {
   }
   if (contents.missilesTxt) {
     zip.addFile(`${d}/data/${xl}/missiles.txt`, str(contents.missilesTxt));
+  }
+  if (contents.monumodTxt) {
+    zip.addFile(`${d}/data/${xl}/monumod.txt`, str(contents.monumodTxt));
+  }
+  if (contents.monpropTxt) {
+    zip.addFile(`${d}/data/${xl}/monprop.txt`, str(contents.monpropTxt));
+  }
+  if (contents.monsterStringsJson) {
+    zip.addFile(`${d}/data/local/lng/strings/monsters.json`, str(contents.monsterStringsJson));
+  }
+  // Before the season overlay: both carry the same gift texture, and AdmZip keeps one copy.
+  if (contents.mutationAssets) {
+    for (const [relativePath, buffer] of contents.mutationAssets) {
+      zip.addFile(`${d}/data/${relativePath}`, buffer);
+    }
   }
   if (contents.seasonFiles) {
     for (const [relativePath, buffer] of contents.seasonFiles) {

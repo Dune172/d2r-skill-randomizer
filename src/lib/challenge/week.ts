@@ -19,6 +19,8 @@ const BASE_DAY = 9;
 const APPROX_WEEK_MS = 14 * 24 * 60 * 60 * 1000;
 export const FIRST_MONTHLY_CHALLENGE = 16;
 export const OCTOBER_2026_CHALLENGE = FIRST_MONTHLY_CHALLENGE;
+/** December 2026: the hand-picked Krampusnacht lineup (src/lib/mutations/registry.ts). */
+export const DECEMBER_2026_CHALLENGE = FIRST_MONTHLY_CHALLENGE + 2;
 
 /** 'Month' for calendar-month challenges, 'Week' for the earlier fortnightly ones ("This Month's Challenge"). */
 export function challengePeriodLabel(challenge: number): 'Month' | 'Week' {

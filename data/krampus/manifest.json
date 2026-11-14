@@ -1,0 +1,21 @@
+{
+  "dataVersionBuild": "95032",
+  "sources": {
+    "data/hd/character/enemy/goatman1.json": "6a67a8e847362b3ed9d7eef72ba916d5ba122e00"
+  },
+  "attach": {
+    "bone": "neck_bind_jnt",
+    "translation": {
+      "x": 0,
+      "y": -1,
+      "z": -1
+    },
+    "rotation": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "scale": 4
+  },
+  "scale": 1.45
+}
