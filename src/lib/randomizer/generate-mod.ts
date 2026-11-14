@@ -619,7 +619,10 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   const charstats = txt('charstats.txt');
   const charstatsPath = path.join(txtDir(gameData), 'charstats.txt');
   let ui: ReturnType<typeof loadTxtFile> | null = null;
-  // Set item, set and runeword tables: loaded and shipped only when items are randomized.
+  // Set item, set and runeword tables: always shipped, skill-remapped (and rerolled when
+  // items are randomized). Vanilla's copies name some skills by row index (Leaf's +3 Fire
+  // Bolt is `skill 36`), which reorderSkillsRows moves, so the game's own copies would
+  // grant whatever skill landed in that row.
   let setTables: { setitems: ReturnType<typeof loadTxtFile>; sets: ReturnType<typeof loadTxtFile>; runes: ReturnType<typeof loadTxtFile> } | null = null;
   let itemRandoReport: ItemRandoReport | undefined;
   if (fs.existsSync(charstatsPath)) {
@@ -641,11 +644,11 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
 
     const uiPath = path.join(txtDir(gameData), 'uniqueitems.txt');
     ui = fs.existsSync(uiPath) ? txt('uniqueitems.txt') : null;
+    setTables = { setitems: txt('setitems.txt'), sets: txt('sets.txt'), runes: txt('runes.txt') };
     if (ui) {
       // Item randomization: reroll with vanilla skill references, before the remap below
       // translates them into this seed's rows. Its own RNG stream, so nothing else moves.
       if (itemRando) {
-        setTables = { setitems: txt('setitems.txt'), sets: txt('sets.txt'), runes: txt('runes.txt') };
         itemRandoReport = randomizeItemProperties({
           uniqueitems: ui, ...setTables,
           armor: txt('armor.txt'), weapons: txt('weapons.txt'), misc: txt('misc.txt'), itemtypes: txt('itemtypes.txt'),
@@ -933,7 +936,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
       ],
       limitations: [
         `${BOOK_SPELLS.length} spells: elemental, bone, curse and utility spells plus Necromancer and Warlock summons and their masteries. Class-specific attacks, channels, forms, traps and shadow warriors are excluded.`,
-        'Vanilla runeword/set skill grants are not removed because their tables are not bundled.',
+        'Vanilla runeword/set skill grants are kept (remapped to the shuffled skill rows), not removed.',
         'Casting, inventory refresh, Cube recipes, vendor stock/prices, bookcase operation and drop balance need in-game testing.',
         'Purple inventory tint uses native runtime color rules and needs an in-game visual check; ground textures are unchanged and legacy palette colors may differ.',
       ],

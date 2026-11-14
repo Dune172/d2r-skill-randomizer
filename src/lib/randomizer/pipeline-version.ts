@@ -54,4 +54,8 @@
 // is on aura skills that no filter picks, so layouts stay the same.
 // v66 switches monster shuffle to v5 selection (melee donors allowed in ranged
 // slots, fixed 10-family rosters, stronger reuse penalty); challenges 16–17 keep v4.
-export const PIPELINE_VERSION = 66;
+// v67 ships setitems.txt, sets.txt and runes.txt in every mod with their skill lines
+// remapped to the shuffled skills.txt rows (vanilla names some by row index, so Leaf,
+// Black and several set procs granted whatever skill moved into that row). No main-RNG
+// change: trees are the same; re-rolls of aura/passive procs use their own stream.
+export const PIPELINE_VERSION = 67;

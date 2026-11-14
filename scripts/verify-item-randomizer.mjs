@@ -88,14 +88,53 @@ const SKILL_CODES = new Set(['skill', 'oskill', 'charged', 'aura', 'hit-skill', 
 const PROC_CODES = new Set(['hit-skill', 'gethit-skill', 'att-skill', 'kill-skill', 'death-skill', 'levelup-skill', 'charged']);
 const FIXED = new Set(['sock', 'ethereal', 'indestruct', 'dur', 'rep-dur', 'rep-quant', 'stack', 'randclassskill', 'state']);
 
-test('off: no set or runeword tables, uniques and skills unchanged', async () => {
+test('off: set and runeword tables ship with only their skill references changed', async () => {
   for (const seed of [1, 42]) {
     const off = await build(seed);
     const zero = await build(seed, { itemRando: 0 });
-    assert.ok(!off.has('setitems.txt') && !off.has('sets.txt') && !off.has('runes.txt'), `seed ${seed}: set tables shipped while off`);
     assertSameZip(zero.contents(), off.contents(), `seed ${seed}: itemRando 0 differs from no option`);
     assert.equal(off.itemRandoReport, undefined);
+    for (const name of ['setitems.txt', 'sets.txt', 'runes.txt']) {
+      const src = source(name);
+      const out = off.table(name);
+      assert.deepEqual(out.headers, src.headers, `${name}: headers`);
+      assert.equal(out.rows.length, src.rows.length, `${name}: row count`);
+      // Every column but the param of a skill line is vanilla.
+      const skillParams = new Set();
+      for (let i = 0; i < src.rows.length; i++) {
+        for (const [c, p] of lines(src, SLOTS[name])) if (SKILL_CODES.has(src.rows[i][c])) skillParams.add(`${i}:${p}`);
+      }
+      for (let i = 0; i < src.rows.length; i++) {
+        for (let j = 0; j < src.headers.length; j++) {
+          if (skillParams.has(`${i}:${j}`)) continue;
+          assert.equal(out.rows[i][j], src.rows[i][j], `${name} row ${i} (${src.rows[i][0]}) ${src.headers[j]}`);
+        }
+      }
+    }
   }
+});
+
+test('off: Leaf and Black grant the skills they name in vanilla', async () => {
+  const vanilla = source('skills.txt');
+  let checked = 0;
+  for (const seed of [1, 42, 777, 2026]) {
+    const mod = await build(seed);
+    const skills = mod.table('skills.txt');
+    const runes = mod.table('runes.txt');
+    const src = source('runes.txt');
+    for (const rw of ['Leaf', 'Black']) {
+      const i = src.rows.findIndex(r => r[1] === rw);
+      assert.ok(i !== -1, rw);
+      for (const [c, p] of lines(src, SLOTS['runes.txt'])) {
+        if (!['skill', 'oskill', 'charged'].includes(src.rows[i][c]) || !/^\d+$/.test(src.rows[i][p])) continue;
+        assert.equal(skills.rows[Number(runes.rows[i][p])][0], vanilla.rows[Number(src.rows[i][p])][0],
+          `seed ${seed} ${rw}: ${src.rows[i][c]} ${src.rows[i][p]} -> ${runes.rows[i][p]}`);
+        checked++;
+      }
+    }
+  }
+  // Leaf: +3 Fire Bolt, Warmth, Inferno; Black: Corpse Explosion charges. Four lines per seed.
+  assert.equal(checked, 16);
 });
 
 test('fully random: lines change, skills.txt and trees do not, output is deterministic', async () => {
