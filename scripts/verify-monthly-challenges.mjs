@@ -79,12 +79,15 @@ const registry = load('src/lib/mutations/registry.ts');
 assert.equal(registry.getWeekName(16), 'Return to Tristram');
 assert.deepEqual(Array.from(registry.getMutationIds(16)), [19, 15, 14]);
 assert.equal(registry.getActiveMutations(16).map(m => m.name).join(', '), 'Forgotten Arts, Molasses, Entropy');
-assert.equal(Object.keys(registry.MUTATIONS).length, 19, 'no new companion mutations');
+assert.equal(registry.getWeekName(18), 'Krampusnacht');
+assert.deepEqual(Array.from(registry.getMutationIds(18)), [13, 20, 21]);
+assert.equal(registry.getActiveMutations(18).map(m => m.name).join(', '), 'Dead Reckoning, Krampus Is Coming, Cold Snap');
+assert.equal(Object.keys(registry.MUTATIONS).length, 21, 'only the December event mutations are new');
 for (let id = 1; id <= 63; id++) {
   registry.assertNoConflictingMutations(registry.getMutationIds(id));
-  if (id !== 16) assert.deepEqual(registry.getMutationIds(id), registry.WEEKLY_MUTATIONS[(id - 1) % 31]);
+  if (id !== 16 && id !== 18) assert.deepEqual(registry.getMutationIds(id), registry.WEEKLY_MUTATIONS[(id - 1) % 31]);
 }
-console.log('PASS: monthly calendar, DST, leap year, historical IDs/seeds and October lineup');
+console.log('PASS: monthly calendar, DST, leap year, historical IDs/seeds, October and December lineups');
 
 const announcer = load('src/lib/discord-weekly-announcer.ts');
 assert.equal(announcer.nextFireTime(16, now), Date.parse('2026-11-01T17:00:00Z'));
