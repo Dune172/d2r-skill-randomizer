@@ -14,6 +14,7 @@
     "test:builder": "node --test scripts/verify-class-build.mjs",
     "test:download": "node --test scripts/verify-cached-download.mjs",
     "test:base": "node --test scripts/verify-base-game.mjs",
+    "test:items": "node --test scripts/verify-item-randomizer.mjs",
     "start": "VIPS_CONCURRENCY=2 UV_THREADPOOL_SIZE=4 next start"
   },
   "dependencies": {

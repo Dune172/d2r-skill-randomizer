@@ -16,6 +16,7 @@ import { parseSkillPoints } from '@/lib/skill-points';
 import { parseShuffleAmount, shuffleAmountParam } from '@/lib/shuffle-amount';
 import { modExtrasFromParams, modExtrasParams } from '@/lib/mod-extras';
 import { baseGameFromParams, baseGameParams } from '@/lib/base-game';
+import { itemRandoParam, parseItemRando, type ItemRandoLevel } from '@/lib/item-rando';
 import { SITE_UPDATED, SITE_VERSION } from '@/lib/site-version';
 
 type Status = 'idle' | 'generating' | 'building' | 'ready' | 'error';
@@ -41,6 +42,8 @@ interface Options {
   anyClassItems: boolean;
   /** Built for players without Reign of the Warlock (src/lib/base-game.ts). */
   baseGame: boolean;
+  /** Unique, set and runeword properties: 0 vanilla, 1 partly, 2 fully random (src/lib/item-rando.ts). */
+  itemRando: ItemRandoLevel;
   raceMode: boolean;
   enemyShuffle: boolean;
   forgottenArts: boolean;
@@ -65,6 +68,7 @@ const defaultOptions: Options = {
   seasonal: true,
   anyClassItems: false,
   baseGame: false,
+  itemRando: 0,
   raceMode: true,
   enemyShuffle: false,
   forgottenArts: false,
@@ -104,6 +108,7 @@ function parseOptionsFromParams(p: URLSearchParams | ReturnType<typeof useSearch
     shuffleAmount: parseShuffleAmount(p.get('shuffle')),
     ...modExtrasFromParams(name => p.get(name)),
     baseGame: baseGameFromParams(name => p.get(name)),
+    itemRando: parseItemRando(p.get('items')),
     raceMode: p.get('raceMode') !== '0',
     enemyShuffle: p.get('enemyShuffle') === '1',
     forgottenArts: false, // challenge-only
@@ -151,7 +156,8 @@ export default function RandomizerApp() {
     const enemyParam = opts.enemyShuffle ? '&enemyShuffle=1' : '';
     const skillPointsParam = opts.skillPoints > 1 ? `&skillPoints=${opts.skillPoints}` : '';
     const shuffleParam = shuffleAmountParam(opts.shuffleAmount) ? `&${shuffleAmountParam(opts.shuffleAmount)}` : '';
-    const extrasParam = [...modExtrasParams(opts), ...baseGameParams(opts.baseGame)].map(p => `&${p}`).join('');
+    const extrasParam = [...modExtrasParams(opts), ...baseGameParams(opts.baseGame), itemRandoParam(opts.itemRando)]
+      .filter(Boolean).map(p => `&${p}`).join('');
     // Part of the download cache key: /api/download parses it back the same way.
     const mutParam = opts.mutations.length ? `&mut=${encodeMutationParam(opts.mutations)}` : '';
     return `seed=${seed}${playersParam}${staffParam}${cubeParam}${actsParam}${noPrereqsParam}${hirelingAuraParam}${disableChatParam}${xpParam}${xpActsParam}${xpDiffParam}${raceModeParam}${enemyParam}${skillPointsParam}${shuffleParam}${extrasParam}${opts.forgottenArts ? '&forgottenArts=1' : ''}${openActsToParams(opts.openActs, opts.raceMode)}${mutParam}`;
@@ -185,7 +191,7 @@ export default function RandomizerApp() {
 
       setStatus('building');
       const buildingStart = Date.now();
-      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, skillPoints: options.skillPoints, shuffleAmount: options.shuffleAmount, seasonal: options.seasonal, anyClassItems: options.anyClassItems, baseGame: options.baseGame, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts, openActs: options.openActs, mutations: options.mutations });
+      const buildBody = JSON.stringify({ seed: data.seed, enablePrereqs: options.enablePrereqs, playersEnabled: options.playersEnabled, playersCount: options.playersCount, playersActs: options.playersActs, startingItems: options.startingItems, hirelingAura: options.hirelingAura, disableChat: options.disableChat, xpMultiplier: options.xpMultiplier, xpActs: options.xpActs, xpDifficulties: options.xpDifficulties, skillPoints: options.skillPoints, shuffleAmount: options.shuffleAmount, seasonal: options.seasonal, anyClassItems: options.anyClassItems, baseGame: options.baseGame, itemRando: options.itemRando, raceMode: options.raceMode, enemyShuffle: options.enemyShuffle, forgottenArts: options.forgottenArts, openActs: options.openActs, mutations: options.mutations });
 
       await generateMod(buildBody, setErrorMessage);
 

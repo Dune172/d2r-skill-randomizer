@@ -16,6 +16,7 @@ import { getMutationIds } from '@/lib/mutations/registry';
 import { normalizeMutationIds, validateMutations, mutationCacheSegment, mutationFeatureKeys } from '@/lib/mutations/custom';
 import { normalizeSkillPoints, skillPointsCacheSegment } from '@/lib/skill-points';
 import { normalizeShuffleAmount, shuffleAmountCacheSegment } from '@/lib/shuffle-amount';
+import { normalizeItemRando, itemRandoCacheSegment, itemRandoFeatureKeys } from '@/lib/item-rando';
 import { DEFAULT_MOD_EXTRAS, modExtrasCacheSegment, modExtrasFeatureKeys, normalizeModExtras } from '@/lib/mod-extras';
 import { DEFAULT_OPEN_ACTS, normalizeOpenActs, openActsCacheSegment, openActsFeatureKeys } from '@/lib/randomizer/open-acts/options';
 import { recordFeatures } from '@/lib/feature-stats';
@@ -95,6 +96,9 @@ export async function POST(request: NextRequest) {
     // Partial shuffle is a Generate page option: challenges keep the full shuffle, and a
     // Class Builder build randomizes the other seven classes fully. Mirrored in /api/download.
     const shuffleAmount = classBuild || weeklyEnabled || forgottenArts ? 100 : normalizeShuffleAmount(body.shuffleAmount);
+    // Item randomization: Generate page and Class Builder only, so every challenge run keeps
+    // vanilla items. Mirrored in /api/download so the cache keys agree.
+    const itemRando = weeklyEnabled || forgottenArts ? 0 : normalizeItemRando(body.itemRando);
     // Seasonal decorations and open class items: Generate page and Class Builder only, so
     // every challenge zip stays the same for every player. Mirrored in /api/download.
     const extras = weeklyEnabled || forgottenArts ? DEFAULT_MOD_EXTRAS : normalizeModExtras(body);
@@ -138,6 +142,7 @@ export async function POST(request: NextRequest) {
       ...(shuffleAmount < 100 ? [`shuffle:${shuffleAmount}`] : []),
       ...modExtrasFeatureKeys(extras),
       ...baseGameFeatureKeys(baseGame),
+      ...itemRandoFeatureKeys(itemRando),
     ];
     if (!classBuild && !seedInput && seedInput !== 0) {
       return NextResponse.json({ error: 'Seed is required' }, { status: 400 });
@@ -154,7 +159,8 @@ export async function POST(request: NextRequest) {
     const cacheKey = withBuildSegment(
       makeCacheKey(seed, effectivePlayers, teleportStaffLevel, effectiveActs, hirelingAura, teleportStaffDropSource, disableChat, startingHoradricCube, enablePrereqs, xpMultiplier, effectiveXpActs, effectiveXpDifficulties, weekNumber, startingTeleportStaff && teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
         + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations) + skillPointsCacheSegment(skillPoints)
-        + shuffleAmountCacheSegment(shuffleAmount) + modExtrasCacheSegment(extras) + baseGameCacheSegment(baseGame),
+        + shuffleAmountCacheSegment(shuffleAmount) + modExtrasCacheSegment(extras) + baseGameCacheSegment(baseGame)
+        + itemRandoCacheSegment(itemRando),
       classBuild?.code,
     );
     const ready = { seed, status: 'ready', ...(classBuild ? { build: classBuild.code, modName: baseGameModName(classBuild.modName, baseGame) } : {}) };
@@ -226,6 +232,7 @@ export async function POST(request: NextRequest) {
       raceMode,
       enemyShuffle,
       baseGame,
+      itemRando,
       openActs,
       mutationIds,
       customMutations,

@@ -31,6 +31,9 @@ export interface ZipContents {
   propertiesTxt?: string;         // cosmetic spell synergy tooltip properties
   missilesTxt?: string;            // private, owner-scaled projectiles for relocated enemies
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
+  setItemsTxt?: string;             // setitems.txt, rerolled and skill-remapped (item randomization only)
+  setsTxt?: string;                 // sets.txt, rerolled and skill-remapped (item randomization only)
+  runesTxt?: string;                // runes.txt (runewords), rerolled and skill-remapped (item randomization only)
   treasureClassExTxt?: string;      // treasureclassex with Blood Raven quest drop TC
   superuniquesTxt?: string;         // superuniques with Blood Raven entry pointing to TC
   itemNamesJson?: string;           // item-names strings (display name for unique staff)
@@ -216,6 +219,9 @@ export function buildZip(contents: ZipContents): Buffer {
   }
 
   // Unique items with Teleport Staff added
+  if (contents.setItemsTxt) zip.addFile(`${d}/data/${xl}/setitems.txt`, str(contents.setItemsTxt));
+  if (contents.setsTxt) zip.addFile(`${d}/data/${xl}/sets.txt`, str(contents.setsTxt));
+  if (contents.runesTxt) zip.addFile(`${d}/data/${xl}/runes.txt`, str(contents.runesTxt));
   if (contents.uniqueitemsTxt) {
     zip.addFile(`${d}/data/${xl}/uniqueitems.txt`, str(contents.uniqueitemsTxt));
   }
