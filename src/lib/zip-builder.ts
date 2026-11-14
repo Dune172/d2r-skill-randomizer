@@ -31,9 +31,9 @@ export interface ZipContents {
   propertiesTxt?: string;         // cosmetic spell synergy tooltip properties
   missilesTxt?: string;            // private, owner-scaled projectiles for relocated enemies
   uniqueitemsTxt?: string;          // uniqueitems with Teleport Staff added
-  setItemsTxt?: string;             // setitems.txt, rerolled and skill-remapped (item randomization only)
-  setsTxt?: string;                 // sets.txt, rerolled and skill-remapped (item randomization only)
-  runesTxt?: string;                // runes.txt (runewords), rerolled and skill-remapped (item randomization only)
+  setItemsTxt?: string;             // setitems.txt, skill-remapped (and rerolled with item randomization)
+  setsTxt?: string;                 // sets.txt, skill-remapped (and rerolled with item randomization)
+  runesTxt?: string;                // runes.txt (runewords), skill-remapped (and rerolled with item randomization)
   treasureClassExTxt?: string;      // treasureclassex with Blood Raven quest drop TC
   superuniquesTxt?: string;         // superuniques with Blood Raven entry pointing to TC
   itemNamesJson?: string;           // item-names strings (display name for unique staff)

@@ -12,6 +12,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.347',
+    date: 'November 2026',
+    tagline: 'Runewords and set items grant the right skills',
+    notes: [
+      'Fixed: some runewords and set items gave the wrong skill. Leaf’s +3 Fire Bolt, Warmth and Inferno, Black’s Corpse Explosion charges and several set chance-to-cast effects pointed at whatever skill the shuffle had moved into that spot',
+      'They now follow their skill to wherever it landed, the same way unique items already did. A chance-to-cast or charge that would land on an aura or passive picks a castable skill instead',
+      'Every seed gets this fix, including the current challenge. Your skill trees do not change. Runewords and set items you already have keep the skills they rolled with; ones you make or find from now on get the fixed skills',
+    ],
+  },
+  {
     version: 'v0.346',
     date: 'November 2026',
     tagline: 'Random item stats: uniques, sets and runewords',
