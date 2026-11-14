@@ -8,6 +8,7 @@ import OpenActsFields from '../OpenActsFields';
 import MutationPicker from '../mutations/MutationPicker';
 import { mutationName, mutationOptionConflict } from '@/lib/mutations/custom';
 import { baseGameConflict } from '@/lib/base-game';
+import { ITEM_RANDO_LABELS, ITEM_RANDO_LEVELS, normalizeItemRando } from '@/lib/item-rando';
 
 const SELECT_CLASS =
   'appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-1.5 text-sm text-[#e8d5a0] ' +
@@ -70,6 +71,7 @@ export default function BuildOptionsPanel({
     value.disableChat && 'chat off',
     !value.seasonal && 'no seasonal decorations',
     value.anyClassItems && 'any class items',
+    value.itemRando > 0 && `item stats ${ITEM_RANDO_LABELS[value.itemRando].toLowerCase()}`,
     value.enemyShuffle && 'monster shuffle',
     value.openActs.shuffle && 'quest shuffle',
     value.openActs.acts.length > 0 && `${openActsLabel(value.openActs.acts)} open`,
@@ -262,6 +264,15 @@ export default function BuildOptionsPanel({
                 label="Any class can use class items"
                 tooltip="Every class can equip orbs, shrunken heads, Paladin shields, Barbarian helms, Druid pelts, Amazon bows, spears and javelins, cloaks and grimoires. Their skill bonuses still only count for the class they name. Claws stay Assassin-only, because other classes have no claw attack animations."
               />
+              <div className="flex items-center gap-2.5">
+                <label htmlFor="b-itemRando" className="text-sm text-[#c8a870] whitespace-nowrap flex items-center">
+                  Item stats
+                  <Tip text="Rerolls the stats on unique items, set items, set bonuses and runewords. New stats come from vanilla items of the same kind and level. Partly random rerolls about half of each item's stats. Skill bonuses follow your shuffled skills." />
+                </label>
+                <Select id="b-itemRando" value={value.itemRando} onChange={v => set('itemRando', normalizeItemRando(v))}>
+                  {ITEM_RANDO_LEVELS.map(l => <option key={l} value={l}>{ITEM_RANDO_LABELS[l]}</option>)}
+                </Select>
+              </div>
             </div>
           </div>
 

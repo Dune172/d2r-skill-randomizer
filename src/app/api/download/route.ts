@@ -12,6 +12,7 @@ import { parseSkillPoints, skillPointsCacheSegment } from '@/lib/skill-points';
 import { parseShuffleAmount, shuffleAmountCacheSegment } from '@/lib/shuffle-amount';
 import { DEFAULT_MOD_EXTRAS, modExtrasCacheSegment, modExtrasFromParams } from '@/lib/mod-extras';
 import { baseGameCacheSegment, baseGameFromParams, baseGameModName } from '@/lib/base-game';
+import { itemRandoCacheSegment, parseItemRando } from '@/lib/item-rando';
 
 export const maxDuration = 60;
 
@@ -95,10 +96,13 @@ export async function GET(request: NextRequest) {
     const extras = weeklyParam || forgottenArts ? DEFAULT_MOD_EXTRAS : modExtrasFromParams(name => searchParams.get(name));
     // Same guard as /api/randomize: challenges are always Reign of the Warlock.
     const baseGame = weeklyParam || forgottenArts ? false : baseGameFromParams(name => searchParams.get(name));
+    // Same guard as /api/randomize: challenges keep vanilla items.
+    const itemRando = weeklyParam || forgottenArts ? 0 : parseItemRando(searchParams.get('items'));
     const cacheKey = withBuildSegment(
       makeCacheKey(seed, playersCount, teleportStaffLevel, playersActs, hirelingAura, dropSourceParam, disableChat, horadricCube, enablePrereqs, xpMultiplier, xpActs, xpDifficulties, weeklyKey, teleportStaffSpeed, false, raceMode, enemyShuffle, forgottenArts)
         + openActsCacheSegment(openActs) + mutationCacheSegment(customMutations) + skillPointsCacheSegment(skillPoints)
-        + shuffleAmountCacheSegment(shuffleAmount) + modExtrasCacheSegment(extras) + baseGameCacheSegment(baseGame),
+        + shuffleAmountCacheSegment(shuffleAmount) + modExtrasCacheSegment(extras) + baseGameCacheSegment(baseGame)
+        + itemRandoCacheSegment(itemRando),
       classBuild?.code,
     );
     const zipBuffer = getCached(cacheKey);

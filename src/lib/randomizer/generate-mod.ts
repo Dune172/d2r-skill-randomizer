@@ -36,7 +36,11 @@ import { randomizeEnemies, finalizeEnemyManifest } from '@/lib/randomizer/enemy-
 import { remapMonstatsSkillIds, stripSubstitutedMonsterSkills } from '@/lib/randomizer/monstats-skill-remapper';
 import { applyTeleportStaffUnique, applyBloodRavenQuestDrop, applyHoradricCube } from '@/lib/randomizer/starting-items';
 import { writeHirelingRows } from '@/lib/randomizer/hireling-writer';
-import { remapClassItemSkills, remapUniqueItemSkills } from '@/lib/randomizer/item-skills-writer';
+import { remapClassItemSkills, remapUniqueItemSkills, remapSetAndRunewordSkills } from '@/lib/randomizer/item-skills-writer';
+import {
+  randomizeItemProperties, type ItemRandoLevel, type ItemRandoReport,
+  SETITEM_PROP_NAMES, SETITEM_APROP_NAMES, SET_PARTIAL_NAMES, SET_FULL_NAMES, RUNEWORD_PROP_NAMES,
+} from '@/lib/randomizer/item-randomizer';
 import { activeClassDefs } from '@/lib/randomizer/config';
 import { baseGameModName, baseGameSavepath, BASE_GAME_README } from '@/lib/base-game';
 import { applySkillPoints } from '@/lib/skill-points';
@@ -101,6 +105,11 @@ export interface GenerateModOptions {
    * left out. Absent or false is the normal Reign of the Warlock mod, byte for byte.
    */
   baseGame?: boolean;
+  /**
+   * Reroll unique, set and runeword properties (src/lib/randomizer/item-randomizer.ts).
+   * Absent or 0 is vanilla items, byte for byte. Challenges, Forgotten Arts and AP never set it.
+   */
+  itemRando?: ItemRandoLevel;
   /** Open Acts settings; DEFAULT_OPEN_ACTS when off. */
   openActs: OpenActsSettings;
   /** Every mutation applied: the challenge's set, or the player's picks. */
@@ -120,6 +129,8 @@ export interface GenerateModResult {
   savepath: string;
   /** Present only in Archipelago mode: what the companion client needs to know about this mod. */
   manifest?: ApManifest;
+  /** Present only when items were rerolled: how many items and lines changed. */
+  itemRandoReport?: ItemRandoReport;
 }
 
 export async function generateMod(seed: number, opts: GenerateModOptions): Promise<GenerateModResult> {
@@ -148,11 +159,18 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     raceMode,
     enemyShuffle,
     baseGame = false,
+    itemRando = 0,
     openActs,
     mutationIds,
     customMutations,
     ap,
   } = opts;
+
+  // Forgotten Arts rewrites uniqueitems.txt around its spell items, challenges have fixed
+  // rules, and AP mode was tested on vanilla items. The routes never ask for these.
+  if (itemRando && (ap || weeklyEnabled || forgottenArts)) {
+    throw new Error('Item randomization cannot be combined with challenges, Forgotten Arts or Archipelago');
+  }
 
   // Base-game mods are the plain randomizer: challenges, mutations, Open Acts and
   // Archipelago were all built on the Reign of the Warlock tables (Open Acts starter
@@ -601,6 +619,9 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   const charstats = txt('charstats.txt');
   const charstatsPath = path.join(txtDir(gameData), 'charstats.txt');
   let ui: ReturnType<typeof loadTxtFile> | null = null;
+  // Set item, set and runeword tables: loaded and shipped only when items are randomized.
+  let setTables: { setitems: ReturnType<typeof loadTxtFile>; sets: ReturnType<typeof loadTxtFile>; runes: ReturnType<typeof loadTxtFile> } | null = null;
+  let itemRandoReport: ItemRandoReport | undefined;
   if (fs.existsSync(charstatsPath)) {
     const classCol = charstats.headers.indexOf('class');
     const startSkillCol = charstats.headers.indexOf('StartSkill');
@@ -621,11 +642,29 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     const uiPath = path.join(txtDir(gameData), 'uniqueitems.txt');
     ui = fs.existsSync(uiPath) ? txt('uniqueitems.txt') : null;
     if (ui) {
+      // Item randomization: reroll with vanilla skill references, before the remap below
+      // translates them into this seed's rows. Its own RNG stream, so nothing else moves.
+      if (itemRando) {
+        setTables = { setitems: txt('setitems.txt'), sets: txt('sets.txt'), runes: txt('runes.txt') };
+        itemRandoReport = randomizeItemProperties({
+          uniqueitems: ui, ...setTables,
+          armor: txt('armor.txt'), weapons: txt('weapons.txt'), misc: txt('misc.txt'), itemtypes: txt('itemtypes.txt'),
+        }, itemRando, createRNG(seed ^ 0x4954454d)); // 'ITEM'
+      }
       ui.rows = remapUniqueItemSkills(ui.headers, ui.rows, placements, idMapping, procRerollRng);
       if (startingTeleportStaff) {
         ui.rows = applyTeleportStaffUnique(ui.headers, ui.rows, teleportStaffLevel, idMapping, teleportStaffSpeed);
       }
       uniqueitemsTxt = serializeTxtFile(ui.headers, ui.rows);
+    }
+
+    if (setTables) {
+      const pairs = (names: [string, string, string, string][]) => names.map(([code, par]) => [code, par] as [string, string]);
+      remapSetAndRunewordSkills(setTables, {
+        setitems: pairs([...SETITEM_PROP_NAMES, ...SETITEM_APROP_NAMES]),
+        sets: pairs([...SET_PARTIAL_NAMES, ...SET_FULL_NAMES]),
+        runes: pairs(RUNEWORD_PROP_NAMES),
+      }, placements, idMapping, createRNG(seed ^ 0x53455452)); // 'SETR'
     }
 
     if (startingHoradricCube) {
@@ -1016,6 +1055,9 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     itemModifiersJson,
     monstatsTxt,
     uniqueitemsTxt,
+    setItemsTxt: setTables ? serializeTxtFile(setTables.setitems.headers, setTables.setitems.rows) : undefined,
+    setsTxt: setTables ? serializeTxtFile(setTables.sets.headers, setTables.sets.rows) : undefined,
+    runesTxt: setTables ? serializeTxtFile(setTables.runes.headers, setTables.runes.rows) : undefined,
     treasureClassExTxt: tcTxt,
     superuniquesTxt,
     itemNamesJson,
@@ -1061,5 +1103,5 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     apLayoutFiles,
   });
 
-  return { zip: zipBuffer, modName, savepath, manifest };
+  return { zip: zipBuffer, modName, savepath, manifest, ...(itemRandoReport ? { itemRandoReport } : {}) };
 }

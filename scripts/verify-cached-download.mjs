@@ -14,7 +14,7 @@ const require = createRequire(import.meta.url);
 // a test passes them in.
 const REAL = new Set([
   '@/lib/mutations/custom', '@/lib/mutations/registry', '@/lib/skill-points',
-  '@/lib/shuffle-amount', '@/lib/mod-extras', '@/lib/base-game',
+  '@/lib/shuffle-amount', '@/lib/mod-extras', '@/lib/base-game', '@/lib/item-rando',
 ]);
 function load(file, dependencies = {}) {
   const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
@@ -175,6 +175,45 @@ test('the base-game option has its own download key and name, and challenges ign
   }
   const plain = downloadRoute(key => { assert.ok(!key.includes(':base'), key); return build(42, false); });
   assert.equal((await plain.GET(new Request('http://localhost/api/download?seed=42'))).status, 200);
+});
+
+test('item randomization has its own download key, and challenges ignore it', async () => {
+  for (const weekly of [false, true]) for (const level of [1, 2]) {
+    const route = downloadRoute(key => {
+      assert.equal(key.endsWith(`:items${level}-v1`), !weekly, key);
+      return build(42, false);
+    });
+    const response = await route.GET(new Request(`http://localhost/api/download?seed=42&items=${level}${weekly ? '&weekly=1' : ''}`));
+    assert.equal(response.status, 200);
+  }
+  const plain = downloadRoute(key => { assert.ok(!key.includes(':items'), key); return build(42, false); });
+  assert.equal((await plain.GET(new Request('http://localhost/api/download?seed=42&items=0'))).status, 200);
+});
+
+test('generation and download agree on the item randomization key', async () => {
+  for (const level of [0, 1, 2, 9]) {
+    let generatedKey, downloadKey;
+    const route = load('src/app/api/randomize/route.ts', {
+      '@/lib/randomizer/open-acts/options': openActsOptions,
+      '@/lib/challenge/week': { getCurrentWeekNumber: () => 20 },
+      '@/lib/challenge/rules': challengeRules,
+      '@/lib/zip-cache': {
+        makeCacheKey: (...args) => JSON.stringify(args),
+        withBuildSegment: key => key,
+        hasCached: key => { generatedKey = key; return true; },
+      },
+      '@/lib/randomizer/mutations': { isMutationActiveForWeek: () => false },
+      '@/lib/feature-stats': { recordFeatures() {} },
+    });
+    const response = await route.POST(new Request('http://localhost/api/randomize', {
+      method: 'POST', body: JSON.stringify({ seed: 42, itemRando: level }),
+    }));
+    assert.equal(response.status, 200);
+    const query = load('src/lib/item-rando.ts').itemRandoParam(load('src/lib/item-rando.ts').normalizeItemRando(level));
+    const download = downloadRoute(key => { downloadKey = key; return Buffer.from('cached'); });
+    assert.equal((await download.GET(new Request(`http://localhost/api/download?seed=42${query ? `&${query}` : ''}`))).status, 200);
+    assert.equal(generatedKey, downloadKey, `level ${level}`);
+  }
 });
 
 test('challenge 15 starts September 21; rollout follows absolute challenge number across rotations', () => {

@@ -12,6 +12,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.346',
+    date: 'November 2026',
+    tagline: 'Random item stats: uniques, sets and runewords',
+    notes: [
+      'New Item stats option on the Generate page and in the Class Builder. Partly random rerolls about half the stats on every unique, set item, set bonus and runeword. Fully random rerolls all of them',
+      'New stats come from vanilla items of the same kind and level, so a level-20 ring gets stats some level-20 ring, amulet or set piece really has, at the same values. Rerolled items stay about as strong as the ones they replace',
+      'Skill bonuses, chance-to-cast effects, charges and auras follow your shuffled skills, the same way vanilla item skills already do',
+      'Sockets, ethereal, durability, Hellfire Torch skills and Sunder charm effects stay as they are. Item names and levels do not change',
+      'Off by default, and challenges always keep vanilla items. Items you already found keep their old stats; only new drops get the new ones',
+    ],
+  },
+  {
     version: 'v0.345',
     date: 'November 2026',
     tagline: 'Archipelago: play D2R Randomizer in a multiworld',

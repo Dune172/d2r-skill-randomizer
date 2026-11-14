@@ -7,6 +7,7 @@ import MutationPicker from './mutations/MutationPicker';
 import { mutationOptionConflict } from '@/lib/mutations/custom';
 import { baseGameConflict } from '@/lib/base-game';
 import RotwSwitch from './RotwSwitch';
+import { ITEM_RANDO_LABELS, ITEM_RANDO_LEVELS, normalizeItemRando, type ItemRandoLevel } from '@/lib/item-rando';
 
 type Preset = 'custom' | 'season1race' | 'turbo' | 'openacts';
 
@@ -28,6 +29,7 @@ interface FormState {
   shuffleAmount: number;
   seasonal: boolean;
   anyClassItems: boolean;
+  itemRando: ItemRandoLevel;
   raceMode: boolean;
   enemyShuffle: boolean;
   forgottenArts: boolean;
@@ -53,6 +55,7 @@ const SEASON1_PRESET: FormState = {
   shuffleAmount: 100,
   seasonal: true,
   anyClassItems: false,
+  itemRando: 0,
   raceMode: true,
   enemyShuffle: true,
   forgottenArts: false,
@@ -78,6 +81,7 @@ const TURBO_PRESET: FormState = {
   shuffleAmount: 100,
   seasonal: true,
   anyClassItems: false,
+  itemRando: 0,
   raceMode: false,
   enemyShuffle: false,
   forgottenArts: false,
@@ -105,6 +109,7 @@ const OPEN_ACTS_PRESET: FormState = {
   shuffleAmount: 100,
   seasonal: true,
   anyClassItems: false,
+  itemRando: 0,
   raceMode: false,
   enemyShuffle: false,
   forgottenArts: false,
@@ -130,6 +135,7 @@ const DEFAULT_STATE: FormState = {
   shuffleAmount: 100,
   seasonal: true,
   anyClassItems: false,
+  itemRando: 0,
   raceMode: true,
   enemyShuffle: false,
   forgottenArts: false,
@@ -138,8 +144,8 @@ const DEFAULT_STATE: FormState = {
 };
 
 interface RandomizerFormProps {
-  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints?: number; shuffleAmount?: number; seasonal?: boolean; anyClassItems?: boolean; baseGame?: boolean; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings; mutations?: number[] };
-  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints: number; shuffleAmount: number; seasonal: boolean; anyClassItems: boolean; baseGame: boolean; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings; mutations: number[] }) => void;
+  initialOptions?: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints?: number; shuffleAmount?: number; seasonal?: boolean; anyClassItems?: boolean; itemRando?: ItemRandoLevel; baseGame?: boolean; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs?: OpenActsSettings; mutations?: number[] };
+  onGenerate: (seed: string, options: { enablePrereqs: boolean; playersEnabled: boolean; playersCount: number; playersActs: number[]; startingItems: { teleportStaff: boolean; teleportStaffLevel: number; teleportStaffDropSource: string; teleportStaffSpeed: boolean; horadricCube: boolean }; hirelingAura: boolean; disableChat: boolean; xpMultiplier: number; xpActs: number[]; xpDifficulties: number[]; skillPoints: number; shuffleAmount: number; seasonal: boolean; anyClassItems: boolean; itemRando: ItemRandoLevel; baseGame: boolean; raceMode: boolean; enemyShuffle: boolean; forgottenArts: boolean; openActs: OpenActsSettings; mutations: number[] }) => void;
   isLoading: boolean;
   seed: string;
   onSeedChange: (s: string) => void;
@@ -271,6 +277,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
   const [shuffleAmount, setShuffleAmount] = useState(initialOptions?.shuffleAmount ?? SEASON1_PRESET.shuffleAmount);
   const [seasonal, setSeasonal] = useState(initialOptions?.seasonal ?? SEASON1_PRESET.seasonal);
   const [anyClassItems, setAnyClassItems] = useState(initialOptions?.anyClassItems ?? SEASON1_PRESET.anyClassItems);
+  const [itemRando, setItemRando] = useState<ItemRandoLevel>(initialOptions?.itemRando ?? SEASON1_PRESET.itemRando);
   const [raceMode, setRaceMode] = useState(initialOptions?.raceMode ?? SEASON1_PRESET.raceMode);
   // Forgotten Arts is challenge-only; the standard generator never enables it.
   const forgottenArts = false;
@@ -314,6 +321,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       setShuffleAmount(src.shuffleAmount);
       setSeasonal(src.seasonal);
       setAnyClassItems(src.anyClassItems);
+      setItemRando(src.itemRando);
       setRaceMode(src.raceMode);
       setEnemyShuffle(src.enemyShuffle);
       setOpenActs(withModeSpoiler(src.openActs, src.raceMode));
@@ -360,6 +368,7 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
       shuffleAmount,
       seasonal,
       anyClassItems,
+      itemRando,
       baseGame,
       raceMode: forgottenArts ? false : raceMode,
       enemyShuffle,
@@ -635,6 +644,26 @@ export default function RandomizerForm({ initialOptions, onGenerate, isLoading, 
                 label="Any class can use class items"
                 tooltip="Every class can equip orbs, shrunken heads, Paladin shields, Barbarian helms, Druid pelts, Amazon bows, spears and javelins, cloaks and grimoires. Their skill bonuses still only count for the class they name. Claws stay Assassin-only, because other classes have no claw attack animations."
               />
+            </div>
+            <div className="mt-3 flex items-center gap-2.5">
+              <label htmlFor="itemRando" className="text-sm text-[#c8a870] whitespace-nowrap flex items-center">
+                Item stats
+                <Tip text="Rerolls the stats on unique items, set items, set bonuses and runewords. New stats come from vanilla items of the same kind and level, so a level-20 ring gets level-20 ring stats. Partly random rerolls about half of each item's stats. Sockets, ethereal and similar traits stay. Skill bonuses follow your shuffled skills." />
+              </label>
+              <div className="relative">
+                <select
+                  id="itemRando"
+                  value={itemRando}
+                  onChange={e => { setPreset('custom'); setItemRando(normalizeItemRando(e.target.value)); }}
+                  className="appearance-none rounded border border-[#3a1510] bg-[#090203] pl-3 pr-7 py-2
+                    text-sm text-[#e8d5a0]
+                    focus:outline-none focus:border-[#7a3020] focus:ring-1 focus:ring-[#7a3020]/40
+                    transition-colors cursor-pointer"
+                >
+                  {ITEM_RANDO_LEVELS.map(l => <option key={l} value={l}>{ITEM_RANDO_LABELS[l]}</option>)}
+                </select>
+                <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7a5818] text-[10px]">▾</div>
+              </div>
             </div>
           </div>
         </div>

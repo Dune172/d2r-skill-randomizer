@@ -190,82 +190,138 @@ export function remapUniqueItemSkills(
   idMapping: Map<number, number> | undefined,
   rerollRng?: SeededRNG,
 ): string[][] {
+  const codeCol = headers.indexOf('code');
+  if (codeCol === -1) return rows;
+  const slots: [number, number][] = [];
+  for (let slot = 1; slot <= 12; slot++) {
+    slots.push([headers.indexOf(`prop${slot}`), headers.indexOf(`par${slot}`)]);
+  }
+  const resolve = makeItemSkillResolver(placements, idMapping, rerollRng);
+
+  return rows.map(row => {
+    const itemCode = row[codeCol]?.trim();
+    if (!itemCode) return row;
+    const updated = [...row];
+    remapRowSkills(updated, slots, ITEM_CLASS_MAP.get(itemCode), resolve);
+    return updated;
+  });
+}
+
+type ItemSkillResolver = (prop: string, par: string, classRestriction: ClassCode | undefined) => string;
+
+/** Rewrite every [prop column, param column] pair of one row in place. */
+function remapRowSkills(
+  row: string[],
+  slots: [number, number][],
+  classRestriction: ClassCode | undefined,
+  resolve: ItemSkillResolver,
+): void {
+  for (const [propCol, parCol] of slots) {
+    if (propCol === -1 || parCol === -1) continue;
+    const par = row[parCol];
+    if (!par?.trim()) continue;
+    row[parCol] = resolve(row[propCol], par, classRestriction);
+  }
+}
+
+/**
+ * The remap rules for one item property line that names a skill (uniqueitems.txt style:
+ * the param is a skills.txt row index or a skill name). Returns the param unchanged for
+ * lines that name no skill.
+ */
+function makeItemSkillResolver(
+  placements: SkillPlacement[],
+  idMapping: Map<number, number> | undefined,
+  rerollRng?: SeededRNG,
+): ItemSkillResolver {
   const byName = new Map<string, SkillPlacement>(placements.map(p => [p.skill.skill, p]));
   const byId = new Map<number, SkillPlacement>(placements.map(p => [p.skill.id, p]));
   const { byPos, byClassRowCol, byClassRow, byClass } = buildPlacementIndices(placements);
   const procPools = buildProcPools(placements, byClass);
 
-  const codeCol = headers.indexOf('code');
-  if (codeCol === -1) return rows;
-
-  return rows.map(row => {
-    const itemCode = row[codeCol]?.trim();
-    if (!itemCode) return row;
-
-    const classRestriction = ITEM_CLASS_MAP.get(itemCode);
-    const updated = [...row];
-
-    for (let slot = 1; slot <= 12; slot++) {
-      const propCol = headers.indexOf(`prop${slot}`);
-      const parCol = headers.indexOf(`par${slot}`);
-      if (propCol === -1 || parCol === -1) continue;
-
-      const prop = updated[propCol];
-      const par = updated[parCol];
-      if (!par?.trim()) continue;
-
-      // Procs (CTC family + charged): identity-remap the vanilla skill via
-      // idMapping so the original D2R proc assignment is preserved (re-rolled
-      // if that row became an aura/passive — see resolveVanillaProcParam).
-      if (PROC_CODES.has(prop)) {
-        updated[parCol] = resolveVanillaProcParam(par, classRestriction, byId, byName, procPools, idMapping, rerollRng);
-        continue;
-      }
-
-      // `oskill` granter: identity-preserve via idMapping (vanilla intent).
-      if (GRANTER_ROWINDEX_CODES.has(prop)) {
-        updated[parCol] = remapRowIndexParam(par, idMapping);
-        continue;
-      }
-
-      if (prop !== 'skill') continue;
-
-      // `skill` granter on non-class-restricted items: identity-preserve via
-      // idMapping. Vanilla "+N to <skill>" on a Sorc-themed staff should still
-      // grant the same skill after reorderSkillsRows shifts row positions.
-      // Numeric par only — string skill names are name-resolved by the engine
-      // and unaffected by row shuffling.
-      if (!classRestriction) {
-        const numId = parseInt(par.trim(), 10);
-        if (!isNaN(numId)) updated[parCol] = remapRowIndexParam(par, idMapping);
-        continue;
-      }
-
-      // `skill` granter on class-restricted items: position-remap to a
-      // castable skill at the same grid slot in the restricted class.
-      let srcPlacement: SkillPlacement | undefined;
-      let useNumeric: boolean;
-      const numId = parseInt(par.trim(), 10);
-      if (!isNaN(numId)) {
-        srcPlacement = byId.get(numId);
-        useNumeric = true;
-      } else {
-        srcPlacement = byName.get(par.trim());
-        useNumeric = false;
-      }
-      if (!srcPlacement) continue;
-
-      const destPlacement = findCastableDestination(
-        classRestriction, srcPlacement, byPos, byClassRowCol, byClassRow, byClass,
-      );
-      if (!destPlacement) continue;
-
-      updated[parCol] = useNumeric
-        ? String(idMapping?.get(destPlacement.skill.id) ?? destPlacement.skill.id)
-        : destPlacement.skill.skill;
+  return (prop, par, classRestriction) => {
+    // Procs (CTC family + charged): identity-remap the vanilla skill via
+    // idMapping so the original D2R proc assignment is preserved (re-rolled
+    // if that row became an aura/passive — see resolveVanillaProcParam).
+    if (PROC_CODES.has(prop)) {
+      return resolveVanillaProcParam(par, classRestriction, byId, byName, procPools, idMapping, rerollRng);
     }
-    return updated;
-  });
+
+    // `oskill` granter: identity-preserve via idMapping (vanilla intent).
+    if (GRANTER_ROWINDEX_CODES.has(prop)) {
+      return remapRowIndexParam(par, idMapping);
+    }
+
+    if (prop !== 'skill') return par;
+
+    // `skill` granter on non-class-restricted items: identity-preserve via
+    // idMapping. Vanilla "+N to <skill>" on a Sorc-themed staff should still
+    // grant the same skill after reorderSkillsRows shifts row positions.
+    // Numeric par only — string skill names are name-resolved by the engine
+    // and unaffected by row shuffling.
+    if (!classRestriction) {
+      const numId = parseInt(par.trim(), 10);
+      return isNaN(numId) ? par : remapRowIndexParam(par, idMapping);
+    }
+
+    // `skill` granter on class-restricted items: position-remap to a
+    // castable skill at the same grid slot in the restricted class.
+    let srcPlacement: SkillPlacement | undefined;
+    let useNumeric: boolean;
+    const numId = parseInt(par.trim(), 10);
+    if (!isNaN(numId)) {
+      srcPlacement = byId.get(numId);
+      useNumeric = true;
+    } else {
+      srcPlacement = byName.get(par.trim());
+      useNumeric = false;
+    }
+    if (!srcPlacement) return par;
+
+    const destPlacement = findCastableDestination(
+      classRestriction, srcPlacement, byPos, byClassRowCol, byClassRow, byClass,
+    );
+    if (!destPlacement) return par;
+
+    return useNumeric
+      ? String(idMapping?.get(destPlacement.skill.id) ?? destPlacement.skill.id)
+      : destPlacement.skill.skill;
+  };
+}
+
+/**
+ * Remap the skill lines of setitems.txt, sets.txt and runes.txt by the uniqueitems rules
+ * (same param forms). Vanilla's copies of these tables name skills by row index in places
+ * (Leaf's +3 Fire Bolt is `skill 36`), which points at the wrong skill once
+ * reorderSkillsRows moves the rows, so every shipped copy must go through here.
+ * A set item's class restriction comes from its base item, like a unique's;
+ * set bonuses and runewords have none. Mutates the rows in place.
+ */
+export function remapSetAndRunewordSkills(
+  tables: {
+    setitems: { headers: string[]; rows: string[][] };
+    sets: { headers: string[]; rows: string[][] };
+    runes: { headers: string[]; rows: string[][] };
+  },
+  pairs: { setitems: [string, string][]; sets: [string, string][]; runes: [string, string][] },
+  placements: SkillPlacement[],
+  idMapping: Map<number, number> | undefined,
+  rerollRng?: SeededRNG,
+): void {
+  const resolve = makeItemSkillResolver(placements, idMapping, rerollRng);
+  const cols = (headers: string[], names: [string, string][]) =>
+    names.map(([p, v]) => [headers.indexOf(p), headers.indexOf(v)] as [number, number]);
+
+  const si = tables.setitems;
+  const siSlots = cols(si.headers, pairs.setitems);
+  const itemCol = si.headers.indexOf('item');
+  for (const row of si.rows) {
+    remapRowSkills(row, siSlots, itemCol === -1 ? undefined : ITEM_CLASS_MAP.get(row[itemCol]?.trim()), resolve);
+  }
+  for (const t of [{ t: tables.sets, names: pairs.sets }, { t: tables.runes, names: pairs.runes }]) {
+    const slots = cols(t.t.headers, t.names);
+    for (const row of t.t.rows) remapRowSkills(row, slots, undefined, resolve);
+  }
 }
 
 /**
