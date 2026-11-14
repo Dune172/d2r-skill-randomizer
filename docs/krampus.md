@@ -84,14 +84,22 @@ cold damage. So:
 - **Superuniques**: cold goes into the first empty Mod slot, else replaces a disabled
   modifier, else the last slot (Ancient Kaa loses Lightning Enchanted).
 
-**−10 cold resistance.** Difficulty penalties lower every resistance, so this rides on
-a hidden passive skill instead: `D2RR Cold Snap`, appended after the last skills.txt
-row (no id moves), `passive` = 1, `passivestat1` coldresist = `0-10`, on the blank,
-unused `resistmagic` state, given to every class in its first free charstats
-`Skill N` slot. Seen in game: the sheet shows −10% cold; `passive` = 1 is required;
-Unsummon is untouched and the passive never appears on the skill bar. A brand-new
-character only gets it from its first load (not in the game it was created in).
-monumod.txt is new in `data/txt/` (and `base/`), from pinkufairy/D2R-Excel@7871977.
+**Cold pierce 10.** Every hostile monster gets monprop.txt property `pierce-cold`
+(stat `passive_cold_pierce`, "−x% to enemy cold resistance") at 10, chance 100, in
+every difficulty: monsters without a MonProp row get the new `d2rr_coldsnap` row,
+monsters with one get it in a free slot of theirs. Player summons (skills.txt
+`summon`) and mercenaries are left out. It applies after the 75% cap, shows nowhere
+on the sheet and needs no reload. Vanilla already gives monsters attacker-side stats
+from this family through monprop (the Council's `extra-fire`), but **a monster's
+pierce against a player has not been seen in play**; it can only be checked by taking
+cold damage outside town.
+
+This replaced a first version, a −10 cold resistance passive (hidden starting skill,
+`passive` = 1 on the unused `resistmagic` state). It showed −10% on the sheet in
+game, but a brand-new character only got it from its first reload.
+
+monumod.txt and monprop.txt are new in `data/txt/` (and `base/`), from
+pinkufairy/D2R-Excel@7871977.
 
 Checks: `node --test scripts/verify-custom-mutations.mjs` (December lineup against the
 real tables), `node scripts/verify-monthly-challenges.mjs`.

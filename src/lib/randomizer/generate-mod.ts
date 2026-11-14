@@ -793,6 +793,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   let gambleTxt: string | undefined;
   let levelsTxt: string | undefined;
   let monumodTxt: string | undefined;
+  let monpropTxt: string | undefined;
   let monsterStringsJson: string | undefined;
   let mutationAssets: Map<string, Buffer> | undefined;
   // monster id → HD token. The enemy shuffle's map when it ran; Krampus needs one either way.
@@ -813,6 +814,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     }
     const krampus = hasMutation(mutationIds, 'krampus');
     const monumodSrc = hasMutation(mutationIds, 'cold-snap') ? txt('monumod.txt') : null;
+    const monpropSrc = monumodSrc ? txt('monprop.txt') : null;
     if (krampus && !monsterGraphics) {
       monsterGraphics = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'hd', 'character', 'monsters.json'), 'utf8')
         .replace(/^\uFEFF/, '')) as Record<string, string>;
@@ -835,10 +837,12 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
       levels:        levelsSrc ?? { headers: [], rows: [] },
       hireling:      hirelingTxtFile ?? { headers: [], rows: [] },
       monumod:       monumodSrc ?? { headers: [], rows: [] },
+      monprop:       monpropSrc ?? { headers: [], rows: [] },
       monsterGraphics,
     });
 
     if (monumodSrc) monumodTxt = serializeTxtFile(monumodSrc.headers, monumodSrc.rows);
+    if (monpropSrc) monpropTxt = serializeTxtFile(monpropSrc.headers, monpropSrc.rows);
     if (krampus && monsterGraphics) {
       // The Krampus unit (enlarged goatman + gift stack) when it matches the game build;
       // otherwise his rows keep the plain goatman token applyKrampus gave them.
@@ -1091,6 +1095,7 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     levelsTxt,
     monsterGraphicsJson: monsterGraphics ? JSON.stringify(monsterGraphics, null, 2) : undefined,
     monumodTxt,
+    monpropTxt,
     monsterStringsJson,
     mutationAssets,
     enemyManifestJson: enemies ? JSON.stringify(enemies.manifest, null, 2) : undefined,

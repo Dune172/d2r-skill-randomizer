@@ -46,8 +46,9 @@ export interface MutationContext {
   magicsuffix:   { headers: string[]; rows: string[][] };
   levels:        { headers: string[]; rows: string[][] };
   hireling:      { headers: string[]; rows: string[][] };
-  /** monumod.txt — loaded only when Cold Snap is active (empty otherwise). */
+  /** monumod.txt and monprop.txt — loaded only when Cold Snap is active (empty otherwise). */
   monumod:       { headers: string[]; rows: string[][] };
+  monprop:       { headers: string[]; rows: string[][] };
   /**
    * hd/character/monsters.json (monster id → HD token), mutable. Krampus adds his
    * rows here; the generator ships it whenever it is present.

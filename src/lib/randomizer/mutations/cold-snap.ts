@@ -27,19 +27,18 @@ import type { MutationContext } from './index';
  * Weights are WORD fields in the game's table, so 10000 is in range; at that
  * weight cold wins the first pick about 99% of the time.
  *
- * THE COLD RESISTANCE. Difficulty penalties (difficultylevels.txt) lower every
- * resistance at once, so the −10 cold rides on a hidden passive skill instead:
- * a new skills.txt row, appended after every other row so no skill id moves,
- * given to every class through its first free charstats "Skill N" starting-skill
- * slot (the Barbarian, with the most, uses 9 of 10). Starting skills are learned at
- * level 1, and passive = 1 makes the game apply passivestat coldresist = −10. It is
- * carried on the `resistmagic` state, a blank vanilla state that no skill, item or
- * monster uses (Resist Cold's own passive_resistcold can't be shared: two skills on
- * one state overwrite each other's stats). Passive skills are never offered as
- * left/right skills, and it has no tree slot, so players never see it. It shows on
- * the character sheet: −10 in Normal, −50 in Nightmare, −110 in Hell.
- * Seen in game (Normal): passive = 1 is required; without it the stat isn't applied.
- * Unsummon itself can't carry it: passive = 1 would take it off the skill bar.
+ * THE COLD BITE. Every monster's cold damage pierces 10 cold resistance:
+ * monprop.txt property pierce-cold (stat passive_cold_pierce, "-x% to enemy cold
+ * resistance") at 10 in every difficulty, the attacker-side monster stat family
+ * vanilla already uses here (the Council's extra-fire). Monsters with no MonProp
+ * row get the new d2rr_coldsnap row; monsters that have one get the property in a
+ * free slot of it. Player summons (skills.txt "summon") and mercenaries are left
+ * out. Unlike a resistance penalty it shows nowhere and needs no reload; it bites
+ * after the 75% cap, so a capped character takes cold as if at 65%.
+ * NOT SEEN IN PLAY: whether the engine honours a monster's pierce against a
+ * player can only be seen by taking cold damage outside town.
+ * (It replaced a −10 cold resistance passive that only applied from a new
+ * character's first reload.)
  */
 
 export const COLD_MOD = 18;
@@ -48,10 +47,12 @@ const UPICK_COLS = ['upick', 'upick (N)', 'upick (H)'];
 const CPICK_COLS = ['cpick', 'cpick (N)', 'cpick (H)'];
 const MOD_COLS = ['Mod1', 'Mod2', 'Mod3'];
 
-export const COLD_RESIST_PENALTY = 10;
-export const COLD_RESIST_SKILL = 'D2RR Cold Snap';
-const COLD_RESIST_STATE = 'resistmagic';
-const SKILL_SLOTS = Array.from({ length: 10 }, (_, i) => `Skill ${i + 1}`);
+export const COLD_PIERCE = 10;
+export const COLD_SNAP_MONPROP = 'd2rr_coldsnap';
+const PIERCE_PROP = 'pierce-cold';
+const MERCENARIES = new Set(['roguehire', 'act2hire', 'act3hire', 'act5hire1', 'act5hire2']);
+const MONPROP_DIFFS = ['', ' (N)', ' (H)'];
+const MONPROP_SLOTS = 6;
 
 export function applyColdSnap(ctx: MutationContext): void {
   // Unique and champion modifier weights.
@@ -82,44 +83,54 @@ export function applyColdSnap(ctx: MutationContext): void {
     row[modIdx[slot]] = String(COLD_MOD);
   }
 
-  // −10 cold resistance through a hidden passive starting skill.
-  const { headers: kh, rows: kr } = ctx.skills;
-  const k = (name: string) => {
-    const i = kh.indexOf(name);
-    if (i === -1) throw new Error(`Cold Snap: skills.txt has no ${name} column`);
+  applyColdPierce(ctx);
+}
+
+/** Every hostile monster's cold damage pierces COLD_PIERCE cold resistance (monprop.txt). */
+function applyColdPierce(ctx: MutationContext): void {
+  const { headers: mh, rows: mr } = ctx.monstats;
+  const { headers: ph, rows: pr } = ctx.monprop;
+  const monPropCol = mh.indexOf('MonProp');
+  if (monPropCol === -1) throw new Error('Cold Snap: monstats.txt has no MonProp column');
+  const p = (name: string) => {
+    const i = ph.indexOf(name);
+    if (i === -1) throw new Error(`Cold Snap: monprop.txt has no ${name} column`);
     return i;
   };
-  if (kr.some(r => r[0] === COLD_RESIST_SKILL)) throw new Error('Cold Snap: applied twice');
-  if (kr.some(r => [r[k('passivestate')], r[k('aurastate')]].includes(COLD_RESIST_STATE))) {
-    throw new Error(`Cold Snap: a skill already uses the ${COLD_RESIST_STATE} state`);
-  }
-  const ids = kr.map(r => Number(r[k('*Id')])).filter(Number.isFinite);
-  const row = kh.map(() => '');
-  const set = (col: string, value: string) => { row[k(col)] = value; };
-  set('skill', COLD_RESIST_SKILL);
-  set('*Id', String(Math.max(...ids) + 1));
-  set('passive', '1');
-  set('passivestate', COLD_RESIST_STATE);
-  set('passivestat1', 'coldresist');
-  // Binary minus: the calc parser's unary minus is not relied on.
-  set('passivecalc1', `0-${COLD_RESIST_PENALTY}`);
-  // The bookkeeping columns a vanilla passive (Natural Resistance) carries.
-  for (const [col, value] of [['range', 'none'], ['anim', 'SC'], ['seqtrans', 'SC'], ['monanim', 'xx'],
-    ['reqlevel', '1'], ['maxlvl', '1'], ['leftskill', '0'], ['rightskill', '0'], ['attackrank', '0'],
-    ['mana', '0'], ['minmana', '0'], ['manashift', '8'], ['lvlmana', '0'], ['HitShift', '8'], ['InGame', '1']] as const) {
-    set(col, value);
-  }
-  if (kh.includes('*eol')) set('*eol', '0');
-  kr.push(row);
+  if (pr.some(r => r[0] === COLD_SNAP_MONPROP)) throw new Error('Cold Snap: applied twice');
 
-  const { headers: ch, rows: cr } = ctx.charstats;
-  const slots = SKILL_SLOTS.map(c => ch.indexOf(c));
-  if (slots.includes(-1)) throw new Error('Cold Snap: charstats.txt is missing Skill 1–10');
-  for (const r of cr) {
-    const cls = r[ch.indexOf('class')];
-    if (!cls || cls === 'Expansion') continue;
-    const free = slots.find(i => !r[i]);
-    if (free === undefined) throw new Error(`Cold Snap: ${cls} has no free starting-skill slot`);
-    r[free] = COLD_RESIST_SKILL;
+  const summonCol = ctx.skills.headers.indexOf('summon');
+  const summons = new Set(summonCol === -1 ? [] : ctx.skills.rows.map(r => r[summonCol]).filter(Boolean));
+
+  /** Put pierce-cold 10 into a free slot of each difficulty; throws if a row is full. */
+  const addPierce = (row: string[]) => {
+    for (const d of MONPROP_DIFFS) {
+      const slots = Array.from({ length: MONPROP_SLOTS }, (_, i) => i + 1);
+      if (slots.some(i => row[p(`prop${i}${d}`)] === PIERCE_PROP)) continue;
+      const free = slots.find(i => !row[p(`prop${i}${d}`)]);
+      if (free === undefined) throw new Error(`Cold Snap: monprop row ${row[0]} has no free${d} slot`);
+      row[p(`prop${free}${d}`)] = PIERCE_PROP;
+      row[p(`chance${free}${d}`)] = '100';
+      row[p(`par${free}${d}`)] = '';
+      row[p(`min${free}${d}`)] = String(COLD_PIERCE);
+      row[p(`max${free}${d}`)] = String(COLD_PIERCE);
+    }
+  };
+
+  const own = ph.map(() => '');
+  own[0] = COLD_SNAP_MONPROP;
+  if (ph.includes('*eol')) own[p('*eol')] = '0';
+  addPierce(own);
+  pr.push(own);
+
+  const byId = new Map(pr.map(r => [r[0], r]));
+  const extended = new Set<string>();
+  for (const row of mr) {
+    const id = row[0];
+    if (!id || id === 'Expansion' || summons.has(id) || MERCENARIES.has(id)) continue;
+    const existing = row[monPropCol];
+    const target = existing ? byId.get(existing) : undefined;
+    if (!target) { row[monPropCol] = COLD_SNAP_MONPROP; continue; }
+    if (!extended.has(existing)) { addPierce(target); extended.add(existing); }
   }
 }

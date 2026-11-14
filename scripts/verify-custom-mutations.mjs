@@ -130,7 +130,7 @@ const TABLES = {
   monstats: 'monstats', charstats: 'charstats', skills: 'skills', superuniques: 'superuniques',
   treasureclass: 'treasureclassex', experience: 'experience', armor: 'armor', weapons: 'weapons',
   misc: 'misc', uniqueitems: 'uniqueitems', magicprefix: 'magicprefix', magicsuffix: 'magicsuffix',
-  levels: 'levels', hireling: 'hireling', monumod: 'monumod',
+  levels: 'levels', hireling: 'hireling', monumod: 'monumod', monprop: 'monprop',
 };
 const base = Object.fromEntries(Object.entries(TABLES).map(([k, f]) => [k, loadTxtFile(`${f}.txt`)]));
 const freshCtx = () => Object.fromEntries(Object.entries(base).map(([k, t]) => [k, { headers: [...t.headers], rows: t.rows.map(r => [...r]) }]));
@@ -221,22 +221,31 @@ test('December lineup applies cleanly to the real tables', () => {
   for (const row of su.rows.filter(r => cell(su, r, 'Class'))) {
     assert.ok(['Mod1', 'Mod2', 'Mod3'].some(c => cell(su, row, c) === '18'), `${row[0]} is Cold Enchanted`);
   }
-  // −10 cold: a hidden passive appended after every vanilla row, given to every class.
-  const passive = sk.rows.at(-1);
-  assert.equal(passive[0], 'D2RR Cold Snap');
-  assert.equal(sk.rows.length, base.skills.rows.length + 1, 'no vanilla skill row moved');
-  assert.equal(cell(sk, passive, 'passive'), '1');
-  assert.equal(cell(sk, passive, 'passivestate'), 'resistmagic');
-  assert.equal(cell(sk, passive, 'passivestat1'), 'coldresist');
-  assert.equal(cell(sk, passive, 'passivecalc1'), '0-10');
-  assert.equal(cell(sk, findRow(sk, 'Unsummon'), 'passive'), '', 'Unsummon untouched');
-  assert.equal(sk.rows.filter(r => [cell(sk, r, 'passivestate'), cell(sk, r, 'aurastate'), cell(sk, r, 'state1')].includes('resistmagic')).length, 1);
-  const cs = ctx.charstats;
-  const classes = cs.rows.filter(r => cell(cs, r, 'class') && cell(cs, r, 'class') !== 'Expansion');
-  assert.equal(classes.length, 8);
-  for (const r of classes) {
-    assert.equal(Array.from({ length: 10 }, (_, i) => cell(cs, r, `Skill ${i + 1}`)).filter(s => s === 'D2RR Cold Snap').length, 1, cell(cs, r, 'class'));
+  // Cold pierce 10: every hostile monster, in every difficulty; summons and mercenaries left out.
+  assert.deepEqual(sk.rows, base.skills.rows, 'skills.txt untouched');
+  const skillCols = t => t.rows.map(r => Array.from({ length: 10 }, (_, i) => cell(t, r, `Skill ${i + 1}`)));
+  assert.deepEqual(skillCols(ctx.charstats), skillCols(base.charstats), 'starting skills untouched');
+  const mp = ctx.monprop;
+  const pierces = row => ['', ' (N)', ' (H)'].every(d => Array.from({ length: 6 }, (_, i) => i + 1)
+    .some(i => cell(mp, row, `prop${i}${d}`) === 'pierce-cold' && cell(mp, row, `chance${i}${d}`) === '100'
+      && cell(mp, row, `min${i}${d}`) === '10' && cell(mp, row, `max${i}${d}`) === '10'));
+  const summons = new Set(base.skills.rows.map(r => cell(base.skills, r, 'summon')).filter(Boolean));
+  const skip = new Set([...summons, 'roguehire', 'act2hire', 'act3hire', 'act5hire1', 'act5hire2']);
+  for (const row of ms.rows.filter(r => r[0] && r[0] !== 'Expansion')) {
+    const prop = cell(ms, row, 'MonProp');
+    if (skip.has(row[0])) {
+      assert.equal(prop, cell(base.monstats, findRow(base.monstats, row[0]) ?? [], 'MonProp') ?? '', `${row[0]} keeps its MonProp`);
+      continue;
+    }
+    const target = findRow(mp, prop);
+    assert.ok(target && pierces(target), `${row[0]} pierces cold (MonProp ${prop})`);
   }
+  // Existing rows keep their own properties (Blood Raven's knockback, the Council's extra fire).
+  const vanillaRaven = findRow(base.monprop, 'bloodraven').filter(Boolean);
+  const raven = findRow(mp, 'bloodraven');
+  assert.ok(vanillaRaven.includes('knock') && vanillaRaven.every(v => raven.includes(v)), 'Blood Raven keeps her knockback');
+  assert.ok(pierces(findRow(mp, 'councilmember1')));
+  assert.ok(!pierces(findRow(mp, 'irongolem')), 'the Iron Golem (a summon) is left alone');
 });
 
 test('Krampus and Cold Snap each apply alone, and Krampus refuses a second pass', () => {

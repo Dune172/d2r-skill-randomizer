@@ -59,6 +59,6 @@
 // Black and several set procs granted whatever skill moved into that row). No main-RNG
 // change: trees are the same; re-rolls of aura/passive procs use their own stream.
 // v68 adds December 2026's Krampusnacht lineup (Dead Reckoning, Krampus Is Coming, Cold
-// Snap) for challenge 18. Other seeds and challenges are unchanged; bumped so a challenge
+// Snap; ships monumod.txt and monprop.txt) for challenge 18. Other seeds and challenges are unchanged; bumped so a challenge
 // 18 zip requested early through weekOverride is not served from the cache.
 export const PIPELINE_VERSION = 68;

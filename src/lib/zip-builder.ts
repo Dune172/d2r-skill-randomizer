@@ -51,6 +51,7 @@ export interface ZipContents {
   miscTxt?: string;                 // misc.txt modified by weekly mutations (e.g. antidote potion cost)
   levelsTxt?: string;               // levels.txt modified by weekly mutations (monster density / special pack counts)
   monumodTxt?: string;              // monumod.txt — Cold Snap's Cold Enchanted weights
+  monpropTxt?: string;              // monprop.txt — Cold Snap's monster cold pierce
   monsterStringsJson?: string;      // monsters string table with Krampus's name
   mutationAssets?: Map<string, Buffer>; // mutation HD files (Krampus unit), paths under data/
   gambleTxt?: string;               // gamble.txt — comprehensive gamble pool (House Always Wins only)
@@ -168,6 +169,9 @@ export function buildZip(contents: ZipContents): Buffer {
   }
   if (contents.monumodTxt) {
     zip.addFile(`${d}/data/${xl}/monumod.txt`, str(contents.monumodTxt));
+  }
+  if (contents.monpropTxt) {
+    zip.addFile(`${d}/data/${xl}/monprop.txt`, str(contents.monpropTxt));
   }
   if (contents.monsterStringsJson) {
     zip.addFile(`${d}/data/local/lng/strings/monsters.json`, str(contents.monsterStringsJson));

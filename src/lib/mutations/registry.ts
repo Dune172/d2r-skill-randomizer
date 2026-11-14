@@ -160,8 +160,8 @@ export const MUTATIONS: Record<number, MutationDef> = {
     emoji: '❄️',
     description:
       'Champion packs, unique monsters and every superunique are Cold Enchanted: they hit ' +
-      'with cold and burst into a frost nova when they die. Your cold resistance is lowered ' +
-      'by 10 in every difficulty.',
+      'with cold and burst into a frost nova when they die. Every monster\'s cold attacks ' +
+      'pierce 10 of your cold resistance.',
   },
   18: {
     id: 'band-of-brothers',

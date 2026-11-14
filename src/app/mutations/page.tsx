@@ -113,7 +113,7 @@ const TIPS: Record<string, string[]> = {
   ],
   'cold-snap': [
     'Every champion, unique and superunique bursts into a frost nova when it dies. Back off before the killing blow, or finish them from range.',
-    'Your cold resistance starts 10 lower, so cold resistance gear and Thawing Potions matter more than usual.',
+    'Every monster’s cold attacks pierce 10 of your cold resistance, even at the 75% cap, so Thawing Potions and spare cold resistance matter more than usual.',
     'Their attacks chill too, which slows you down. Don’t fight a champion pack with nowhere to retreat.',
   ],
   'forgotten-arts': [

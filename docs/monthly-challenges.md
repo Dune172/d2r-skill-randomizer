@@ -26,8 +26,8 @@ December 1–31, 2026 is **Challenge 18: Krampusnacht**, seed **24066**
 - Krampus Is Coming (new, challenge-only): Krampus replaces Bishibosh,
   Beetleburst, Stormtree and Frozenstein. See [krampus.md](krampus.md).
 - Cold Snap (new, challenge-only): champions, uniques and superuniques are Cold
-  Enchanted (frost nova on death); players get −10 cold resistance. See
-  [krampus.md](krampus.md).
+  Enchanted (frost nova on death); every monster's cold damage pierces 10 cold
+  resistance. See [krampus.md](krampus.md).
 
 Like October's override, December's doesn't replace the rotation slot it would have
 used (slot 17, The Long Rot); January carries on with slot 18.
