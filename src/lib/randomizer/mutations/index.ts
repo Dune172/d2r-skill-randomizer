@@ -20,6 +20,8 @@ import { applyMolasses } from './molasses';
 import { applyNoGuard, NO_GUARD_EXCLUDED_SKILLS } from './no-guard';
 import { applyCourtOfKings } from './court-of-kings';
 import { applyBandOfBrothers } from './band-of-brothers';
+import { applyKrampus } from './krampus';
+import { applyColdSnap } from './cold-snap';
 import { assertNoFractionalCells } from './util';
 
 export { getActiveMutations };
@@ -44,6 +46,13 @@ export interface MutationContext {
   magicsuffix:   { headers: string[]; rows: string[][] };
   levels:        { headers: string[]; rows: string[][] };
   hireling:      { headers: string[]; rows: string[][] };
+  /** monumod.txt — loaded only when Cold Snap is active (empty otherwise). */
+  monumod:       { headers: string[]; rows: string[][] };
+  /**
+   * hd/character/monsters.json (monster id → HD token), mutable. Krampus adds his
+   * rows here; the generator ships it whenever it is present.
+   */
+  monsterGraphics?: Record<string, string>;
 }
 
 type ApplyFn = (ctx: MutationContext) => void;
@@ -66,6 +75,8 @@ const APPLY_FNS: Record<number, ApplyFn> = {
   16: applyNoGuard,
   17: applyCourtOfKings,
   18: applyBandOfBrothers,
+  20: applyKrampus,
+  21: applyColdSnap,
   // Forgotten Arts (19) needs final skill IDs and art assets: the route applies it last.
 };
 
@@ -147,7 +158,8 @@ export function applyMutations(ids: readonly number[], ctx: MutationContext): vo
   // misreads a decimal cell as a much larger number. Vanilla data has no bare
   // decimal cells, so any match here is a mutation bug.
   for (const [name, file] of Object.entries(ctx) as [string, MutationContext[keyof MutationContext]][]) {
-    if (!file || !('headers' in file)) continue;
+    if (!file || name === 'monsterGraphics' || !('headers' in file)) continue;
+    if (typeof file.headers === 'string' || typeof file.rows === 'string') continue;
     assertNoFractionalCells(`${name}.txt`, file.headers, file.rows);
   }
 }

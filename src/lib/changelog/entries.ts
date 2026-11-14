@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.348',
+    date: 'November 2026',
+    tagline: 'December’s challenge: Krampusnacht',
+    notes: [
+      'December’s challenge is Krampusnacht: Dead Reckoning, Krampus Is Coming and Cold Snap on seed 24066, from December 1 to December 31',
+      'New mutation, Krampus Is Coming, exclusive to December. Krampus takes the place of Bishibosh, Beetleburst, Stormtree and Frozenstein: a hulking goat-demon with a stack of presents on his back, twice the life, Cold Enchanted, Cursed and Extra Strong, with a pack of goat-men. He drops that act’s boss haul',
+      'New mutation, Cold Snap, exclusive to December. Champion packs, unique monsters and every superunique are Cold Enchanted, so they burst into a frost nova when they die. Your cold resistance is 10 lower in every difficulty. A brand-new character gets the −10 from the first time it’s loaded, not in the game it was created in',
+      'Krampus’s look is HD only; in classic graphics he is a Moon Clan goat-man',
+    ],
+  },
+  {
     version: 'v0.347',
     date: 'November 2026',
     tagline: 'Runewords and set items grant the right skills',

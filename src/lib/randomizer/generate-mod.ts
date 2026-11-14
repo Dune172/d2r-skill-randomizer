@@ -48,6 +48,8 @@ import { shuffleShareOf } from '@/lib/shuffle-amount';
 import { DEFAULT_MOD_EXTRAS, openClassItems, type ModExtras } from '@/lib/mod-extras';
 import { scaleExperienceRows } from '@/lib/randomizer/experience-scaler';
 import { applyMutations, preApplyMagicAffixMutationsFor, getMutationExcludedSkillsFor, hasMutation } from '@/lib/randomizer/mutations';
+import { KRAMPUS_NAME_KEY } from '@/lib/randomizer/mutations/krampus';
+import { krampusAssetFiles, useKrampusUnit, monsterStringsWithKrampus } from '@/lib/krampus-assets';
 import { MUTATIONS } from '@/lib/mutations/registry';
 import { mutationSavepathSuffix } from '@/lib/mutations/custom';
 import { buildGambleTable } from '@/lib/randomizer/mutations/house-always-wins';
@@ -790,6 +792,11 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
   let miscTxt: string | undefined;
   let gambleTxt: string | undefined;
   let levelsTxt: string | undefined;
+  let monumodTxt: string | undefined;
+  let monsterStringsJson: string | undefined;
+  let mutationAssets: Map<string, Buffer> | undefined;
+  // monster id → HD token. The enemy shuffle's map when it ran; Krampus needs one either way.
+  let monsterGraphics: Record<string, string> | undefined = enemies?.graphics;
 
   if (mutationIds.length) {
     const expSrc = txt('experience.txt');
@@ -803,6 +810,12 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     // hireling.txt at all, exactly as before.
     if (!hirelingTxtFile && hasMutation(mutationIds, 'band-of-brothers')) {
       hirelingTxtFile = txt('hireling.txt');
+    }
+    const krampus = hasMutation(mutationIds, 'krampus');
+    const monumodSrc = hasMutation(mutationIds, 'cold-snap') ? txt('monumod.txt') : null;
+    if (krampus && !monsterGraphics) {
+      monsterGraphics = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'hd', 'character', 'monsters.json'), 'utf8')
+        .replace(/^\uFEFF/, '')) as Record<string, string>;
     }
 
     applyMutations(mutationIds, {
@@ -821,7 +834,17 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
       magicsuffix:   magicSuffixTxt,
       levels:        levelsSrc ?? { headers: [], rows: [] },
       hireling:      hirelingTxtFile ?? { headers: [], rows: [] },
+      monumod:       monumodSrc ?? { headers: [], rows: [] },
+      monsterGraphics,
     });
+
+    if (monumodSrc) monumodTxt = serializeTxtFile(monumodSrc.headers, monumodSrc.rows);
+    if (krampus && monsterGraphics) {
+      // The Krampus unit (enlarged goatman + gift stack) when it matches the game build;
+      // otherwise his rows keep the plain goatman token applyKrampus gave them.
+      if (useKrampusUnit(monsterGraphics)) mutationAssets = krampusAssetFiles() ?? undefined;
+      monsterStringsJson = monsterStringsWithKrampus(KRAMPUS_NAME_KEY);
+    }
 
     // Re-serialize charstats (may have been modified by Hyperdrive/Hollow Shell)
     charstatsTxt = serializeTxtFile(charstats.headers, charstats.rows);
@@ -1066,7 +1089,10 @@ export async function generateMod(seed: number, opts: GenerateModOptions): Promi
     itemNamesJson,
     hirelingTxt: hirelingTxtContent,
     levelsTxt,
-    monsterGraphicsJson: enemies ? JSON.stringify(enemies.graphics, null, 2) : undefined,
+    monsterGraphicsJson: monsterGraphics ? JSON.stringify(monsterGraphics, null, 2) : undefined,
+    monumodTxt,
+    monsterStringsJson,
+    mutationAssets,
     enemyManifestJson: enemies ? JSON.stringify(enemies.manifest, null, 2) : undefined,
     inventorySpellsJson,
     globalSkillIcons,

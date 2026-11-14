@@ -4,7 +4,7 @@
  */
 
 import { FORGOTTEN_ARTS } from './forgotten-arts';
-import { OCTOBER_2026_CHALLENGE } from '../challenge/week';
+import { OCTOBER_2026_CHALLENGE, DECEMBER_2026_CHALLENGE } from '../challenge/week';
 
 export interface MutationDef {
   /** Slug used as the image filename: public/mutations/{id}.webp */
@@ -144,6 +144,24 @@ export const MUTATIONS: Record<number, MutationDef> = {
       'Three times as many champion and unique packs roam every area, with a third ' +
       'fewer common monsters between them. Almost everything you meet has a title ' +
       'and an aura to match.',
+  },
+  20: {
+    id: 'krampus',
+    name: 'Krampus Is Coming',
+    emoji: '😈',
+    description:
+      'Krampus has taken over a superunique in Acts I, II, III and V: a hulking goat-demon ' +
+      'with a sack of presents on his back, twice the life, a curse and a pack of goat-men. ' +
+      'He bursts into a frost nova when he dies and drops an act boss\'s haul.',
+  },
+  21: {
+    id: 'cold-snap',
+    name: 'Cold Snap',
+    emoji: '❄️',
+    description:
+      'Champion packs, unique monsters and every superunique are Cold Enchanted: they hit ' +
+      'with cold and burst into a frost nova when they die. Your cold resistance is lowered ' +
+      'by 10 in every difficulty.',
   },
   18: {
     id: 'band-of-brothers',
@@ -292,9 +310,14 @@ export function getActiveMutations(weekNumber: number): MutationDef[] {
   return getMutationIds(weekNumber).map((id) => MUTATIONS[id]);
 }
 
-/** Authored calendar events do not rewrite the historical rotation. */
+/**
+ * Authored calendar events do not rewrite the historical rotation.
+ * December 2026 is Dead Reckoning, Krampus Is Coming and Cold Snap. Krampus runs
+ * before Cold Snap; he is Cold Enchanted either way.
+ */
 export function getMutationIds(challenge: number): readonly number[] {
   if (challenge === OCTOBER_2026_CHALLENGE) return [19, 15, 14];
+  if (challenge === DECEMBER_2026_CHALLENGE) return [13, 20, 21];
   if (!Number.isInteger(challenge) || challenge < 1) return [];
   return WEEKLY_MUTATIONS[(challenge - 1) % WEEKLY_MUTATIONS.length];
 }
@@ -302,5 +325,6 @@ export function getMutationIds(challenge: number): readonly number[] {
 /** Return the thematic name for the given week number (1-based). */
 export function getWeekName(weekNumber: number): string {
   if (weekNumber === OCTOBER_2026_CHALLENGE) return 'Return to Tristram';
+  if (weekNumber === DECEMBER_2026_CHALLENGE) return 'Krampusnacht';
   return WEEK_NAMES[(weekNumber - 1) % WEEK_NAMES.length];
 }

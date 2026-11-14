@@ -19,6 +19,19 @@ The normal challenge XP, hireling and monster-randomization settings still apply
 October uses the challenge's isolated save folder, `seed21392`. Create a fresh
 character. Forgotten Arts' existing in-game validation notes still apply.
 
+December 1–31, 2026 is **Challenge 18: Krampusnacht**, seed **24066**
+(`getMutationIds`/`getWeekName` override, `DECEMBER_2026_CHALLENGE`):
+
+- Dead Reckoning (existing).
+- Krampus Is Coming (new, challenge-only): Krampus replaces Bishibosh,
+  Beetleburst, Stormtree and Frozenstein. See [krampus.md](krampus.md).
+- Cold Snap (new, challenge-only): champions, uniques and superuniques are Cold
+  Enchanted (frost nova on death); players get −10 cold resistance. See
+  [krampus.md](krampus.md).
+
+Like October's override, December's doesn't replace the rotation slot it would have
+used (slot 17, The Long Rot); January carries on with slot 18.
+
 November becomes Challenge 17; subsequent challenges use successive calendar
 months and the existing mutation rotation. The October override doesn't replace
 an entry in the historical rotation. Legacy `week` API fields, leaderboard IDs,

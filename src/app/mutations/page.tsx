@@ -106,6 +106,16 @@ const TIPS: Record<string, string[]> = {
     'You gain much less life per point of Vitality, so let the hireling stand in front and support from behind.',
     'An Act II mercenary’s aura or an Act III mercenary’s spells become far more important with their boosted skill levels.',
   ],
+  'krampus': [
+    'Krampus waits where Bishibosh, Beetleburst, Stormtree and Frozenstein would be. He has twice their life and a curse, so come prepared or come back later.',
+    'He is Cold Enchanted: step back when he falls, or his frost nova will catch you.',
+    'He drops the act boss’s haul, so he is worth the detour.',
+  ],
+  'cold-snap': [
+    'Every champion, unique and superunique bursts into a frost nova when it dies. Back off before the killing blow, or finish them from range.',
+    'Your cold resistance starts 10 lower, so cold resistance gear and Thawing Potions matter more than usual.',
+    'Their attacks chill too, which slows you down. Don’t fight a champion pack with nowhere to retreat.',
+  ],
   'forgotten-arts': [
     'Skill trees are disabled. Buy early spell books from Akara and pick up every spell you find while exploring.',
     'Cube three matching copies into a stronger book. You keep your levels when you upgrade, so hold on to duplicates.',
