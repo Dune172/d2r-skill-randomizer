@@ -46,6 +46,10 @@ export default function ArchivePage() {
         <p className="anim-fade-up-d2 text-[#a89060] text-sm leading-relaxed max-w-lg mx-auto mb-10">
           Play any past mutation challenge — same seed, same settings, same mutations as when it was live.
         </p>
+        <p className="anim-fade-up-d2 text-[#a89060] text-sm leading-relaxed max-w-lg mx-auto -mt-6 mb-10">
+          Each challenge has its own page with the full leaderboard, what every mutation did, strategy tips and
+          the complete skill layout for its seed.
+        </p>
       </section>
 
       <section className="max-w-4xl mx-auto px-4 pb-16">

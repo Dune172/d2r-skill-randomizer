@@ -12,6 +12,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v0.348',
+    date: 'November 2026',
+    tagline: 'Every past challenge gets its own page',
+    notes: [
+      'Each finished Mutation Challenge now has its own page in the archive, from Swarming Plague (#1) to Return to Tristram (#16)',
+      'A challenge page shows its dates and seed, what each mutation did with strategy tips, the challenge settings, the full Normal and Hell leaderboards with run videos, and every class’s skill trees for that seed',
+      'Mystery Box challenges keep their layout secret, the same as in game. You can still generate and play any challenge from its page',
+      'Open one from the link on each archive card, or from the “Featured in” lists in the mutations guide',
+    ],
+  },
+  {
     version: 'v0.347',
     date: 'November 2026',
     tagline: 'Runewords and set items grant the right skills',
