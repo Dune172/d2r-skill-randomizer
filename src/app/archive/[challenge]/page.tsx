@@ -8,7 +8,7 @@ import { getActiveMutations, getWeekName } from '@/lib/mutations/registry';
 import { MUTATION_TIPS } from '@/lib/mutations/tips';
 import { formatWeekDate, getWeekEnd, getWeekSeed, getWeekStart } from '@/lib/challenge/week';
 import { challengeRandomizesMonsters } from '@/lib/challenge/rules';
-import { challengeEndDate, challengePath, challengeSlug, isPastChallenge, parseChallengeSlug, pastChallenges } from '@/lib/challenge/pages';
+import { challengeEndDate, challengePath, challengeSlug, isPastChallenge, parseChallengeSlug } from '@/lib/challenge/pages';
 import { CHALLENGE_RECAPS } from '@/lib/challenge/recaps';
 import { getEntries, stripIp, type PublicSubmission } from '@/lib/leaderboard';
 import { challengePreview } from '@/lib/randomizer/preview';
@@ -19,9 +19,14 @@ import { formatHMS } from '@/lib/time-format';
 // Hourly, so late leaderboard changes (moderation, a corrected time) show up.
 export const revalidate = 3600;
 
-/** Every finished challenge at build time; later ones render on first request and then cache. */
+/**
+ * Nothing is prerendered at build: every page renders on its first request and
+ * then caches. Hostinger builds each release in its own directory, where
+ * leaderboard.json (STATE_DIR, see state-dir.ts) doesn't exist, so build-time
+ * pages showed every challenge with no runs until the first revalidation.
+ */
 export function generateStaticParams() {
-  return pastChallenges().map((n) => ({ challenge: challengeSlug(n) }));
+  return [];
 }
 
 type Params = { params: Promise<{ challenge: string }> };
