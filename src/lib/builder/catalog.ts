@@ -26,7 +26,7 @@ export interface BuilderCatalog {
 
 // Keyed by page, named by content. (The SkillCategory strings are indexed by
 // screen position, and Warlock's don't line up with its skilldesc pages.)
-const TREE_NAMES: Record<string, string> = {
+export const TREE_NAMES: Record<string, string> = {
   'ama-1': 'Bow and Crossbow', 'ama-2': 'Passive and Magic', 'ama-3': 'Javelin and Spear',
   'sor-1': 'Fire Spells', 'sor-2': 'Lightning Spells', 'sor-3': 'Cold Spells',
   'nec-1': 'Curses', 'nec-2': 'Poison and Bone', 'nec-3': 'Summoning',

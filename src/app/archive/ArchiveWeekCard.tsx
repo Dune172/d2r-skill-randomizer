@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { getActiveMutations, getWeekName } from '@/lib/mutations/registry';
 import { getWeekStart, getWeekEnd, getWeekSeed, formatWeekDate } from '@/lib/challenge/week';
 import { HomeMutationCard } from '@/app/components/HomeMutationCard';
 import { ChallengeGenerator } from '@/app/challenge/ChallengeGenerator';
 import { Leaderboard } from '@/app/components/Leaderboard';
 import { formatHMS } from '@/lib/time-format';
+import { challengePath } from '@/lib/challenge/pages';
 import type { PublicSubmission } from '@/lib/leaderboard';
 
 type Props = {
@@ -69,6 +71,15 @@ export function ArchiveWeekCard({ weekNumber, entries = [], hellEntries = [] }: 
           </p>
         )}
       </button>
+
+      <p className="-mt-2 pb-5 px-6">
+        <Link
+          href={challengePath(weekNumber)}
+          className="font-cinzel text-[10px] tracking-[0.25em] uppercase text-[#a87830] hover:text-[#c8942a] underline underline-offset-4 transition-colors"
+        >
+          Results, rules and skill layout →
+        </Link>
+      </p>
 
       {expanded && (
         <div id={`archive-week-${weekNumber}-body`} className="px-6 pb-6 pt-1">
